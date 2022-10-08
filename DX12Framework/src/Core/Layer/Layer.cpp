@@ -9,4 +9,10 @@ namespace DX12Framework
 	{
 		
 	}
+
+	Layer::~Layer()
+	{
+		
+	}
+
 }

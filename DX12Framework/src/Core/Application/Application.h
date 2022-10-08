@@ -1,32 +1,47 @@
 #pragma once
-
+#include "Core/Core.h"
+#include "Core/Window.h"
+#include "Core/TimeStep.h"
+#include "Core/Layer/LayerStack.h"
+#include "Core/Events/AppEvents.h"
 
 namespace DX12Framework
 {
 	class Application
 	{
-	private:
+	protected:
 		Application(const std::wstring& appName);
 
-		virtual ~Application() = default;
-
 	public:
-
-		virtual Application* CreateApplication() = 0;
+		virtual ~Application() = default;
 
 		void Run();
 		//void OnEvent(Event& event);
 
-		//void PushLayer(Layer* layer);
-		//void PushOverlay(Layer* overlay);
+		void PushLayer(Layer* layer);
+		void PushOverlay(Layer* overlay);
 
 		//inline Window* GetWindow() { return *Window; }
 
-		//inline static Application* Get() { return SingletonInstance; }
+		inline static Application* Get() { return SingletonInstance; }
 
 		//inline ImGuiLayer() { return ImGuiLayer; }
 
-	protected:
+
+	private:
+
+		// container for all the apps layers
+		LayerStack LayerStack;
+
+		// unique ptr to the system window
+		RefPointer<Window> Window;
+
+		//
+		bool IsRunning;
+
+		bool IsMinimised;
+
+		float PreviousFrameTime;
 
 	private:
 

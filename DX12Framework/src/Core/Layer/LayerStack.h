@@ -5,8 +5,9 @@
 namespace DX12Framework
 {
 	// @brief The layer stack is a custom structure which stores the application's
-	//		  various layers. For instance, ImGui will reside on a seperate layer from
-	//		  the frontend application layer to ease maintenance.
+	//		  frontend layers.
+	//		  Additionally, the layer system tracks overlays, such as ImGui which handles
+	//		  user interface rendering. 
 
 	class LayerStack
 	{

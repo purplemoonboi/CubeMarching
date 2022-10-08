@@ -31,7 +31,7 @@ namespace DX12Framework
 #define CORE_WARNING(...) ::DX12Framework::Log::GetCoreLog()->warn(__VA_ARGS__);
 #define CORE_INFO(...)    ::DX12Framework::Log::GetCoreLog()->info(__VA_ARGS__);
 #define CORE_TRACE(...)   ::DX12Framework::Log::GetCoreLog()->trace(__VA_ARGS__);
-#define CORE_FATAL(...)   ::DX12Framework::Log::GetCoreLog()->fatal(__VA_ARGS__);
+//#define CORE_FATAL(...)   ::DX12Framework::Log::GetCoreLog()->fatal(__VA_ARGS__);
 
 
 /**Client log MACROS**/
@@ -39,20 +39,20 @@ namespace DX12Framework
 #define APP_WARNING(...) ::DX12Framework::Log::GetClientLog()->warn(__VA_ARGS__);
 #define APP_INFO(...)    ::DX12Framework::Log::GetClientLog()->info(__VA_ARGS__);
 #define APP_TRACE(...)   ::DX12Framework::Log::GetClientLog()->trace(__VA_ARGS__);
-#define APP_FATAL(...)   ::DX12Framework::Log::GetClientLog()->fatal(__VA_ARGS__);
+//#define APP_FATAL(...)   ::DX12Framework::Log::GetClientLog()->fatal(__VA_ARGS__);
 
 // @brief Assertion checks - for debugging core code only, 			 
 // remove assertion checks for optimised builds.			
 #if CM_DEBUG
 
-	#define FD_CORE_ASSERT(expr, ...) {if(!expr){FD_CORE_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak();}}
+	#define CORE_ASSERT(expr, ...) {if(!expr){CORE_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak();}}
 
-	#define FD_APP_ASSERT(expr, ...) {if(!expr){FD_APP_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak();}}
+	#define APP_ASSERT(expr, ...) {if(!expr){APP_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak();}}
 
 #else
 
 	//Do nothing - effectively strip assertions from code in optimised builds.
-	#define FD_CORE_ASSERT(expr, ...)
-	#define FD_APP_ASSERT(expr, ...)
+	#define CORE_ASSERT(expr, ...)
+	#define APP_ASSERT(expr, ...)
 
 #endif

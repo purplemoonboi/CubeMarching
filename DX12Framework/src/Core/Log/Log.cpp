@@ -12,7 +12,7 @@ namespace DX12Framework
 	{
 		spdlog::set_pattern("%^ [%T]: %v%$");
 
-		CoreLog = spdlog::stdout_color_mt("Foundation");
+		CoreLog = spdlog::stdout_color_mt("DX12Application");
 
 		CoreLog->set_level(spdlog::level::trace);
 

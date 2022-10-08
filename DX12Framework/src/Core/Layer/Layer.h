@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/TimeStep.h"
-#include "Events/Event.h"
+#include "Core/Events/Event.h"
 
 namespace DX12Framework
 {
@@ -9,7 +9,7 @@ namespace DX12Framework
 	{
 	public:
 		Layer(const std::wstring& name = L"Layer");
-		virtual ~Layer() = 0;
+		virtual ~Layer();
 
 		virtual void OnAttach() = 0;
 		virtual void OnDetach() = 0;

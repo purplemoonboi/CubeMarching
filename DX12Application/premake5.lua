@@ -1,5 +1,5 @@
-project "DX12Framework"
-		kind "StaticLib"
+project "DX12Application"
+		kind "ConsoleApp"
 			language "C++"
 			cppdialect "C++20"
 			staticruntime "on"
@@ -7,49 +7,39 @@ project "DX12Framework"
 			targetdir ("%{wks.location}/bin/" ..outputdir.. "/%{prj.name}")
 			objdir ("%{wks.location}/bin-int/" ..outputdir.. "/%{prj.name}")
 
-			pchheader "cmpch.h"
-			pchsource "src/cmpch.cpp"
-
 			files
 			{
 				"src/**.h",
 				"src/**.cpp"
 			}
 
-			includedirs
+			includedirs 
 			{
-				"src",
-				"vendor/spdlog/include"
+				"%{wks.location}/DX12Framework/vendor/spdlog/include",
+				"%{wks.location}/DX12Framework/vendor",
+				"%{wks.location}/DX12Framework/src"
+				
 			}
 
 			links
 			{
-			   
+				"DX12Framework"
 			}
-
 
 			filter "system:windows"
 				systemversion "latest"
 
 			defines
 			{
-				"_CRT_SECURE_NO_WARNINGS",
-				"CM_WINDOWS_PLATFORM"
+				"CM_PLATFORM_WINDOWS"
 			}
 
 			filter "configurations:Debug"
-			defines	"CM_DEBUG"
+			defines	"FD_DEBUG"
 			runtime "Debug"
 			symbols "on"
 
 			filter "configurations:Release"
-			defines	"CM_RELEASE"
+			defines	"FD_RELEASE"
 			runtime "Release"
 			optimize "on"
-
-
-
-
-
-
-

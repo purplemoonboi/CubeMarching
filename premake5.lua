@@ -2,7 +2,7 @@ include "./vendor/premake/premake_customisation/solutions_items.lua"
 
 workspace "DX12Framework"
     architecture "x64"
-    startproject "DX12Framework"
+    startproject "DX12Application"
 
     configurations
     {
@@ -27,3 +27,4 @@ include "vendor/premake"
 group ""
 
 include "DX12Framework"
+include "DX12Application"
