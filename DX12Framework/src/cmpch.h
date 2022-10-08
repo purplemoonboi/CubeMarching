@@ -8,7 +8,7 @@
 #include <functional>
 #include <sstream>
 #include <string>
-#include <wchar.h>
+#include <cwchar>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>

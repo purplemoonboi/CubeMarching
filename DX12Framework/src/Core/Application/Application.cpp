@@ -8,7 +8,10 @@ namespace DX12Framework
 
 	Application::Application(const std::wstring& appName)
 	{
-		
+		//TODO: Check if an app instance exists
+
+
+
 	}
 
 
