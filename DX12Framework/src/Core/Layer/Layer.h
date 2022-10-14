@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/TimeStep.h"
+#include "Core/Time/DeltaTime.h"
 #include "Core/Events/Event.h"
 
 namespace DX12Framework

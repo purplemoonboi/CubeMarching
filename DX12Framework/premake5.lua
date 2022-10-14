@@ -19,12 +19,15 @@ project "DX12Framework"
 			includedirs
 			{
 				"src",
-				"vendor/spdlog/include"
+				"vendor/spdlog/include",
+				"vendor/DX12/include"
 			}
 
 			links
 			{
-			   
+			   "d3dcompiler",
+			   "D3D12",
+			   "dxgi"
 			}
 
 

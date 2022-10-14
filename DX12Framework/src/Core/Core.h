@@ -2,6 +2,7 @@
 #include <memory>
 #include <utility>
 
+
 // @brief A macro for shifting bits by 'x' amount. (very lazy)
 #define BIT(x) (1 << x)
 

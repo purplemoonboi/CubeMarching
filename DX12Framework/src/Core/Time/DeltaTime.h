@@ -20,5 +20,7 @@ namespace DX12Framework
 
 	private:
 		float Time;
+		
 	};
+
 }

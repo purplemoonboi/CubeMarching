@@ -9,6 +9,7 @@ namespace DX12Framework
 	class DX12Application : public Application
 	{
 	public:
+		//Create a new front end application
 		DX12Application()
 			:
 			Application(L"DX12 Editor")

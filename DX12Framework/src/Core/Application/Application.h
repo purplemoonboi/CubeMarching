@@ -1,9 +1,11 @@
 #pragma once
 #include "Core/Core.h"
 #include "Core/Window.h"
-#include "Core/TimeStep.h"
+#include "Core/Time/DeltaTime.h"
+#include "Core/Time/AppTimeManager.h"
 #include "Core/Layer/LayerStack.h"
 #include "Core/Events/AppEvents.h"
+
 
 namespace DX12Framework
 {
@@ -43,10 +45,13 @@ namespace DX12Framework
 
 		float PreviousFrameTime;
 
-	private:
+	protected:
 
 		static Application* SingletonInstance;
 
+		//Application instance handle
+		HINSTANCE AppInstance;
+		HWND WindowHandle;
 	};
 
 	// This must be defined on client.
