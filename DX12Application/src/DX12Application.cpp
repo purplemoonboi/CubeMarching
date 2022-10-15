@@ -1,5 +1,5 @@
-#include <DX12Framework.h>
-#include <Core/EntryPoint.h>
+#include <Framework/DX12Framework.h>
+#include <Framework/Core/EntryPoint.h>
 
 #include "DX12EditorLayer.h"
 
@@ -10,9 +10,9 @@ namespace DX12Framework
 	{
 	public:
 		//Create a new front end application
-		DX12Application()
+		DX12Application(HINSTANCE hInstance, const std::wstring& appName)
 			:
-			Application(L"DX12 Editor")
+			Application(hInstance, appName)
 		{
 			PushLayer(new DX12EditorLayer());
 		}
@@ -21,8 +21,8 @@ namespace DX12Framework
 		{}
 	};
 
-	Application* CreateApplication()
+	Application* CreateApplication(HINSTANCE hInstance, const std::wstring& appName)
 	{
-		return new DX12Application();
+		return new DX12Application(hInstance, appName);
 	}
 }

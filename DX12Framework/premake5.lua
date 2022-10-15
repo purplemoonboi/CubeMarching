@@ -30,6 +30,7 @@ project "DX12Framework"
 			   "dxgi"
 			}
 
+			flags { "NoPCH" }
 
 			filter "system:windows"
 				systemversion "latest"

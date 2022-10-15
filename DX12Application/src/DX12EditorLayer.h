@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/Layer/Layer.h"
-#include "DX12Framework.h"
+#include "Framework/Core/Layer/Layer.h"
+#include "Framework/DX12Framework.h"
 
 namespace DX12Framework
 {
