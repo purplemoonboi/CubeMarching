@@ -34,8 +34,15 @@ namespace DX12Framework
 		bool CreateDsvDescriptorHeap();
 		// @brief Creates the description for a resource buffer. (of type CBV, SRV and UAV)
 		bool CreateCbvSrvUavDescriptorHeap();
-	
+
+		// @brief 
 		void Resize();
+
+		// @brief 
+		void FlushCommandQueue();
+
+
+		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
 
 		Microsoft::WRL::ComPtr<IDXGISwapChain>  SwapChain;
 		Microsoft::WRL::ComPtr<IDXGIFactory4>	DXGIFactory;
@@ -52,7 +59,7 @@ namespace DX12Framework
 		Microsoft::WRL::ComPtr<ID3D12Resource>			  DepthStencilBuffer;
 
 		// @brief Tracks the number of syncs between CPU and GPU.
-		UINT64 CurrentFence;
+		UINT64 FenceSyncCount;
 
 		// @brief - The following unsigned integers represent the size of descriptor types.
 		//			Descriptor sizes vary across GPUs, so we need to get this information
@@ -81,10 +88,15 @@ namespace DX12Framework
 		// @brief Defines the format of the stencil.
 		DXGI_FORMAT DepthStencilFormat;
 
+		// @brief A structure describing the output buffer
+		D3D12_VIEWPORT ScreenViewport;
+
+		// @brief 
+		D3D12_RECT ScissorRect;
 
 		// @brief This is out dated. Please use frame buffer class instead.   
-		INT32 BufferWidth;
-		INT32 BufferHeight;
+		INT32 ViewportWidth;
+		INT32 ViewportHeight;
 
 		HWND* ApplicationWindowHandle;
 

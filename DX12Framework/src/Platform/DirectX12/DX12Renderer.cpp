@@ -13,9 +13,9 @@ namespace DX12Framework
 		D3DDriverType(D3D_DRIVER_TYPE_HARDWARE),
 		BackBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM),
 		DepthStencilFormat(DXGI_FORMAT_D24_UNORM_S8_UINT),
-		CurrentFence(0),
-		BufferWidth(bufferWidth),
-		BufferHeight(bufferHeight),
+		FenceSyncCount(0),
+		ViewportWidth(bufferWidth),
+		ViewportHeight(bufferHeight),
 		ApplicationWindowHandle(&windowHandle)
 	{
 		CreateDevice();
@@ -147,8 +147,8 @@ namespace DX12Framework
 		SwapChain.Reset();
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc;
-		swapChainDesc.BufferDesc.Width = BufferWidth;
-		swapChainDesc.BufferDesc.Height = BufferHeight;
+		swapChainDesc.BufferDesc.Width = ViewportWidth;
+		swapChainDesc.BufferDesc.Height = ViewportHeight;
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 		swapChainDesc.BufferDesc.Format = BackBufferFormat;
@@ -240,8 +240,8 @@ namespace DX12Framework
 		HRESULT resizeSCResult = SwapChain->ResizeBuffers
 		(
 			SwapChainBufferCount,
-			BufferWidth,
-			BufferHeight,
+			ViewportWidth,
+			ViewportHeight,
 			BackBufferFormat,
 			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
 		);
@@ -259,8 +259,8 @@ namespace DX12Framework
 		D3D12_RESOURCE_DESC depthStencilDesc;
 		depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Alignment = 0;
-		depthStencilDesc.Width = BufferWidth;
-		depthStencilDesc.Height = BufferHeight;
+		depthStencilDesc.Width = ViewportWidth;
+		depthStencilDesc.Height = ViewportHeight;
 		depthStencilDesc.DepthOrArraySize = 1;
 		depthStencilDesc.MipLevels = 1;
 
@@ -287,10 +287,56 @@ namespace DX12Framework
 		);
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Format = DepthStencilFormat;
+		dsvDesc.Texture2D.MipSlice = 0;
+		Device->CreateDepthStencilView(DepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
 
 
+		CommandList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				DepthStencilBuffer.Get(),
+				D3D12_RESOURCE_STATE_COMMON,
+				D3D12_RESOURCE_STATE_DEPTH_WRITE
+			)
+		);
 
+		HRESULT cmdListResult = CommandList->Close();
+
+		//FlushCommandQueue();
+
+		ScreenViewport.TopLeftX = 0;
+		ScreenViewport.TopLeftY = 0;
+		ScreenViewport.Width = static_cast<float>(ViewportWidth);
+		ScreenViewport.Height = static_cast<float>(ViewportHeight);
+		ScreenViewport.MinDepth = 0.0f;
+		ScreenViewport.MaxDepth = 1.0f;
+
+		ScissorRect = { 0, 0, ViewportWidth, ViewportHeight };
 	}
 
+	void DX12Renderer::FlushCommandQueue()
+	{
+		FenceSyncCount++;
 
+
+		HRESULT cmdQueueResult = CommandQueue->Signal(SyncFence.Get(), FenceSyncCount++);
+
+		if (SyncFence->GetCompletedValue() < FenceSyncCount)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::DepthStencilView() const
+	{
+		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
+	}
 }
