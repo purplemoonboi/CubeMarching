@@ -9,13 +9,13 @@ namespace DX12Framework
 	class DX12Renderer 
 	{
 	private:
-		DX12Renderer(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight);
+		explicit DX12Renderer(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight);
 		DX12Renderer(const DX12Renderer&) = default;
-		~DX12Renderer();
 
 	public:
+		~DX12Renderer();
 
-		static RefPointer<DX12Renderer> Create();
+		static RefPointer<DX12Renderer> Create(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight);
 
 	private:
 
@@ -36,10 +36,13 @@ namespace DX12Framework
 		bool CreateCbvSrvUavDescriptorHeap();
 
 		// @brief 
-		void Resize();
+		void Resize(INT32 bufferWidth, INT32 bufferHeight);
 
 		// @brief 
 		void FlushCommandQueue();
+
+		// @brief Builds the depth stencil description and creates a committed resource.#
+		bool CreateDepthStencilResource();
 
 
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;

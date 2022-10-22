@@ -32,9 +32,9 @@ namespace DX12Framework
 
 	}
 
-	RefPointer<DX12Renderer> DX12Renderer::Create()
+	RefPointer<DX12Renderer> DX12Renderer::Create(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight)
 	{
-		return CreateRef<DX12Renderer>();
+		return CreateRef<DX12Renderer>(windowHandle, bufferWidth, bufferHeight);
 	}
 
 	bool DX12Renderer::CreateDevice()
@@ -219,14 +219,14 @@ namespace DX12Framework
 
 	}
 
-	void DX12Renderer::Resize()
+	void DX12Renderer::Resize(INT32 bufferWidth, INT32 bufferHeight)
 	{
 		CORE_ASSERT(Device, "Device failed...");
 		CORE_ASSERT(SwapChain, "Swap chain encountered an error...");
 		CORE_ASSERT(DirectCommandListAllocator, "Command alloc com failed...");
 
 
-		//FlushCommandQueue();
+		FlushCommandQueue();
 
 		CommandList->Reset(DirectCommandListAllocator.Get(), nullptr);
 
@@ -256,58 +256,24 @@ namespace DX12Framework
 			rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
 
-		D3D12_RESOURCE_DESC depthStencilDesc;
-		depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		depthStencilDesc.Alignment = 0;
-		depthStencilDesc.Width = ViewportWidth;
-		depthStencilDesc.Height = ViewportHeight;
-		depthStencilDesc.DepthOrArraySize = 1;
-		depthStencilDesc.MipLevels = 1;
+		CreateDepthStencilResource();
 
-		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-
-		depthStencilDesc.SampleDesc.Count = MSAA4xQaulity;
-		depthStencilDesc.SampleDesc.Quality = MSAA4xQaulity ? (MSAA4xQaulity - 1) : 0;
-		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-		D3D12_CLEAR_VALUE optClear;
-		optClear.Format = DepthStencilFormat;
-		optClear.DepthStencil.Depth = 1.0f;
-		optClear.DepthStencil.Stencil = 0;
-
-		HRESULT resourceResult = Device->CreateCommittedResource
+		auto resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition
 		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&depthStencilDesc,
+			DepthStencilBuffer.Get(),
 			D3D12_RESOURCE_STATE_COMMON,
-			&optClear,
-			IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf())
+			D3D12_RESOURCE_STATE_DEPTH_WRITE
 		);
-
-		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		dsvDesc.Format = DepthStencilFormat;
-		dsvDesc.Texture2D.MipSlice = 0;
-		Device->CreateDepthStencilView(DepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
-
 
 		CommandList->ResourceBarrier
 		(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				DepthStencilBuffer.Get(),
-				D3D12_RESOURCE_STATE_COMMON,
-				D3D12_RESOURCE_STATE_DEPTH_WRITE
-			)
+			&resourceBarrier
 		);
 
 		HRESULT cmdListResult = CommandList->Close();
 
-		//FlushCommandQueue();
+		FlushCommandQueue();
 
 		ScreenViewport.TopLeftX = 0;
 		ScreenViewport.TopLeftY = 0;
@@ -323,16 +289,61 @@ namespace DX12Framework
 	{
 		FenceSyncCount++;
 
-
 		HRESULT cmdQueueResult = CommandQueue->Signal(SyncFence.Get(), FenceSyncCount++);
 
 		if (SyncFence->GetCompletedValue() < FenceSyncCount)
 		{
-			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
 
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
+	}
+
+	bool DX12Renderer::CreateDepthStencilResource()
+	{
+		/* Create the depth stencil description*/
+		D3D12_RESOURCE_DESC depthStencilDesc;
+		depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		depthStencilDesc.Alignment = 0;
+		depthStencilDesc.Width = ViewportWidth;
+		depthStencilDesc.Height = ViewportHeight;
+		depthStencilDesc.DepthOrArraySize = 1;
+		depthStencilDesc.MipLevels = 1;
+		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+		depthStencilDesc.SampleDesc.Count = MSAA4xQaulity;
+		depthStencilDesc.SampleDesc.Quality = MSAA4xQaulity ? (MSAA4xQaulity - 1) : 0;
+		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+		D3D12_CLEAR_VALUE optClear;
+		optClear.Format = DepthStencilFormat;
+		optClear.DepthStencil.Depth = 1.0f;
+		optClear.DepthStencil.Stencil = 0;
+
+		//taking the address of r-value is non-standard... implemented local
+		//variable for l-value
+		const auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		HRESULT resourceResult = Device->CreateCommittedResource
+		(
+			&heapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&depthStencilDesc,
+			D3D12_RESOURCE_STATE_COMMON,
+			&optClear,
+			IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf())
+		);
+
+
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Format = DepthStencilFormat;
+		dsvDesc.Texture2D.MipSlice = 0;
+		Device->CreateDepthStencilView(DepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
+
+
+		return true;
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::DepthStencilView() const
