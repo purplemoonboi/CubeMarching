@@ -1,11 +1,12 @@
 #pragma once
 #include <WindowsX.h>
-
+#include "Framework/Core/Window.h"
+#include "Framework/Core/Events/Event.h"
 
 
 namespace DX12Framework
 {
-	class WindowsWindow
+	class WindowsWindow : public Window
 	{
 	public:
 
@@ -20,8 +21,6 @@ namespace DX12Framework
 		WindowsWindow(const WindowsWindow&) = delete;
 	//	WindowsWindow& operator=(const WindowsWindow&) = delete;
 
-		// @brief Returns the handle to the registered window.
-		HWND GetWindowHandle() const { return WindowHandle; }
 
 		// @brief Returns the maximised boolean
 		bool IsWndMaximised() const { return IsMaximised; }
@@ -33,6 +32,19 @@ namespace DX12Framework
 		bool HasUserRequestedToCloseWnd() const { return IsClosing; }
 
 
+		void OnUpdate() override;
+
+		UINT32 GetWidth() const override { return Width; }
+		UINT32 GetHeight() const override { return Height; }
+
+		void* GetNativeWindow() const override { return WindowHandle; }
+
+		/*..Window Attributes..*/
+
+		void SetVSync(bool enabled) override { VSync = enabled; }
+		bool IsVSync() const override { return VSync; }
+
+
 		// @brief Event callback bound to the system, processes and handles
 		//		  received events from the user.
 		// @param[in] A handle to the window
@@ -40,6 +52,10 @@ namespace DX12Framework
 		// @param[in] A wide parameter
 		// @param[in] A long parameter
 		LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
+		// @brief Set the applications on event process
+		void SetEventCallBack(const WindowCallback& callBack) override { WindowsData.AppEventCallBack = callBack; }
 
 	public:
 		// @brief Returns the pointer to this class.
@@ -53,9 +69,21 @@ namespace DX12Framework
 		bool InitialiseWindow(HINSTANCE hInstance, const std::wstring& windowCaption = L"DX12 Engine");
 
 
-		// @brief When the user has resized the screen, dispatch an event to the renderer.
-		//		  This is so the renderer can rebuild the buffers and render targets.
-		inline void OnResize();
+		// @brief Encapsulating window data.
+		struct WindowData
+		{
+			std::string Title;
+
+			INT32 Width;
+			INT32 Height;
+
+			std::function<void(Event&)> AppEventCallBack;
+
+
+			bool VSync;
+		};
+
+		WindowData WindowsData;
 
 		// Window attributes
 		// Handle to the registered window
@@ -68,6 +96,7 @@ namespace DX12Framework
 		bool IsResizing;
 		bool IsClosing;
 		bool WindowCreated;
+		bool VSync;
 	};
 }
 

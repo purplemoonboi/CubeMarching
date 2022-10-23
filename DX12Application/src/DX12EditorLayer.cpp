@@ -1,4 +1,6 @@
 #include "DX12EditorLayer.h"
+#include "Framework/Renderer/RenderInstruction.h"
+
 
 namespace DX12Framework
 {
@@ -22,10 +24,20 @@ namespace DX12Framework
 
     void DX12EditorLayer::OnUpdate(DeltaTime deltaTime)
     {
+        //User input
+
+
+        //Update camera transform
+
+
     }
 
     void DX12EditorLayer::OnRender()
     {
+
+        //TODO: Need to think about a more delicate way of doing this.
+        RenderInstruction::Draw();
+
     }
 
     void DX12EditorLayer::OnImGuiRender()

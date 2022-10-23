@@ -1,6 +1,7 @@
 #pragma once
 #include "Framework/Core/Layer/Layer.h"
 #include "Framework/DX12Framework.h"
+#include "Framework/Camera/Camera.h"
 
 namespace DX12Framework
 {
@@ -21,12 +22,8 @@ namespace DX12Framework
 
 	private:
 
-		//struct ProfilingResults
-		//{
-		//	const char* name;
-		//	float time;
-		//};
-		//std::vector<ProfilingResults> m_Profiles;
+
+		Camera Camera;
 	};
 
 }

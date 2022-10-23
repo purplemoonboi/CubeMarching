@@ -8,7 +8,7 @@ namespace DX12Framework
 	{
 	public:
 
-		enum class API
+		enum class Api
 		{
 
 			None = 0,
@@ -24,19 +24,23 @@ namespace DX12Framework
 
 		virtual void Init() = 0;
 
+		virtual void InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight) = 0;
+
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
 		virtual void SetClearColour(DirectX::XMFLOAT4 colour) = 0;
+
+		virtual void Draw() = 0;
 
 		virtual void Clear() = 0;
 
 		//virtual void DrawIndexed(const RefPointer<VertexArray>& vertex_array, INT32 index_count = 0) = 0;
 
-		inline static API GetAPI() { return RendererAPIPtr; }
+		static Api GetAPI() { return RenderingApi; }
 
 	private:
 
-		static API RendererAPIPtr;
+		static Api RenderingApi;
 
 	};
 }

@@ -3,6 +3,6 @@
 
 namespace DX12Framework
 {
-	//For this project, forcing API to be DX12
-	RendererAPI::API RendererAPI::RendererAPIPtr = RendererAPI::API::DX12;
+	//For this project, forcing Api to be DX12
+	RendererAPI::Api RendererAPI::RenderingApi = RendererAPI::Api::DX12;
 }

@@ -1,4 +1,4 @@
-
+#include <DirectXMath.h>
 
 class Camera
 {

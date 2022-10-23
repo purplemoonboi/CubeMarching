@@ -8,12 +8,12 @@ namespace DX12Framework
 
 	class DX12Renderer 
 	{
-	private:
-		explicit DX12Renderer(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight);
 		DX12Renderer(const DX12Renderer&) = default;
 
 	public:
 		~DX12Renderer();
+		DX12Renderer(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight);
+
 
 		static RefPointer<DX12Renderer> Create(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight);
 
@@ -35,8 +35,7 @@ namespace DX12Framework
 		// @brief Creates the description for a resource buffer. (of type CBV, SRV and UAV)
 		bool CreateCbvSrvUavDescriptorHeap();
 
-		// @brief 
-		void Resize(INT32 bufferWidth, INT32 bufferHeight);
+	
 
 		// @brief 
 		void FlushCommandQueue();
@@ -68,11 +67,11 @@ namespace DX12Framework
 		//			Descriptor sizes vary across GPUs, so we need to get this information
 		//			and cache them for later when we want to create descriptors.
 
-		// @brief Represents the size of the RTV descriptor heap.
+		// @brief - Represents the size of the RTV descriptor heap.
 		UINT RtvDescriptorSize;
-		// @brief Represents the size of the DSV descriptor heap.
+		// @brief - Represents the size of the DSV descriptor heap.
 		UINT DsvDescriptorSize;
-		// @brief Represents the size of the CBV, SRV and UAV descriptor heaps.
+		// @brief - Represents the size of the CBV, SRV and UAV descriptor heaps.
 		UINT CbvSrvUavDescriptorSize;
 
 		// @brief
@@ -91,10 +90,11 @@ namespace DX12Framework
 		// @brief Defines the format of the stencil.
 		DXGI_FORMAT DepthStencilFormat;
 
-		// @brief A structure describing the output buffer
+		// @brief - A structure describing the buffer which we render to.
 		D3D12_VIEWPORT ScreenViewport;
 
-		// @brief 
+		// @brief - Used to specify an area of the buffer we would like to render to.
+		//			Therefore culls pixels not included in the scissor rect.
 		D3D12_RECT ScissorRect;
 
 		// @brief This is out dated. Please use frame buffer class instead.   

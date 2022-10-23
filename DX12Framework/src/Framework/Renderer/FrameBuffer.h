@@ -18,11 +18,9 @@ namespace DX12Framework
 		INT32 Samples;
 		bool SwapChainTarget;
 
-
-		//FramebufferFormat format = 0;
 	};
 
-	// @brief Abstract class, needs to be implemented on a per API basis.
+	// @brief Abstract class, needs to be implemented on a per Api basis.
 	class FrameBuffer
 	{
 	public:

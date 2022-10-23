@@ -1,6 +1,8 @@
 #pragma once
 #include "RendererAPI.h"
 
+#include "Platform/DirectX12/DX12RenderingApi.h"
+
 namespace DX12Framework
 {
 
@@ -8,34 +10,44 @@ namespace DX12Framework
 	{
 	public:
 
-		inline static void Init()
+		static void Init()
 		{
-			RendererAPIPtr->Init();
+			RendererApiPtr->Init();
 		}
 
-		inline static void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
+		static void InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight)
 		{
-			//RendererAPIPtr->SetViewport(x, y, Width, Height);
+			RendererApiPtr->InitD3D(windowHandle, viewportWidth, viewportHeight);
 		}
 
-		inline static void SetClearColour(const DirectX::XMFLOAT4& colour)
+		static void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 		{
-			//RendererAPIPtr->SetClearColour(colour);
+			RendererApiPtr->SetViewport(x, y, width, height);
 		}
-		
-		inline static void Clear()
+
+		static void SetClearColour(const DirectX::XMFLOAT4& colour)
 		{
-			RendererAPIPtr->Clear();
+			RendererApiPtr->SetClearColour(colour);
+		}
+
+		static void Clear()
+		{
+			RendererApiPtr->Clear();
+		}
+
+		static void Draw()
+		{
+			RendererApiPtr->Draw();
 		}
 
 		//inline static void DrawIndexed(const std::shared_ptr<VertexArray>& vertex_array, INT32 count = 0)
 		//{
-			//RendererAPIPtr->DrawIndexed(vertex_array, count);
+			//RendererApiPtr->DrawIndexed(vertex_array, count);
 		//}
 
 	private:
 
-		static RendererAPI* RendererAPIPtr;
+		static RendererAPI* RendererApiPtr;
 
 	};
 }

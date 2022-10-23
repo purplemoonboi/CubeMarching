@@ -1,7 +1,7 @@
 project "DX12Application"
 		kind "ConsoleApp"
 			language "C++"
-			cppdialect "C++20"
+			cppdialect "C++17"
 			staticruntime "on"
 
 			targetdir ("%{wks.location}/bin/" ..outputdir.. "/%{prj.name}")

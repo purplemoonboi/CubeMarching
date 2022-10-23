@@ -1,8 +1,9 @@
 #include "Framework/cmpch.h"
 #include "RenderInstruction.h"
 
+#include "Platform/DirectX12/DX12RenderingApi.h"
 
 namespace DX12Framework
 {
-	RendererAPI* RenderInstruction::RendererAPIPtr = NULL;
+	RendererAPI* RenderInstruction::RendererApiPtr = new DX12RenderingApi();
 }

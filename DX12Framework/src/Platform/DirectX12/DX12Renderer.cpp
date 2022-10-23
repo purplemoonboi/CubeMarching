@@ -83,7 +83,7 @@ namespace DX12Framework
 			D3D12_FENCE_FLAG_NONE, 
 			IID_PPV_ARGS(&SyncFence)
 		);
-
+		return true;
 	}
 
 	bool DX12Renderer::CheckMSAAQualityAndCache()
@@ -103,6 +103,8 @@ namespace DX12Framework
 
 		MSAA4xQaulity = msaaQualityLevels.NumQualityLevels;
 		//CORE_ASSERT("Unexpected MSAA quality level.", (MSAA4xQaulity > 0), );
+
+		return true;
 	}
 
 	bool DX12Renderer::CreateCommandObjects()
@@ -140,6 +142,8 @@ namespace DX12Framework
 		//we'll need to reset it, for this to happen, the list must
 		//be in a closed state.
 		CommandList->Close();
+
+		return true;
 	}
 
 	bool DX12Renderer::CreateSwapChain()
@@ -216,138 +220,7 @@ namespace DX12Framework
 	{
 		//TODO: Finish implementing this!
 		CbvSrvUavDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	}
-
-	void DX12Renderer::Resize(INT32 bufferWidth, INT32 bufferHeight)
-	{
-		CORE_ASSERT(Device, "Device failed...");
-		CORE_ASSERT(SwapChain, "Swap chain encountered an error...");
-		CORE_ASSERT(DirectCommandListAllocator, "Command alloc com failed...");
-
-
-		FlushCommandQueue();
-
-		CommandList->Reset(DirectCommandListAllocator.Get(), nullptr);
-
-		for(UINT i = 0; i < SwapChainBufferCount; ++i)
-		{
-			SwapChainBuffer[i].Reset();
-		}
-
-		DepthStencilBuffer.Reset();
-
-		HRESULT resizeSCResult = SwapChain->ResizeBuffers
-		(
-			SwapChainBufferCount,
-			ViewportWidth,
-			ViewportHeight,
-			BackBufferFormat,
-			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
-		);
-
-		CurrentBackBuffer = 0;
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(RtvHeap->GetCPUDescriptorHandleForHeapStart());
-		for(UINT i = 0; i < SwapChainBufferCount; ++i)
-		{
-			HRESULT scbResult = SwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
-			Device->CreateRenderTargetView(SwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
-			rtvHeapHandle.Offset(1, RtvDescriptorSize);
-		}
-
-		CreateDepthStencilResource();
-
-		auto resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition
-		(
-			DepthStencilBuffer.Get(),
-			D3D12_RESOURCE_STATE_COMMON,
-			D3D12_RESOURCE_STATE_DEPTH_WRITE
-		);
-
-		CommandList->ResourceBarrier
-		(
-			1,
-			&resourceBarrier
-		);
-
-		HRESULT cmdListResult = CommandList->Close();
-
-		FlushCommandQueue();
-
-		ScreenViewport.TopLeftX = 0;
-		ScreenViewport.TopLeftY = 0;
-		ScreenViewport.Width = static_cast<float>(ViewportWidth);
-		ScreenViewport.Height = static_cast<float>(ViewportHeight);
-		ScreenViewport.MinDepth = 0.0f;
-		ScreenViewport.MaxDepth = 1.0f;
-
-		ScissorRect = { 0, 0, ViewportWidth, ViewportHeight };
-	}
-
-	void DX12Renderer::FlushCommandQueue()
-	{
-		FenceSyncCount++;
-
-		HRESULT cmdQueueResult = CommandQueue->Signal(SyncFence.Get(), FenceSyncCount++);
-
-		if (SyncFence->GetCompletedValue() < FenceSyncCount)
-		{
-			HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
-
-			WaitForSingleObject(eventHandle, INFINITE);
-			CloseHandle(eventHandle);
-		}
-	}
-
-	bool DX12Renderer::CreateDepthStencilResource()
-	{
-		/* Create the depth stencil description*/
-		D3D12_RESOURCE_DESC depthStencilDesc;
-		depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		depthStencilDesc.Alignment = 0;
-		depthStencilDesc.Width = ViewportWidth;
-		depthStencilDesc.Height = ViewportHeight;
-		depthStencilDesc.DepthOrArraySize = 1;
-		depthStencilDesc.MipLevels = 1;
-		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-		depthStencilDesc.SampleDesc.Count = MSAA4xQaulity;
-		depthStencilDesc.SampleDesc.Quality = MSAA4xQaulity ? (MSAA4xQaulity - 1) : 0;
-		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-		D3D12_CLEAR_VALUE optClear;
-		optClear.Format = DepthStencilFormat;
-		optClear.DepthStencil.Depth = 1.0f;
-		optClear.DepthStencil.Stencil = 0;
-
-		//taking the address of r-value is non-standard... implemented local
-		//variable for l-value
-		const auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		HRESULT resourceResult = Device->CreateCommittedResource
-		(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&depthStencilDesc,
-			D3D12_RESOURCE_STATE_COMMON,
-			&optClear,
-			IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf())
-		);
-
-
-		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		dsvDesc.Format = DepthStencilFormat;
-		dsvDesc.Texture2D.MipSlice = 0;
-		Device->CreateDepthStencilView(DepthStencilBuffer.Get(), &dsvDesc, DepthStencilView());
-
-
 		return true;
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE DX12Renderer::DepthStencilView() const
-	{
-		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
-	}
 }

@@ -5,11 +5,14 @@
 #include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Core/Layer/LayerStack.h"
 #include "Framework/Core/Events/AppEvents.h"
-
 #include "Platform/DirectX12/WindowsWindow.h"
 
 namespace DX12Framework
 {
+
+	class DX12GraphicsContext;
+
+
 	class Application
 	{
 	
@@ -22,23 +25,40 @@ namespace DX12Framework
 	public:
 		virtual ~Application() = default;
 
+		void OnApplicatonEvent(Event& event);
+
 		void Run();
 		//void OnEvent(Event& event);
 
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
 
-		//inline Window* GetWindow() { return *Window; }
+		// @brief Returns a pointer to the active window
+		WindowsWindow* GetWindow() { return Window; }
 
-		inline static Application* Get() { return SingletonInstance; }
+		// @brief Returns this application
+		static Application* Get() { return SingletonInstance; }
 
 		//inline ImGuiLayer() { return ImGuiLayer; }
 
+		// @brief Captures a window resize event, if true dispatch a
+		//		  invalidate buffer command. (Rebuilds buffer)
+		bool OnWindowResize(WindowResizeEvent& windowResize);
 
 	private:
 
+
 		// container for all the apps layers
 		LayerStack LayerStack;
+
+		// Reflects the state of the app currently running
+		bool IsRunning;
+
+		float PreviousFrameTime;
+
+	protected:
+
+		static Application* SingletonInstance;
 
 		// unique ptr to the system window
 		WindowsWindow* Window;
@@ -46,21 +66,8 @@ namespace DX12Framework
 		//A time manager
 		AppTimeManager Timer;
 
-		// Reflects the state of the app currently running
-		bool IsRunning;
-
-		float PreviousFrameTime;
-
-
-	protected:
-
-		static Application* SingletonInstance;
-
 		//Application instance handle
 		HINSTANCE AppInstance;
-
-	private:
-
 
 	};
 

@@ -11,7 +11,7 @@ namespace DX12Framework
 
 	// @brief The shader class is a high level object which allows the user to allocate
 	// data onto the GPU.
-	// Needs implemented per API
+	// Needs implemented per Api
 	class Shader
 	{
 	public:
