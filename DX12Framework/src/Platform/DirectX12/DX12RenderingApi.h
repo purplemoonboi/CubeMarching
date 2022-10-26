@@ -27,11 +27,16 @@ namespace DX12Framework
 
 		void Clear() override;
 
+		void SetIsResizing(bool value) {IsResizing = value;}
+		bool IsBufferResizing() const { return IsResizing; }
+
 	private:
 
 		DX12GraphicsContext* GraphicsContext = nullptr;
 
 		DX12FrameBuffer* FrameBuffer = nullptr;
+
+		bool IsResizing;
 
 	};
 

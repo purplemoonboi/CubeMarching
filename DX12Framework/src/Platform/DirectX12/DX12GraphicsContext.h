@@ -21,13 +21,7 @@ namespace DX12Framework
 
 		void Init() override;
 
-		void SwapBuffers() override;
-
-		void ResetCommandList();
-
-		void OpenCommandList();
-
-		void CloseCommandList();
+		void SwapBuffers() override{}
 
 		void FlushCommandQueue();
 
@@ -46,10 +40,10 @@ namespace DX12Framework
 		Microsoft::WRL::ComPtr<IDXGISwapChain>  SwapChain;
 		Microsoft::WRL::ComPtr<IDXGIFactory4>	DXGIFactory;
 
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> CommandList;
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> GraphicsCmdList;
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue>		  CommandQueue;
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>	  DirectCommandListAllocator;
-		Microsoft::WRL::ComPtr<ID3D12Fence> D3DFence() { return SyncFence; }
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>	  DirCmdListAlloc;
+		Microsoft::WRL::ComPtr<ID3D12Fence> D3DFence() { return Fence; }
 
 
 		Microsoft::WRL::ComPtr<ID3D12Resource>			  SwapChainBuffer[SwapChainBufferCount];
@@ -73,6 +67,7 @@ namespace DX12Framework
 		UINT32 GetDsvDescSize() const { return DsvDescriptorSize; }
 
 		UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
+		bool GetMsaaState() const { return MsaaState; }
 
 
 		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
@@ -85,6 +80,7 @@ namespace DX12Framework
 		INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 
 	private:
+
 
 		// @brief Creates the command object responsible for recording commands to be sent to the
 		//		  GPU.
@@ -99,18 +95,17 @@ namespace DX12Framework
 		bool CheckMSAAQualityAndCache();
 
 		// @brief 
-		bool CreateDsvDescriptorHeap();
-		// @brief 
-		bool CreateRtvDescriptorHeap();
+		bool CreateDsvAndRtvDescriptorHeaps();
+
 		// @brief Creates the description for a resource buffer. (of type CBV, SRV and UAV)
 		bool CreateCbvSrvUavDescriptorHeap();
 
 
 
-		Microsoft::WRL::ComPtr<ID3D12Fence>				  SyncFence;
+		Microsoft::WRL::ComPtr<ID3D12Fence>				  Fence;
 
 		// @brief Tracks the number of syncs between CPU and GPU.
-		UINT64 FenceSyncCount = 0;
+		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;
 
 		// @brief Index to the current back buffer
 		INT32 BackBufferIndex = 0;
@@ -124,7 +119,8 @@ namespace DX12Framework
 		UINT32 CbvSrvUavDescriptorSize;
 
 		// @brief Unsigned integer representing the supported multi sampling quality.
-		UINT32 MsaaQaulity;
+		UINT32 MsaaQaulity = 0;
+		bool MsaaState = false;
 
 		// @brief Defines the format of the back buffer.
 		DXGI_FORMAT BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -132,6 +128,14 @@ namespace DX12Framework
 		DXGI_FORMAT DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 		HWND WindowHandle;
+		// @brief - A structure describing the buffer which we render to.
+		D3D12_VIEWPORT ScreenViewport;
+
+		// @brief - Used to specify an area of the buffer we would like to render to.
+		//			Therefore culls pixels not included in the scissor rect.
+		D3D12_RECT ScissorRect;
+
+		// @brief This is out dated. Please use frame buffer class instead.   
 		INT32 ViewportWidth;
 		INT32 ViewportHeight;
 

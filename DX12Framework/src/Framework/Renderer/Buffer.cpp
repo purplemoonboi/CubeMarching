@@ -5,6 +5,8 @@
 #include "Renderer.h"
 #include "RendererAPI.h"
 
+#include "Platform/DirectX12/DX12Buffer.h"
+
 namespace DX12Framework
 {
 	RefPointer<VertexBuffer> VertexBuffer::Create(INT32 size)
@@ -15,7 +17,7 @@ namespace DX12Framework
 		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   CORE_ASSERT(false, "DirectX 12 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:   return CreateRef<DX12VertexBuffer>(size);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
@@ -26,11 +28,11 @@ namespace DX12Framework
 	{
 		switch (RendererAPI::GetAPI())
 		{
-		case RendererAPI::Api::None:	  CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
-		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
-		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   CORE_ASSERT(false, "DirectX 12 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::None:		CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
+		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
+		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:   CreateRef<DX12VertexBuffer>(vertices, size);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
@@ -41,11 +43,11 @@ namespace DX12Framework
 	{
 		switch (RendererAPI::GetAPI())
 		{
-		case RendererAPI::Api::None:	  CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
-		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
-		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   CORE_ASSERT(false, "DirectX 12 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::None:		CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
+		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
+		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:   CreateRef<DX12IndexBuffer>(indices, size);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

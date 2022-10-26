@@ -35,12 +35,13 @@ namespace DX12Framework
 		GraphicsContext = new DX12GraphicsContext(windowHandle, viewportWidth, viewportHeight);
 
 		FrameBufferSpecifications fbs;
-		fbs.Width = 1920;
-		fbs.Height = 1080;
+		fbs.Width = viewportWidth;
+		fbs.Height = viewportHeight;
 
+		IsResizing = true;
 		FrameBuffer = new DX12FrameBuffer(fbs);
 		FrameBuffer->Invalidate(GraphicsContext);
-
+		IsResizing = false;
 	}
 
 	void DX12RenderingApi::SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
@@ -60,18 +61,18 @@ namespace DX12Framework
 
 	void DX12RenderingApi::Draw()
 	{
-		if (GraphicsContext != nullptr)
+		if (GraphicsContext != nullptr && !IsResizing)
 		{
 			// Reset the command allocator
-			GraphicsContext->DirectCommandListAllocator->Reset();
+			GraphicsContext->DirCmdListAlloc->Reset();
 
 
 
 
 			// Reset the command list
-			GraphicsContext->CommandList->Reset
+			GraphicsContext->GraphicsCmdList->Reset
 			(
-				GraphicsContext->DirectCommandListAllocator.Get(),
+				GraphicsContext->DirCmdListAlloc.Get(),
 				nullptr
 			);
 
@@ -80,7 +81,7 @@ namespace DX12Framework
 
 
 			// Indicate there will be a transition made to the resource.
-			GraphicsContext->CommandList->ResourceBarrier
+			GraphicsContext->GraphicsCmdList->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -96,15 +97,15 @@ namespace DX12Framework
 
 
 			// Reset the viewport and scissor rect whenever the command list is empty.
-			GraphicsContext->CommandList->RSSetViewports(1, &FrameBuffer->GetViewport());
-			GraphicsContext->CommandList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
+			GraphicsContext->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
+			GraphicsContext->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
 
 
 
 
 
 			//Clear the back buffer 
-			GraphicsContext->CommandList->ClearRenderTargetView
+			GraphicsContext->GraphicsCmdList->ClearRenderTargetView
 			(
 				GraphicsContext->CurrentBackBufferView(),
 				DirectX::Colors::Red,
@@ -117,7 +118,7 @@ namespace DX12Framework
 
 
 			// Clear the depth buffer
-			GraphicsContext->CommandList->ClearDepthStencilView
+			GraphicsContext->GraphicsCmdList->ClearDepthStencilView
 			(
 				GraphicsContext->DepthStencilView(),
 				D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
@@ -132,7 +133,7 @@ namespace DX12Framework
 
 
 			// Set the render targets descriptors
-			GraphicsContext->CommandList->OMSetRenderTargets
+			GraphicsContext->GraphicsCmdList->OMSetRenderTargets
 			(
 				1,
 				&GraphicsContext->CurrentBackBufferView(),
@@ -145,7 +146,7 @@ namespace DX12Framework
 
 
 			// Now instruct we have made the changes to the buffer
-			GraphicsContext->CommandList->ResourceBarrier
+			GraphicsContext->GraphicsCmdList->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -161,13 +162,13 @@ namespace DX12Framework
 
 
 			// We can now close the command list
-			GraphicsContext->CommandList->Close();
+			GraphicsContext->GraphicsCmdList->Close();
 
 
 
 
 
-			ID3D12CommandList* cmdsLists[] = { GraphicsContext->CommandList.Get() };
+			ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
 			GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 

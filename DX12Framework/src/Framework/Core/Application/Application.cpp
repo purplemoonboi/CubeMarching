@@ -63,7 +63,7 @@ namespace DX12Framework
 			{
 
 				//Process any events...
-				//Window->OnUpdate();
+				Window->OnUpdate();
 
 				if (!Window->IsWndMinimised() && IsRunning)
 				{

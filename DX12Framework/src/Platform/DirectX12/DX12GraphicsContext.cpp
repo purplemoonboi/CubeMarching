@@ -25,64 +25,35 @@ namespace DX12Framework
 
 	void DX12GraphicsContext::Init()
 	{
+
 		CreateDevice();
 		CheckMSAAQualityAndCache();
-
-		//LogAdapters();
+		LogAdapters();
 
 		CreateCommandObjects();
 		CreateSwapChain();
-
-
-		CreateDsvDescriptorHeap();
-		CreateRtvDescriptorHeap();
-		CreateCbvSrvUavDescriptorHeap();
-
-	
-	}
-
-	void DX12GraphicsContext::SwapBuffers()
-	{
-	
-
-	
-	}
-
-	void DX12GraphicsContext::ResetCommandList()
-	{
-
-	}
-
-	void DX12GraphicsContext::OpenCommandList()
-	{
-
-	}
-
-	void DX12GraphicsContext::CloseCommandList()
-	{
+		CreateDsvAndRtvDescriptorHeaps();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
 	{
-		//TODO: This isn't very efficient, we shouldn't be waiting...
+		//TODO: This isn't very efficient
+		GPU_TO_CPU_SYNC_COUNT++;
 
-		FenceSyncCount++;
 
-		THROW_ON_FAILURE(CommandQueue->Signal(SyncFence.Get(), FenceSyncCount));
+		THROW_ON_FAILURE(CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT));
 
-		if (SyncFence->GetCompletedValue() < FenceSyncCount)
+		auto a = Fence->GetCompletedValue();
+		if (a < GPU_TO_CPU_SYNC_COUNT)
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
-			SyncFence->SetEventOnCompletion(FenceSyncCount, eventHandle);
+			THROW_ON_FAILURE(Fence->SetEventOnCompletion(GPU_TO_CPU_SYNC_COUNT, eventHandle));
 
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
-		else
-		{
-			CORE_ERROR("D3D device lost... ");
-		}
+
 	}
 
 	bool DX12GraphicsContext::CreateDevice()
@@ -123,18 +94,20 @@ namespace DX12Framework
 
 		}
 
+		//Create the fence
+		THROW_ON_FAILURE(Device->CreateFence
+		(
+			0,
+			D3D12_FENCE_FLAG_NONE,
+			IID_PPV_ARGS(&Fence)
+		));
+
 		DsvDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 		RtvDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		CbvSrvUavDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 
-		//Create the fence
-		HRESULT fenceResult = Device->CreateFence
-		(
-			0,
-			D3D12_FENCE_FLAG_NONE,
-			IID_PPV_ARGS(&SyncFence)
-		);
+
 
 		return true;
 	}
@@ -157,7 +130,7 @@ namespace DX12Framework
 		HRESULT cmdQueueAllocResult = Device->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(DirectCommandListAllocator.GetAddressOf())
+			IID_PPV_ARGS(DirCmdListAlloc.GetAddressOf())
 		);
 
 		//Create the direct command queue
@@ -165,15 +138,15 @@ namespace DX12Framework
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			DirectCommandListAllocator.Get(),
+			DirCmdListAlloc.Get(),
 			nullptr,
-			IID_PPV_ARGS(CommandList.GetAddressOf())
+			IID_PPV_ARGS(GraphicsCmdList.GetAddressOf())
 		);
 
 		//Now close the list. When we first use the command list
 		//we'll need to reset it, for this to happen, the list must
 		//be in a closed state.
-		CommandList->Close();
+		GraphicsCmdList->Close();
 
 		return true;
 	}
@@ -194,7 +167,37 @@ namespace DX12Framework
 		);
 
 		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
-		CORE_ASSERT("Unexpected MSAA quality level.", (MsaaQaulity > 0));
+		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
+
+		return true;
+	}
+
+	bool DX12GraphicsContext::CreateDsvAndRtvDescriptorHeaps()
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+		rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
+		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		rtvHeapDesc.NodeMask = 0;
+
+		THROW_ON_FAILURE(Device->CreateDescriptorHeap
+		(
+			&rtvHeapDesc,
+			IID_PPV_ARGS(RtvHeap.GetAddressOf())
+		));
+
+
+		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+		dsvHeapDesc.NumDescriptors = 1;
+		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		dsvHeapDesc.NodeMask = 0;
+
+		THROW_ON_FAILURE(Device->CreateDescriptorHeap
+		(
+			&dsvHeapDesc,
+			IID_PPV_ARGS(DsvHeap.GetAddressOf())
+		));
 
 		return true;
 	}
@@ -211,8 +214,8 @@ namespace DX12Framework
 		swapChainDesc.BufferDesc.Format = BackBufferFormat;
 		swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-		swapChainDesc.SampleDesc.Count = MsaaQaulity;
-		swapChainDesc.SampleDesc.Quality = MsaaQaulity ? (MsaaQaulity - 1) : 0;
+		swapChainDesc.SampleDesc.Count = MsaaState ? 4 : 1;
+		swapChainDesc.SampleDesc.Quality = MsaaState ? (MsaaQaulity - 1) : 0;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferCount = SwapChainBufferCount;
 		swapChainDesc.OutputWindow = WindowHandle;
@@ -220,52 +223,17 @@ namespace DX12Framework
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-		HRESULT swapChainResult = DXGIFactory->CreateSwapChain
+		THROW_ON_FAILURE(DXGIFactory->CreateSwapChain
 		(
 			CommandQueue.Get(),
 			&swapChainDesc,
 			SwapChain.GetAddressOf()
-		);
+		));
 
 
 		return true;
 	}
 
-	bool DX12GraphicsContext::CreateRtvDescriptorHeap()
-	{
-
-		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-		rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
-		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		rtvHeapDesc.NodeMask = 0;
-
-		HRESULT rtvHeapResult = Device->CreateDescriptorHeap
-		(
-			&rtvHeapDesc,
-			IID_PPV_ARGS(RtvHeap.GetAddressOf())
-		);
-
-		return true;
-	}
-
-	bool DX12GraphicsContext::CreateDsvDescriptorHeap()
-	{
-
-		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-		dsvHeapDesc.NumDescriptors = 1;
-		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		dsvHeapDesc.NodeMask = 0;
-
-		HRESULT dsvHeapResult = Device->CreateDescriptorHeap
-		(
-			&dsvHeapDesc,
-			IID_PPV_ARGS(DsvHeap.GetAddressOf())
-		);
-
-		return true;
-	}
 
 	bool DX12GraphicsContext::CreateCbvSrvUavDescriptorHeap()
 	{
@@ -292,6 +260,9 @@ namespace DX12Framework
 	{
 		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
 	}
+
+
+
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }
 

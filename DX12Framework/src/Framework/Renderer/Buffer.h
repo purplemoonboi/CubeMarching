@@ -52,24 +52,24 @@ namespace DX12Framework
 
 	struct BufferElement
 	{
-		std::string name;
-		ShaderDataType type;
-		INT32 size;
-		INT32 offset;
-		bool normalised;
+		std::string Name;
+		ShaderDataType Type;
+		INT32 Size;
+		INT32 Offset;
+		bool Normalised;
 
-		BufferElement() {}
+		BufferElement() = default;
 
-		BufferElement(ShaderDataType type, const std::string& name, bool norm = false)
+		BufferElement(ShaderDataType type, const std::string& name, bool normalised = false)
 			:
-			name(name), type(type), size(ShaderDataTypeSize(type)), offset(0), normalised(norm)
+			Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalised(normalised)
 		{
 		
 		}
 
 		INT32 GetComponentCount() const
 		{
-			switch (type)
+			switch (Type)
 			{
 				case ShaderDataType::Int:	   return 1;
 				case ShaderDataType::Int2:	   return 2;
@@ -94,49 +94,49 @@ namespace DX12Framework
 	{
 	public:
 
-		BufferLayout() {}
+		BufferLayout() = default;
 
 		BufferLayout(const std::initializer_list<BufferElement>& element)
 		: 
-			elements(element)
+			Elements(element)
 		{
 			CalculateOffsetAndStride();
 		}
 
 		BufferLayout(const std::vector<BufferElement>& element)
 			:
-			elements(element)
+			Elements(element)
 		{
 			CalculateOffsetAndStride();
 		}
 
-		inline INT32 GetStride() const { return stride; }
+		INT32 GetStride() const { return Stride; }
 
-		inline const std::vector<BufferElement>& GetElements() const { return elements; }
+		const std::vector<BufferElement>& GetElements() const { return Elements; }
 
-		std::vector<BufferElement>::iterator begin() { return elements.begin(); }
-		std::vector<BufferElement>::iterator end() { return elements.end(); }
-		std::vector<BufferElement>::const_iterator begin() const { return elements.begin(); }
-		std::vector<BufferElement>::const_iterator end() const { return elements.end(); }
+		std::vector<BufferElement>::iterator begin() { return Elements.begin(); }
+		std::vector<BufferElement>::iterator end() { return Elements.end(); }
+		std::vector<BufferElement>::const_iterator begin() const { return Elements.begin(); }
+		std::vector<BufferElement>::const_iterator end() const { return Elements.end(); }
 
 	private:
 
 		void CalculateOffsetAndStride()
 		{
 			INT32 offset = 0;
-			stride = 0;
+			Stride = 0;
 
-			for (auto& element : elements)
+			for (auto& element : Elements)
 			{
-				element.offset = offset;
-				offset += element.size;
-				stride += element.size;
+				element.Offset = offset;
+				offset += element.Size;
+				Stride += element.Size;
 			}
 		}
 
 	private:
-		std::vector<BufferElement> elements;
-		INT32 stride;
+		std::vector<BufferElement> Elements;
+		INT32 Stride;
 	};
 
 	class VertexBuffer

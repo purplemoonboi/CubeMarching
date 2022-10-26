@@ -34,12 +34,12 @@ namespace DX12Framework
 	{
 		CORE_ASSERT(graphicsContext->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(graphicsContext->SwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(graphicsContext->CommandList, "The 'graphics command list' has failed...");
+		CORE_ASSERT(graphicsContext->GraphicsCmdList, "The 'graphics command list' has failed...");
 
 		// Flush before changing any resources.
 		graphicsContext->FlushCommandQueue();
 
-	    THROW_ON_FAILURE(graphicsContext->CommandList->Reset(graphicsContext->DirectCommandListAllocator.Get(), nullptr));
+	    THROW_ON_FAILURE(graphicsContext->GraphicsCmdList->Reset(graphicsContext->DirCmdListAlloc.Get(), nullptr));
 
 		// Release the previous resources we will be recreating.
 		for (UINT i = 0; i < DX12Framework::SwapChainBufferCount; ++i)
@@ -98,9 +98,8 @@ namespace DX12Framework
 		//   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
 		// we need to create the depth buffer resource with a typeless format.  
 		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-		UINT32 msaa = graphicsContext->GetMsaaQaulity();
-		depthStencilDesc.SampleDesc.Count = msaa ? 4 : 1;
-		depthStencilDesc.SampleDesc.Quality = msaa ? (msaa - 1) : 0;
+		depthStencilDesc.SampleDesc.Count = graphicsContext->GetMsaaState() ? 4 : 1;
+		depthStencilDesc.SampleDesc.Quality = graphicsContext->GetMsaaState() ? (graphicsContext->GetMsaaQaulity() - 1) : 0;
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -139,7 +138,7 @@ namespace DX12Framework
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		graphicsContext->CommandList->ResourceBarrier
+		graphicsContext->GraphicsCmdList->ResourceBarrier
 		(
 			1, 
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -151,9 +150,9 @@ namespace DX12Framework
 		);
 
 		// Execute the resize commands.
-		THROW_ON_FAILURE(graphicsContext->CommandList->Close());
+		THROW_ON_FAILURE(graphicsContext->GraphicsCmdList->Close());
 
-		ID3D12CommandList* cmdsLists[] = { graphicsContext->CommandList.Get() };
+		ID3D12CommandList* cmdsLists[] = { graphicsContext->GraphicsCmdList.Get() };
 
 		graphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 

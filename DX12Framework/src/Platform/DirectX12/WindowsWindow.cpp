@@ -178,6 +178,8 @@ namespace DX12Framework
 				{
 
 				}
+
+				
 			}
 			return 0;
 			// WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
