@@ -4,6 +4,8 @@
 #include "Shader.h"
 #include "Renderer.h"
 
+#include "Platform/DirectX12/DX12Shader.h"
+
 namespace DX12Framework
 {
 
@@ -15,14 +17,14 @@ namespace DX12Framework
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  CORE_ASSERT(false, "DirectX 12 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:	  return CreateRef<DX12Shader>(filePath);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
 		return nullptr;
 	}
 
-	RefPointer<Shader> Shader::Create(const std::wstring& name, const std::wstring& vertexSrc, const std::wstring& fragmentSrc)
+	RefPointer<Shader> Shader::Create(const std::wstring& filePath, const std::wstring& vertexSrc, const std::wstring& fragmentSrc)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -30,7 +32,8 @@ namespace DX12Framework
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  CORE_ASSERT(false, "DirectX 12 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:	  return CreateRef<DX12Shader>(filePath);
+
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

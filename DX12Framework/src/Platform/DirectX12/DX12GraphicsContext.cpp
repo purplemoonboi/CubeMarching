@@ -33,6 +33,8 @@ namespace DX12Framework
 		CreateCommandObjects();
 		CreateSwapChain();
 		CreateDsvAndRtvDescriptorHeaps();
+
+		CreateCbvSrvUavDescriptorHeap();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
@@ -172,8 +174,9 @@ namespace DX12Framework
 		return true;
 	}
 
-	bool DX12GraphicsContext::CreateDsvAndRtvDescriptorHeaps()
+	bool DX12GraphicsContext::CreateDsvRtvAndCbvDescriptorHeaps()
 	{
+		// Resource 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
 		rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
 		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -187,6 +190,7 @@ namespace DX12Framework
 		));
 
 
+		// Depth stencil
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
 		dsvHeapDesc.NumDescriptors = 1;
 		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
@@ -199,8 +203,26 @@ namespace DX12Framework
 			IID_PPV_ARGS(DsvHeap.GetAddressOf())
 		));
 
+
+		// Const buffer
+		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
+		cbvHeapDesc.NumDescriptors = 1U;
+		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		cbvHeapDesc.NodeMask = 0;
+
+		THROW_ON_FAILURE
+		(
+			Device->CreateDescriptorHeap
+			(
+				&cbvHeapDesc, 
+				IID_PPV_ARGS(&CbvHeap)
+			)
+		);
+
 		return true;
 	}
+
 
 	bool DX12GraphicsContext::CreateSwapChain()
 	{
@@ -235,11 +257,6 @@ namespace DX12Framework
 	}
 
 
-	bool DX12GraphicsContext::CreateCbvSrvUavDescriptorHeap()
-	{
-		//TODO: Finish implementing this!
-		return true;
-	}
 
 	ID3D12Resource* DX12GraphicsContext::CurrentBackBuffer() const
 	{
