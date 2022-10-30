@@ -32,9 +32,7 @@ namespace DX12Framework
 
 		CreateCommandObjects();
 		CreateSwapChain();
-		CreateDsvAndRtvDescriptorHeaps();
-
-		CreateCbvSrvUavDescriptorHeap();
+		CreateDsvRtvAndCbvDescriptorHeaps();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
@@ -206,7 +204,7 @@ namespace DX12Framework
 
 		// Const buffer
 		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-		cbvHeapDesc.NumDescriptors = 1U;
+		cbvHeapDesc.NumDescriptors = 1;
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
@@ -278,7 +276,10 @@ namespace DX12Framework
 		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
-
+	D3D12_CPU_DESCRIPTOR_HANDLE DX12GraphicsContext::ConstantBufferView() const
+	{
+		return CbvHeap->GetCPUDescriptorHandleForHeapStart();
+	}
 
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }

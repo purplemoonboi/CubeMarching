@@ -36,6 +36,7 @@ namespace DX12Framework
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE ConstantBufferView() const;
 
 		ComPtr<ID3D12Device>	Device;
 		ComPtr<IDXGISwapChain>  SwapChain;

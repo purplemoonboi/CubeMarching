@@ -5,7 +5,7 @@
 #include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Core/Layer/LayerStack.h"
 #include "Framework/Core/Events/AppEvents.h"
-#include "Platform/DirectX12/WindowsWindow.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 namespace DX12Framework
 {
@@ -47,6 +47,7 @@ namespace DX12Framework
 
 	private:
 
+		void UpdateTimer();
 
 		// container for all the apps layers
 		LayerStack LayerStack;

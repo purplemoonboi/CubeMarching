@@ -69,29 +69,7 @@ namespace DX12Framework
 				{
 					Timer.Tick();
 
-					static int frameCnt = 0;
-					static float timeElapsed = 0.0f;
-
-					frameCnt++;
-
-					// Compute averages over one second period.
-					if ((Timer.TimeElapsed() - timeElapsed) >= 1.0f)
-					{
-						float fps = (float)frameCnt; // fps = frameCnt / 1
-						float mspf = 1000.0f / fps;
-
-						std::wstring fpsStr = std::to_wstring(fps);
-						std::wstring mspfStr = std::to_wstring(mspf);
-
-						std::wstring windowText = L"Engine fps: " + fpsStr +
-							L"   mspf: " + mspfStr;
-
-						SetWindowText(static_cast<HWND>(Window->GetNativeWindow()), windowText.c_str());
-
-						// Reset for next average.
-						frameCnt = 0;
-						timeElapsed += 1.0f;
-					}
+					UpdateTimer();
 
 					//Update each layer
 					for(Layer* layer : LayerStack)
@@ -104,9 +82,7 @@ namespace DX12Framework
 					{
 						layer->OnRender();
 					}
-
 				}
-
 			}
 		}
 	}
@@ -139,4 +115,32 @@ namespace DX12Framework
 		return false;
 	}
 
+	void Application::UpdateTimer()
+	{
+
+		static int frameCnt = 0;
+		static float timeElapsed = 0.0f;
+
+		frameCnt++;
+
+		// Compute averages over one second period.
+		if ((Timer.TimeElapsed() - timeElapsed) >= 1.0f)
+		{
+			float fps = (float)frameCnt; // fps = frameCnt / 1
+			float mspf = 1000.0f / fps;
+
+			std::wstring fpsStr = std::to_wstring(fps);
+			std::wstring mspfStr = std::to_wstring(mspf);
+
+			std::wstring windowText = L"Engine fps: " + fpsStr +
+				L"   mspf: " + mspfStr;
+
+			SetWindowText(static_cast<HWND>(Window->GetNativeWindow()), windowText.c_str());
+
+			// Reset for next average.
+			frameCnt = 0;
+			timeElapsed += 1.0f;
+		}
+
+	}
 }

@@ -1,6 +1,4 @@
 #include "DX12EditorLayer.h"
-#include "Framework/Renderer/RenderInstruction.h"
-
 
 namespace DX12Framework
 {
@@ -8,6 +6,7 @@ namespace DX12Framework
         :
         Layer(L"Scene Editor")
     {
+        World = new Scene("Test Scene");
     }
 
     DX12EditorLayer::~DX12EditorLayer()
@@ -26,18 +25,12 @@ namespace DX12Framework
     {
         //User input
 
-
-        //Update camera transform
-
-
+        World->OnUpdate(deltaTime);
     }
 
     void DX12EditorLayer::OnRender()
     {
-
-        //TODO: Need to think about a more delicate way of doing this.
-        RenderInstruction::Draw();
-
+        World->OnRender();
     }
 
     void DX12EditorLayer::OnImGuiRender()
@@ -46,6 +39,46 @@ namespace DX12Framework
 
     void DX12EditorLayer::OnEvent(Event& event)
     {
+
+        /** process mouse and keyboard events */
+
+        EventDispatcher dispatcher(event);
+
+         //   dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(DX12EditorLayer::OnWindowResize));
+        //   dispatcher.Dispatch<KeyPressedEvent>(BIND_DELEGATE(OnKeyPressed));
+     //   dispatcher.Dispatch<KeyPressedEvent>(BIND_DELEGATE(DX12EditorLayer::OnKeyReleased));
+     //
+     //   dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_DELEGATE(DX12EditorLayer::OnMouseDown));
+     //   dispatcher.Dispatch<MouseButtonReleasedEvent>(BIND_DELEGATE(DX12EditorLayer::OnMouseUp));
+     //   dispatcher.Dispatch<MouseMovedEvent>(BIND_DELEGATE(DX12EditorLayer::OnMouseMove));
+
     }
 
+    void DX12EditorLayer::OnWindowResize(WindowResizeEvent& wndResize)
+    {
+        World->SceneCamera->RecalculateAspectRatio(wndResize.GetWidth(), wndResize.GetHeight());
+    }
+
+    void DX12EditorLayer::OnKeyPressed(KeyPressedEvent& keyEvent)
+    {
+    }
+
+    void DX12EditorLayer::OnKeyReleased(KeyReleasedEvent& keyEvent)
+    {
+    }
+
+    void DX12EditorLayer::OnMouseDown(MouseButtonPressedEvent& mEvent)
+    {
+
+    }
+
+    void DX12EditorLayer::OnMouseUp(MouseButtonPressedEvent& mEvent)
+    {
+
+    }
+
+    void DX12EditorLayer::OnMouseMove(MouseMovedEvent& mEvent)
+    {
+
+    }
 }

@@ -1,10 +1,9 @@
 #pragma once
-#include "Framework/Core/Layer/Layer.h"
-#include "Framework/DX12Framework.h"
-#include "Framework/Camera/Camera.h"
+#include <Framework/DX12Framework.h>
 
 namespace DX12Framework
 {
+
 	class DX12EditorLayer : public Layer
 	{
 	public:
@@ -22,8 +21,16 @@ namespace DX12Framework
 
 	private:
 
+		void OnWindowResize(WindowResizeEvent& wndResize);
 
-		Camera Camera;
+		void OnKeyPressed(KeyPressedEvent& keyEvent);
+		void OnKeyReleased(KeyReleasedEvent& keyEvent);
+
+		void OnMouseDown(MouseButtonPressedEvent& mEvent);
+		void OnMouseUp(MouseButtonPressedEvent& mEvent);
+		void OnMouseMove(MouseMovedEvent& mEvent);
+
+		Scene* World;
 	};
 
 }

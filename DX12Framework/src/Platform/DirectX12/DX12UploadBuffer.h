@@ -41,7 +41,7 @@ namespace DX12Framework
 				)
 			);
 
-			THROW_ON_FAILURE(UploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(MappedData)));
+			THROW_ON_FAILURE(UploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&MappedData)));
 
 		}
 

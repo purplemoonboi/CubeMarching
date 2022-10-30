@@ -1,6 +1,5 @@
 #include <Framework/DX12Framework.h>
 #include <Framework/Core/EntryPoint.h>
-
 #include "DX12EditorLayer.h"
 
 

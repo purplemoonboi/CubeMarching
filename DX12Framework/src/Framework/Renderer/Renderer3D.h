@@ -1,13 +1,9 @@
 #pragma once
 #include <intsafe.h>
-
-#include "Framework/Core/Core.h"
-#include "Framework/Camera/Camera.h";
+#include "Framework/Camera/MainCamera.h";
 
 namespace DX12Framework
 {
-	class DX12GraphicsContext;
-	class DX12FrameBuffer;
 
 	class Renderer3D
 	{
@@ -22,7 +18,7 @@ namespace DX12Framework
 		// @brief - Marks the start of rendering commands.
 		//			Resets the current pointer to the buffer to
 		//			point at the base. 
-		static void BeginScene(Camera& camera);
+		static void BeginScene(MainCamera& cam);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
@@ -33,7 +29,7 @@ namespace DX12Framework
 		static void FlushCommandQueue();
 
 		// @brief - For now this will render a colour to the viewport.
-		static void Draw();
+		static void DrawDemoBox();
 
 		struct RenderingStats
 		{

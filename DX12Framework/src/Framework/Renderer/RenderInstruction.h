@@ -1,7 +1,6 @@
 #pragma once
 #include "RendererAPI.h"
 
-#include "Platform/DirectX12/DX12RenderingApi.h"
 
 namespace DX12Framework
 {
@@ -25,7 +24,7 @@ namespace DX12Framework
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
-		static void SetClearColour(const DirectX::XMFLOAT4& colour)
+		static void SetClearColour(const float colour[4])
 		{
 			RendererApiPtr->SetClearColour(colour);
 		}
@@ -35,10 +34,12 @@ namespace DX12Framework
 			RendererApiPtr->Clear();
 		}
 
-		static void Draw()
+		static void DrawDemoScene()
 		{
 			RendererApiPtr->Draw();
 		}
+
+		static RendererAPI* GetApiPtr() { return RendererApiPtr; }
 
 		//inline static void DrawIndexed(const std::shared_ptr<VertexArray>& vertex_array, INT32 count = 0)
 		//{

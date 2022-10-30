@@ -8,9 +8,16 @@ namespace DX12Framework
 
 	class DX12Shader : public Shader
 	{
-		DX12Shader(const std::wstring& fileName);
 	public:
+		DX12Shader(const std::wstring& fileName);
 
+		virtual void Bind() const override;
+
+		virtual void UnBind() const override;
+
+
+
+		virtual const std::wstring& GetName() const override;
 		
 	private:
 
@@ -18,18 +25,5 @@ namespace DX12Framework
 
 	};
 
-	class DX12ShaderUtils
-	{
-	public:
 
-		static ComPtr<ID3DBlob> CompileShader
-		(
-			const std::wstring& fileName, 
-			const D3D_SHADER_MACRO* defines,
-			const std::string& entryPoint,
-			const std::string& target
-		);
-
-
-	};
 }

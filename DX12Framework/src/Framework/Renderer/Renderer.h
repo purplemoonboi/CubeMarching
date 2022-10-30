@@ -9,9 +9,6 @@
 namespace DX12Framework
 {
 
-	class DX12GraphicsContext;
-	class DX12FrameBuffer;
-
 	class Renderer
 	{
 	public:

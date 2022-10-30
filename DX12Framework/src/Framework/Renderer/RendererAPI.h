@@ -1,6 +1,5 @@
 #pragma once
-
-#include "DirectXMath.h"
+#include <Windows.h>
 
 namespace DX12Framework
 {
@@ -28,7 +27,7 @@ namespace DX12Framework
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
-		virtual void SetClearColour(DirectX::XMFLOAT4 colour) = 0;
+		virtual void SetClearColour(const float colour[4]) = 0;
 
 		virtual void Draw() = 0;
 
