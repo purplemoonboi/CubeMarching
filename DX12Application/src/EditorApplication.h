@@ -4,12 +4,12 @@
 namespace DX12Framework
 {
 
-	class DX12EditorLayer : public Layer
+	class EditorApplication : public Layer
 	{
 	public:
 
-		DX12EditorLayer();
-		virtual ~DX12EditorLayer();
+		EditorApplication();
+		virtual ~EditorApplication();
 
 		void OnAttach() override;
 		void OnDetach() override;
