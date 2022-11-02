@@ -1,3 +1,0 @@
-[submodule "DX12Framework/vendor/spdlog"]
-	path = DX12Framework/vendor/spdlog
-	url = https://github.com/gabime/spdlog.git

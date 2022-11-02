@@ -13,14 +13,16 @@ project "Framework"
 			files
 			{
 				"src/**.h",
-				"src/**.cpp"
+				"src/**.cpp",
+				"vendor/Microsoft/**.h",
+				"vendor/Microsoft/**.cpp"
 			}
 
 			includedirs
 			{
 				"src",
 				"vendor/spdlog/include",
-				"vendor/DX12/include"
+				"vendor/DX12/Microsoft"
 			}
 
 			links
