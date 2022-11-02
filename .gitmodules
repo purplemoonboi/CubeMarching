@@ -1,0 +1,3 @@
+[submodule "Framework/vendor/spdlog"]
+	path = Framework/vendor/spdlog
+	url = https://github.com/purplemoonboi/spdlog.git
