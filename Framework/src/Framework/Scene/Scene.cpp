@@ -25,7 +25,7 @@ namespace Engine
 
 		Renderer3D::BeginScene(*SceneCamera);
 
-		Renderer3D::DrawDemoBox();
+		
 
 		Renderer3D::EndScene();
 	}

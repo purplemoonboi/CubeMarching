@@ -2,12 +2,15 @@
 #include <intsafe.h>
 #include "DirectX12.h"
 #include "Framework/Renderer/RendererAPI.h"
+#include "Platform/DirectX12/DX12GraphicsContext.h"
+
 #include "DX12Buffer.h"
+#include "DX12PipelineStateObject.h"
 
 namespace Engine
 {
+	struct ObjectConstant;
 
-	class DX12GraphicsContext;
 	class DX12FrameBuffer;
 
 	class DX12RenderingApi : public RendererAPI
@@ -24,54 +27,26 @@ namespace Engine
 
 		void SetClearColour(const float colour[4]) override;
 
-		void Draw() override;
+		void Flush() override;
 
-		void Clear() override;
+		// @brief Adds a draw instance instruction to the command list
+		// @param[in] A unique pointer to the vertex array to be submitted.
+		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override;
 
-		void UpdateConstantBuffer(DirectX::XMMATRIX worldViewProj);
+		// @brief Adds a draw instance instruction to the command list
+		// @param[in] A unique pointer to the vertex array to be submitted.
+		void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0) override;
 
-		void SetIsResizing(bool value) {IsResizing = value;}
-		bool IsBufferResizing() const { return IsResizing; }
-
-		void BuildConstantBuffer
-		(
-			ID3D12Device* device,
-			D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle,
-			UINT count,
-			bool isConstantBuffer = true
-		);
-
-		// @brief Defines the resources the shader programs should expect.
-		void BuildRootSignature(ID3D12Device* device);
-
-		void BuildShaderInputAndLayout();
-
-		void BuildBoxGeometry(ID3D12Device* device, ID3D12GraphicsCommandList* graphicsCmdList);
-
-		void BuildPSO(ID3D12Device* device, DXGI_FORMAT backbufferFormat, DXGI_FORMAT depthStencilFormat);
+		GraphicsContext* GetGraphicsContext() const override { return GraphicsContext.get(); };
 
 	private:
 
-		DX12GraphicsContext* GraphicsContext = nullptr;
+		// A unique pointer to the graphics context
+		RefPointer<DX12GraphicsContext> GraphicsContext = nullptr;
 
-		DX12FrameBuffer* FrameBuffer = nullptr;
+		// A unique pointer to the framebuffer
+		RefPointer<DX12FrameBuffer> FrameBuffer = nullptr;
 
-		bool IsResizing;
-
-		DX12ConstantBuffer* CBuffer = nullptr;
-
-
-
-
-
-		ComPtr<ID3DBlob> mvsByteCode;
-		ComPtr<ID3DBlob> mpsByteCode;
-		ComPtr<ID3D12RootSignature> RootSignature;
-		ComPtr<ID3D12PipelineState> Pso;
-		RefPointer<DX12UploadBuffer<ObjectConstant>> ObjectCB = nullptr;
-
-		std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
-		RefPointer<MeshGeometry> BoxGeo;
 
 	};
 

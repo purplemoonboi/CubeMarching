@@ -2,8 +2,11 @@
 #include <intsafe.h>
 #include "Framework/Camera/MainCamera.h";
 
+
 namespace Engine
 {
+
+	class RendererApi;
 
 	class Renderer3D
 	{
@@ -16,8 +19,7 @@ namespace Engine
 		static void Shutdown();
 
 		// @brief - Marks the start of rendering commands.
-		//			Resets the current pointer to the buffer to
-		//			point at the base. 
+		//		
 		static void BeginScene(MainCamera& cam);
 
 		// @brief - Marks the end to capturing rendering instructions.
@@ -25,9 +27,9 @@ namespace Engine
 		//			calculated for rendering.
 		static void EndScene();
 
-		// @brief - Creates a draw call instruction. 
-		static void FlushCommandQueue();
 
+
+		//TODO: Don't use this function!
 		// @brief - For now this will render a colour to the viewport.
 		static void DrawDemoBox();
 
@@ -43,9 +45,9 @@ namespace Engine
 			UINT32 GetTotalIndexCount() { return 0; }
 		};
 
-		static RenderingStats& GetRenderingStats();
+		//static RenderingStats& GetRenderingStats();
 
-	private:
+
 
 	};
 

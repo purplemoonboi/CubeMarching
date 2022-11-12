@@ -1,8 +1,13 @@
 #pragma once
 #include <Windows.h>
+#include "Framework/Renderer/VertexArray.h"
+#include "Framework/Renderer/Geometry.h"
+#include "Framework/Core/Core.h"
 
 namespace Engine
 {
+
+
 	class RendererAPI
 	{
 	public:
@@ -29,17 +34,24 @@ namespace Engine
 
 		virtual void SetClearColour(const float colour[4]) = 0;
 
-		virtual void Draw() = 0;
+		virtual void Flush() = 0;
 
-		virtual void Clear() = 0;
+		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
-		//virtual void DrawIndexed(const RefPointer<VertexArray>& vertex_array, INT32 index_count = 0) = 0;
+		virtual void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0) = 0;
 
 		static Api GetAPI() { return RenderingApi; }
+
+		virtual GraphicsContext* GetGraphicsContext() const = 0;
+
+	protected:
+
+		//RefPointer<GraphicsContext> GraphicsContext;
 
 	private:
 
 		static Api RenderingApi;
+
 
 	};
 }

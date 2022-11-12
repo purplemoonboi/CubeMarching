@@ -1,10 +1,16 @@
+//***************************************************************************************
+// MathHelper.h by Frank Luna (C) 2011 All Rights Reserved.
+//
+// Helper math class.
+//***************************************************************************************
+
 #pragma once
 
 #include <Windows.h>
 #include <DirectXMath.h>
 #include <cstdint>
 
-class DXMathsUtilities
+class MathHelper
 {
 public:
 	// Returns random float in [0, 1).

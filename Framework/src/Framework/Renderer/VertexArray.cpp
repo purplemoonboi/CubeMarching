@@ -2,6 +2,8 @@
 #include "VertexArray.h"
 #include "Framework/Renderer/RendererAPI.h"
 
+#include "Platform/DirectX12/DX12VertexArray.h"
+
 namespace Engine
 {
 	RefPointer<VertexArray> VertexArray::Create()
@@ -12,7 +14,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   CORE_ASSERT(false, "DirectX 12 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:   return CreateRef<DX12VertexArray>();
 		}
 
 		CORE_ASSERT(false, "Unknown renderer API!");

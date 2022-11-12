@@ -32,21 +32,26 @@ namespace Engine
 			RendererApiPtr->SetClearColour(colour);
 		}
 
-		static void Clear()
+		static void Flush()
 		{
-			RendererApiPtr->Clear();
+			RendererApiPtr->Flush();
 		}
 
 		static void DrawDemoScene()
 		{
-			RendererApiPtr->Draw();
+		//	RendererApiPtr->Draw();
 		}
 
 		static RendererAPI* GetApiPtr() { return RendererApiPtr; }
 
-		static void DrawIndexed(const RefPointer<VertexArray>& vertex_array, INT32 count = 0)
+		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
 		{
-	
+			RendererApiPtr->DrawIndexed(vertexArray, count);
+		}
+
+		static void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 count = 0)
+		{
+			RendererApiPtr->DrawIndexed(geometry, count);
 		}
 
 	private:

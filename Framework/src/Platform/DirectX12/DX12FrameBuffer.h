@@ -11,10 +11,11 @@ namespace Engine
 
 	class DX12FrameBuffer : public FrameBuffer
 	{
-		DX12FrameBuffer(const DX12FrameBuffer&) = default;
-
 	public:
+
+		DX12FrameBuffer(const DX12FrameBuffer&) = default;
 		DX12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs);
+
 		virtual ~DX12FrameBuffer() = default;
 
 
@@ -27,7 +28,7 @@ namespace Engine
 		void UnBind() override;
 		void RebuildFrameBuffer(INT32 width, INT32 height) override;
 
-		void Invalidate(DX12GraphicsContext* graphicsContext);
+		void Invalidate(RefPointer<DX12GraphicsContext> graphicsContext);
 
 		void SetViewportDimensions(INT32 width, INT32 height) { ViewportWidth = width; ViewportHeight = height; }
 

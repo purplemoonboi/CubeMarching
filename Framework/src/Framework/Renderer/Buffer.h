@@ -1,8 +1,10 @@
 #pragma once
 #include "Framework/Core/Log/Log.h"
-
+#include "Framework/Camera/MainCamera.h"
 namespace Engine
 {
+
+	class GraphicsContext;
 
 	enum class ShaderDataType
 	{
@@ -54,20 +56,27 @@ namespace Engine
 	{
 		std::string Name;
 		ShaderDataType Type;
-		INT32 Size;
-		INT32 Offset;
+		UINT Size;
+		UINT Offset;
 		bool Normalised;
 
 		BufferElement() = default;
 
-		BufferElement(ShaderDataType type, const std::string& name, bool normalised = false)
+		BufferElement(std::string&& name, ShaderDataType type, bool normalised = false)
 			:
-			Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalised(normalised)
+			Name(std::move(name)), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalised(normalised)
 		{
 		
 		}
 
-		INT32 GetComponentCount() const
+		BufferElement(std::string&& name, ShaderDataType type, INT32 alignedByteOffset, INT32 semanticIndex = 0, bool normalised = false)
+			:
+			Name(std::move(name)), Type(type), Size(ShaderDataTypeSize(type)), Offset(alignedByteOffset), Normalised(normalised)
+		{
+
+		}
+
+		UINT GetComponentCount() const
 		{
 			switch (Type)
 			{
@@ -110,7 +119,7 @@ namespace Engine
 			CalculateOffsetAndStride();
 		}
 
-		INT32 GetStride() const { return Stride; }
+		UINT GetStride() const { return Stride; }
 
 		const std::vector<BufferElement>& GetElements() const { return Elements; }
 
@@ -123,7 +132,7 @@ namespace Engine
 
 		void CalculateOffsetAndStride()
 		{
-			INT32 offset = 0;
+			UINT offset = 0;
 			Stride = 0;
 
 			for (auto& element : Elements)
@@ -136,7 +145,7 @@ namespace Engine
 
 	private:
 		std::vector<BufferElement> Elements;
-		INT32 Stride;
+		UINT Stride;
 	};
 
 	class VertexBuffer
@@ -147,14 +156,14 @@ namespace Engine
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
 
-		virtual void SetData(const void* data, INT32 size) = 0;
+		virtual void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) = 0;
 
 		virtual inline void SetLayout(const BufferLayout& layout) = 0;
 
 		virtual inline const BufferLayout& GetLayout() const = 0;
 
-		static RefPointer<VertexBuffer> Create(INT32 size);
-		static RefPointer<VertexBuffer> Create(float* vertices, INT32 size);
+		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, UINT size);
+		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, float* vertices, UINT size);
 
 	};
 
@@ -169,7 +178,27 @@ namespace Engine
 
 		virtual const INT32 GetCount() = 0;
 
-		static RefPointer<IndexBuffer> Create(INT32* indices, INT32 size);
+		static RefPointer<IndexBuffer> Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size);
+	};
+
+
+	class UploadBuffer
+	{
+	public:
+		virtual ~UploadBuffer() = default;
+
+		virtual void Bind() const = 0;
+
+		virtual void UnBind() const = 0;
+
+		virtual void Update(MainCamera& camera) = 0;
+
+		virtual const INT32 GetCount() const = 0;
+
+		static RefPointer<UploadBuffer> Create(GraphicsContext* const graphicsContext, UINT count, bool isConstant);
+
+	protected:
+		
 	};
 
 }

@@ -7,25 +7,25 @@ namespace Engine
 	DX12GraphicsContext::DX12GraphicsContext
 	(
 		HWND windowHandle,
-		INT32 viewportWidth,
-		INT32 viewportHeight
+		INT32 swapChainBufferWidth,
+		INT32 swapChainBufferHeight
 	)
 		:
 		WindowHandle(windowHandle),
-		ViewportWidth(viewportWidth),
-		ViewportHeight(viewportHeight)
+		SwapChainBufferWidth(swapChainBufferWidth),
+		SwapChainBufferHeight(swapChainBufferHeight)
 	{
 		CORE_ASSERT(WindowHandle, "Window handle is null!");
-		Init();
+		DX12GraphicsContext::Init();
 	}
 
 	DX12GraphicsContext::~DX12GraphicsContext()
 	{
+
 	}
 
 	void DX12GraphicsContext::Init()
 	{
-
 		CreateDevice();
 		CheckMSAAQualityAndCache();
 		LogAdapters();
@@ -33,6 +33,8 @@ namespace Engine
 		CreateCommandObjects();
 		CreateSwapChain();
 		CreateDsvRtvAndCbvDescriptorHeaps();
+
+		BuildRootSignature();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
@@ -43,8 +45,8 @@ namespace Engine
 
 		THROW_ON_FAILURE(CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT));
 
-		auto a = Fence->GetCompletedValue();
-		if (a < GPU_TO_CPU_SYNC_COUNT)
+
+		if (Fence->GetCompletedValue() < GPU_TO_CPU_SYNC_COUNT)
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
@@ -59,7 +61,7 @@ namespace Engine
 	bool DX12GraphicsContext::CreateDevice()
 	{
 #ifdef CM_DEBUG
-		Microsoft::WRL::ComPtr<ID3D12Debug>  DX12DebugController;
+		ComPtr<ID3D12Debug>  DX12DebugController;
 		HRESULT debugResult = D3D12GetDebugInterface(IID_PPV_ARGS(&DX12DebugController));
 #endif
 
@@ -71,7 +73,7 @@ namespace Engine
 		//Create the Device.
 		HRESULT hardwareResult = D3D12CreateDevice
 		(
-			nullptr,//Means we'd like to use dedicated GPU.
+			nullptr,//We'd like to use dedicated GPU.
 			D3D_FEATURE_LEVEL_11_0,
 			IID_PPV_ARGS(&Device)
 		);
@@ -82,7 +84,7 @@ namespace Engine
 		//Device.
 		if (FAILED(hardwareResult))
 		{
-			Microsoft::WRL::ComPtr<IDXGIAdapter> warpAdapter;
+			ComPtr<IDXGIAdapter> warpAdapter;
 			HRESULT warpEnumResult = DXGIFactory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
 
 			HRESULT warpDeviceResult = D3D12CreateDevice
@@ -130,7 +132,7 @@ namespace Engine
 		HRESULT cmdQueueAllocResult = Device->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(DirCmdListAlloc.GetAddressOf())
+			IID_PPV_ARGS(CmdListAlloc.GetAddressOf())
 		);
 
 		//Create the direct command queue
@@ -138,7 +140,7 @@ namespace Engine
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			DirCmdListAlloc.Get(),
+			CmdListAlloc.Get(),
 			nullptr,
 			IID_PPV_ARGS(GraphicsCmdList.GetAddressOf())
 		);
@@ -176,7 +178,7 @@ namespace Engine
 	{
 		// Resource 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-		rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
+		rtvHeapDesc.NumDescriptors = SWAP_CHAIN_BUFFER_COUNT;
 		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		rtvHeapDesc.NodeMask = 0;
@@ -227,8 +229,8 @@ namespace Engine
 		SwapChain.Reset();
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc;
-		swapChainDesc.BufferDesc.Width = ViewportWidth;
-		swapChainDesc.BufferDesc.Height = ViewportHeight;
+		swapChainDesc.BufferDesc.Width = SwapChainBufferWidth;
+		swapChainDesc.BufferDesc.Height = SwapChainBufferHeight;
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 		swapChainDesc.BufferDesc.Format = BackBufferFormat;
@@ -237,7 +239,7 @@ namespace Engine
 		swapChainDesc.SampleDesc.Count = MsaaState ? 4 : 1;
 		swapChainDesc.SampleDesc.Quality = MsaaState ? (MsaaQaulity - 1) : 0;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = SwapChainBufferCount;
+		swapChainDesc.BufferCount = SWAP_CHAIN_BUFFER_COUNT;
 		swapChainDesc.OutputWindow = WindowHandle;
 		swapChainDesc.Windowed = true;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -254,6 +256,57 @@ namespace Engine
 		return true;
 	}
 
+	bool DX12GraphicsContext::BuildRootSignature()
+	{
+
+		// Root parameter can be a table, root descriptors or root constants.
+		CD3DX12_ROOT_PARAMETER slotRootParameter[1];
+
+		// Create a single descriptor table of CBVs
+		CD3DX12_DESCRIPTOR_RANGE cbvTable;
+		cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+
+		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
+		(
+			1,
+			slotRootParameter,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+		);
+
+
+		ComPtr<ID3DBlob> serialisedRootSignature = nullptr;
+		ComPtr<ID3DBlob> errorBlob = nullptr;
+
+
+		HRESULT hr = D3D12SerializeRootSignature
+		(
+			&rootSigDesc,
+			D3D_ROOT_SIGNATURE_VERSION_1,
+			serialisedRootSignature.GetAddressOf(),
+			errorBlob.GetAddressOf()
+		);
+
+		if (errorBlob != nullptr)
+		{
+			OutputDebugStringA(static_cast<char*>(errorBlob->GetBufferPointer()));
+		}
+
+		THROW_ON_FAILURE(hr);
+
+		THROW_ON_FAILURE(Device->CreateRootSignature
+		(
+			0,
+			serialisedRootSignature->GetBufferPointer(),
+			serialisedRootSignature->GetBufferSize(),
+			IID_PPV_ARGS(&RootSignature)
+		));
+
+		return true;
+
+	}
 
 
 	ID3D12Resource* DX12GraphicsContext::CurrentBackBuffer() const

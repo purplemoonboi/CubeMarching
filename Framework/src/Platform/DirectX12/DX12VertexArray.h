@@ -9,7 +9,7 @@ namespace Engine
 	public:
 		DX12VertexArray();
 
-		virtual ~DX12VertexArray();
+		~DX12VertexArray() override;
 
 		void Bind() const override;
 

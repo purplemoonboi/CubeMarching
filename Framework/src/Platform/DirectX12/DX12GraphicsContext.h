@@ -2,26 +2,25 @@
 #include "DirectX12.h"
 #include "Framework/Renderer/GraphicsContext.h"
 
-
-
+using Microsoft::WRL::ComPtr;
 
 namespace Engine
 {
-	static constexpr  INT32 SwapChainBufferCount = 2;
 
-	using Microsoft::WRL::ComPtr;
+	// @brief Double buffering
+	static constexpr  INT32 SWAP_CHAIN_BUFFER_COUNT = 2;
 
 	class DX12GraphicsContext : public GraphicsContext
 	{
 	public:
-		DX12GraphicsContext
-		(
-			HWND windowHandle,
-			INT32 viewportWidth,
-			INT32 viewportHeight
-		);
 
-		virtual ~DX12GraphicsContext();
+		DX12GraphicsContext(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
+		DX12GraphicsContext(const DX12GraphicsContext&) = delete;
+		DX12GraphicsContext(DX12GraphicsContext&&) = delete;
+		auto operator=(const DX12GraphicsContext&) noexcept -> DX12GraphicsContext & = delete;
+		auto operator=(DX12GraphicsContext&&) noexcept -> DX12GraphicsContext && = delete;
+
+		~DX12GraphicsContext() override;
 
 		void Init() override;
 
@@ -29,34 +28,28 @@ namespace Engine
 
 		void FlushCommandQueue();
 
-		void Resize();
-
-		void SetBackBufferIndex(UINT value) { BackBufferIndex = value; }
+		void SetBackBufferIndex(INT32 value) { BackBufferIndex = value; }
 
 		ID3D12Resource* CurrentBackBuffer() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const;
 		D3D12_CPU_DESCRIPTOR_HANDLE ConstantBufferView() const;
 
-		ComPtr<ID3D12Device>	Device;
-		ComPtr<IDXGISwapChain>  SwapChain;
-		ComPtr<IDXGIFactory4>	DXGIFactory;
-
-		ComPtr<ID3D12GraphicsCommandList> GraphicsCmdList;
-		ComPtr<ID3D12CommandQueue>		  CommandQueue;
-		ComPtr<ID3D12CommandAllocator>	  DirCmdListAlloc;
-		ComPtr<ID3D12Fence> D3DFence() { return Fence; }
-
-
-		ComPtr<ID3D12Resource>			  SwapChainBuffer[SwapChainBufferCount];
-		ComPtr<ID3D12Resource>			  DepthStencilBuffer;
+		ComPtr<ID3D12Device>				Device;
+		ComPtr<IDXGISwapChain>				SwapChain;
+		ComPtr<IDXGIFactory4>				DXGIFactory;
+		ComPtr<ID3D12GraphicsCommandList>	GraphicsCmdList;
+		ComPtr<ID3D12CommandQueue>			CommandQueue;
+		ComPtr<ID3D12CommandAllocator>		CmdListAlloc;
+		ComPtr<ID3D12Fence>					Fence;
+		ComPtr<ID3D12RootSignature>			RootSignature;
+		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
+		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
 		// @brief Heap descriptor for resources
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;
-
 		// @brief Heap descriptor for depth-stencil resource
 		ComPtr<ID3D12DescriptorHeap> DsvHeap;
-
 		// @brief Heap descriptor for constant buffer resource
 		ComPtr<ID3D12DescriptorHeap> CbvHeap;
 
@@ -80,9 +73,10 @@ namespace Engine
 
 		INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 
+		ID3D12PipelineState* CurrentPso = nullptr;
 
 
-		// Debugging tools
+		// Debugging layer
 
 		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 
@@ -108,6 +102,7 @@ namespace Engine
 		// @brief Creates descriptors for the depth-stencil, render texture and constant buffers.
 		bool CreateDsvRtvAndCbvDescriptorHeaps();
 
+		bool BuildRootSignature();
 
 		// @brief - Represents the size of the RTV descriptor heap.
 		UINT32 RtvDescriptorSize;
@@ -116,10 +111,6 @@ namespace Engine
 		// @brief - Represents the size of the CBV, SRV and UAV descriptor heaps.
 		UINT32 CbvSrvUavDescriptorSize;
 
-
-
-		// @brief Fence is used to signal synchronization with GPU
-		ComPtr<ID3D12Fence>	Fence;
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;
 
@@ -139,14 +130,10 @@ namespace Engine
 		// @brief - A handle to the window
 		HWND WindowHandle;
 
-		// @brief - A structure describing the buffer which we render to.
-		D3D12_VIEWPORT ScreenViewport;
-		// @brief - Used to specify an area of the buffer we would like to render to.
-		//			Therefore culls pixels not included in the scissor rect.
-		D3D12_RECT ScissorRect;
+
 		// @brief This is out dated. Please use frame buffer class instead.   
-		INT32 ViewportWidth;
-		INT32 ViewportHeight;
+		INT32 SwapChainBufferWidth;
+		INT32 SwapChainBufferHeight;
 
 		D3D_DRIVER_TYPE DriverType = D3D_DRIVER_TYPE_HARDWARE;
 	};

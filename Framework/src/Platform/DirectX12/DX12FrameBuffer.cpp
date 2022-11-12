@@ -30,7 +30,7 @@ namespace Engine
 	{
 	}
 
-	void DX12FrameBuffer::Invalidate(DX12GraphicsContext* graphicsContext)
+	void DX12FrameBuffer::Invalidate(RefPointer<DX12GraphicsContext> graphicsContext)
 	{
 		CORE_ASSERT(graphicsContext->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(graphicsContext->SwapChain, "The 'swap chain' has failed...");
@@ -39,10 +39,10 @@ namespace Engine
 		// Flush before changing any resources.
 		graphicsContext->FlushCommandQueue();
 
-	    THROW_ON_FAILURE(graphicsContext->GraphicsCmdList->Reset(graphicsContext->DirCmdListAlloc.Get(), nullptr));
+	    THROW_ON_FAILURE(graphicsContext->GraphicsCmdList->Reset(graphicsContext->CmdListAlloc.Get(), nullptr));
 
 		// Release the previous resources we will be recreating.
-		for (UINT i = 0; i < Engine::SwapChainBufferCount; ++i)
+		for (UINT i = 0; i < Engine::SWAP_CHAIN_BUFFER_COUNT; ++i)
 		{
 			graphicsContext->SwapChainBuffer[i].Reset();
 		}
@@ -53,7 +53,7 @@ namespace Engine
 		// Resize the swap chain.
 		THROW_ON_FAILURE(graphicsContext->SwapChain->ResizeBuffers
 		(
-			SwapChainBufferCount,
+			SWAP_CHAIN_BUFFER_COUNT,
 			ViewportWidth, ViewportHeight,
 			graphicsContext->GetBackBufferFormat(),
 			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
@@ -67,7 +67,7 @@ namespace Engine
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(graphicsContext->RtvHeap->GetCPUDescriptorHandleForHeapStart());
 
-		for (UINT i = 0; i < SwapChainBufferCount; i++)
+		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
 		{
 			graphicsContext->SwapChain->GetBuffer(i, IID_PPV_ARGS(&graphicsContext->SwapChainBuffer[i]));
 

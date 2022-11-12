@@ -10,13 +10,18 @@ project "Application"
 			files
 			{
 				"src/**.h",
-				"src/**.cpp"
+				"src/**.cpp",
+				"vendor/Microsoft/**.h",
+				"vendor/Microsoft/**.cpp",
+				"vendor/FDLuna/**.h",
+				"vendor/FDLuna/**.cpp"
 			}
 
 			includedirs 
 			{
 				"%{wks.location}/Framework/vendor/spdlog/include",
-				"%{wks.location}/Framework/vendor",
+				"%{wks.location}/Framework/vendor/Microsoft",
+				"%{wks.location}/Framework/vendor/FDLuna",
 				"%{wks.location}/Framework/src"
 				
 			}

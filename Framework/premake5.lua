@@ -15,14 +15,17 @@ project "Framework"
 				"src/**.h",
 				"src/**.cpp",
 				"vendor/Microsoft/**.h",
-				"vendor/Microsoft/**.cpp"
+				"vendor/Microsoft/**.cpp",
+				"vendor/FDLuna/**.h",
+				"vendor/FDLuna/**.cpp"
 			}
 
 			includedirs
 			{
 				"src",
 				"vendor/spdlog/include",
-				"vendor/DX12/Microsoft"
+				"vendor/DX12/Microsoft",
+				"vendor/FDLuna"
 			}
 
 			links
