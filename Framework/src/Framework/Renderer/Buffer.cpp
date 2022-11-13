@@ -24,7 +24,7 @@ namespace Engine
 		return nullptr;
 	}
 
-	RefPointer<VertexBuffer> VertexBuffer::Create(GraphicsContext* const graphicsContext, float* vertices, UINT size)
+	RefPointer<VertexBuffer> VertexBuffer::Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -39,7 +39,7 @@ namespace Engine
 		return nullptr;
 	}
 
-	RefPointer<IndexBuffer> IndexBuffer::Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size)
+	RefPointer<IndexBuffer> IndexBuffer::Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT indexCount)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -47,7 +47,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   return CreateRef<DX12IndexBuffer>(graphicsContext, indices, size);
+		case RendererAPI::Api::DX12:   return CreateRef<DX12IndexBuffer>(graphicsContext, indices, size, indexCount);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

@@ -30,7 +30,7 @@ namespace Engine
 	{
 	}
 
-	void DX12FrameBuffer::Invalidate(RefPointer<DX12GraphicsContext> graphicsContext)
+	void DX12FrameBuffer::ResizeFrameBuffer(RefPointer<DX12GraphicsContext> graphicsContext)
 	{
 		CORE_ASSERT(graphicsContext->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(graphicsContext->SwapChain, "The 'swap chain' has failed...");
@@ -144,7 +144,7 @@ namespace Engine
 			&CD3DX12_RESOURCE_BARRIER::Transition
 			(
 				graphicsContext->DepthStencilBuffer.Get(),
-			D3D12_RESOURCE_STATE_COMMON,
+				D3D12_RESOURCE_STATE_COMMON,
 				D3D12_RESOURCE_STATE_DEPTH_WRITE
 			)
 		);

@@ -46,6 +46,9 @@ namespace Engine
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
+		ComPtr<ID3D12PipelineState> CurrentPso = nullptr;
+
+
 		// @brief Heap descriptor for resources
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;
 		// @brief Heap descriptor for depth-stencil resource
@@ -73,7 +76,6 @@ namespace Engine
 
 		INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 
-		ID3D12PipelineState* CurrentPso = nullptr;
 
 
 		// Debugging layer

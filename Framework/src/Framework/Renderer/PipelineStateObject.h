@@ -20,9 +20,7 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			const std::string& vertexShader,
 			const std::string& pixelShader,
-			const BufferLayout& layout,
-			UINT backBufferFormat = 28,
-			UINT depthStencilFormal = 45
+			const BufferLayout& layout
 		);
 
 
@@ -31,9 +29,7 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			Shader* vertexShader,
 			Shader* pixelShader,
-			const BufferLayout& layout,
-			UINT backBufferFormat = 28,
-			UINT depthStencilFormal = 45
+			const BufferLayout& layout
 		);
 	};
 }

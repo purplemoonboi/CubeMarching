@@ -31,14 +31,15 @@ namespace Engine
 
 		// @brief Adds a draw instance instruction to the command list
 		// @param[in] A unique pointer to the vertex array to be submitted.
-		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override;
+		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override{}
 
 		// @brief Adds a draw instance instruction to the command list
 		// @param[in] A unique pointer to the vertex array to be submitted.
-		void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0) override;
+		void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0, PipelineStateObject* pso = nullptr) override;
 
 		GraphicsContext* GetGraphicsContext() const override { return GraphicsContext.get(); };
 
+	
 	private:
 
 		// A unique pointer to the graphics context
@@ -46,7 +47,6 @@ namespace Engine
 
 		// A unique pointer to the framebuffer
 		RefPointer<DX12FrameBuffer> FrameBuffer = nullptr;
-
 
 	};
 

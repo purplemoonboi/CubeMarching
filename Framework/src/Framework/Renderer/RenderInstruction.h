@@ -49,9 +49,9 @@ namespace Engine
 			RendererApiPtr->DrawIndexed(vertexArray, count);
 		}
 
-		static void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 count = 0)
+		static void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 count = 0, PipelineStateObject* pso = nullptr)
 		{
-			RendererApiPtr->DrawIndexed(geometry, count);
+			RendererApiPtr->DrawIndexed(geometry, count, pso);
 		}
 
 	private:

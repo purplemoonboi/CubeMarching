@@ -13,7 +13,7 @@ namespace Engine
 	struct Vertex
 	{
 		DirectX::XMFLOAT3 Position;
-		DirectX::XMFLOAT4 Colour;
+		DirectX::XMFLOAT4 Color;
 	};
 
 	struct PassConstants

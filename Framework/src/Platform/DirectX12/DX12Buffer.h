@@ -22,7 +22,7 @@ namespace Engine
 	public:
 
 		DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT size);
-		DX12VertexBuffer(GraphicsContext* const graphicsContext, float* vertices, UINT size);
+		DX12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT size);
 		~DX12VertexBuffer() override = default;
 
 		// @brief Binds this buffer for modifications.
@@ -63,7 +63,7 @@ namespace Engine
 	{
 	public:
 
-		DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, INT32 size);
+		DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT count);
 
 		~DX12IndexBuffer() override = default;
 
@@ -76,7 +76,7 @@ namespace Engine
 		D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const;
 
 	private:
-		INT32 Count;
+		UINT Count;
 
 		// @brief CPU copy of the index buffer
 		ComPtr<ID3DBlob> IndexBufferCPU = nullptr;

@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include "Framework/Renderer/VertexArray.h"
 #include "Framework/Renderer/Geometry.h"
+#include "Framework/Renderer/PipelineStateObject.h"
 #include "Framework/Core/Core.h"
 
 namespace Engine
@@ -38,7 +39,7 @@ namespace Engine
 
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
-		virtual void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0) = 0;
+		virtual void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0, PipelineStateObject* pso = nullptr) = 0;
 
 		static Api GetAPI() { return RenderingApi; }
 

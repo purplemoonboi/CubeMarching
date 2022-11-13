@@ -1,5 +1,6 @@
 #include "DX12RenderingApi.h"
 #include "DirectX12.h"
+#include "DX12Shader.h"
 
 #include "Platform/DirectX12/DX12FrameBuffer.h"
 
@@ -10,7 +11,7 @@ namespace Engine
 {
 	DX12RenderingApi::~DX12RenderingApi()
 	{
-		if(GraphicsContext.get() != nullptr)
+		/*if(GraphicsContext.get() != nullptr)
 		{
 			GraphicsContext.reset();
 			GraphicsContext = nullptr;
@@ -20,7 +21,7 @@ namespace Engine
 		{
 			FrameBuffer.reset();
 			FrameBuffer = nullptr;
-		}
+		}*/
 	}
 
 	void DX12RenderingApi::Init()
@@ -39,18 +40,7 @@ namespace Engine
 		fbs.Height = viewportHeight;
 
 		FrameBuffer = std::static_pointer_cast<DX12FrameBuffer>(FrameBuffer::Create(fbs));
-		FrameBuffer->Invalidate(GraphicsContext);
-
-		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Reset(GraphicsContext->CmdListAlloc.Get(), nullptr));
-
-
-		HRESULT H = GraphicsContext->GraphicsCmdList->Close();
-		THROW_ON_FAILURE(H);
-
-		ID3D12CommandList* cmdList[] = { GraphicsContext->GraphicsCmdList.Get() };
-		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
-
-		GraphicsContext->FlushCommandQueue();
+		FrameBuffer->ResizeFrameBuffer(GraphicsContext);
 
 	}
 
@@ -60,12 +50,17 @@ namespace Engine
 		{
 			CORE_TRACE("Buffer resize");
 			FrameBuffer->SetViewportDimensions(width, height);
-			FrameBuffer->Invalidate(GraphicsContext);
+			FrameBuffer->ResizeFrameBuffer(GraphicsContext);
 		}
 	}
 
 	void DX12RenderingApi::SetClearColour(const float colour[4])
 	{
+
+		CORE_ASSERT(GraphicsContext->Device, "Device lost");
+		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
+
 		// Reset the command allocator
 		GraphicsContext->CmdListAlloc->Reset();
 
@@ -73,7 +68,7 @@ namespace Engine
 		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset
 		(
 			GraphicsContext->CmdListAlloc.Get(),
-			GraphicsContext->CurrentPso
+			GraphicsContext->CurrentPso.Get()
 		);
 
 		THROW_ON_FAILURE(cmdReset);
@@ -132,19 +127,89 @@ namespace Engine
 	}
 
 
-	void DX12RenderingApi::DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount)
+	void DX12RenderingApi::DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount, PipelineStateObject* pso)
 	{
-	}
 
-	void DX12RenderingApi::DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount)
-	{
-		const auto& vertexBuffer = static_cast<DX12VertexBuffer*>(geometry->VertexBuffer.get());
-		const auto& indexBuffer = static_cast<DX12IndexBuffer*>(geometry->IndexBuffer.get());
+		const auto dx12Pso = dynamic_cast<DX12PipelineStateObject*>(pso);
 
 
+		CORE_ASSERT(GraphicsContext->Device, "Device lost");
+		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
 
-		GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vertexBuffer->GetVertexBufferView());
-		GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&indexBuffer->GetIndexBufferView());
+		// Reset the command allocator
+		GraphicsContext->CmdListAlloc->Reset();
+
+
+		// Reset the command list
+		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset
+		(
+			GraphicsContext->CmdListAlloc.Get(),
+			GraphicsContext->CurrentPso.Get()
+		);
+
+		THROW_ON_FAILURE(cmdReset);
+
+		// Reset the viewport and scissor rect whenever the command list is empty.
+		GraphicsContext->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
+		GraphicsContext->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
+
+		// Indicate there will be a transition made to the resource.
+		GraphicsContext->GraphicsCmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				GraphicsContext->CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			)
+		);
+
+
+		//Flush the back buffer 
+		GraphicsContext->GraphicsCmdList->ClearRenderTargetView
+		(
+			GraphicsContext->CurrentBackBufferView(),
+			DirectX::Colors::Green,
+			0,
+			nullptr
+		);
+
+		// Flush the depth buffer
+		GraphicsContext->GraphicsCmdList->ClearDepthStencilView
+		(
+			GraphicsContext->DepthStencilView(),
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.0f,
+			0,
+			0,
+			nullptr
+		);
+
+		// Set the render targets descriptors
+		GraphicsContext->GraphicsCmdList->OMSetRenderTargets
+		(
+			1,
+			&GraphicsContext->CurrentBackBufferView(),
+			true,
+			&GraphicsContext->DepthStencilView()
+		);
+
+		// Set the descriptors for the memory and the root signature
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
+		GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
+
+
+		const auto& vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VertexBuffer.get());
+		const auto& indexBuffer  = dynamic_cast<DX12IndexBuffer*>(geometry->IndexBuffer.get());
+
+		const auto& vbView = vertexBuffer->GetVertexBufferView();
+		const auto& ibView = indexBuffer->GetIndexBufferView();
+
+		GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vbView);
+		GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&ibView);
 		GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
@@ -152,7 +217,7 @@ namespace Engine
 
 		GraphicsContext->GraphicsCmdList->DrawIndexedInstanced
 		(
-			geometry->DrawArgs["box"].IndexCount,
+			geometry->DrawArgs["Box"].IndexCount,
 			1,
 			0,
 			0,
@@ -160,10 +225,40 @@ namespace Engine
 		);
 
 
+		// Now instruct we have made the changes to the buffer
+		GraphicsContext->GraphicsCmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				GraphicsContext->CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PRESENT
+			)
+		);
+
+		// We can now close the command list
+		GraphicsContext->GraphicsCmdList->Close();
+
+		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
+		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+
+		THROW_ON_FAILURE(GraphicsContext->SwapChain->Present(0, 0));
+		GraphicsContext->UpdateBackBufferIndex((GraphicsContext->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+
+
+		GraphicsContext->FlushCommandQueue();
+
 	}
+
 
 	void DX12RenderingApi::Flush()
 	{
+		CORE_ASSERT(GraphicsContext->Device, "Device lost");
+		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
+
 		// Now instruct we have made the changes to the buffer
 		GraphicsContext->GraphicsCmdList->ResourceBarrier
 		(

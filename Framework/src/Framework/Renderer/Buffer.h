@@ -163,7 +163,7 @@ namespace Engine
 		virtual inline const BufferLayout& GetLayout() const = 0;
 
 		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, UINT size);
-		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, float* vertices, UINT size);
+		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size);
 
 	};
 
@@ -178,7 +178,7 @@ namespace Engine
 
 		virtual const INT32 GetCount() = 0;
 
-		static RefPointer<IndexBuffer> Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size);
+		static RefPointer<IndexBuffer> Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT indexCount);
 	};
 
 

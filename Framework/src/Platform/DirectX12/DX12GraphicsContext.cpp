@@ -45,8 +45,9 @@ namespace Engine
 
 		THROW_ON_FAILURE(CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT));
 
+		auto i = Fence->GetCompletedValue();
 
-		if (Fence->GetCompletedValue() < GPU_TO_CPU_SYNC_COUNT)
+		if (i < GPU_TO_CPU_SYNC_COUNT)
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
@@ -259,50 +260,41 @@ namespace Engine
 	bool DX12GraphicsContext::BuildRootSignature()
 	{
 
-		// Root parameter can be a table, root descriptors or root constants.
+		// Shader programs typically require resources as input (constant buffers,
+	// textures, samplers).  The root signature defines the resources the shader
+	// programs expect.  If we think of the shader programs as a function, and
+	// the input resources as function parameters, then the root signature can be
+	// thought of as defining the function signature.  
+
+	// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[1];
 
-		// Create a single descriptor table of CBVs
+		// Create a single descriptor table of CBVs.
 		CD3DX12_DESCRIPTOR_RANGE cbvTable;
 		cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 		slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 
-		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
-		(
-			1,
-			slotRootParameter,
-			0,
-			nullptr,
-			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-		);
+		// A root signature is an array of root parameters.
+		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-
-		ComPtr<ID3DBlob> serialisedRootSignature = nullptr;
+		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+		ComPtr<ID3DBlob> serializedRootSig = nullptr;
 		ComPtr<ID3DBlob> errorBlob = nullptr;
-
-
-		HRESULT hr = D3D12SerializeRootSignature
-		(
-			&rootSigDesc,
-			D3D_ROOT_SIGNATURE_VERSION_1,
-			serialisedRootSignature.GetAddressOf(),
-			errorBlob.GetAddressOf()
-		);
+		HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+			serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
 
 		if (errorBlob != nullptr)
 		{
-			OutputDebugStringA(static_cast<char*>(errorBlob->GetBufferPointer()));
+			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
 		}
-
 		THROW_ON_FAILURE(hr);
 
-		THROW_ON_FAILURE(Device->CreateRootSignature
-		(
+		THROW_ON_FAILURE(Device->CreateRootSignature(
 			0,
-			serialisedRootSignature->GetBufferPointer(),
-			serialisedRootSignature->GetBufferSize(),
-			IID_PPV_ARGS(&RootSignature)
-		));
+			serializedRootSig->GetBufferPointer(),
+			serializedRootSig->GetBufferSize(),
+			IID_PPV_ARGS(&RootSignature)));
 
 		return true;
 

@@ -28,7 +28,7 @@ namespace Engine
 		);
 	}
 
-	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, float* vertices, UINT size)
+	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, const void* vertices, UINT size)
 		:
 		Layout(),
 		VertexBufferByteSize(size)
@@ -39,6 +39,8 @@ namespace Engine
 		THROW_ON_FAILURE(D3DCreateBlob(size, &VertexBufferCPU));
 		// Copy data into buffer
 		CopyMemory(VertexBufferCPU->GetBufferPointer(), vertices, size);
+
+
 		// Create the GPU vertex buffer
 		VertexBufferGPU = DX12BufferUtils::CreateDefaultBuffer
 		(
@@ -94,16 +96,17 @@ namespace Engine
 	{
 		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = VertexBufferGPU->GetGPUVirtualAddress();
-		vbv.StrideInBytes  = Layout.GetStride();
-		vbv.SizeInBytes    = VertexBufferCPU->GetBufferSize();
+		vbv.StrideInBytes = sizeof(Vertex);
+		vbv.SizeInBytes    = sizeof(Vertex) * 8U;
 
 		return vbv;
 	}
 
-	DX12IndexBuffer::DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, INT32 size)
+	DX12IndexBuffer::DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT indexCount)
 		:
 		Format(DXGI_FORMAT_R16_UINT),
-		IndexBufferByteSize(size)
+		IndexBufferByteSize(size),
+		Count(indexCount)
 	{
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
@@ -139,7 +142,7 @@ namespace Engine
 		D3D12_INDEX_BUFFER_VIEW ibv;
 		ibv.BufferLocation	= IndexBufferGPU->GetGPUVirtualAddress();
 		ibv.Format			= Format;
-		ibv.SizeInBytes		= IndexBufferCPU->GetBufferSize();
+		ibv.SizeInBytes		= 36U * sizeof(UINT16);
 
 		return ibv;
 	}
@@ -166,17 +169,15 @@ namespace Engine
 		cbvDesc.BufferLocation = cbAddress;
 		cbvDesc.SizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 
-		HRESULT h = dx12GraphicsContext->Device->GetDeviceRemovedReason();
-
-		THROW_ON_FAILURE(h);
-
 		dx12GraphicsContext->Device->CreateConstantBufferView
 		(
 			&cbvDesc,
 			dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart()
 		);
 
-
+		HRESULT hasRemovedReason = S_OK;
+		hasRemovedReason = dx12GraphicsContext->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(hasRemovedReason);
 	}
 
 	void DX12UploadBufferManager::Bind() const
