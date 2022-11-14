@@ -21,8 +21,8 @@ namespace Engine
 			)
 		);
 
-		PassBuffer = CreateScope<UploadBuffer<PassConstants>>(dx12DeviceContext->Device, passCount, true);
-		ConstantBuffer = CreateScope<UploadBuffer<ObjectConstant>>(dx12DeviceContext->Device, objectCount, true);
+		PassBuffer = CreateScope<DX12UploadBuffer<PassConstants>>(dx12DeviceContext, passCount, true);
+		ConstantBuffer = CreateScope<DX12UploadBuffer<ObjectConstant>>(dx12DeviceContext, objectCount, true);
 	}
 
 }

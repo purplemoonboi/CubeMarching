@@ -55,26 +55,26 @@ namespace Engine
 	};
 
 
-	//// @Brief Stores pointers to shader object using an unordered map.
-	//class ShaderLibrary
-	//{
-	//public:
+	// @Brief Stores pointers to shader object using an unordered map.
+	class ShaderLibrary
+	{
+	public:
 
-	//	static void Add(const RefPointer<Shader>& shader);
-	//	
-	//	static void Add(const std::string& name, const RefPointer<Shader>& shader);
-	//	
-	//	static RefPointer<Shader> Load(const std::string& filePath);
-	//	
-	//	static RefPointer<Shader> Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
-	//	
-	//	static RefPointer<Shader> Get(const std::string& name);
-	//	
-	//	static bool Exists(const std::string& name);
+		static void Add(const RefPointer<Shader>& shader);
+		
+		static void Add(const std::string& name, const RefPointer<Shader>& shader);
+		
+		static RefPointer<Shader> Load(const std::string& filePath);
+		
+		static RefPointer<Shader> Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
+		
+		static RefPointer<Shader> Get(const std::string& name);
+		
+		static bool Exists(const std::string& name);
 
-	//private:
-	//	static std::unordered_map<std::string, RefPointer<Shader>> Shaders;
-	//};
+	private:
+		static std::unordered_map<std::string, RefPointer<Shader>> Shaders;
+	};
 
 
 }

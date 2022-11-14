@@ -49,10 +49,10 @@ namespace Engine
 	private:
 
 		// A unique pointer to the graphics context
-		ScopePointer<DX12GraphicsContext> GraphicsContext = nullptr;
+		RefPointer<DX12GraphicsContext> GraphicsContext = nullptr;
 
 		// A unique pointer to the framebuffer
-		ScopePointer<DX12FrameBuffer> FrameBuffer = nullptr;
+		RefPointer<DX12FrameBuffer> FrameBuffer = nullptr;
 
 	};
 

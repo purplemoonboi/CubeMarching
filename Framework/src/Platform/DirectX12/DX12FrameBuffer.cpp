@@ -30,7 +30,7 @@ namespace Engine
 	{
 	}
 
-	void DX12FrameBuffer::ResizeFrameBuffer(ScopePointer<DX12GraphicsContext> graphicsContext)
+	void DX12FrameBuffer::ResizeFrameBuffer(RefPointer<DX12GraphicsContext> graphicsContext)
 	{
 		CORE_ASSERT(graphicsContext->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(graphicsContext->SwapChain, "The 'swap chain' has failed...");

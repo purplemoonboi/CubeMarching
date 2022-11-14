@@ -33,7 +33,7 @@ namespace Engine
 	void DX12RenderingApi::InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight)
 	{
 		/** builds our cbv descriptor etc */
-		GraphicsContext = std::dynamic_pointer_cast<DX12GraphicsContext>(GraphicsContext::Create(windowHandle, viewportWidth, viewportHeight));
+		GraphicsContext = std::static_pointer_cast<DX12GraphicsContext>(GraphicsContext::Create(windowHandle, viewportWidth, viewportHeight));
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;

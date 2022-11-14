@@ -24,6 +24,7 @@ namespace Engine
 		RefPointer<VertexArray> VertexArray;
 		RefPointer<Shader> VertexShader;
 		RefPointer<Shader> PixelShader;
+		ScopePointer<ShaderLibrary> ShaderLib;
 
 		RefPointer<Geometry> Geometry;
 		RefPointer<UploadBuffer> ConstantBuffer;
@@ -50,6 +51,8 @@ namespace Engine
 		/** build and compile shaders */
 		RenderData.VertexShader = Shader::Create(L"assets\\shaders\\color.hlsl", "VS", "vs_5_0");
 		RenderData.PixelShader = Shader::Create(L"assets\\shaders\\color.hlsl", "PS", "ps_5_0");
+
+		RenderData.ShaderLib->Add("vertex_shader", RenderData.VertexShader);
 
 		RenderData.ConstantBuffer = UploadBuffer::Create(api->GetGraphicsContext(), 1, true);
 
