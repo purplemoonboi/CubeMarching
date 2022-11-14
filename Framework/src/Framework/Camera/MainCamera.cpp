@@ -46,6 +46,16 @@ namespace Engine
 
 	}
 
+	void MainCamera::SetPosition(float x, float y, float z)
+	{
+		DirectX::XMFLOAT3 currentPosition;
+		DirectX::XMStoreFloat3(&currentPosition, Position);
+		currentPosition.x += x;
+		currentPosition.y += y;
+		currentPosition.z += z;
+		Position = DirectX::XMVectorSet(currentPosition.x, currentPosition.y, currentPosition.z, 1.0f);
+	}
+
 	void MainCamera::RecalculateAspectRatio(float width, float height, float nearPlane, float farPlane, float fov)
 	{
 		DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(fov, (width / height), nearPlane, farPlane);

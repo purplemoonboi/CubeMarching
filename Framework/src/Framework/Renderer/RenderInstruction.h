@@ -37,6 +37,16 @@ namespace Engine
 			RendererApiPtr->Flush();
 		}
 
+		static void ResetGraphicsCommandList()
+		{
+			RendererApiPtr->ResetCommandList();
+		}
+
+		static void ExecGraphicsCommandList()
+		{
+			RendererApiPtr->ExecCommandList();
+		}
+
 		static void DrawDemoScene()
 		{
 		//	RendererApiPtr->Draw();

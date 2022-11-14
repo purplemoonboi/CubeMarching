@@ -37,6 +37,10 @@ namespace Engine
 
 		virtual void Flush() = 0;
 
+		virtual void ResetCommandList() = 0;
+
+		virtual void ExecCommandList() = 0;
+
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
 		virtual void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0, PipelineStateObject* pso = nullptr) = 0;

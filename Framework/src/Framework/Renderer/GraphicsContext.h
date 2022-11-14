@@ -23,7 +23,7 @@ namespace Engine
 
 		virtual void SwapBuffers() = 0;
 
-		static RefPointer<GraphicsContext> Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
+		static ScopePointer<GraphicsContext> Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
 
 	};
 }

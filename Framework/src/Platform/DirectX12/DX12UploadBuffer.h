@@ -2,6 +2,7 @@
 #include "DirectX12.h"
 
 #include "DX12BufferUtils.h"
+#include "Platform/DirectX12/DX12GraphicsContext.h"
 
 namespace Engine
 {
@@ -16,12 +17,12 @@ namespace Engine
 	{
 	public:
 
-		DX12UploadBuffer(GraphicsContext* const graphicsContext, UINT elementCount, bool isConstantBuffer)
+		DX12UploadBuffer(GraphicsContext* graphicsContext, UINT elementCount, bool isConstantBuffer)
 			:
 			IsConstantBuffer(isConstantBuffer)
 		{
 
-			auto const dx12GraphicsContext = dynamic_cast<DX12GraphicsContext* const>(graphicsContext);
+			auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
 			ElementByteSize = sizeof(T);
 
@@ -49,6 +50,16 @@ namespace Engine
 
 		DX12UploadBuffer(const DX12UploadBuffer& rhs) = delete;
 		DX12UploadBuffer& operator=(const DX12UploadBuffer& rhs) = delete;
+
+		void Bind(UINT index, const D3D12_RANGE* range)
+		{
+			THROW_ON_FAILURE(UploadBuffer->Map(index, range, reinterpret_cast<void**>(&MappedData)));
+		}
+
+		void UnBind(UINT index, const D3D12_RANGE* range = nullptr) const
+		{
+			THROW_ON_FAILURE(UploadBuffer->Map(0, range, nullptr));
+		}
 
 		virtual ~DX12UploadBuffer()
 		{

@@ -21,8 +21,8 @@ namespace Engine
 	{
 	public:
 
-		DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT size);
-		DX12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT size);
+		DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size);
+		DX12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT64 size);
 		~DX12VertexBuffer() override = default;
 
 		// @brief Binds this buffer for modifications.
@@ -63,7 +63,7 @@ namespace Engine
 	{
 	public:
 
-		DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT count);
+		DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT64 size, UINT count);
 
 		~DX12IndexBuffer() override = default;
 
@@ -90,10 +90,9 @@ namespace Engine
 		// @brief Index format
 		DXGI_FORMAT Format;
 
-		UINT IndexBufferByteSize;
+		UINT64 IndexBufferByteSize;
 
 	};
-
 
 
 	class DX12UploadBufferManager : public UploadBuffer
@@ -112,7 +111,7 @@ namespace Engine
 
 		const INT32 GetCount() const override;
 
-		
+
 	private:
 		RefPointer<DX12UploadBuffer<ObjectConstant>> ConstantBuffer;
 	};

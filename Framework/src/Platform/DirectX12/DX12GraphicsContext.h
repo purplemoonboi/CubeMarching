@@ -106,6 +106,9 @@ namespace Engine
 
 		bool BuildRootSignature();
 
+
+		bool BuildRootSignatureUsingCBVTables(UINT numberOfSlots = 1);
+
 		// @brief - Represents the size of the RTV descriptor heap.
 		UINT32 RtvDescriptorSize;
 		// @brief - Represents the size of the DSV descriptor heap.

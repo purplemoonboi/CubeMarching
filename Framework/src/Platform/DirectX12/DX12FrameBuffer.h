@@ -28,7 +28,7 @@ namespace Engine
 		void UnBind() override;
 		void RebuildFrameBuffer(INT32 width, INT32 height) override;
 
-		void ResizeFrameBuffer(RefPointer<DX12GraphicsContext> graphicsContext);
+		void ResizeFrameBuffer(ScopePointer<DX12GraphicsContext> graphicsContext);
 
 		void SetViewportDimensions(INT32 width, INT32 height) { ViewportWidth = width; ViewportHeight = height; }
 

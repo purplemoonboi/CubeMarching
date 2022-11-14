@@ -48,26 +48,27 @@ namespace Engine
 
 		InputLayout =
 		{
-			{	vertex.Name.c_str(), 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{   colour.Name.c_str(), 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{	"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{   "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
 		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
 		psoDesc.InputLayout = { InputLayout.data(), static_cast<UINT>(InputLayout.size()) };
+
 		psoDesc.pRootSignature = dx12GraphicsContext->RootSignature.Get();
 
-		auto vsSize = VertexShader->GetComPointer()->GetBufferSize();
-		auto psSize = PixelShader->GetComPointer()->GetBufferSize();
+		auto vsSize = VertexShader->GetShader()->GetBufferSize();
+		auto psSize = PixelShader->GetShader()->GetBufferSize();
 
 
 		psoDesc.VS =
 		{
-			reinterpret_cast<BYTE*>(VertexShader->GetComPointer()->GetBufferPointer()),
+			reinterpret_cast<BYTE*>(VertexShader->GetShader()->GetBufferPointer()),
 			vsSize
 		};
 		psoDesc.PS =
 		{
-			reinterpret_cast<BYTE*>(PixelShader->GetComPointer()->GetBufferPointer()),
+			reinterpret_cast<BYTE*>(PixelShader->GetShader()->GetBufferPointer()),
 			psSize
 		};
 

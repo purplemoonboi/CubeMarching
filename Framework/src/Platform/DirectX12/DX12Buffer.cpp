@@ -6,7 +6,7 @@ namespace Engine
 {
 
 
-	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT size)
+	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size)
 		:
 		Layout(),
 		VertexBufferByteSize(size)
@@ -28,7 +28,7 @@ namespace Engine
 		);
 	}
 
-	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, const void* vertices, UINT size)
+	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, const void* vertices, UINT64 size)
 		:
 		Layout(),
 		VertexBufferByteSize(size)
@@ -102,7 +102,7 @@ namespace Engine
 		return vbv;
 	}
 
-	DX12IndexBuffer::DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT indexCount)
+	DX12IndexBuffer::DX12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT64 size, UINT indexCount)
 		:
 		Format(DXGI_FORMAT_R16_UINT),
 		IndexBufferByteSize(size),
@@ -160,7 +160,7 @@ namespace Engine
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = ConstantBuffer->Resource()->GetGPUVirtualAddress();
 
 		// Offset to the ith object in the constant buffer
-		const INT32 boxCBufferIndex = 0;
+		const UINT boxCBufferIndex = 0;
 		cbAddress += boxCBufferIndex * objectCBBytes;
 
 
@@ -182,16 +182,19 @@ namespace Engine
 
 	void DX12UploadBufferManager::Bind() const
 	{
+		ConstantBuffer->Bind(0U, nullptr);
 	}
 
 	void DX12UploadBufferManager::UnBind() const
 	{
+		ConstantBuffer->UnBind(0U);
 	}
 
 	void DX12UploadBufferManager::Update(MainCamera& camera)
 	{
 		//World matrix in shader
 		ObjectConstant objConstants;
+		
 		XMStoreFloat4x4(&objConstants.WorldViewProj, DirectX::XMMatrixTranspose(camera.GetWorldViewProjMat()));
 
 		ConstantBuffer->CopyData(0, objConstants);

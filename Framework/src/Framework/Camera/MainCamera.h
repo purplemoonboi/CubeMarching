@@ -16,11 +16,14 @@ namespace Engine
 		// @brief Returns the final matrix used in the constant buffer
 		const DirectX::XMMATRIX& GetWorldViewProjMat() const { return WorldViewProj; }
 
+
+		void SetPosition(float x, float y, float z);
 		// @brief Returns the position of the camera
 		const DirectX::XMVECTOR& GetPosition() const { return Position; }
 
 		// @brief Recalculates the cameras aspect ratio
 		void RecalculateAspectRatio(float width, float height, float nearPlane = 1.0f, float farPlane = 1000.0f, float fov = 0.25f * MathHelper::Pi);
+
 
 
 	public:

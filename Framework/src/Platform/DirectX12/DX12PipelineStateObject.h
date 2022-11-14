@@ -49,7 +49,7 @@ namespace Engine
 		~DX12PipelineStateObject() override;
 
 		// @brief Returns a raw pointer to the pso.
-		ID3D12PipelineState* GetPso() const { return Pso.Get(); }
+		ID3D12PipelineState* GetPipelineState() const { return Pso.Get(); }
 
 
 

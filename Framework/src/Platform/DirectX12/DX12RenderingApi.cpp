@@ -33,7 +33,7 @@ namespace Engine
 	void DX12RenderingApi::InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight)
 	{
 		/** builds our cbv descriptor etc */
-		GraphicsContext = std::static_pointer_cast<DX12GraphicsContext>(GraphicsContext::Create(windowHandle, viewportWidth, viewportHeight));
+		GraphicsContext = std::dynamic_pointer_cast<DX12GraphicsContext>(GraphicsContext::Create(windowHandle, viewportWidth, viewportHeight));
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
@@ -49,8 +49,8 @@ namespace Engine
 		if(GraphicsContext != nullptr && FrameBuffer != nullptr)
 		{
 			CORE_TRACE("Buffer resize");
-			FrameBuffer->SetViewportDimensions(width, height);
-			FrameBuffer->ResizeFrameBuffer(GraphicsContext);
+			//FrameBuffer->SetViewportDimensions(width, height);
+			//FrameBuffer->ResizeFrameBuffer(GraphicsContext);
 		}
 	}
 
@@ -90,7 +90,7 @@ namespace Engine
 		);
 
 
-		//Flush the back buffer 
+		//ExecCommandList the back buffer 
 		GraphicsContext->GraphicsCmdList->ClearRenderTargetView
 		(
 			GraphicsContext->CurrentBackBufferView(),
@@ -99,7 +99,7 @@ namespace Engine
 			nullptr
 		);
 
-		// Flush the depth buffer
+		// ExecCommandList the depth buffer
 		GraphicsContext->GraphicsCmdList->ClearDepthStencilView
 		(
 			GraphicsContext->DepthStencilView(),
@@ -126,6 +126,28 @@ namespace Engine
 
 	}
 
+	void DX12RenderingApi::Flush()
+	{
+	}
+
+	void DX12RenderingApi::ResetCommandList()
+	{
+
+		CORE_ASSERT(GraphicsContext->Device, "Device lost");
+		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
+
+		// Reset the command allocator
+		// Reset the command list
+		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset
+		(
+			GraphicsContext->CmdListAlloc.Get(),
+			nullptr
+		);
+
+		THROW_ON_FAILURE(cmdReset);
+
+	}
 
 	void DX12RenderingApi::DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount, PipelineStateObject* pso)
 	{
@@ -138,14 +160,14 @@ namespace Engine
 		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
 
 		// Reset the command allocator
-		GraphicsContext->CmdListAlloc->Reset();
+		THROW_ON_FAILURE(GraphicsContext->CmdListAlloc->Reset());
 
 
 		// Reset the command list
 		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset
 		(
 			GraphicsContext->CmdListAlloc.Get(),
-			GraphicsContext->CurrentPso.Get()
+			dx12Pso->GetPipelineState()
 		);
 
 		THROW_ON_FAILURE(cmdReset);
@@ -167,16 +189,16 @@ namespace Engine
 		);
 
 
-		//Flush the back buffer 
+		//ExecCommandList the back buffer 
 		GraphicsContext->GraphicsCmdList->ClearRenderTargetView
 		(
 			GraphicsContext->CurrentBackBufferView(),
-			DirectX::Colors::Green,
+			DirectX::Colors::Cyan,
 			0,
 			nullptr
 		);
 
-		// Flush the depth buffer
+		// ExecCommandList the depth buffer
 		GraphicsContext->GraphicsCmdList->ClearDepthStencilView
 		(
 			GraphicsContext->DepthStencilView(),
@@ -199,17 +221,19 @@ namespace Engine
 		// Set the descriptors for the memory and the root signature
 		ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
 		GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+		HRESULT cb = GraphicsContext->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(cb);
+
 		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
 
 
 		const auto& vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VertexBuffer.get());
 		const auto& indexBuffer  = dynamic_cast<DX12IndexBuffer*>(geometry->IndexBuffer.get());
 
-		const auto& vbView = vertexBuffer->GetVertexBufferView();
-		const auto& ibView = indexBuffer->GetIndexBufferView();
 
-		GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vbView);
-		GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&ibView);
+		GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vertexBuffer->GetVertexBufferView());
+		GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&indexBuffer->GetIndexBufferView());
 		GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
@@ -238,14 +262,18 @@ namespace Engine
 		);
 
 		// We can now close the command list
-		GraphicsContext->GraphicsCmdList->Close();
+		HRESULT closedResult = GraphicsContext->GraphicsCmdList->Close();
+		THROW_ON_FAILURE(closedResult);
+
 
 		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
 		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
+		HRESULT swapResult = GraphicsContext->SwapChain->Present(0, 0);
+		THROW_ON_FAILURE(swapResult);
 
-		THROW_ON_FAILURE(GraphicsContext->SwapChain->Present(0, 0));
-		GraphicsContext->UpdateBackBufferIndex((GraphicsContext->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+		auto index = GraphicsContext->GetBackBufferIndex();
+		GraphicsContext->UpdateBackBufferIndex((index + 1) % SWAP_CHAIN_BUFFER_COUNT);
 
 
 		GraphicsContext->FlushCommandQueue();
@@ -253,34 +281,21 @@ namespace Engine
 	}
 
 
-	void DX12RenderingApi::Flush()
+
+
+	void DX12RenderingApi::ExecCommandList()
 	{
 		CORE_ASSERT(GraphicsContext->Device, "Device lost");
 		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
 		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
 
-		// Now instruct we have made the changes to the buffer
-		GraphicsContext->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				GraphicsContext->CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PRESENT
-			)
-		);
-
-		// We can now close the command list
-		GraphicsContext->GraphicsCmdList->Close();
+		// Execute the initialization commands.
+		HRESULT result = S_OK;
+		result = GraphicsContext->GraphicsCmdList->Close();
+		THROW_ON_FAILURE(result);
 
 		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
 		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-
-		THROW_ON_FAILURE(GraphicsContext->SwapChain->Present(0, 0));
-		GraphicsContext->UpdateBackBufferIndex((GraphicsContext->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
-
 
 		GraphicsContext->FlushCommandQueue();
 	}
