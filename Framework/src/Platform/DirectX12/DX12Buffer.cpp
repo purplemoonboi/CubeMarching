@@ -1,4 +1,6 @@
 #include "DX12Buffer.h"
+
+#include "Platform/DirectX12/DX12FrameResource.h"
 #include "Platform/DirectX12/DX12GraphicsContext.h"
 #include "Platform/DirectX12/DX12UploadBuffer.h"
 
@@ -6,10 +8,11 @@ namespace Engine
 {
 
 
-	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size)
+	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size, UINT vertexCount)
 		:
 		Layout(),
-		VertexBufferByteSize(size)
+		VertexBufferByteSize(size),
+		VertexCount(vertexCount)
 	{
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
@@ -28,10 +31,11 @@ namespace Engine
 		);
 	}
 
-	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, const void* vertices, UINT64 size)
+	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, const void* vertices, UINT64 size, UINT vertexCount)
 		:
 		Layout(),
-		VertexBufferByteSize(size)
+		VertexBufferByteSize(size),
+		VertexCount(vertexCount)
 	{
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
@@ -97,7 +101,7 @@ namespace Engine
 		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = VertexBufferGPU->GetGPUVirtualAddress();
 		vbv.StrideInBytes = sizeof(Vertex);
-		vbv.SizeInBytes    = sizeof(Vertex) * 8U;
+		vbv.SizeInBytes    = sizeof(Vertex) * VertexCount;
 
 		return vbv;
 	}
@@ -142,63 +146,232 @@ namespace Engine
 		D3D12_INDEX_BUFFER_VIEW ibv;
 		ibv.BufferLocation	= IndexBufferGPU->GetGPUVirtualAddress();
 		ibv.Format			= Format;
-		ibv.SizeInBytes		= 36U * sizeof(UINT16);
+		ibv.SizeInBytes		= Count * sizeof(UINT16);
 
 		return ibv;
 	}
 
-	DX12UploadBufferManager::DX12UploadBufferManager(GraphicsContext* const graphicsContext, UINT count, bool isConstant)
+	DX12UploadBufferManager::DX12UploadBufferManager
+	(
+		GraphicsContext* const graphicsContext,
+		FrameResource* const frameResources,
+		UINT count, 
+		bool isConstant, 
+		UINT frameResourceCount, 
+		UINT renderItemsCount
+	)
 	{
+		/**	cast to appropriate api implementation */
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
 
-		ConstantBuffer = CreateRef<DX12UploadBuffer<ObjectConstant>>(dx12GraphicsContext, count, isConstant);
+		const auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResources);
 
-		const UINT objectCBBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
+		/**
+		 * Create the descriptor heap for the constant buffer if one hasn't been created already.
+		 */
+		if(dx12GraphicsContext->CbvHeap == nullptr)
+		{
+			dx12GraphicsContext->CreateCBVAndSRVDescHeaps(renderItemsCount, frameResourceCount);
+		}
 
-		// Get the mapped virtual address located on the GPU
-		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = ConstantBuffer->Resource()->GetGPUVirtualAddress();
+		/**
+		 * Size of the constant buffer in bytes
+		 */
+		const UINT64 constantBufferSizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 
-		// Offset to the ith object in the constant buffer
-		const UINT boxCBufferIndex = 0;
-		cbAddress += boxCBufferIndex * objectCBBytes;
+		/**
+		 * Total number of render items
+		 */
+		const UINT32 objectCount = renderItemsCount;
+
+		/**
+		 *	Need a CBV descriptor for each object for each frame resource.
+		 */ 
+		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
+		{
+
+			const auto constantBuffer = dx12FrameResource[frameIndex].ConstantBuffer.get();
+
+			for (UINT32 i = 0; i < objectCount; ++i)
+			{
+				/**
+				* Fetch the GPU address of the constant buffer
+				*/
+				D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
 
 
-		// Create a constant buffer view
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-		cbvDesc.BufferLocation = cbAddress;
-		cbvDesc.SizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
+				/**
+				 * Offset to the ith address in memory
+				 */
+				constantBufferAddress += i * constantBufferSizeInBytes;
 
-		dx12GraphicsContext->Device->CreateConstantBufferView
-		(
-			&cbvDesc,
-			dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart()
-		);
+				/**
+				 * Offset to the object CBV in the heap
+				 */
+				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-		HRESULT hasRemovedReason = S_OK;
-		hasRemovedReason = dx12GraphicsContext->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(hasRemovedReason);
+				/**
+				 * Retrieve the descriptor handle 
+				 */
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
+				handle.Offset(heapIndex, dx12GraphicsContext->GetCbvDescSize());
+
+
+				/**
+				* Create a view for the constant buffer
+				*/
+				D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+				cbvDesc.BufferLocation = constantBufferAddress;
+				cbvDesc.SizeInBytes = constantBufferSizeInBytes;
+
+				/**
+				 * Create CBV view
+				 */
+				dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
+			}
+		}
+
+		/**
+		 * Calculate the size of the 'PassConstants' buffer in bytes
+		 */
+		const UINT64 passConstantBufferSizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
+
+		/**
+		 *	Last three descriptors are the pass CBVs for each frame resource.
+		 */ 
+		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
+		{
+			const auto passConstantBuffer = dx12FrameResource[frameIndex].PassBuffer->Resource();
+
+			/**
+			* Fetch the GPU address of the constant buffer
+			*/
+			const D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
+
+			/**
+			 * Offset to the object in the heap
+			 */
+			const UINT32 heapIndex = PassConstantBufferOffset + frameIndex;
+
+			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
+			handle.Offset(heapIndex, dx12GraphicsContext->GetCbvDescSize());
+
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+			cbvDesc.BufferLocation = constantBufferAddress;
+			cbvDesc.SizeInBytes = passConstantBufferSizeInBytes;
+
+			dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
+		}
+
+	}
+
+
+	void DX12UploadBufferManager::CreateMainPassConstBuffer
+	(
+		GraphicsContext* graphicsContext, 
+		UINT32 passCount,
+		UINT32 objectCount
+	)
+	{
+		MainPassConstantBuffer = CreateScope<PassConstants>(graphicsContext, passCount, objectCount);
 	}
 
 	void DX12UploadBufferManager::Bind() const
 	{
-		ConstantBuffer->Bind(0U, nullptr);
+	//	ConstantBuffer->Bind(0U, nullptr);
 	}
 
 	void DX12UploadBufferManager::UnBind() const
 	{
-		ConstantBuffer->UnBind(0U);
+	//	ConstantBuffer->UnBind(0U);
 	}
 
-	void DX12UploadBufferManager::Update(MainCamera& camera)
+	void DX12UploadBufferManager::Update(const MainCamera& camera, const AppTimeManager& appTimeManager)
 	{
-		//World matrix in shader
-		ObjectConstant objConstants;
-		
-		XMStoreFloat4x4(&objConstants.WorldViewProj, DirectX::XMMatrixTranspose(camera.GetWorldViewProjMat()));
+		/**
+		 * Get the camera's view and projection matrix
+		 */
+		const DirectX::XMMATRIX view = DirectX::XMLoadFloat4x4(&camera.GetView());
+		const DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&camera.GetProjection());
 
-		ConstantBuffer->CopyData(0, objConstants);
+		/**
+		 *	Create the view matrix
+		 *	Store the inverse matrices
+		 *	Copy the data into the pass buffer
+		 */
+
+		const DirectX::XMMATRIX viewProj	= XMMatrixMultiply(view, proj);
+		const DirectX::XMMATRIX invView		= XMMatrixInverse(&XMMatrixDeterminant(view), view);
+		const DirectX::XMMATRIX invProj		= XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
+		const DirectX::XMMATRIX invViewProj = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
+
+		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->View,			XMMatrixTranspose(view));
+		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->InvView,		XMMatrixTranspose(invView));
+		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->Proj,			XMMatrixTranspose(proj));
+		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->InvProj,		XMMatrixTranspose(invProj));
+		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->ViewProj,		XMMatrixTranspose(viewProj));
+		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->InvViewProj,	XMMatrixTranspose(invViewProj));
+
+		DirectX::XMFLOAT3 eyeW;
+		DirectX::XMStoreFloat3(&eyeW, camera.GetPosition());
+		MainPassConstantBuffer->EyePosW = eyeW;
+
+		/**
+		 *
+		 *	Upload the camera data such as the position, near and far planes
+		 *	and time data such as delta and elapsed time.
+		 *
+		 */
+
+		MainPassConstantBuffer->RenderTargetSize = DirectX::XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
+		MainPassConstantBuffer->InvRenderTargetSize = DirectX::XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
+		MainPassConstantBuffer->NearZ = 1.0f;
+		MainPassConstantBuffer->FarZ = 1000.0f;
+		MainPassConstantBuffer->TotalTime = appTimeManager.TimeElapsed();
+		MainPassConstantBuffer->DeltaTime = appTimeManager.DeltaTime();
+
+
+		CurrentFrameResource->PassBuffer->CopyData(0, *MainPassConstantBuffer.get());
 	}
+
+	void DX12UploadBufferManager::UpdateConstantBuffer(std::vector<RefPointer<RenderItem>> items)
+	{
+
+		const auto constantBuffer = CurrentFrameResource->ConstantBuffer.get();
+
+		for(auto& renderItem : items)
+		{
+
+			/**
+			 * Only update the constant buffer of an item if it has changed.
+			 */
+
+			if(renderItem->NumFramesDirty > 0)
+			{
+				const auto dx12RenderItem = dynamic_cast<DX12RenderItem*>(renderItem.get());
+
+				DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&dx12RenderItem->World);
+
+				ObjectConstant objConst;
+				DirectX::XMStoreFloat4x4(&objConst.World, DirectX::XMMatrixTranspose(world));
+
+				/**
+				 * Update the object's constant buffer
+				 */
+				constantBuffer->CopyData(renderItem->ObjectConstantBufferIndex, objConst);
+
+				/**
+				 * Decriment the flag, the current object has been updated
+				 */
+				renderItem->NumFramesDirty--;
+			}
+
+		}
+
+
+	}
+
 
 	const INT32 DX12UploadBufferManager::GetCount() const
 	{

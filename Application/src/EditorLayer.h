@@ -14,8 +14,8 @@ namespace Engine
 		void OnAttach() override;
 		void OnDetach() override;
 
-		void OnUpdate(DeltaTime deltaTime) override;
-		void OnRender()override;
+		void OnUpdate(const AppTimeManager& timer) override;
+		void OnRender(const AppTimeManager& timer)override;
 		void OnImGuiRender() override;
 		void OnEvent(Event& event) override;
 

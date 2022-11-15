@@ -11,7 +11,8 @@ namespace Engine
 		GraphicsContext* graphicsContext, 
 		const std::string& vertexShader,
 		const std::string& pixelShader, 
-		const BufferLayout& layout
+		const BufferLayout& layout,
+		FillMode fillMode 
 	)
 	{
 		
@@ -22,7 +23,8 @@ namespace Engine
 		GraphicsContext* graphicsContext,
 		Shader* vertexShader,
 		Shader* pixelShader,
-		const BufferLayout& layout
+		const BufferLayout& layout,
+		FillMode fillMode 
 	)
 	{
 		/** cast to DX12 graphics context */
@@ -32,6 +34,7 @@ namespace Engine
 
 		/** pso description */
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
+
 
 		/** cast to DX12 shaders */
 		auto VertexShader = dynamic_cast<DX12Shader*>(vertexShader);
@@ -48,8 +51,8 @@ namespace Engine
 
 		InputLayout =
 		{
-			{	"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{   "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{	vertex.Name.c_str(), 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{   colour.Name.c_str(), 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		};
 
 		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -74,7 +77,10 @@ namespace Engine
 
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+
+
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		psoDesc.SampleMask = UINT_MAX;
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.NumRenderTargets = 1;
@@ -83,14 +89,18 @@ namespace Engine
 		psoDesc.SampleDesc.Quality = dx12GraphicsContext->GetMsaaState() ? (dx12GraphicsContext->GetMsaaQaulity() - 1) : 0;
 		psoDesc.DSVFormat = dx12GraphicsContext->GetDepthStencilFormat();
 
+
+		if (fillMode == FillMode::WireFrame)
+		{
+			psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		}
+
+
 		HRESULT creationResult = S_OK;
 		creationResult  = dx12GraphicsContext->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
 		THROW_ON_FAILURE(creationResult);
-
 		HRESULT cb = dx12GraphicsContext->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(cb);
-
-		dx12GraphicsContext->CurrentPso = Pso;
 	}
 
 	DX12PipelineStateObject::~DX12PipelineStateObject()

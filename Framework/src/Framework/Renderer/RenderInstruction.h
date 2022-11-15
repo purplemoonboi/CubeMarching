@@ -1,9 +1,5 @@
 #pragma once
 #include "RendererAPI.h"
-#include "Framework/Core/Core.h"
-#include "Buffer.h"
-#include "VertexArray.h"
-
 
 namespace Engine
 {
@@ -27,9 +23,9 @@ namespace Engine
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
-		static void SetClearColour(const float colour[4])
+		static void SetClearColour(const float colour[4], PipelineStateObject* pso)
 		{
-			RendererApiPtr->SetClearColour(colour);
+			RendererApiPtr->SetClearColour(colour, pso);
 		}
 
 		static void Flush()
@@ -59,9 +55,14 @@ namespace Engine
 			RendererApiPtr->DrawIndexed(vertexArray, count);
 		}
 
-		static void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 count = 0, PipelineStateObject* pso = nullptr)
+		static void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 count = 0)
 		{
-			RendererApiPtr->DrawIndexed(geometry, count, pso);
+			RendererApiPtr->DrawIndexed(geometry, count);
+		}
+
+		static void DrawRenderItems(FrameResource* const frameResource, std::vector<RefPointer<RenderItem>>& renderItems, UINT currentFrameResourceIndex = 0, UINT opaqueItemCount = 0)
+		{
+			RendererApiPtr->DrawRenderItems(frameResource, renderItems, currentFrameResourceIndex, opaqueItemCount);
 		}
 
 	private:

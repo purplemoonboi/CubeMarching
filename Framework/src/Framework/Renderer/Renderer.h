@@ -1,9 +1,7 @@
 #pragma once
 #include "Framework/Core/Core.h"
 
-#include "RenderInstruction.h"
 #include "RendererAPI.h"
-#include "Shader.h"
 
 
 namespace Engine
@@ -24,7 +22,7 @@ namespace Engine
 			
 		};
 
-		static ScopePointer<SceneData> SceneData;
+		static SceneData* SceneData;
 
 	};
 }

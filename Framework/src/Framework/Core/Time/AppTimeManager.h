@@ -7,6 +7,7 @@ public:
 	AppTimeManager(const AppTimeManager&) = delete;
 
 	float TimeElapsed() const;
+	float DeltaTime() const { return Time; };
 
 	void Reset();
 	void Start();

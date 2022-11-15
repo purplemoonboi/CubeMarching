@@ -7,6 +7,12 @@ namespace Engine
 	class Shader;
 	class GraphicsContext;
 
+	enum class FillMode
+	{
+		WireFrame = 2,
+		Opaque = 3,
+	};
+
 	// @brief Base class for describing the rendering pipeline.
 	class PipelineStateObject 
 	{
@@ -20,7 +26,8 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			const std::string& vertexShader,
 			const std::string& pixelShader,
-			const BufferLayout& layout
+			const BufferLayout& layout,
+			FillMode fillMode = FillMode::Opaque
 		);
 
 
@@ -29,7 +36,8 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			Shader* vertexShader,
 			Shader* pixelShader,
-			const BufferLayout& layout
+			const BufferLayout& layout,
+			FillMode fillMode = FillMode::Opaque
 		);
 	};
 }

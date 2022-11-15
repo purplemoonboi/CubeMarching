@@ -74,7 +74,7 @@ namespace Engine
 		WindowsWindow Window;
 
 		//A time manager
-		AppTimeManager Timer;
+		AppTimeManager AppTimer;
 
 	};
 

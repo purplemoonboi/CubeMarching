@@ -1,13 +1,12 @@
 #pragma once
 #include "Framework/Renderer/Buffer.h"
-#include "Framework/Primitives/GeometryBase.h"
-#include "DX12UploadBuffer.h"
+#include "Framework/Primitives/GeometryBuilder.h"
 #include "DirectX12.h"
 
 #include <memory>
 
 #include "DX12FrameResource.h"
-#include "DX12Mesh.h"
+#include "DX12RenderItem.h"
 
 namespace Engine
 {
@@ -21,8 +20,8 @@ namespace Engine
 	{
 	public:
 
-		DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size);
-		DX12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT64 size);
+		DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size, UINT vertexCount);
+		DX12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT64 size, UINT vertexCount);
 		~DX12VertexBuffer() override = default;
 
 		// @brief Binds this buffer for modifications.
@@ -34,7 +33,7 @@ namespace Engine
 		// @brief Sets the vertex data for this buffer.
 		void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) override;
 
-		inline void SetLayout(const BufferLayout& layout) override;
+		void SetLayout(const BufferLayout& layout) override;
 
 		const BufferLayout& GetLayout() const override { return Layout; }
 
@@ -55,6 +54,8 @@ namespace Engine
 		ComPtr<ID3D12Resource> VertexBufferUploader = nullptr;
 
 		UINT VertexBufferByteSize;
+
+		UINT VertexCount;
 	};
 
 
@@ -95,27 +96,66 @@ namespace Engine
 	};
 
 
-	class DX12UploadBufferManager : public UploadBuffer
+	class DX12UploadBufferManager : public UploadBufferManager
 	{
 	public:
 
-		DX12UploadBufferManager(GraphicsContext* const graphicsContext, UINT count, bool isConstant);
+		DX12UploadBufferManager
+		(
+			GraphicsContext* const graphicsContext,
+			FrameResource* const frameResources,
+			UINT count, 
+			bool isConstant, 
+			UINT frameResourceCount, 
+			UINT renderItemsCount
+		);
 
 		~DX12UploadBufferManager() override = default;
+
+		void CreateMainPassConstBuffer
+		(
+			GraphicsContext* graphicsContext,
+			UINT32 passCount, 
+			UINT32 objectCount
+		) override;
 
 		void Bind() const override;
 
 		void UnBind() const override;
 
-		void Update(MainCamera& camera) override;
+		void Update(const MainCamera& camera, const AppTimeManager& appTimeManager) override;
+
+		void UpdateConstantBuffer(std::vector<RefPointer<RenderItem>> items) override;
 
 		const INT32 GetCount() const override;
 
+		// @brief - Update the pass constant buffer offset value.
+		void UpdatePassConstBufferOffset(UINT32 newOffset) { PassConstantBufferOffset = newOffset; }
+
+		// @brief - Returns the pass constant buffer offset
+		UINT32 GetPassConstBufferOffset() const { return PassConstantBufferOffset; }
+
+
+		// @brief - Updates the current frame resource.
+		void UpdateCurrentFrameResource(FrameResource* const frameResource) { CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource); }
+
+		// @brief - Returns a raw pointer to the frame resource.
+		FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
 
 	private:
-		RefPointer<DX12UploadBuffer<ObjectConstant>> ConstantBuffer;
+
+		// @brief - Keeps track of the current frame resource being updated.
+		DX12FrameResource* CurrentFrameResource = nullptr;
+
+		// @brief - Offset into the main pass constant buffer.
+		UINT32 PassConstantBufferOffset = 0;
+
+		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.
+		RefPointer<PassConstants> MainPassConstantBuffer;
+
 	};
 
+	
 }
 
 

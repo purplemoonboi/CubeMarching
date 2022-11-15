@@ -1,6 +1,7 @@
 #pragma once
 #include "DirectX12.h"
-#include "Framework/Renderer/Geometry.h"
+#include "MathHelper.h"
+#include "Framework/Renderer/RenderItems.h"
 
 namespace Engine
 {
@@ -10,11 +11,15 @@ namespace Engine
 	//Implemented render item for the DX12 api
 	struct DX12RenderItem : RenderItem
 	{
-		DX12RenderItem() = default;
-		virtual ~DX12RenderItem() override
-		{
-			
-		}
+		DX12RenderItem
+		(
+			const RefPointer<MeshGeometry> geometry,
+			std::string&& drawArgs,
+			UINT constantBufferIndex,
+			Transform&& transform
+		);
+
+		~DX12RenderItem() override = default;
 
 		// World matrix of the shape that describes the object's local space
 		// relative to the world space, which defines the position, orientation,

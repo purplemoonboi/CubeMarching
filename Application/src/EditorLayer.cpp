@@ -23,17 +23,17 @@ namespace Engine
     {
     }
 
-    void EditorLayer::OnUpdate(DeltaTime deltaTime)
+    void EditorLayer::OnUpdate(const AppTimeManager& timer)
     {
         //User input
 
 
-        World->OnUpdate(deltaTime);
+        World->OnUpdate(timer);
     }
 
-    void EditorLayer::OnRender()
+    void EditorLayer::OnRender(const AppTimeManager& timer)
     {
-        World->OnRender();
+        World->OnRender(timer);
     }
 
     void EditorLayer::OnImGuiRender()

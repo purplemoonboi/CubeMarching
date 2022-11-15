@@ -14,6 +14,16 @@ namespace Engine
 	{
 	public:
 
+		// Debugging layer
+
+		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+
+		void LogAdapterOutputs(IDXGIAdapter* adapter);
+
+		void LogAdapters();
+
+	public:
+
 		DX12GraphicsContext(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
 		DX12GraphicsContext(const DX12GraphicsContext&) = delete;
 		DX12GraphicsContext(DX12GraphicsContext&&) = delete;
@@ -46,14 +56,13 @@ namespace Engine
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
-		ComPtr<ID3D12PipelineState> CurrentPso = nullptr;
 
 
 		// @brief Heap descriptor for resources
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;
 		// @brief Heap descriptor for depth-stencil resource
 		ComPtr<ID3D12DescriptorHeap> DsvHeap;
-		// @brief Heap descriptor for constant buffer resource
+		// @brief Heap descriptor for constant buffers
 		ComPtr<ID3D12DescriptorHeap> CbvHeap;
 
 
@@ -68,6 +77,10 @@ namespace Engine
 		// @brief - Returns the size of the DSV descriptor size.
 		UINT32 GetDsvDescSize() const { return DsvDescriptorSize; }
 
+		// @brief - Returns the size of the CBV descriptor size.
+		UINT32 GetCbvDescSize() const { return CbvDescriptorSize; }
+
+
 		UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
 
 		bool GetMsaaState() const { return MsaaState; }
@@ -76,15 +89,14 @@ namespace Engine
 
 		INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 
+		UINT64 IncrimentSyncBetweenGPUAndCPU() { return ++GPU_TO_CPU_SYNC_COUNT; };
+		const UINT64 GetFenceSyncCount() const { return GPU_TO_CPU_SYNC_COUNT; }
 
 
-		// Debugging layer
+		UINT GetPassConstBufferViewOffset() const { return PassConstantBufferViewOffset; }
 
-		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
-
-		void LogAdapterOutputs(IDXGIAdapter* adapter);
-
-		void LogAdapters();
+		// @brief Create the descriptors for the constant buffer view and resource view.
+		bool CreateCBVAndSRVDescHeaps(UINT opaqueRenderItemCount, UINT frameResourceCount);
 
 	private:
 
@@ -102,7 +114,14 @@ namespace Engine
 		bool CheckMSAAQualityAndCache();
 
 		// @brief Creates descriptors for the depth-stencil, render texture and constant buffers.
-		bool CreateDsvRtvAndCbvDescriptorHeaps();
+		bool CreateDsvAndRtvDescriptorHeaps();
+
+		
+		// @brief - Represents the size of the CBV, SRV and UAV descriptor heaps.
+		UINT32 CbvSrvUavDescriptorSize;
+		// @brief Heap descriptor for constant buffer resource
+
+		UINT PassConstantBufferViewOffset;
 
 		bool BuildRootSignature();
 
@@ -113,8 +132,9 @@ namespace Engine
 		UINT32 RtvDescriptorSize;
 		// @brief - Represents the size of the DSV descriptor heap.
 		UINT32 DsvDescriptorSize;
-		// @brief - Represents the size of the CBV, SRV and UAV descriptor heaps.
-		UINT32 CbvSrvUavDescriptorSize;
+		// @brief - Represents the size of the CBV descriptor heap.
+		UINT32 CbvDescriptorSize;
+
 
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;

@@ -1,8 +1,10 @@
 #pragma once
 #include <Windows.h>
-#include "Framework/Renderer/VertexArray.h"
-#include "Framework/Renderer/Geometry.h"
-#include "Framework/Renderer/PipelineStateObject.h"
+
+#include "FrameResource.h"
+#include "VertexArray.h"
+#include "RenderItems.h"
+#include "PipelineStateObject.h"
 #include "Framework/Core/Core.h"
 
 namespace Engine
@@ -33,7 +35,7 @@ namespace Engine
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
-		virtual void SetClearColour(const float colour[4]) = 0;
+		virtual void SetClearColour(const float colour[4], PipelineStateObject* pso) = 0;
 
 		virtual void Flush() = 0;
 
@@ -43,7 +45,10 @@ namespace Engine
 
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
-		virtual void DrawIndexed(const RefPointer<Geometry>& geometry, INT32 indexCount = 0, PipelineStateObject* pso = nullptr) = 0;
+		virtual void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
+
+		virtual void DrawRenderItems(FrameResource* const frameResource, std::vector<RefPointer<RenderItem>>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) = 0;
+
 
 		static Api GetAPI() { return RenderingApi; }
 

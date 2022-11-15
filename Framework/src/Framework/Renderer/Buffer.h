@@ -1,10 +1,15 @@
 #pragma once
 #include "Framework/Core/Log/Log.h"
+#include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Camera/MainCamera.h"
+
+
 namespace Engine
 {
 
 	class GraphicsContext;
+	class RenderItem;
+	class FrameResource;
 
 	enum class ShaderDataType
 	{
@@ -158,12 +163,12 @@ namespace Engine
 
 		virtual void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) = 0;
 
-		virtual inline void SetLayout(const BufferLayout& layout) = 0;
+		virtual void SetLayout(const BufferLayout& layout) = 0;
 
-		virtual inline const BufferLayout& GetLayout() const = 0;
+		virtual const BufferLayout& GetLayout() const = 0;
 
-		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, UINT size);
-		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size);
+		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, UINT size, UINT vertexCount);
+		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size, UINT vertexCount);
 
 	};
 
@@ -182,23 +187,26 @@ namespace Engine
 	};
 
 
-	class UploadBuffer
+	class UploadBufferManager
 	{
 	public:
-		virtual ~UploadBuffer() = default;
+
+		virtual ~UploadBufferManager() = default;
 
 		virtual void Bind() const = 0;
 
 		virtual void UnBind() const = 0;
 
-		virtual void Update(MainCamera& camera) = 0;
+		virtual void Update(const MainCamera& camera, const AppTimeManager& appTimeManager) = 0;
+
+		virtual void UpdateConstantBuffer(std::vector<RefPointer<RenderItem>> items) = 0;
 
 		virtual const INT32 GetCount() const = 0;
 
-		static RefPointer<UploadBuffer> Create(GraphicsContext* const graphicsContext, UINT count, bool isConstant);
+		virtual void CreateMainPassConstBuffer(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount) = 0;
 
-	protected:
-		
+		static RefPointer<UploadBufferManager> Create(GraphicsContext* const graphicsContext, FrameResource* const frameResources, UINT count, bool isConstant, UINT frameResourceCount, UINT renderItemsCount);
+
 	};
 
 }

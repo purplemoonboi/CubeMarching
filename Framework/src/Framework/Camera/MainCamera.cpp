@@ -7,30 +7,36 @@ namespace Engine
 
 
 	MainCamera::MainCamera(float width, float height, float nearPlane, float farPlane, float fov)
-		:
+			:
 		    DistanceToTarget(5.0f),
 			Phi(DirectX::XM_PIDIV4),
 			Theta(DirectX::XM_PI * 1.5f),
 			AspectRatio(width/height),
 			NearPlane(nearPlane),
 			FarPlane(farPlane),
-			Fov(fov)
+			Fov(fov),
+			ViewportWidthHeight(width, height)
 	{
-		float as = (width / height);
-		// The window resized, so update the aspect ratio and recompute the projection matrix.
-		DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(fov,as, nearPlane, farPlane);
+		/**
+		 *The window resized, so update the aspect ratioand recompute the projection matrix.
+		 */ 
+		DirectX::XMMATRIX P = DirectX::XMMatrixPerspectiveFovLH(fov, (width / height), nearPlane, farPlane);
 		DirectX::XMStoreFloat4x4(&Proj, P);
 	}
 
-	void MainCamera::Update(const float deltaTime)
+	void MainCamera::Update(const AppTimeManager& deltaTime)
 	{
-		// Convert Spherical to Cartesian coordinates.
-		float x = DistanceToTarget * sinf(Phi) * cosf(Theta);
-		float z = DistanceToTarget * sinf(Phi) * sinf(Theta);
-		float y = DistanceToTarget * cosf(Phi);
+		/**
+		 *	Convert Spherical to Cartesian coordinates.
+		 */ 
+		const float x = DistanceToTarget * sinf(Phi) * cosf(Theta);
+		const float z = DistanceToTarget * sinf(Phi) * sinf(Theta);
+		const float y = DistanceToTarget * cosf(Phi);
 
 
-		// Build the view matrix.
+		/**
+		 * Build the view matrix.
+		 */
 		Position	= DirectX::XMVectorSet(x, y, z, 1.0f);
 		Target		= DirectX::XMVectorZero();
 		Up			= DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -42,8 +48,6 @@ namespace Engine
 		DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&World);
 		DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&Proj);
 		WorldViewProj = world * view * proj;
-
-
 	}
 
 	void MainCamera::SetPosition(float x, float y, float z)

@@ -1,97 +1,10 @@
 #pragma once
-#include "Buffer.h"
-#include "Framework/Core/core.h"
+#include "Platform/DirectX12/DirectX12.h"
 
+#include <vector>
 
 namespace Engine
 {
-
-	// Defines a sub-range of geometry in a MeshGeometry.  This is for when multiple
-	// geometries are stored in one vertex and index buffer.  It provides the offsets
-	// and data needed to draw a subset of geometry stores in the vertex and index 
-	// buffers so that we can implement the technique described by Figure 6.3.
-	struct SubGeometry
-	{
-		UINT IndexCount = 0;
-		UINT StartIndexLocation = 0;
-		INT BaseVertexLocation = 0;
-
-		// Bounding box of the geometry defined by this submesh. 
-		// This is used in later chapters of the book.
-		//DirectX::BoundingBox Bounds;
-	};
-
-
-	struct Geometry
-	{
-	
-
-		Geometry(const std::string& name)
-			:
-			Name(name),
-			VertexBuffer(nullptr),
-			IndexBuffer(nullptr)
-		{}
-
-		Geometry(std::string&& name)
-			:
-			Name(std::move(name)),
-			VertexBuffer(nullptr),
-			IndexBuffer(nullptr)
-		{}
-
-
-
-		static RefPointer<Geometry> Create(std::string&& name)
-		{
-			return CreateRef<Geometry>(name);
-		}
-
-		// @brief Returns the name of the mesh
-		const std::string& GetName() const { return Name; }
-
-		// @brief Contains the vertex data for drawing the mesh
-		RefPointer<VertexBuffer> VertexBuffer;
-		// @brief Contains the indices for drawing the mesh
-		RefPointer<IndexBuffer> IndexBuffer;
-
-		// A MeshGeometry may store multiple geometries in one vertex/index buffer.
-		// Use this container to define the Submesh geometries so we can draw
-		// the Submeshes individually.
-		std::unordered_map<std::string, SubGeometry> DrawArgs;
-
-	private:
-		// Give it a name so we can look it up by name.
-		std::string Name;
-	};
-
-	constexpr INT32 NUM_OF_RESOURCES = 3;
-
-	// Lightweight structure stores parameters to draw a shape.  This will
-	// vary from app-to-app.
-	struct RenderItem
-	{
-		RenderItem() = default;
-		virtual ~RenderItem() = default;
-
-		// Dirty flag indicating the object data has changed and we need to update the constant buffer.
-		// Because we have an object cbuffer for each FrameResource, we have to apply the
-		// update to each FrameResource.  Thus, when we modify obect data we should set 
-		// NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
-		int NumFramesDirty = NUM_OF_RESOURCES;
-
-		// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
-		UINT ObjectConstantBufferIndex = -1;
-
-		// A unique pointer to geometry
-		ScopePointer<Geometry> Geometry;
-
-		// DrawIndexedInstanced parameters.
-		UINT IndexCount = 0;
-		UINT StartIndexLocation = 0;
-		INT32 BaseVertexLocation = 0;
-	};
-
 	class GeometryGenerator
 	{
 	public:
@@ -188,7 +101,6 @@ namespace Engine
 		void BuildCylinderTopCap(float bottomRadius, float topRadius, float height, UINT32 sliceCount, UINT32 stackCount, MeshData& meshData);
 		void BuildCylinderBottomCap(float bottomRadius, float topRadius, float height, UINT32 sliceCount, UINT32 stackCount, MeshData& meshData);
 	};
-
 
 
 }

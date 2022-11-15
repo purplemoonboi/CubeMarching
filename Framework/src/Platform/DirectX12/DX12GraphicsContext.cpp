@@ -32,7 +32,7 @@ namespace Engine
 
 		CreateCommandObjects();
 		CreateSwapChain();
-		CreateDsvRtvAndCbvDescriptorHeaps();
+		CreateDsvAndRtvDescriptorHeaps();
 
 		BuildRootSignature();
 	}
@@ -107,9 +107,7 @@ namespace Engine
 
 		DsvDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 		RtvDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-		CbvSrvUavDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-
+		CbvDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 
 		return true;
@@ -175,7 +173,7 @@ namespace Engine
 		return true;
 	}
 
-	bool DX12GraphicsContext::CreateDsvRtvAndCbvDescriptorHeaps()
+	bool DX12GraphicsContext::CreateDsvAndRtvDescriptorHeaps()
 	{
 		// Resource 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
@@ -205,9 +203,25 @@ namespace Engine
 		));
 
 
-		// Const buffer
+
+		return true;
+
+	}
+
+	bool DX12GraphicsContext::CreateCBVAndSRVDescHeaps(UINT opaqueRenderItemCount, UINT frameResourceCount)
+	{
+
+		UINT objCount = opaqueRenderItemCount;
+
+		// Need a CBV descriptor for each object for each frame resource,
+		// +1 for the perPass CBV for each frame resource.
+		UINT numDescriptors = (objCount + 1) * 3;
+
+		// Save an offset to the start of the pass CBVs.  These are the last 3 descriptors.
+		PassConstantBufferViewOffset = objCount * frameResourceCount;
+
 		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-		cbvHeapDesc.NumDescriptors = 1;
+		cbvHeapDesc.NumDescriptors = numDescriptors;
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.NodeMask = 0;
@@ -216,14 +230,11 @@ namespace Engine
 		(
 			Device->CreateDescriptorHeap
 			(
-				&cbvHeapDesc, 
+				&cbvHeapDesc,
 				IID_PPV_ARGS(&CbvHeap)
 			)
 		);
-
-		return true;
 	}
-
 
 	bool DX12GraphicsContext::CreateSwapChain()
 	{
@@ -398,11 +409,6 @@ namespace Engine
 	D3D12_CPU_DESCRIPTOR_HANDLE DX12GraphicsContext::DepthStencilView() const
 	{
 		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
-	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE DX12GraphicsContext::ConstantBufferView() const
-	{
-		return CbvHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
 

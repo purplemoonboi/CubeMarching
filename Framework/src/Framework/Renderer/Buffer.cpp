@@ -9,7 +9,7 @@
 
 namespace Engine
 {
-	RefPointer<VertexBuffer> VertexBuffer::Create(GraphicsContext* const graphicsContext, UINT size)
+	RefPointer<VertexBuffer> VertexBuffer::Create(GraphicsContext* const graphicsContext, UINT size, UINT vertexCount)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -24,7 +24,7 @@ namespace Engine
 		return nullptr;
 	}
 
-	RefPointer<VertexBuffer> VertexBuffer::Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size)
+	RefPointer<VertexBuffer> VertexBuffer::Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size, UINT vertexCount)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -54,7 +54,7 @@ namespace Engine
 		return nullptr;
 	}
 
-	RefPointer<UploadBuffer> UploadBuffer::Create(GraphicsContext* const graphicsContext, UINT count, bool isConstant)
+	RefPointer<UploadBufferManager> UploadBufferManager::Create(GraphicsContext* const graphicsContext, FrameResource* const frameResources, UINT count, bool isConstant, UINT frameResourceCount, UINT renderItemsCount)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -62,7 +62,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   return CreateRef<DX12UploadBufferManager>(graphicsContext, count, isConstant);
+		case RendererAPI::Api::DX12:   return CreateRef<DX12UploadBufferManager>(graphicsContext, frameResources, count, isConstant, frameResourceCount, renderItemsCount);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

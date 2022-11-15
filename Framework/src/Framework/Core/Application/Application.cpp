@@ -52,7 +52,7 @@ namespace Engine
 	{
 		MSG message = { 0 };
 
-		Timer.Reset();
+		AppTimer.Reset();
 
 		while(message.message != WM_QUIT)
 		{
@@ -69,20 +69,20 @@ namespace Engine
 
 				if (!Window.IsWndMinimised() && IsRunning)
 				{
-					Timer.Tick();
+					AppTimer.Tick();
 
 					UpdateTimer();
 
 					//Update each layer
 					for(Layer* layer : LayerStack)
 					{
-						layer->OnUpdate(Timer.GetSeconds());
+						layer->OnUpdate(AppTimer);
 					}
 
 					//Render each layer
 					for(Layer* layer : LayerStack)
 					{
-						layer->OnRender();
+						layer->OnRender(AppTimer);
 					}
 				}
 			}
@@ -126,7 +126,7 @@ namespace Engine
 		frameCnt++;
 
 		// Compute averages over one second period.
-		if ((Timer.TimeElapsed() - timeElapsed) >= 1.0f)
+		if ((AppTimer.TimeElapsed() - timeElapsed) >= 1.0f)
 		{
 			float fps = (float)frameCnt; // fps = frameCnt / 1
 			float mspf = 1000.0f / fps;

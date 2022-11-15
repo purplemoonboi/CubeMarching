@@ -1,37 +1,47 @@
 #pragma once
 #include <intsafe.h>
 #include "Framework/Camera/MainCamera.h";
-
+#include "Framework/Core/Time/AppTimeManager.h"
 
 namespace Engine
 {
 
 	class RendererApi;
+	class GraphicsContext;
 
 	class Renderer3D
 	{
 	public:
 
+		// @brief - Resets command lists for Apis such as DirectX12 and Vulkan
+		static void PreInit();
+
 		// @brief - Initialises descriptions of vertex buffer.
 		static void Init();
+
+		// @brief - Closes command lists for Apis such as DirectX12 and Vulkan
+		static void PostInit();
 
 		// @brief - Cleans the rendering system.
 		static void Shutdown();
 
 		// @brief - Marks the start of rendering commands.
 		//		
-		static void BeginScene(MainCamera& cam);
+		static void BeginScene(const MainCamera& cam, const AppTimeManager& appTimeManager);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
 		//			calculated for rendering.
 		static void EndScene();
 
+		//TODO: THINK ABOUT MOVING THIS, DOESN'T SEEM RIGHT TO HAVE IT HERE
+		// @brief - Build the frame resources for the scene
+		static void BuildFrameResources(GraphicsContext* graphicsContext);
 
+		//TODO: SIMILARLY MAYBE NOT HAVE THIS HERE
+		// @brief - Build the objects which will be rendered to the buffer.
+		static void BuildRenderItems(GraphicsContext* graphicsContext);
 
-		//TODO: Don't use this function!
-		// @brief - For now this will render a colour to the viewport.
-		static void DrawDemoBox();
 
 		struct RenderingStats
 		{
@@ -46,7 +56,6 @@ namespace Engine
 		};
 
 		//static RenderingStats& GetRenderingStats();
-
 
 
 	};

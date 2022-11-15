@@ -23,7 +23,8 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			const std::string& vertexShader,
 			const std::string& pixelShader,
-			const BufferLayout& layout
+			const BufferLayout& layout,
+			FillMode fillMode
 		);
 
 
@@ -32,7 +33,8 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			Shader* vertexShader,
 			Shader* pixelShader,
-			const BufferLayout& layout
+			const BufferLayout& layout,
+			FillMode fillMode 
 		);
 
 
