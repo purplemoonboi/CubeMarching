@@ -27,8 +27,8 @@ namespace Engine
 
 		// We cannot update a cbuffer until the GPU is done processing the commands
 		// that reference it.  So each frame needs their own cbuffers.
-		RefPointer<DX12UploadBuffer<PassConstants>> PassBuffer = nullptr;
-		RefPointer<DX12UploadBuffer<ObjectConstant>> ConstantBuffer = nullptr;
+		ScopePointer<DX12UploadBuffer<PassConstants>> PassBuffer = nullptr;
+		ScopePointer<DX12UploadBuffer<ObjectConstant>> ConstantBuffer = nullptr;
 
 		// Fence value to mark commands up to this fence point.  This lets us
 		// check if these frame resources are still in use by the GPU.

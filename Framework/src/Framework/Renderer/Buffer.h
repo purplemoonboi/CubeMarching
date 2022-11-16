@@ -6,6 +6,7 @@
 
 namespace Engine
 {
+	class DeltaTime;
 
 	class GraphicsContext;
 	class RenderItem;
@@ -197,15 +198,27 @@ namespace Engine
 
 		virtual void UnBind() const = 0;
 
-		virtual void Update(const MainCamera& camera, const AppTimeManager& appTimeManager) = 0;
+		virtual void Update(const MainCamera& camera, const DeltaTime& appTimeManager) = 0;
 
-		virtual void UpdateConstantBuffer(std::vector<RefPointer<RenderItem>> items) = 0;
+		virtual void UpdateConstantBuffer(std::vector<RenderItem*> items) = 0;
+
+		virtual void UpdateCurrentFrameResource(FrameResource* const frameResource) = 0;
+
+		virtual FrameResource* GetCurrentFrameResource() const = 0;
 
 		virtual const INT32 GetCount() const = 0;
 
 		virtual void CreateMainPassConstBuffer(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount) = 0;
 
-		static RefPointer<UploadBufferManager> Create(GraphicsContext* const graphicsContext, FrameResource* const frameResources, UINT count, bool isConstant, UINT frameResourceCount, UINT renderItemsCount);
+		static RefPointer<UploadBufferManager> Create
+		(
+			GraphicsContext* const graphicsContext, 
+			ScopePointer<FrameResource>* const frameResources, 
+			UINT count, 
+			bool isConstant, 
+			UINT frameResourceCount, 
+			UINT renderItemsCount
+		);
 
 	};
 

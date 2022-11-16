@@ -98,6 +98,11 @@ namespace Engine
 		// @brief Create the descriptors for the constant buffer view and resource view.
 		bool CreateCBVAndSRVDescHeaps(UINT opaqueRenderItemCount, UINT frameResourceCount);
 
+
+		// @brief Tracks the number of syncs between CPU and GPU.
+		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;
+
+		bool BuildRootSignatureUsingCBVTables(UINT numberOfSlots = 1);
 	private:
 
 		// @brief Creates the command object responsible for recording commands to be sent to the
@@ -126,8 +131,6 @@ namespace Engine
 		bool BuildRootSignature();
 
 
-		bool BuildRootSignatureUsingCBVTables(UINT numberOfSlots = 1);
-
 		// @brief - Represents the size of the RTV descriptor heap.
 		UINT32 RtvDescriptorSize;
 		// @brief - Represents the size of the DSV descriptor heap.
@@ -136,8 +139,6 @@ namespace Engine
 		UINT32 CbvDescriptorSize;
 
 
-		// @brief Tracks the number of syncs between CPU and GPU.
-		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;
 
 
 		// @brief Index to the current back buffer

@@ -28,11 +28,6 @@ namespace Engine
 			RendererApiPtr->SetClearColour(colour, pso);
 		}
 
-		static void Flush()
-		{
-			RendererApiPtr->Flush();
-		}
-
 		static void ResetGraphicsCommandList()
 		{
 			RendererApiPtr->ResetCommandList();
@@ -41,6 +36,16 @@ namespace Engine
 		static void ExecGraphicsCommandList()
 		{
 			RendererApiPtr->ExecCommandList();
+		}
+
+		static void Flush()
+		{
+			RendererApiPtr->Flush();
+		}
+
+		static void UpdateFrameResource(FrameResource* frameResource)
+		{
+			RendererApiPtr->UpdateFrameResource(frameResource);
 		}
 
 		static void DrawDemoScene()
@@ -60,10 +65,12 @@ namespace Engine
 			RendererApiPtr->DrawIndexed(geometry, count);
 		}
 
-		static void DrawRenderItems(FrameResource* const frameResource, std::vector<RefPointer<RenderItem>>& renderItems, UINT currentFrameResourceIndex = 0, UINT opaqueItemCount = 0)
+		static void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex = 0, UINT opaqueItemCount = 0)
 		{
-			RendererApiPtr->DrawRenderItems(frameResource, renderItems, currentFrameResourceIndex, opaqueItemCount);
+			RendererApiPtr->DrawRenderItems(renderItems, currentFrameResourceIndex, opaqueItemCount);
 		}
+
+
 
 	private:
 

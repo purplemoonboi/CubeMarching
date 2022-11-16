@@ -15,7 +15,7 @@ namespace Engine
 		(
 			float X, float Y, float Z, 
 			float RX = 0.0f, float RY = 0.0f, float RZ = 0.0f, 
-			float SX = 0.0f, float SY = 0.0f, float SZ = 0.0f
+			float SX = 1.0f, float SY = 1.0f, float SZ = 1.0f
 		)
 			:
 			X(X),   Y(Y),   Z(Z),
@@ -39,7 +39,7 @@ namespace Engine
 		RenderItem() = default;
 		virtual ~RenderItem() = default;
 
-		static RefPointer<RenderItem> Create(const RefPointer<MeshGeometry> geometry, std::string&& drawArgs, UINT constantBufferIndex, Transform&& transform);
+		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, std::string&& drawArgs, UINT constantBufferIndex, Transform transform);
 
 		// Dirty flag indicating the object data has changed and we need to update the constant buffer.
 		// Because we have an object cbuffer for each FrameResource, we have to apply the
@@ -50,8 +50,8 @@ namespace Engine
 		// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
 		UINT ObjectConstantBufferIndex = -1;
 
-		// A unique pointer to geometry
-		RefPointer<MeshGeometry> Geometry;
+		// A raw pointer to geometry
+		MeshGeometry* Geometry;
 
 		// DrawIndexedInstanced parameters.
 		UINT IndexCount = 0;

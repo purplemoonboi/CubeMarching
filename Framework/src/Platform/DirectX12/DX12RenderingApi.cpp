@@ -3,10 +3,7 @@
 #include "DX12Buffer.h"
 #include "DX12RenderingApi.h"
 #include "DX12Shader.h"
-#include "DX12FrameResource.h"
 #include "DX12RenderItem.h"
-#include "DX12FrameBuffer.h"
-#include "DX12GraphicsContext.h"
 #include "DX12PipelineStateObject.h"
 
 #include "Framework/Core/Log/Log.h"
@@ -59,102 +56,6 @@ namespace Engine
 		}
 	}
 
-	void DX12RenderingApi::SetClearColour(const float colour[4], PipelineStateObject* pso)
-	{
-
-		CORE_ASSERT(GraphicsContext->Device, "Device lost");
-		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
-		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
-
-		const auto dx12Pso = dynamic_cast<DX12PipelineStateObject*>(pso);
-
-		// Reset the command allocator
-		GraphicsContext->CmdListAlloc->Reset();
-
-		// Reset the command list
-		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset
-		(
-			GraphicsContext->CmdListAlloc.Get(),
-			dx12Pso->GetPipelineState()
-		);
-
-		THROW_ON_FAILURE(cmdReset);
-
-		// Reset the viewport and scissor rect whenever the command list is empty.
-		GraphicsContext->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
-		GraphicsContext->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
-
-		// Indicate there will be a transition made to the resource.
-		GraphicsContext->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				GraphicsContext->CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_PRESENT,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			)
-		);
-
-
-		//ExecCommandList the back buffer 
-		GraphicsContext->GraphicsCmdList->ClearRenderTargetView
-		(
-			GraphicsContext->CurrentBackBufferView(),
-			DirectX::Colors::Aquamarine,
-			0,
-			nullptr
-		);
-
-		// ExecCommandList the depth buffer
-		GraphicsContext->GraphicsCmdList->ClearDepthStencilView
-		(
-			GraphicsContext->DepthStencilView(),
-			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.0f,
-			0,
-			0,
-			nullptr
-		);
-
-		// Set the render targets descriptors
-		GraphicsContext->GraphicsCmdList->OMSetRenderTargets
-		(
-			1,
-			&GraphicsContext->CurrentBackBufferView(),
-			true,
-			&GraphicsContext->DepthStencilView()
-		);
-
-		// Set the descriptors for the memory and the root signature
-		ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
-		GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
-
-	}
-
-	void DX12RenderingApi::Flush()
-	{
-		// Done recording commands.
-		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Close());
-
-		// Add the command list to the queue for execution.
-		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
-		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-		// Swap the back and front buffers
-		THROW_ON_FAILURE(GraphicsContext->SwapChain->Present(0, 0));
-		auto index = GraphicsContext->GetBackBufferIndex();
-		GraphicsContext->UpdateBackBufferIndex((index + 1) % SWAP_CHAIN_BUFFER_COUNT);
-
-		// Advance the fence value to mark commands up to this fence point.
-		//CurrentFrameResource->Fence = GraphicsContext->IncrimentSyncBetweenGPUAndCPU();
-
-		// Add an instruction to the command queue to set a new fence point. 
-		// Because we are on the GPU timeline, the new fence point won't be 
-		// set until the GPU finishes processing all the commands prior to this Signal().
-		GraphicsContext->CommandQueue->Signal(GraphicsContext->Fence.Get(), GraphicsContext->GetFenceSyncCount());
-	}
 
 	void DX12RenderingApi::ResetCommandList()
 	{
@@ -173,52 +74,9 @@ namespace Engine
 
 		THROW_ON_FAILURE(cmdReset);
 
-	}
-
-	void DX12RenderingApi::DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount)
-	{
-
-
-		//// Set the render targets descriptors
-		//GraphicsContext->GraphicsCmdList->OMSetRenderTargets
-		//(
-		//	1,
-		//	&GraphicsContext->CurrentBackBufferView(),
-		//	true,
-		//	&GraphicsContext->DepthStencilView()
-		//);
-
-		//// Set the descriptors for the memory and the root signature
-		//ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
-		//GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-		//HRESULT cb = GraphicsContext->Device->GetDeviceRemovedReason();
-		//THROW_ON_FAILURE(cb);
-
-		//GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
-
-
-		//auto vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VertexBuffer.get());
-		//auto indexBuffer  = dynamic_cast<DX12IndexBuffer*>(geometry->IndexBuffer.get());
-
-
-		//GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vertexBuffer->GetVertexBufferView());
-		//GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&indexBuffer->GetIndexBufferView());
-		//GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		//GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
-
-
-		//GraphicsContext->GraphicsCmdList->DrawIndexedInstanced
-		//(
-		//	geometry->DrawArgs["Box"].IndexCount,
-		//	1,
-		//	0,
-		//	0,
-		//	0
-		//);
 
 	}
+
 
 	void DX12RenderingApi::ExecCommandList()
 	{
@@ -237,17 +95,53 @@ namespace Engine
 		GraphicsContext->FlushCommandQueue();
 	}
 
-	void DX12RenderingApi::DrawRenderItems(FrameResource* const frameResource, std::vector<RefPointer<RenderItem>>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount)
+	void DX12RenderingApi::UpdateFrameResource(FrameResource* const frameResource)
 	{
 
+		CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource);
 
-		INT32 passCbvIndex = GraphicsContext->GetPassConstBufferViewOffset() + currentFrameResourceIndex;
-		auto passCbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
-		passCbvHandle.Offset(passCbvIndex, GraphicsContext->GetCbvDescSize());
-		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(1, passCbvHandle);
+		// Has the GPU finished processing the commands of the current frame resource?
+		// If not, wait until the GPU has completed commands up to this fence point.
+		if (CurrentFrameResource->Fence != 0 && GraphicsContext->Fence->GetCompletedValue() < CurrentFrameResource->Fence)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			THROW_ON_FAILURE(GraphicsContext->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle));
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
 
-		auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResource);
-		auto objectCB = dx12FrameResource->ConstantBuffer->Resource();
+
+	}
+
+	void DX12RenderingApi::SetClearColour(const float colour[4], PipelineStateObject* pso)
+	{
+		CORE_ASSERT(GraphicsContext->Device, "Device lost");
+		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
+		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
+
+
+		/*
+		 * Reset current frame resource command allocator
+		 */
+		auto cmdListAlloc = CurrentFrameResource->CmdListAlloc;
+		THROW_ON_FAILURE(cmdListAlloc->Reset());
+
+
+
+		const auto dx12Pso = dynamic_cast<DX12PipelineStateObject*>(pso);
+		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset(cmdListAlloc.Get(), dx12Pso->GetPipelineState());
+		THROW_ON_FAILURE(cmdReset);
+
+
+
+
+		// Reset the viewport and scissor rect whenever the command list is empty.
+		GraphicsContext->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
+		GraphicsContext->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
+
+
+
 
 		// Indicate there will be a transition made to the resource.
 		GraphicsContext->GraphicsCmdList->ResourceBarrier
@@ -260,17 +154,85 @@ namespace Engine
 				D3D12_RESOURCE_STATE_RENDER_TARGET
 			)
 		);
-		
+
+
+
+
+
+		//ExecCommandList the back buffer 
+		GraphicsContext->GraphicsCmdList->ClearRenderTargetView
+		(
+			GraphicsContext->CurrentBackBufferView(),
+			DirectX::Colors::Aquamarine,
+			0,
+			nullptr
+		);
+
+
+
+		// ExecCommandList the depth buffer
+		GraphicsContext->GraphicsCmdList->ClearDepthStencilView
+		(
+			GraphicsContext->DepthStencilView(),
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.0f,
+			0,
+			0,
+			nullptr
+		);
+
+
+
+
+		// Set the render targets descriptors
+		GraphicsContext->GraphicsCmdList->OMSetRenderTargets
+		(
+			1,
+			&GraphicsContext->CurrentBackBufferView(),
+			true,
+			&GraphicsContext->DepthStencilView()
+		);
+
+
+
+
+		// Set the descriptors for the memory and the root signature
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
+		GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
+
+
+
+	}
+
+
+	void DX12RenderingApi::DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount)
+	{
+
+		/**
+		 *
+		 *	 We offset to the respective pass buffer and set the root
+		 *	 argument to use *that* pass buffer.
+		 *
+		 */
+		INT32 passConstantBufferIndex = GraphicsContext->GetPassConstBufferViewOffset() + currentFrameResourceIndex;
+		auto passCbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
+		auto size = GraphicsContext->GetCbvDescSize();
+		passCbvHandle.Offset(passConstantBufferIndex, size);
+		/**
+		*	The pass buffer is *bound* to the 1st register.
+		*/
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(1, passCbvHandle);
+
+
 		// For each render item...
 		for (size_t i = 0; i < renderItems.size(); ++i)
 		{
-			const auto renderItem = dynamic_cast<DX12RenderItem*>(renderItems[i].get());
+			const auto renderItem = dynamic_cast<DX12RenderItem*>(renderItems[i]);
 
-			DX12VertexBuffer* dx12VertexBuffer = nullptr;
-			DX12IndexBuffer*  dx12IndexBuffer  = nullptr;
-
-			dx12VertexBuffer = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VBuffer.get());
-			dx12IndexBuffer  = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IBuffer.get());
+			
+			DX12VertexBuffer* dx12VertexBuffer  = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VBuffer.get());
+			DX12IndexBuffer*  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IBuffer.get());
 
 			/** bind the vertex and index array */
 			GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &dx12VertexBuffer->GetVertexBufferView());
@@ -279,9 +241,21 @@ namespace Engine
 
 			// Offset to the CBV in the descriptor heap for this object and for this frame resource.
 			UINT cbvIndex = currentFrameResourceIndex * opaqueItemCount + renderItem->ObjectConstantBufferIndex;
-			auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
-			cbvHandle.Offset(cbvIndex, GraphicsContext->GetCbvDescSize());
 
+
+			/**
+			 *
+			 *	 Simialrly, we need to get the respective constant buffer.
+			 *	 Again we apply the offset based on our current frame resource.
+			 *
+			 */
+			auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
+			auto size = GraphicsContext->GetCbvDescSize();
+			cbvHandle.Offset(cbvIndex, size);
+
+			/**
+			 *	The constant buffer is *bound* to the 0th register.
+			 */
 			GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, cbvHandle);
 
 			GraphicsContext->GraphicsCmdList->DrawIndexedInstanced
@@ -294,6 +268,12 @@ namespace Engine
 			);
 		}
 
+
+
+	}
+
+	void DX12RenderingApi::Flush()
+	{
 		// Now instruct we have made the changes to the buffer
 		GraphicsContext->GraphicsCmdList->ResourceBarrier
 		(
@@ -306,7 +286,80 @@ namespace Engine
 			)
 		);
 
+		// Done recording commands.
+		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Close());
+
+		// Add the command list to the queue for execution.
+		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
+		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+		// Swap the back and front buffers
+		THROW_ON_FAILURE(GraphicsContext->SwapChain->Present(0, 0));
+		auto index = GraphicsContext->GetBackBufferIndex();
+		GraphicsContext->UpdateBackBufferIndex((index + 1) % SWAP_CHAIN_BUFFER_COUNT);
+
+		// Advance the fence value to mark commands up to this fence point.
+		CurrentFrameResource->Fence = ++GraphicsContext->GPU_TO_CPU_SYNC_COUNT;
+
+		// Add an instruction to the command queue to set a new fence point. 
+		// Because we are on the GPU timeline, the new fence point won't be 
+		// set until the GPU finishes processing all the commands prior to this Signal().
+		GraphicsContext->CommandQueue->Signal(GraphicsContext->Fence.Get(), GraphicsContext->GPU_TO_CPU_SYNC_COUNT);
 	}
 
-	
+
+
+
+
+
+
+
+
+
+
+	void DX12RenderingApi::DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount)
+	{
+
+
+		// Set the render targets descriptors
+		GraphicsContext->GraphicsCmdList->OMSetRenderTargets
+		(
+			1,
+			&GraphicsContext->CurrentBackBufferView(),
+			true,
+			&GraphicsContext->DepthStencilView()
+		);
+
+		// Set the descriptors for the memory and the root signature
+		ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
+		GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+		HRESULT cb = GraphicsContext->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(cb);
+
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
+
+
+		auto vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VBuffer.get());
+		auto indexBuffer = dynamic_cast<DX12IndexBuffer*>(geometry->IBuffer.get());
+
+
+		GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vertexBuffer->GetVertexBufferView());
+		GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&indexBuffer->GetIndexBufferView());
+		GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
+
+
+		GraphicsContext->GraphicsCmdList->DrawIndexedInstanced
+		(
+			geometry->DrawArgs["Box"].IndexCount,
+			1,
+			0,
+			0,
+			0
+		);
+
+	}
+
 }

@@ -76,13 +76,13 @@ namespace Engine
 					//Update each layer
 					for(Layer* layer : LayerStack)
 					{
-						layer->OnUpdate(AppTimer);
+						layer->OnUpdate(AppTimer.DeltaTime());
 					}
 
 					//Render each layer
 					for(Layer* layer : LayerStack)
 					{
-						layer->OnRender(AppTimer);
+						layer->OnRender(AppTimer.DeltaTime());
 					}
 				}
 			}

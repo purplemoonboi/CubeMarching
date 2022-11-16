@@ -103,7 +103,7 @@ namespace Engine
 		DX12UploadBufferManager
 		(
 			GraphicsContext* const graphicsContext,
-			FrameResource* const frameResources,
+			ScopePointer<FrameResource>* const frameResources,
 			UINT count, 
 			bool isConstant, 
 			UINT frameResourceCount, 
@@ -123,35 +123,28 @@ namespace Engine
 
 		void UnBind() const override;
 
-		void Update(const MainCamera& camera, const AppTimeManager& appTimeManager) override;
+		void Update(const MainCamera& camera, const DeltaTime& appTimeManager) override;
 
-		void UpdateConstantBuffer(std::vector<RefPointer<RenderItem>> items) override;
+		void UpdateConstantBuffer(std::vector<RenderItem*> items) override;
 
 		const INT32 GetCount() const override;
 
-		// @brief - Update the pass constant buffer offset value.
-		void UpdatePassConstBufferOffset(UINT32 newOffset) { PassConstantBufferOffset = newOffset; }
-
-		// @brief - Returns the pass constant buffer offset
-		UINT32 GetPassConstBufferOffset() const { return PassConstantBufferOffset; }
 
 
 		// @brief - Updates the current frame resource.
-		void UpdateCurrentFrameResource(FrameResource* const frameResource) { CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource); }
+		void UpdateCurrentFrameResource(FrameResource* const frameResource) override { CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource); }
 
 		// @brief - Returns a raw pointer to the frame resource.
-		FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
+		FrameResource* GetCurrentFrameResource() const override { return CurrentFrameResource; }
 
 	private:
 
 		// @brief - Keeps track of the current frame resource being updated.
 		DX12FrameResource* CurrentFrameResource = nullptr;
 
-		// @brief - Offset into the main pass constant buffer.
-		UINT32 PassConstantBufferOffset = 0;
 
 		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.
-		RefPointer<PassConstants> MainPassConstantBuffer;
+		PassConstants MainPassConstantBuffer;
 
 	};
 

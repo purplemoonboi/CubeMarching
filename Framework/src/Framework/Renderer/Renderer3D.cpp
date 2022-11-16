@@ -33,11 +33,13 @@ namespace Engine
 
 		std::unordered_map<std::string, RefPointer<MeshGeometry>> Geometries;
 
-		RefPointer<FrameResource> ActiveFrameResource;
+		FrameResource* ActiveFrameResource;
+		UINT32 CurrentFrameResourceIndex = 0;
 
-		std::vector<RefPointer<FrameResource>> FrameResources;
-		std::vector<RefPointer<RenderItem>> RenderItems;
-		std::vector<RefPointer<RenderItem>> OpaqueRenderItems;
+
+		std::vector<ScopePointer<FrameResource>> FrameResources;
+		std::vector<ScopePointer<RenderItem>> RenderItems;
+		std::vector<RenderItem*> OpaqueRenderItems;
 
 
 		RefPointer<UploadBufferManager> UploadBufferManager;
@@ -46,7 +48,6 @@ namespace Engine
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
 
-		UINT32 CurrentFrameResourceIndex = 0;
 
 
 		// Struct capturing performance
@@ -76,12 +77,15 @@ namespace Engine
 
 	void Renderer3D::Init()
 	{
+		
 
 		/** build and compile shaders */
-		RenderData.VertexShader = Shader::Create(L"assets\\shaders\\color.hlsl", "VS", "vs_5_0");
-		RenderData.PixelShader = Shader::Create(L"assets\\shaders\\color.hlsl", "PS", "ps_5_0");
+		RenderData.VertexShader = Shader::Create(L"assets\\shaders\\color.hlsl", "VS", "vs_5_1");
+		RenderData.PixelShader = Shader::Create(L"assets\\shaders\\color.hlsl", "PS", "ps_5_1");
 
-		RenderData.ShaderLib.Add("vertex_shader", RenderData.VertexShader);
+	//	RenderData.ShaderLib.Add("vertex_shader", RenderData.VertexShader);
+
+		/**  Build the scene geometry  */
 
 		GeometryGenerator geoGen;
 		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 3);
@@ -173,8 +177,6 @@ namespace Engine
 		indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
 		indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
 
-		const UINT vbByteSize = static_cast<UINT>(vertices.size()) * sizeof(Vertex);
-		const UINT ibByteSize = static_cast<UINT>(indices.size()) * sizeof(UINT16);
 
 		RefPointer<MeshGeometry> geo = MeshGeometry::Create("SceneGeo");
 
@@ -183,16 +185,19 @@ namespace Engine
 		 */
 		 /** get the graphics context */
 		const auto api = RenderInstruction::GetApiPtr();
-
-		RenderData.UploadBufferManager = UploadBufferManager::Create(api->GetGraphicsContext(), RenderData.FrameResources.data()->get(), 1, true, 3, RenderData.RenderItems.size());
-
+		
+		const UINT vbByteSize = static_cast<UINT>(vertices.size()) * sizeof(Vertex);
 		geo->VBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, static_cast<UINT>(vertices.size()));
+
 		geo->VBuffer->SetLayout
-		({
+		(
+			{
 			 {  "POSITION" , ShaderDataType::Float3	,	0},
 			 {  "COLOR"	    , ShaderDataType::Float4,  12	}
 			}
 		);
+
+		const UINT ibByteSize = static_cast<UINT>(indices.size()) * sizeof(UINT16);
 
 		geo->IBuffer = IndexBuffer::Create(api->GetGraphicsContext(), indices.data(), ibByteSize, static_cast<UINT>(indices.size()));
 
@@ -204,61 +209,112 @@ namespace Engine
 
 		RenderData.Geometries[geo->GetName()] = std::move(geo);
 
+
+
+
+		/**
+		 * Build scene render items
+		 */
+		BuildRenderItems(api->GetGraphicsContext());
+
+		/**
+		 * Build scene frame resources
+		 */
+		BuildFrameResources(api->GetGraphicsContext());
+
+
+		/**
+		 * Build upload buffers
+		 */
+		RenderData.UploadBufferManager = UploadBufferManager::Create
+		(
+			api->GetGraphicsContext(),
+			RenderData.FrameResources.data(),
+			1,
+			true,
+			NUM_OF_RESOURCES,
+			RenderData.RenderItems.size()
+		);
+
 		/** create the pso */
 
 
-		///** build the pipeline state objects */
-		//RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
-		//(
-		//	api->GetGraphicsContext(),
-		//	RenderData.VertexShader.get(),
-		//	RenderData.PixelShader.get(),
-		//	RenderData.Geometries["SceneGeo"]->VertexBuffer->GetLayout(),
-		//	FillMode::Opaque
-		//));
+		/** build the pipeline state objects */
+		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
+		(
+			api->GetGraphicsContext(),
+			RenderData.VertexShader.get(),
+			RenderData.PixelShader.get(),
+			RenderData.Geometries["SceneGeo"]->VBuffer->GetLayout(),
+			FillMode::Opaque
+		));
 
-		//RenderData.PSOs.emplace("WireFrame", PipelineStateObject::Create
-		//(
-		//	api->GetGraphicsContext(),
-		//	RenderData.VertexShader.get(),
-		//	RenderData.PixelShader.get(),
-		//	RenderData.Geometries["SceneGeo"]->VertexBuffer->GetLayout(),
-		//	FillMode::WireFrame
-		//));
+		RenderData.PSOs.emplace("WireFrame", PipelineStateObject::Create
+		(
+			api->GetGraphicsContext(),
+			RenderData.VertexShader.get(),
+			RenderData.PixelShader.get(),
+			RenderData.Geometries["SceneGeo"]->VBuffer->GetLayout(),
+			FillMode::WireFrame
+		));
 
 
 	
 	}
 
 	void Renderer3D::Shutdown()
+	{}
+
+	void Renderer3D::BeginScene(const MainCamera& cam, const DeltaTime& appTimeManager)
 	{
-	}
+
+		/**
+		 *	Cycle throught the frame resources array
+		 */
+		RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUM_OF_RESOURCES;
+		RenderData.ActiveFrameResource = RenderData.FrameResources[RenderData.CurrentFrameResourceIndex].get();
+
+		/**
+		 * Update the underlying fence and check if the GPU has finished executing
+		 * commands for the current frame resource.
+		 */
+		RenderInstruction::UpdateFrameResource(RenderData.ActiveFrameResource);
+
+		/**
+		 * Update the interal frame resource pointer
+		 */
+		RenderData.UploadBufferManager->UpdateCurrentFrameResource(RenderData.ActiveFrameResource);
+
+		/**
+		 * Update each render item's CB if a change has been made
+		 */
+		RenderData.UploadBufferManager->UpdateConstantBuffer(RenderData.OpaqueRenderItems);
 
 
-	void Renderer3D::BeginScene(const MainCamera& cam, const AppTimeManager& appTimeManager)
-	{
-		//Update the world matrices
-		for(auto& constBuffer : RenderData.FrameResources)
-		{
-			
-		}
-
+		/**
+		 * Update the main pass buffer
+		 */
 		RenderData.UploadBufferManager->Update(cam, appTimeManager);
 
-
+		/**
+		 * Clear the back buffer ready for rendering
+		 */
 		RenderInstruction::SetClearColour(0, RenderData.PSOs["Opaque"].get());
 
 
-		// Render the geometry and use the current Pso settings (Ignore the count (36) for now.)
-		//RenderInstruction::DrawIndexed(RenderData.Geometries["Box"], 36);
-		RenderInstruction::DrawRenderItems(RenderData.ActiveFrameResource.get(), RenderData.RenderItems);
+		/**
+		 * Prepare scene geometry to the screen
+		 */
+		RenderInstruction::DrawRenderItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex, RenderData.OpaqueRenderItems.size());
 
 	}
 
 	void Renderer3D::EndScene()
 	{
+		/**
+		 *	Render the scene geometry to the scene
+		 */
 		RenderInstruction::Flush();
-		
 	}
 
 	void Renderer3D::BuildRenderItems(GraphicsContext* graphicsContext)
@@ -266,7 +322,7 @@ namespace Engine
 
 		auto boxRitem = RenderItem::Create
 		(
-			RenderData.Geometries["SceneGeo"], 
+			RenderData.Geometries["SceneGeo"].get(), 
 			"Box", 
 			0, 
 			Transform(0.0f, 0.5f, 0.0f, 0, 0, 0, 2.0f, 2.0f, 2.0f)
@@ -276,7 +332,7 @@ namespace Engine
 
 		auto gridRitem = RenderItem::Create
 		(
-			RenderData.Geometries["SceneGeo"],
+			RenderData.Geometries["SceneGeo"].get(),
 			"Grid",
 			1,
 			Transform(0.0f, 0.0f, 0.0f)
@@ -291,16 +347,16 @@ namespace Engine
 		{
 			auto leftCylRitem = RenderItem::Create
 			(
-				RenderData.Geometries["SceneGeo"],
+				RenderData.Geometries["SceneGeo"].get(),
 				"Cylinder",
-				objCBIndex,
+				objCBIndex++,
 				Transform(-5.0f, 1.5f, -10.0f + i * 5.0f)
 			);
 
 
 			auto rightCylRitem = RenderItem::Create
 			(
-				RenderData.Geometries["SceneGeo"],
+				RenderData.Geometries["SceneGeo"].get(),
 				"Cylinder",
 				objCBIndex++,
 				Transform(+5.0f, 1.5f, -10.0f + i * 5.0f)
@@ -309,7 +365,7 @@ namespace Engine
 
 			auto leftSphereRitem = RenderItem::Create
 			(
-				RenderData.Geometries["SceneGeo"],
+				RenderData.Geometries["SceneGeo"].get(),
 				"Sphere",
 				objCBIndex++,
 				Transform(-5.0f, 3.5f, -10.0f + i * 5.0f)
@@ -317,7 +373,7 @@ namespace Engine
 
 			auto rightSphereRitem = RenderItem::Create
 			(
-				RenderData.Geometries["SceneGeo"],
+				RenderData.Geometries["SceneGeo"].get(),
 				"Sphere",
 				objCBIndex++,
 				Transform(+5.0f, 3.5f, -10.0f + i * 5.0f)
@@ -330,10 +386,12 @@ namespace Engine
 			RenderData.RenderItems.push_back(std::move(rightSphereRitem));
 		}
 
-		// All the render items are opaque.
+		/**
+		 * Store all the render items in an array
+		 */
 		for (auto& renderItem : RenderData.RenderItems)
 		{
-			RenderData.OpaqueRenderItems.push_back(renderItem);
+			RenderData.OpaqueRenderItems.push_back(renderItem.get());
 		}
 	}
 
@@ -341,10 +399,7 @@ namespace Engine
 	{
 		for (int i = 0; i < RendererData::MaxNumberOfFrameResources; ++i)
 		{
-			RenderData.FrameResources.push_back
-			(
-				CreateScope<FrameResource>(graphicsContext, 1, static_cast<UINT>(RenderData.RenderItems.size()))
-			);
+			RenderData.FrameResources.push_back(FrameResource::Create(graphicsContext, 1, static_cast<UINT>(RenderData.RenderItems.size())));
 		}
 	}
 

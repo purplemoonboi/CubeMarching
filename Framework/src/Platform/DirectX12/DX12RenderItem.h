@@ -13,10 +13,10 @@ namespace Engine
 	{
 		DX12RenderItem
 		(
-			const RefPointer<MeshGeometry> geometry,
+			MeshGeometry* geometry,
 			std::string&& drawArgs,
 			UINT constantBufferIndex,
-			Transform&& transform
+			Transform transform
 		);
 
 		~DX12RenderItem() override = default;

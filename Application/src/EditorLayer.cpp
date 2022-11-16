@@ -1,6 +1,7 @@
 #include "EditorLayer.h"
 
 #include "Framework/Engine.h"
+#include "Framework/Scene/Scene.h"
 
 namespace Engine
 {
@@ -23,7 +24,7 @@ namespace Engine
     {
     }
 
-    void EditorLayer::OnUpdate(const AppTimeManager& timer)
+    void EditorLayer::OnUpdate(const DeltaTime& timer)
     {
         //User input
 
@@ -31,7 +32,7 @@ namespace Engine
         World->OnUpdate(timer);
     }
 
-    void EditorLayer::OnRender(const AppTimeManager& timer)
+    void EditorLayer::OnRender(const DeltaTime& timer)
     {
         World->OnRender(timer);
     }
@@ -47,13 +48,15 @@ namespace Engine
 
         EventDispatcher dispatcher(event);
 
-    /*	dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(EditorLayer::OnWindowResize));
-		dispatcher.Dispatch<KeyPressedEvent>(BIND_DELEGATE(EditorLayer::OnKeyPressed));
-        dispatcher.Dispatch<KeyPressedEvent>(BIND_DELEGATE(EditorLayer::OnKeyReleased));
-     
-        dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_DELEGATE(EditorLayer::OnMouseDown));
-        dispatcher.Dispatch<MouseButtonReleasedEvent>(BIND_DELEGATE(EditorLayer::OnMouseUp));
-        dispatcher.Dispatch<MouseMovedEvent>(BIND_DELEGATE(EditorLayer::OnMouseMove));*/
+		//
+  //  	dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(EditorLayer::OnWindowResize));
+		//dispatcher.Dispatch<KeyPressedEvent>(BIND_DELEGATE(EditorLayer::OnKeyPressed));
+  //      dispatcher.Dispatch<KeyPressedEvent>(BIND_DELEGATE(EditorLayer::OnKeyReleased));
+  //   
+  //      dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_DELEGATE(EditorLayer::OnMouseDown));
+  //      dispatcher.Dispatch<MouseButtonReleasedEvent>(BIND_DELEGATE(EditorLayer::OnMouseUp));
+  //      dispatcher.Dispatch<MouseMovedEvent>(BIND_DELEGATE(EditorLayer::OnMouseMove));
+        
 
     }
 

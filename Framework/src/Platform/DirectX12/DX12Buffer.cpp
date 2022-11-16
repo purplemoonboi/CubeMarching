@@ -1,12 +1,13 @@
 #include "DX12Buffer.h"
 
+#include "Framework/Core/Time/DeltaTime.h"
 #include "Platform/DirectX12/DX12FrameResource.h"
 #include "Platform/DirectX12/DX12GraphicsContext.h"
 #include "Platform/DirectX12/DX12UploadBuffer.h"
 
 namespace Engine
 {
-
+	using namespace DirectX;
 
 	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size, UINT vertexCount)
 		:
@@ -31,12 +32,15 @@ namespace Engine
 		);
 	}
 
-	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* graphicsContext, const void* vertices, UINT64 size, UINT vertexCount)
+	DX12VertexBuffer::DX12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT64 size, UINT vertexCount)
 		:
 		Layout(),
 		VertexBufferByteSize(size),
 		VertexCount(vertexCount)
 	{
+
+
+
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
 		// Reserve memory and copy the vertices into our CPU buffer
@@ -154,7 +158,7 @@ namespace Engine
 	DX12UploadBufferManager::DX12UploadBufferManager
 	(
 		GraphicsContext* const graphicsContext,
-		FrameResource* const frameResources,
+		ScopePointer<FrameResource>* const frameResources,
 		UINT count, 
 		bool isConstant, 
 		UINT frameResourceCount, 
@@ -165,7 +169,6 @@ namespace Engine
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
 
-		const auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResources);
 
 		/**
 		 * Create the descriptor heap for the constant buffer if one hasn't been created already.
@@ -190,8 +193,9 @@ namespace Engine
 		 */ 
 		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
 		{
+			const auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResources[frameIndex].get());
 
-			const auto constantBuffer = dx12FrameResource[frameIndex].ConstantBuffer.get();
+			const auto constantBuffer = dx12FrameResource->ConstantBuffer.get();
 
 			for (UINT32 i = 0; i < objectCount; ++i)
 			{
@@ -242,27 +246,32 @@ namespace Engine
 		 */ 
 		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
 		{
-			const auto passConstantBuffer = dx12FrameResource[frameIndex].PassBuffer->Resource();
+			const auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResources[frameIndex].get());
+
+			const auto passConstantBuffer = dx12FrameResource->PassBuffer->Resource();
 
 			/**
 			* Fetch the GPU address of the constant buffer
 			*/
-			const D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
+			const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
 
 			/**
 			 * Offset to the object in the heap
 			 */
-			const UINT32 heapIndex = PassConstantBufferOffset + frameIndex;
+			const UINT32 heapIndex = dx12GraphicsContext->GetPassConstBufferViewOffset() + frameIndex;
 
 			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
 			handle.Offset(heapIndex, dx12GraphicsContext->GetCbvDescSize());
 
 			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-			cbvDesc.BufferLocation = constantBufferAddress;
+			cbvDesc.BufferLocation = passConstantBufferAddress;
 			cbvDesc.SizeInBytes = passConstantBufferSizeInBytes;
 
 			dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
 		}
+
+
+		//MainPassConstantBuffer = CreateScope<PassConstants>();
 
 	}
 
@@ -274,7 +283,7 @@ namespace Engine
 		UINT32 objectCount
 	)
 	{
-		MainPassConstantBuffer = CreateScope<PassConstants>(graphicsContext, passCount, objectCount);
+		//MainPassConstantBuffer = CreateScope<PassConstants>();
 	}
 
 	void DX12UploadBufferManager::Bind() const
@@ -287,13 +296,13 @@ namespace Engine
 	//	ConstantBuffer->UnBind(0U);
 	}
 
-	void DX12UploadBufferManager::Update(const MainCamera& camera, const AppTimeManager& appTimeManager)
+	void DX12UploadBufferManager::Update(const MainCamera& camera, const DeltaTime& appTimeManager)
 	{
 		/**
 		 * Get the camera's view and projection matrix
 		 */
-		const DirectX::XMMATRIX view = DirectX::XMLoadFloat4x4(&camera.GetView());
-		const DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&camera.GetProjection());
+		const XMMATRIX view = XMLoadFloat4x4(&camera.GetView());
+		const XMMATRIX proj = XMLoadFloat4x4(&camera.GetProjection());
 
 		/**
 		 *	Create the view matrix
@@ -301,21 +310,20 @@ namespace Engine
 		 *	Copy the data into the pass buffer
 		 */
 
-		const DirectX::XMMATRIX viewProj	= XMMatrixMultiply(view, proj);
-		const DirectX::XMMATRIX invView		= XMMatrixInverse(&XMMatrixDeterminant(view), view);
-		const DirectX::XMMATRIX invProj		= XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
-		const DirectX::XMMATRIX invViewProj = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
+		const XMMATRIX viewProj	    = XMMatrixMultiply(view, proj);
+		const XMMATRIX invView		= XMMatrixInverse(&XMMatrixDeterminant(view), view);
+		const XMMATRIX invProj		= XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
+		const XMMATRIX invViewProj  = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
 
-		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->View,			XMMatrixTranspose(view));
-		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->InvView,		XMMatrixTranspose(invView));
-		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->Proj,			XMMatrixTranspose(proj));
-		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->InvProj,		XMMatrixTranspose(invProj));
-		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->ViewProj,		XMMatrixTranspose(viewProj));
-		DirectX::XMStoreFloat4x4(&MainPassConstantBuffer->InvViewProj,	XMMatrixTranspose(invViewProj));
+		XMStoreFloat4x4(&MainPassConstantBuffer.View,			XMMatrixTranspose(view));
+		XMStoreFloat4x4(&MainPassConstantBuffer.InvView,		XMMatrixTranspose(invView));
+		XMStoreFloat4x4(&MainPassConstantBuffer.Proj,			XMMatrixTranspose(proj));
+		XMStoreFloat4x4(&MainPassConstantBuffer.InvProj,		XMMatrixTranspose(invProj));
+		XMStoreFloat4x4(&MainPassConstantBuffer.ViewProj,		XMMatrixTranspose(viewProj));
+		XMStoreFloat4x4(&MainPassConstantBuffer.InvViewProj,	XMMatrixTranspose(invViewProj));
 
-		DirectX::XMFLOAT3 eyeW;
-		DirectX::XMStoreFloat3(&eyeW, camera.GetPosition());
-		MainPassConstantBuffer->EyePosW = eyeW;
+		
+		MainPassConstantBuffer.EyePosW = camera.GetPosition();
 
 		/**
 		 *
@@ -324,18 +332,20 @@ namespace Engine
 		 *
 		 */
 
-		MainPassConstantBuffer->RenderTargetSize = DirectX::XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
-		MainPassConstantBuffer->InvRenderTargetSize = DirectX::XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
-		MainPassConstantBuffer->NearZ = 1.0f;
-		MainPassConstantBuffer->FarZ = 1000.0f;
-		MainPassConstantBuffer->TotalTime = appTimeManager.TimeElapsed();
-		MainPassConstantBuffer->DeltaTime = appTimeManager.DeltaTime();
+		MainPassConstantBuffer.RenderTargetSize	= XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
+		MainPassConstantBuffer.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
+		MainPassConstantBuffer.NearZ = 1.0f;
+		MainPassConstantBuffer.FarZ = 1000.0f;
 
+		//TODO: NEED TO FIX APP TIME MANAGER CLASS PREVENTING OVERRIDES FROM OVERRIDING???
+		MainPassConstantBuffer.TotalTime = 0.0f;
+		MainPassConstantBuffer.DeltaTime = appTimeManager;
 
-		CurrentFrameResource->PassBuffer->CopyData(0, *MainPassConstantBuffer.get());
+		auto currentPassCB = CurrentFrameResource->PassBuffer.get();
+		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
 
-	void DX12UploadBufferManager::UpdateConstantBuffer(std::vector<RefPointer<RenderItem>> items)
+	void DX12UploadBufferManager::UpdateConstantBuffer(std::vector<RenderItem*> items)
 	{
 
 		const auto constantBuffer = CurrentFrameResource->ConstantBuffer.get();
@@ -349,7 +359,7 @@ namespace Engine
 
 			if(renderItem->NumFramesDirty > 0)
 			{
-				const auto dx12RenderItem = dynamic_cast<DX12RenderItem*>(renderItem.get());
+				const auto dx12RenderItem = dynamic_cast<DX12RenderItem*>(renderItem);
 
 				DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&dx12RenderItem->World);
 

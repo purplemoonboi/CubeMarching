@@ -5,13 +5,13 @@ namespace Engine
 {
 	DX12RenderItem::DX12RenderItem
 	(
-		const RefPointer<MeshGeometry> geometry,
+		MeshGeometry* geometry,
 		std::string&& drawArgs,
 		UINT constantBufferIndex,
-		Transform&& transform
+		Transform transform
 	)
 	{
-
+		World = MathHelper::Identity4x4();
 		DirectX::XMStoreFloat4x4
 		(
 			&World,
@@ -23,9 +23,10 @@ namespace Engine
 
 		Geometry = geometry;
 		PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		IndexCount = geometry->IBuffer->GetCount();
-		StartIndexLocation = geometry->DrawArgs[drawArgs].StartIndexLocation;
-		BaseVertexLocation = geometry->DrawArgs[drawArgs].BaseVertexLocation;
+		IndexCount = Geometry->DrawArgs[drawArgs].IndexCount;
+		//IndexCount = geometry->IBuffer->GetCount();
+		StartIndexLocation = Geometry->DrawArgs[drawArgs].StartIndexLocation;
+		BaseVertexLocation = Geometry->DrawArgs[drawArgs].BaseVertexLocation;
 
 
 	}

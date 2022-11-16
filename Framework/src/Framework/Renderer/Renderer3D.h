@@ -5,6 +5,7 @@
 
 namespace Engine
 {
+	class DeltaTime;
 
 	class RendererApi;
 	class GraphicsContext;
@@ -27,7 +28,7 @@ namespace Engine
 
 		// @brief - Marks the start of rendering commands.
 		//		
-		static void BeginScene(const MainCamera& cam, const AppTimeManager& appTimeManager);
+		static void BeginScene(const MainCamera& cam, const DeltaTime& appTimeManager);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is

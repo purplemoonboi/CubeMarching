@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "Framework/Core/Events/Event.h"
-#include "Framework/Core/Time/AppTimeManager.h"
+#include "Framework/Core/Time/DeltaTime.h"
 
 namespace Engine
 {
@@ -13,8 +13,8 @@ namespace Engine
 
 		virtual void OnAttach() = 0;
 		virtual void OnDetach() = 0;
-		virtual void OnUpdate(const AppTimeManager& timer) = 0;
-		virtual void OnRender(const AppTimeManager& timer) = 0;
+		virtual void OnUpdate(const DeltaTime& timer) = 0;
+		virtual void OnRender(const DeltaTime& timer) = 0;
 		virtual void OnImGuiRender() = 0;
 		virtual void OnEvent(Event& event) = 0;
 

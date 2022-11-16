@@ -37,18 +37,19 @@ namespace Engine
 
 		virtual void SetClearColour(const float colour[4], PipelineStateObject* pso) = 0;
 
-		virtual void Flush() = 0;
-
 		virtual void ResetCommandList() = 0;
 
 		virtual void ExecCommandList() = 0;
+
+		virtual void UpdateFrameResource(FrameResource* frameResource) = 0;
 
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
 		virtual void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
-		virtual void DrawRenderItems(FrameResource* const frameResource, std::vector<RefPointer<RenderItem>>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) = 0;
+		virtual void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) = 0;
 
+		virtual void Flush() = 0;
 
 		static Api GetAPI() { return RenderingApi; }
 

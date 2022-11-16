@@ -15,7 +15,7 @@ public:
 	void Tick();
 
 
-	operator float() const { return Time; }
+//	operator float() const { return Time; }
 
 	float GetSeconds() const { return Time; }
 

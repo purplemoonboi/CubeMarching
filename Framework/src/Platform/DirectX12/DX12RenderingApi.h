@@ -1,13 +1,13 @@
 #pragma once
 #include "Framework/Renderer/RendererAPI.h"
+#include "DX12FrameBuffer.h"
+#include "DX12GraphicsContext.h"
+#include "DX12FrameResource.h"
 
 
 namespace Engine
 {
 	struct ObjectConstant;
-
-	class DX12FrameBuffer;
-	class DX12GraphicsContext;
 
 	class DX12RenderingApi : public RendererAPI
 	{
@@ -29,6 +29,8 @@ namespace Engine
 
 		void ExecCommandList() override;
 
+		void UpdateFrameResource(FrameResource* const frameResource) override;
+
 		// @brief Adds a draw instance instruction to the command list
 		// @param[in] A unique pointer to the vertex array to be submitted.
 		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override{}
@@ -38,9 +40,11 @@ namespace Engine
 		void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount = 0) override;
 
 		// @brief 
-		void DrawRenderItems(FrameResource* const frameResource, std::vector<RefPointer<RenderItem>>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) override;
+		void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) override;
 
 		GraphicsContext* GetGraphicsContext() const override { return GraphicsContext.get(); };
+
+		
 
 	private:
 
@@ -51,6 +55,8 @@ namespace Engine
 
 		// A unique pointer to the framebuffer
 		RefPointer<DX12FrameBuffer> FrameBuffer = nullptr;
+
+		DX12FrameResource* CurrentFrameResource = nullptr;
 
 
 	};

@@ -10,12 +10,12 @@ using namespace DirectX;
 
 namespace Engine
 {
-	RefPointer<RenderItem> RenderItem::Create
+	ScopePointer<RenderItem> RenderItem::Create
 	(
-		const RefPointer<Engine::MeshGeometry> geometry,
+		Engine::MeshGeometry* geometry,
 		std::string&& drawArgs,
 		UINT constantBufferIndex,
-		Transform&& transform
+		Transform transform
 	)
 	{
 
@@ -24,7 +24,7 @@ namespace Engine
 		case RendererAPI::Api::None:   CORE_ASSERT(false, "Not a recognised api!");              return nullptr;
 		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!");	 return nullptr;
 		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   return CreateRef<DX12RenderItem>(geometry, std::move(drawArgs), constantBufferIndex, std::move(transform));
+		case RendererAPI::Api::DX12:   return CreateScope<DX12RenderItem>(geometry, std::move(drawArgs), constantBufferIndex, transform);
 		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!");     return nullptr;
 
 		default:

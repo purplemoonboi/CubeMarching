@@ -1,6 +1,6 @@
 #pragma once
 #include "Framework/Core/Core.h"
-#include "Framework/Core/Time/AppTimeManager.h"
+#include "Framework/Core/Time/DeltaTime.h"
 
 namespace Engine
 {
@@ -14,12 +14,13 @@ namespace Engine
 		Scene& operator=(const Scene&) = delete;
 		Scene(const std::string& name);
 
-		void OnUpdate(const  AppTimeManager& timer);
-		void OnRender(const  AppTimeManager& timer);
+		void OnUpdate(const  float timer);
+		void OnRender(const  float timer);
 
 		MainCamera* GetSceneCamera() const { return SceneCamera; }
 
 	private:
 		MainCamera* SceneCamera;
+		POINT LastMousePos;
 	};
 }

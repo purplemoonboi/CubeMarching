@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/DirectX12/DirectX12.h"
-
+#include <cstdint>
+#include <DirectXMath.h>
 #include <vector>
 
 namespace Engine

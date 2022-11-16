@@ -8,7 +8,9 @@ AppTimeManager::AppTimeManager()
 	PausedTime(0),
 	PreviousTime(0),
 	CurrentTime(0),
-	HasStopped(false)
+	HasStopped(false),
+	Time(0.0f),
+	StopTime(0)
 {
 	INT64 countsPerSecond;
 

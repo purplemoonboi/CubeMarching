@@ -34,7 +34,8 @@ namespace Engine
 		CreateSwapChain();
 		CreateDsvAndRtvDescriptorHeaps();
 
-		BuildRootSignature();
+	//	BuildRootSignature();
+		BuildRootSignatureUsingCBVTables();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
@@ -215,7 +216,7 @@ namespace Engine
 
 		// Need a CBV descriptor for each object for each frame resource,
 		// +1 for the perPass CBV for each frame resource.
-		UINT numDescriptors = (objCount + 1) * 3;
+		UINT numDescriptors = (objCount + 1) * frameResourceCount;
 
 		// Save an offset to the start of the pass CBVs.  These are the last 3 descriptors.
 		PassConstantBufferViewOffset = objCount * frameResourceCount;

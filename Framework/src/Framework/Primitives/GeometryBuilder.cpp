@@ -8,6 +8,8 @@
 #include "MathHelper.h"
 #include <algorithm>
 
+using namespace DirectX;
+
 namespace Engine
 {
 	GeometryGenerator::MeshData GeometryGenerator::CreateBox(float width, float height, float depth, UINT32 numSubdivisions)
