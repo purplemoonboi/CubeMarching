@@ -1,6 +1,7 @@
 #include "Framework/cmpch.h"
 #include "MainCamera.h"
 
+#include "Framework/Core/Log/Log.h"
 #include "Framework/Core/Time/DeltaTime.h"
 
 
@@ -10,7 +11,7 @@ namespace Engine
 
 	MainCamera::MainCamera(float width, float height, float nearPlane, float farPlane, float fov)
 			:
-		    DistanceToTarget(15.0f),
+		    DistanceToTarget(15),
 			Phi(DirectX::XM_PIDIV4),
 			Theta(DirectX::XM_PI * 1.5f),
 			AspectRatio(width/height),
@@ -48,8 +49,10 @@ namespace Engine
 		DirectX::XMStoreFloat4x4(&View, view);
 
 	//	DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&World);
-	//	DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&Proj);
+		DirectX::XMMATRIX proj = DirectX::XMLoadFloat4x4(&Proj);
 	//	WorldViewProj = world * view * proj;
+
+
 	}
 
 	void MainCamera::SetPosition(float x, float y, float z)

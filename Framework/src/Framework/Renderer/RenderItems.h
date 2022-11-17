@@ -57,6 +57,7 @@ namespace Engine
 		UINT IndexCount = 0;
 		UINT StartIndexLocation = 0;
 		INT32 BaseVertexLocation = 0;
+		std::string args = "";
 	};
 
 

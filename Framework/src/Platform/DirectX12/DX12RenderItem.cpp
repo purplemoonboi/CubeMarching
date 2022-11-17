@@ -15,8 +15,7 @@ namespace Engine
 		DirectX::XMStoreFloat4x4
 		(
 			&World,
-			DirectX::XMMatrixScaling(transform.SX, transform.SY, transform.SZ) *
-			DirectX::XMMatrixTranslation(transform.X, transform.Y, transform.Z)
+			DirectX::XMMatrixScaling(transform.SX, transform.SY, transform.SZ) * DirectX::XMMatrixTranslation(transform.X, transform.Y, transform.Z)
 		);
 
 		ObjectConstantBufferIndex = constantBufferIndex;
@@ -24,9 +23,11 @@ namespace Engine
 		Geometry = geometry;
 		PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		IndexCount = Geometry->DrawArgs[drawArgs].IndexCount;
-		//IndexCount = geometry->IBuffer->GetCount();
+		//IndexCount = Geometry->IBuffer->GetCount();
 		StartIndexLocation = Geometry->DrawArgs[drawArgs].StartIndexLocation;
 		BaseVertexLocation = Geometry->DrawArgs[drawArgs].BaseVertexLocation;
+
+		args = drawArgs;
 
 
 	}

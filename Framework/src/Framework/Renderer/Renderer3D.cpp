@@ -45,6 +45,7 @@ namespace Engine
 		RefPointer<UploadBufferManager> UploadBufferManager;
 		RefPointer<PipelineStateObject> Pso;
 
+		ScopePointer<MeshGeometry> Box;
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
 
@@ -77,8 +78,6 @@ namespace Engine
 
 	void Renderer3D::Init()
 	{
-		
-
 		/** build and compile shaders */
 		RenderData.VertexShader = Shader::Create(L"assets\\shaders\\color.hlsl", "VS", "vs_5_1");
 		RenderData.PixelShader = Shader::Create(L"assets\\shaders\\color.hlsl", "PS", "ps_5_1");
@@ -88,27 +87,14 @@ namespace Engine
 		/**  Build the scene geometry  */
 
 		GeometryGenerator geoGen;
-		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 3);
-		GeometryGenerator::MeshData grid = geoGen.CreateGrid(20.0f, 30.0f, 60, 40);
-		GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
-		GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.3f, 3.0f, 20, 20);
-
-		//
-		// We are concatenating all the geometry into one big vertex/index buffer.  So
-		// define the regions in the buffer each submesh covers.
-		//
+		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 0);
 
 		// Cache the vertex offsets to each object in the concatenated vertex buffer.
 		UINT boxVertexOffset = 0;
-		UINT gridVertexOffset = (UINT)box.Vertices.size();
-		UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
-		UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
 
 		// Cache the starting index for each object in the concatenated index buffer.
 		UINT boxIndexOffset = 0;
-		UINT gridIndexOffset = (UINT)box.Indices32.size();
-		UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
-		UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
+
 
 		// Define the SubmeshGeometry that cover different 
 		// regions of the vertex/index buffers.
@@ -118,31 +104,12 @@ namespace Engine
 		boxSubmesh.StartIndexLocation = boxIndexOffset;
 		boxSubmesh.BaseVertexLocation = boxVertexOffset;
 
-		SubGeometry gridSubmesh;
-		gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
-		gridSubmesh.StartIndexLocation = gridIndexOffset;
-		gridSubmesh.BaseVertexLocation = gridVertexOffset;
-
-		SubGeometry sphereSubmesh;
-		sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-		sphereSubmesh.StartIndexLocation = sphereIndexOffset;
-		sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
-
-		SubGeometry cylinderSubmesh;
-		cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
-		cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
-		cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
-
 		//
 		// Extract the vertex elements we are interested in and pack the
 		// vertices of all the meshes into one vertex buffer.
 		//
 
-		auto totalVertexCount =
-			box.Vertices.size() +
-			grid.Vertices.size() +
-			sphere.Vertices.size() +
-			cylinder.Vertices.size();
+		auto totalVertexCount = box.Vertices.size();
 
 		std::vector<Vertex> vertices(totalVertexCount);
 
@@ -153,29 +120,8 @@ namespace Engine
 			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::DarkGreen);
 		}
 
-		for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-		{
-			vertices[k].Position = grid.Vertices[i].Position;
-			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::ForestGreen);
-		}
-
-		for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-		{
-			vertices[k].Position = sphere.Vertices[i].Position;
-			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::Crimson);
-		}
-
-		for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
-		{
-			vertices[k].Position = cylinder.Vertices[i].Position;
-			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::SteelBlue);
-		}
-
 		std::vector<UINT16> indices;
 		indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
-		indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-		indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
-		indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
 
 
 		RefPointer<MeshGeometry> geo = MeshGeometry::Create("SceneGeo");
@@ -183,16 +129,16 @@ namespace Engine
 		/**
 		 * @brief Create one large vertex and index buffer to store all the geometry.
 		 */
-		 /** get the graphics context */
 		const auto api = RenderInstruction::GetApiPtr();
 		
 		const UINT vbByteSize = static_cast<UINT>(vertices.size()) * sizeof(Vertex);
+
 		geo->VBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, static_cast<UINT>(vertices.size()));
 
 		geo->VBuffer->SetLayout
 		(
 			{
-			 {  "POSITION" , ShaderDataType::Float3	,	0},
+			 {  "POSITION" , ShaderDataType::Float3	,	0	},
 			 {  "COLOR"	    , ShaderDataType::Float4,  12	}
 			}
 		);
@@ -203,13 +149,9 @@ namespace Engine
 
 		/** store the attributes of each submesh */
 		geo->DrawArgs["Box"] = boxSubmesh;
-		geo->DrawArgs["Grid"] = gridSubmesh;
-		geo->DrawArgs["Sphere"] = sphereSubmesh;
-		geo->DrawArgs["Cylinder"] = cylinderSubmesh;
+
 
 		RenderData.Geometries[geo->GetName()] = std::move(geo);
-
-
 
 
 		/**
@@ -258,7 +200,6 @@ namespace Engine
 			FillMode::WireFrame
 		));
 
-
 	
 	}
 
@@ -280,6 +221,9 @@ namespace Engine
 		 */
 		RenderInstruction::UpdateFrameResource(RenderData.ActiveFrameResource);
 
+
+
+
 		/**
 		 * Update the interal frame resource pointer
 		 */
@@ -296,6 +240,12 @@ namespace Engine
 		 */
 		RenderData.UploadBufferManager->Update(cam, appTimeManager);
 
+
+
+
+
+
+
 		/**
 		 * Clear the back buffer ready for rendering
 		 */
@@ -307,6 +257,8 @@ namespace Engine
 		 */
 		RenderInstruction::DrawRenderItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex, RenderData.OpaqueRenderItems.size());
 
+
+		//RenderInstruction::DrawIndexed(RenderData.Box, 0);
 	}
 
 	void Renderer3D::EndScene()
@@ -325,66 +277,10 @@ namespace Engine
 			RenderData.Geometries["SceneGeo"].get(), 
 			"Box", 
 			0, 
-			Transform(0.0f, 0.5f, 0.0f, 0, 0, 0, 2.0f, 2.0f, 2.0f)
+			Transform(10.0f, 0.5f, 0.0f, 0, 0, 0, 2.0f, 2.0f, 2.0f)
 		);
 
 		RenderData.RenderItems.push_back(std::move(boxRitem));
-
-		auto gridRitem = RenderItem::Create
-		(
-			RenderData.Geometries["SceneGeo"].get(),
-			"Grid",
-			1,
-			Transform(0.0f, 0.0f, 0.0f)
-		);
-
-		RenderData.RenderItems.push_back(std::move(gridRitem));
-
-
-		UINT objCBIndex = 2;
-
-		for (int i = 0; i < 5; ++i)
-		{
-			auto leftCylRitem = RenderItem::Create
-			(
-				RenderData.Geometries["SceneGeo"].get(),
-				"Cylinder",
-				objCBIndex++,
-				Transform(-5.0f, 1.5f, -10.0f + i * 5.0f)
-			);
-
-
-			auto rightCylRitem = RenderItem::Create
-			(
-				RenderData.Geometries["SceneGeo"].get(),
-				"Cylinder",
-				objCBIndex++,
-				Transform(+5.0f, 1.5f, -10.0f + i * 5.0f)
-			);
-
-
-			auto leftSphereRitem = RenderItem::Create
-			(
-				RenderData.Geometries["SceneGeo"].get(),
-				"Sphere",
-				objCBIndex++,
-				Transform(-5.0f, 3.5f, -10.0f + i * 5.0f)
-			);
-
-			auto rightSphereRitem = RenderItem::Create
-			(
-				RenderData.Geometries["SceneGeo"].get(),
-				"Sphere",
-				objCBIndex++,
-				Transform(+5.0f, 3.5f, -10.0f + i * 5.0f)
-			);
-
-
-			RenderData.RenderItems.push_back(std::move(leftCylRitem));
-			RenderData.RenderItems.push_back(std::move(rightCylRitem));
-			RenderData.RenderItems.push_back(std::move(leftSphereRitem));
-			RenderData.RenderItems.push_back(std::move(rightSphereRitem));
-		}
 
 		/**
 		 * Store all the render items in an array
@@ -397,9 +293,10 @@ namespace Engine
 
 	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
 	{
+		const char tags[3]{ 'A', 'B', 'C' };
 		for (int i = 0; i < RendererData::MaxNumberOfFrameResources; ++i)
 		{
-			RenderData.FrameResources.push_back(FrameResource::Create(graphicsContext, 1, static_cast<UINT>(RenderData.RenderItems.size())));
+			RenderData.FrameResources.push_back(FrameResource::Create(graphicsContext, 1, static_cast<UINT>(RenderData.RenderItems.size()), tags[i]));
 		}
 	}
 

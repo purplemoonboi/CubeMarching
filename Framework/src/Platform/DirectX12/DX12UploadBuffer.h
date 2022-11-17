@@ -53,12 +53,12 @@ namespace Engine
 
 		void Bind(UINT index, const D3D12_RANGE* range)
 		{
-			THROW_ON_FAILURE(UploadBuffer->Map(index, range, reinterpret_cast<void**>(&MappedData)));
+			//THROW_ON_FAILURE(UploadBuffer->Map(index, range, reinterpret_cast<void**>(&MappedData)));
 		}
 
 		void UnBind(UINT index, const D3D12_RANGE* range = nullptr) const
 		{
-			THROW_ON_FAILURE(UploadBuffer->Map(0, range, nullptr));
+		//	THROW_ON_FAILURE(UploadBuffer->Map(0, range, nullptr));
 		}
 
 		virtual ~DX12UploadBuffer()

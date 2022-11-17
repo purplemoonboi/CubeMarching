@@ -60,7 +60,7 @@ namespace Engine
 			RendererApiPtr->DrawIndexed(vertexArray, count);
 		}
 
-		static void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 count = 0)
+		static void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 count = 0)
 		{
 			RendererApiPtr->DrawIndexed(geometry, count);
 		}

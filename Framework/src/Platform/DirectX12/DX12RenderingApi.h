@@ -37,7 +37,7 @@ namespace Engine
 
 		// @brief Adds a draw instance instruction to the command list
 		// @param[in] A unique pointer to the vertex array to be submitted.
-		void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount = 0) override;
+		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override;
 
 		// @brief 
 		void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) override;

@@ -271,7 +271,6 @@ namespace Engine
 		}
 
 
-		//MainPassConstantBuffer = CreateScope<PassConstants>();
 
 	}
 
@@ -341,6 +340,15 @@ namespace Engine
 		MainPassConstantBuffer.TotalTime = 0.0f;
 		MainPassConstantBuffer.DeltaTime = appTimeManager;
 
+
+
+
+
+
+
+
+
+
 		auto currentPassCB = CurrentFrameResource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
@@ -365,6 +373,9 @@ namespace Engine
 
 				ObjectConstant objConst;
 				DirectX::XMStoreFloat4x4(&objConst.World, DirectX::XMMatrixTranspose(world));
+
+
+
 
 				/**
 				 * Update the object's constant buffer

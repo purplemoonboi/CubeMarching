@@ -45,7 +45,7 @@ namespace Engine
 
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
-		virtual void DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
+		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
 		virtual void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) = 0;
 

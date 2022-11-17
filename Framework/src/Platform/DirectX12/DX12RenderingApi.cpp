@@ -59,36 +59,22 @@ namespace Engine
 
 	void DX12RenderingApi::ResetCommandList()
 	{
-
-		CORE_ASSERT(GraphicsContext->Device, "Device lost");
-		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
-		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
-
 		// Reset the command allocator
 		// Reset the command list
-		HRESULT cmdReset = GraphicsContext->GraphicsCmdList->Reset
+		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Reset
 		(
 			GraphicsContext->CmdListAlloc.Get(),
 			nullptr
-		);
+		));
 
-		THROW_ON_FAILURE(cmdReset);
-
-
+		GraphicsContext->BuildRootSignatureUsingCBVTables();
 	}
 
 
 	void DX12RenderingApi::ExecCommandList()
 	{
-		CORE_ASSERT(GraphicsContext->Device, "Device lost");
-		CORE_ASSERT(GraphicsContext->GraphicsCmdList, "Graphics CmdL lost");
-		CORE_ASSERT(GraphicsContext->CommandQueue, "Command queue lost");
-
 		// Execute the initialization commands.
-		HRESULT result = S_OK;
-		result = GraphicsContext->GraphicsCmdList->Close();
-		THROW_ON_FAILURE(result);
-
+		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Close());
 		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
 		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
@@ -97,20 +83,18 @@ namespace Engine
 
 	void DX12RenderingApi::UpdateFrameResource(FrameResource* const frameResource)
 	{
-
 		CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource);
-
 		// Has the GPU finished processing the commands of the current frame resource?
 		// If not, wait until the GPU has completed commands up to this fence point.
-		if (CurrentFrameResource->Fence != 0 && GraphicsContext->Fence->GetCompletedValue() < CurrentFrameResource->Fence)
+		auto a = CurrentFrameResource->Fence;
+		auto b = GraphicsContext->Fence->GetCompletedValue();
+		if (a != 0 && b < a)
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 			THROW_ON_FAILURE(GraphicsContext->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle));
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
-
-
 	}
 
 	void DX12RenderingApi::SetClearColour(const float colour[4], PipelineStateObject* pso)
@@ -159,7 +143,9 @@ namespace Engine
 
 
 
-		//ExecCommandList the back buffer 
+		/**
+		 * Add an instruction to clear render target
+		 */
 		GraphicsContext->GraphicsCmdList->ClearRenderTargetView
 		(
 			GraphicsContext->CurrentBackBufferView(),
@@ -170,7 +156,9 @@ namespace Engine
 
 
 
-		// ExecCommandList the depth buffer
+		/**
+		 * Add an instruction to clear the depth buffer
+		 */
 		GraphicsContext->GraphicsCmdList->ClearDepthStencilView
 		(
 			GraphicsContext->DepthStencilView(),
@@ -184,7 +172,9 @@ namespace Engine
 
 
 
-		// Set the render targets descriptors
+		/**
+		 * Set the current render target to the current back buffer
+		 */
 		GraphicsContext->GraphicsCmdList->OMSetRenderTargets
 		(
 			1,
@@ -194,9 +184,13 @@ namespace Engine
 		);
 
 
-
-
-		// Set the descriptors for the memory and the root signature
+		/**
+		 *
+		 * Set the descriptor heaps for the constant buffers (inc pass buffer)
+		 *
+		 * Bind the root signature
+		 *
+		 */
 		ID3D12DescriptorHeap* descriptorHeaps[] = { GraphicsContext->CbvHeap.Get() };
 		GraphicsContext->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
@@ -215,14 +209,21 @@ namespace Engine
 		 *	 argument to use *that* pass buffer.
 		 *
 		 */
-		INT32 passConstantBufferIndex = GraphicsContext->GetPassConstBufferViewOffset() + currentFrameResourceIndex;
+		auto passOffset = GraphicsContext->GetPassConstBufferViewOffset();
+		INT32 passConstantBufferIndex = passOffset + currentFrameResourceIndex;
+
 		auto passCbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
+
 		auto size = GraphicsContext->GetCbvDescSize();
 		passCbvHandle.Offset(passConstantBufferIndex, size);
+
+
 		/**
 		*	The pass buffer is *bound* to the 1st register.
 		*/
 		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(1, passCbvHandle);
+
+
 
 
 		// For each render item...
@@ -234,7 +235,11 @@ namespace Engine
 			DX12VertexBuffer* dx12VertexBuffer  = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VBuffer.get());
 			DX12IndexBuffer*  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IBuffer.get());
 
-			/** bind the vertex and index array */
+			/**
+			 *
+			 * bind the vertex and index buffers
+			 *
+			 */
 			GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &dx12VertexBuffer->GetVertexBufferView());
 			GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&dx12IndexBuffer->GetIndexBufferView());
 			GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(renderItem->PrimitiveType);
@@ -245,7 +250,7 @@ namespace Engine
 
 			/**
 			 *
-			 *	 Simialrly, we need to get the respective constant buffer.
+			 *	 Need to get the respective constant buffer.
 			 *	 Again we apply the offset based on our current frame resource.
 			 *
 			 */
@@ -258,6 +263,14 @@ namespace Engine
 			 */
 			GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, cbvHandle);
 
+			/**
+			 * 
+			 * All render items now share the same vertex and index buffer.
+			 *
+			 * So we need to apply an offset to obtain the correct index configuration
+			 *	for the current render item.
+			 * 
+			 */
 			GraphicsContext->GraphicsCmdList->DrawIndexedInstanced
 			(
 				renderItem->IndexCount,
@@ -268,7 +281,7 @@ namespace Engine
 			);
 		}
 
-
+		
 
 	}
 
@@ -285,7 +298,6 @@ namespace Engine
 				D3D12_RESOURCE_STATE_PRESENT
 			)
 		);
-
 		// Done recording commands.
 		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Close());
 
@@ -305,6 +317,7 @@ namespace Engine
 		// Because we are on the GPU timeline, the new fence point won't be 
 		// set until the GPU finishes processing all the commands prior to this Signal().
 		GraphicsContext->CommandQueue->Signal(GraphicsContext->Fence.Get(), GraphicsContext->GPU_TO_CPU_SYNC_COUNT);
+		
 	}
 
 
@@ -317,7 +330,7 @@ namespace Engine
 
 
 
-	void DX12RenderingApi::DrawIndexed(const RefPointer<MeshGeometry>& geometry, INT32 indexCount)
+	void DX12RenderingApi::DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount)
 	{
 
 

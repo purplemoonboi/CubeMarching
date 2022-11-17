@@ -35,7 +35,7 @@ namespace Engine
 		CreateDsvAndRtvDescriptorHeaps();
 
 	//	BuildRootSignature();
-		BuildRootSignatureUsingCBVTables();
+	//	BuildRootSignatureUsingCBVTables();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
@@ -235,6 +235,8 @@ namespace Engine
 				IID_PPV_ARGS(&CbvHeap)
 			)
 		);
+
+		return true;
 	}
 
 	bool DX12GraphicsContext::CreateSwapChain()

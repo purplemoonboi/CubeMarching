@@ -43,6 +43,8 @@ namespace Engine
 	{
 		virtual ~FrameResource() = default;
 
-		static ScopePointer<FrameResource> Create(GraphicsContext* graphicsContex, UINT passCount, UINT objectCount);
+		static ScopePointer<FrameResource> Create(GraphicsContext* graphicsContex, UINT passCount, UINT objectCount, const char t = 'O');
+
+		std::string frTag = "";
 	};
 }
