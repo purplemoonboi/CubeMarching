@@ -34,9 +34,14 @@ namespace Engine
 
 		void Init() override;
 
-		void SwapBuffers() override{}
+		// @brief Swaps the front and back buffers
+		void SwapBuffers() override;
 
 		void FlushCommandQueue();
+
+		void ExecuteGraphicsCommandList() const;
+
+		void SignalGPU() const;
 
 		void SetBackBufferIndex(INT32 value) { BackBufferIndex = value; }
 
@@ -55,7 +60,6 @@ namespace Engine
 		ComPtr<ID3D12RootSignature>			RootSignature;
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
-
 
 
 		// @brief Heap descriptor for resources
@@ -84,8 +88,6 @@ namespace Engine
 		UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
 
 		bool GetMsaaState() const { return MsaaState; }
-
-		void UpdateBackBufferIndex(INT32 index) { BackBufferIndex = index; }
 
 		INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 

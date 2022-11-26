@@ -2,8 +2,44 @@
 
 #include "Framework/Core/Log/Log.h"
 
+#include <filesystem>
+#include <shlobj.h>
+#include <pix3.h>
+
+static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
+{
+	LPWSTR programFilesPath = nullptr;
+	SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
+
+	std::filesystem::path pixInstallationPath = programFilesPath;
+	pixInstallationPath /= "Microsoft PIX";
+
+	std::wstring newestVersionFound;
+
+	for (auto const& directory_entry : std::filesystem::directory_iterator(pixInstallationPath))
+	{
+		if (directory_entry.is_directory())
+		{
+			if (newestVersionFound.empty() || newestVersionFound < directory_entry.path().filename().c_str())
+			{
+				newestVersionFound = directory_entry.path().filename().c_str();
+			}
+		}
+	}
+
+	if (newestVersionFound.empty())
+	{
+		// TODO: Error, no PIX installation found
+	}
+
+	return pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll";
+}
+
+
 namespace Engine
 {
+
+
 	DX12GraphicsContext::DX12GraphicsContext
 	(
 		HWND windowHandle,
@@ -26,6 +62,14 @@ namespace Engine
 
 	void DX12GraphicsContext::Init()
 	{
+
+		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
+		// This may happen if the application is launched through the PIX UI. 
+		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+		{
+			LoadLibrary(GetLatestWinPixGpuCapturerPath_Cpp17().c_str());
+		}
+
 		CreateDevice();
 		CheckMSAAQualityAndCache();
 		LogAdapters();
@@ -35,7 +79,7 @@ namespace Engine
 		CreateDsvAndRtvDescriptorHeaps();
 
 	//	BuildRootSignature();
-	//	BuildRootSignatureUsingCBVTables();
+		BuildRootSignatureUsingCBVTables();
 	}
 
 	void DX12GraphicsContext::FlushCommandQueue()
@@ -58,6 +102,23 @@ namespace Engine
 			CloseHandle(eventHandle);
 		}
 
+	}
+
+	void DX12GraphicsContext::SwapBuffers()
+	{
+		THROW_ON_FAILURE(SwapChain->Present(0, 0));
+		BackBufferIndex = ((BackBufferIndex + 1) % SWAP_CHAIN_BUFFER_COUNT);
+	}
+
+	void DX12GraphicsContext::ExecuteGraphicsCommandList() const
+	{
+		ID3D12CommandList* cmdsLists[] = { GraphicsCmdList.Get() };
+		CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	}
+
+	void DX12GraphicsContext::SignalGPU() const
+	{
+		CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT);
 	}
 
 	bool DX12GraphicsContext::CreateDevice()
@@ -212,11 +273,11 @@ namespace Engine
 	bool DX12GraphicsContext::CreateCBVAndSRVDescHeaps(UINT opaqueRenderItemCount, UINT frameResourceCount)
 	{
 
-		UINT objCount = opaqueRenderItemCount;
+		const UINT objCount = opaqueRenderItemCount;
 
 		// Need a CBV descriptor for each object for each frame resource,
 		// +1 for the perPass CBV for each frame resource.
-		UINT numDescriptors = (objCount + 1) * frameResourceCount;
+		const UINT numDescriptors = (objCount + 1) * frameResourceCount;
 
 		// Save an offset to the start of the pass CBVs.  These are the last 3 descriptors.
 		PassConstantBufferViewOffset = objCount * frameResourceCount;

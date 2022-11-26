@@ -43,7 +43,8 @@ project "Framework"
 			defines
 			{
 				"_CRT_SECURE_NO_WARNINGS",
-				"CM_WINDOWS_PLATFORM"
+				"CM_WINDOWS_PLATFORM",
+				"USE_PIX"
 			}
 
 			filter "configurations:Debug"

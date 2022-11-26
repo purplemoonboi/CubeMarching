@@ -54,13 +54,10 @@ namespace Engine
 		return nullptr;
 	}
 
-	RefPointer<UploadBufferManager> UploadBufferManager::Create
+	ScopePointer<UploadBufferManager> UploadBufferManager::Create
 	(
-		GraphicsContext* const graphicsContext, 
-		ScopePointer<FrameResource>* const frameResources,
-		UINT count, 
-		bool isConstant, 
-		UINT frameResourceCount, 
+		GraphicsContext*  graphicsContext,
+		const std::vector<ScopePointer<FrameResource>>& frameResources,
 		UINT renderItemsCount
 	)
 	{
@@ -70,7 +67,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   return CreateRef<DX12UploadBufferManager>(graphicsContext, frameResources, count, isConstant, frameResourceCount, renderItemsCount);
+		case RendererAPI::Api::DX12:   return CreateScope<DX12UploadBufferManager>(graphicsContext, frameResources, renderItemsCount);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

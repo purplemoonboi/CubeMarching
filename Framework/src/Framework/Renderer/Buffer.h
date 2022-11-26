@@ -198,25 +198,20 @@ namespace Engine
 
 		virtual void UnBind() const = 0;
 
-		virtual void Update(const MainCamera& camera, const DeltaTime& appTimeManager) = 0;
+		virtual void UpdatePassBuffer(const MainCamera& camera, const DeltaTime& appTimeManager) = 0;
 
-		virtual void UpdateConstantBuffer(std::vector<RenderItem*> items) = 0;
+		virtual void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) = 0;
 
-		virtual void UpdateCurrentFrameResource(FrameResource* const frameResource) = 0;
+		virtual void UpdateCurrentFrameResource(FrameResource* frameResource) = 0;
 
 		virtual FrameResource* GetCurrentFrameResource() const = 0;
 
 		virtual const INT32 GetCount() const = 0;
 
-		virtual void CreateMainPassConstBuffer(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount) = 0;
-
-		static RefPointer<UploadBufferManager> Create
+		static ScopePointer<UploadBufferManager> Create
 		(
-			GraphicsContext* const graphicsContext, 
-			ScopePointer<FrameResource>* const frameResources, 
-			UINT count, 
-			bool isConstant, 
-			UINT frameResourceCount, 
+			GraphicsContext* graphicsContext, 
+			const std::vector<ScopePointer<FrameResource>>& frameResources, 
 			UINT renderItemsCount
 		);
 

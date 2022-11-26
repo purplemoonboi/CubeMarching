@@ -16,7 +16,7 @@ namespace Engine
 	// for a frame.  
     struct DX12FrameResource : FrameResource
     {
-        DX12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount, const char t);
+        DX12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount, UINT id);
         DX12FrameResource(const DX12FrameResource& rhs) = delete;
         DX12FrameResource& operator=(const DX12FrameResource& rhs) = delete;
         ~DX12FrameResource() override;

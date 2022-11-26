@@ -17,12 +17,11 @@ namespace Engine
 	{
 	public:
 
-		DX12UploadBuffer(GraphicsContext* graphicsContext, UINT elementCount, bool isConstantBuffer)
+		DX12UploadBuffer(DX12GraphicsContext* graphicsContext, UINT elementCount, bool isConstantBuffer)
 			:
 			IsConstantBuffer(isConstantBuffer)
 		{
 
-			auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
 			ElementByteSize = sizeof(T);
 
@@ -33,7 +32,7 @@ namespace Engine
 
 			THROW_ON_FAILURE
 			(
-				dx12GraphicsContext->Device->CreateCommittedResource
+				graphicsContext->Device->CreateCommittedResource
 				(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 					D3D12_HEAP_FLAG_NONE,

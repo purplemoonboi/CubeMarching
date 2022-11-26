@@ -157,18 +157,15 @@ namespace Engine
 
 	DX12UploadBufferManager::DX12UploadBufferManager
 	(
-		GraphicsContext* const graphicsContext,
-		ScopePointer<FrameResource>* const frameResources,
-		UINT count, 
-		bool isConstant, 
-		UINT frameResourceCount, 
+		GraphicsContext* graphicsContext,
+		const std::vector<ScopePointer<FrameResource>>& frameResources,
 		UINT renderItemsCount
 	)
 	{
 		/**	cast to appropriate api implementation */
 		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
-
+		const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
 		/**
 		 * Create the descriptor heap for the constant buffer if one hasn't been created already.
@@ -195,16 +192,18 @@ namespace Engine
 		{
 			const auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResources[frameIndex].get());
 
+			/**
+			 * Get the constant buffer as a resource.
+			 */
 			const auto constantBuffer = dx12FrameResource->ConstantBuffer.get();
+
+			/**
+			 * Fetch the GPU address of the constant buffer
+			 */
+			D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
 
 			for (UINT32 i = 0; i < objectCount; ++i)
 			{
-				/**
-				* Fetch the GPU address of the constant buffer
-				*/
-				D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
-
-
 				/**
 				 * Offset to the ith address in memory
 				 */
@@ -234,20 +233,21 @@ namespace Engine
 				 */
 				dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
 			}
-		}
 
-		/**
-		 * Calculate the size of the 'PassConstants' buffer in bytes
-		 */
-		const UINT64 passConstantBufferSizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
 
-		/**
-		 *	Last three descriptors are the pass CBVs for each frame resource.
-		 */ 
-		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
-		{
-			const auto dx12FrameResource = dynamic_cast<DX12FrameResource*>(frameResources[frameIndex].get());
+			/**
+			 * After we've create a constant buffer for each render item, create the global pass buffer for
+			 * the current resource.
+			 */
 
+			/**
+			 * Calculate the size of the 'PassConstants' buffer in bytes
+			 */
+			const UINT64 passConstantBufferSizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
+
+			/**
+			 * Create the pass buffer for this resource.
+			 */
 			const auto passConstantBuffer = dx12FrameResource->PassBuffer->Resource();
 
 			/**
@@ -263,39 +263,27 @@ namespace Engine
 			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
 			handle.Offset(heapIndex, dx12GraphicsContext->GetCbvDescSize());
 
-			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-			cbvDesc.BufferLocation = passConstantBufferAddress;
-			cbvDesc.SizeInBytes = passConstantBufferSizeInBytes;
+			D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
+			passCbDesc.BufferLocation = passConstantBufferAddress;
+			passCbDesc.SizeInBytes = passConstantBufferSizeInBytes;
 
-			dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
+			dx12GraphicsContext->Device->CreateConstantBufferView(&passCbDesc, handle);
+
+			dx12FrameResource->IsInitialised = true;
 		}
 
-
-
 	}
 
-
-	void DX12UploadBufferManager::CreateMainPassConstBuffer
-	(
-		GraphicsContext* graphicsContext, 
-		UINT32 passCount,
-		UINT32 objectCount
-	)
-	{
-		//MainPassConstantBuffer = CreateScope<PassConstants>();
-	}
 
 	void DX12UploadBufferManager::Bind() const
 	{
-	//	ConstantBuffer->Bind(0U, nullptr);
 	}
 
 	void DX12UploadBufferManager::UnBind() const
 	{
-	//	ConstantBuffer->UnBind(0U);
 	}
 
-	void DX12UploadBufferManager::Update(const MainCamera& camera, const DeltaTime& appTimeManager)
+	void DX12UploadBufferManager::UpdatePassBuffer(const MainCamera& camera, const DeltaTime& appTimeManager)
 	{
 		/**
 		 * Get the camera's view and projection matrix
@@ -341,26 +329,18 @@ namespace Engine
 		MainPassConstantBuffer.DeltaTime = appTimeManager;
 
 
-
-
-
-
-
-
-
-
-		auto currentPassCB = CurrentFrameResource->PassBuffer.get();
+		const auto currentPassCB = CurrentFrameResource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
 
-	void DX12UploadBufferManager::UpdateConstantBuffer(std::vector<RenderItem*> items)
+	void DX12UploadBufferManager::UpdateObjectBuffers(std::vector<RenderItem*>& renderItems)
 	{
 
 		const auto constantBuffer = CurrentFrameResource->ConstantBuffer.get();
 
-		for(auto& renderItem : items)
+		for(auto& renderItem : renderItems)
 		{
-
+			
 			/**
 			 * Only update the constant buffer of an item if it has changed.
 			 */
@@ -369,23 +349,21 @@ namespace Engine
 			{
 				const auto dx12RenderItem = dynamic_cast<DX12RenderItem*>(renderItem);
 
-				DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&dx12RenderItem->World);
+				const DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&dx12RenderItem->World);
 
 				ObjectConstant objConst;
 				DirectX::XMStoreFloat4x4(&objConst.World, DirectX::XMMatrixTranspose(world));
 
-
-
-
 				/**
 				 * Update the object's constant buffer
 				 */
-				constantBuffer->CopyData(renderItem->ObjectConstantBufferIndex, objConst);
+				constantBuffer->CopyData(dx12RenderItem->ObjectConstantBufferIndex, objConst);
 
 				/**
 				 * Decriment the flag, the current object has been updated
 				 */
-				renderItem->NumFramesDirty--;
+				dx12RenderItem->NumFramesDirty--;
+				dx12RenderItem->HasBeenUpdated = true;
 			}
 
 		}
@@ -393,11 +371,11 @@ namespace Engine
 
 	}
 
-
 	const INT32 DX12UploadBufferManager::GetCount() const
 	{
 
 		return 0;
 
 	}
+
 }

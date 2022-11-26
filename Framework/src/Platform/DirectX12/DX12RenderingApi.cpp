@@ -200,7 +200,7 @@ namespace Engine
 	}
 
 
-	void DX12RenderingApi::DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount)
+	void DX12RenderingApi::DrawOpaqueItems(const std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex)
 	{
 
 		/**
@@ -209,31 +209,34 @@ namespace Engine
 		 *	 argument to use *that* pass buffer.
 		 *
 		 */
-		auto passOffset = GraphicsContext->GetPassConstBufferViewOffset();
-		INT32 passConstantBufferIndex = passOffset + currentFrameResourceIndex;
+		const auto passBufferOffset = GraphicsContext->GetPassConstBufferViewOffset();
+		const INT32 passBufferIndex = passBufferOffset + currentFrameResourceIndex;
 
-		auto passCbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
+		auto passBufferHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-		auto size = GraphicsContext->GetCbvDescSize();
-		passCbvHandle.Offset(passConstantBufferIndex, size);
+		/**
+		 * Offset to the render item's pass buffer 
+		 */
+		passBufferHandle.Offset(passBufferIndex, GraphicsContext->GetCbvDescSize());
 
 
 		/**
 		*	The pass buffer is *bound* to the 1st register.
 		*/
-		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(1, passCbvHandle);
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(1, passBufferHandle);
 
 
 
+		const auto opaqueItemCount = static_cast<UINT>(renderItems.size());
 
 		// For each render item...
-		for (size_t i = 0; i < renderItems.size(); ++i)
+		for (auto& renderItem : renderItems)
 		{
-			const auto renderItem = dynamic_cast<DX12RenderItem*>(renderItems[i]);
+			const auto renderItemDerived = dynamic_cast<DX12RenderItem*>(renderItem);
 
 			
-			DX12VertexBuffer* dx12VertexBuffer  = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VBuffer.get());
-			DX12IndexBuffer*  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IBuffer.get());
+			const auto dx12VertexBuffer  = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
+			const auto  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IBuffer.get());
 
 			/**
 			 *
@@ -242,21 +245,18 @@ namespace Engine
 			 */
 			GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &dx12VertexBuffer->GetVertexBufferView());
 			GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&dx12IndexBuffer->GetIndexBufferView());
-			GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(renderItem->PrimitiveType);
-
-			// Offset to the CBV in the descriptor heap for this object and for this frame resource.
-			UINT cbvIndex = currentFrameResourceIndex * opaqueItemCount + renderItem->ObjectConstantBufferIndex;
-
+			GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
 			/**
-			 *
-			 *	 Need to get the respective constant buffer.
-			 *	 Again we apply the offset based on our current frame resource.
-			 *
+			 * Offset to the CBV in the descriptor heap for this objectand for this frame resource.
+			 */
+			const UINT cbvIndex = currentFrameResourceIndex * opaqueItemCount + renderItem->ObjectConstantBufferIndex;
+
+			/**
+			 *	 Retrieve the current render item's cbuffer index and bind this to the shader.
 			 */
 			auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
-			auto size = GraphicsContext->GetCbvDescSize();
-			cbvHandle.Offset(cbvIndex, size);
+			cbvHandle.Offset(cbvIndex, GraphicsContext->GetCbvDescSize());
 
 			/**
 			 *	The constant buffer is *bound* to the 0th register.
@@ -298,26 +298,32 @@ namespace Engine
 				D3D12_RESOURCE_STATE_PRESENT
 			)
 		);
-		// Done recording commands.
+
+		/**
+		 * Close graphics command list.
+		 */
 		THROW_ON_FAILURE(GraphicsContext->GraphicsCmdList->Close());
 
-		// Add the command list to the queue for execution.
-		ID3D12CommandList* cmdsLists[] = { GraphicsContext->GraphicsCmdList.Get() };
-		GraphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		/**
+		 * Execute the current recorded commands on the GPU
+		 */
+		GraphicsContext->ExecuteGraphicsCommandList();
 
-		// Swap the back and front buffers
-		THROW_ON_FAILURE(GraphicsContext->SwapChain->Present(0, 0));
-		auto index = GraphicsContext->GetBackBufferIndex();
-		GraphicsContext->UpdateBackBufferIndex((index + 1) % SWAP_CHAIN_BUFFER_COUNT);
+		/**
+		 * Swap back buffers
+		 */
+		GraphicsContext->SwapBuffers();
 
-		// Advance the fence value to mark commands up to this fence point.
+		/**
+		 * Advance the fence value to mark commands up to this fence point.
+		 */ 
 		CurrentFrameResource->Fence = ++GraphicsContext->GPU_TO_CPU_SYNC_COUNT;
-
-		// Add an instruction to the command queue to set a new fence point. 
-		// Because we are on the GPU timeline, the new fence point won't be 
-		// set until the GPU finishes processing all the commands prior to this Signal().
-		GraphicsContext->CommandQueue->Signal(GraphicsContext->Fence.Get(), GraphicsContext->GPU_TO_CPU_SYNC_COUNT);
-		
+		/**
+		 * Add an instruction to the command queue to set a new fence point. 
+		 * Because we are on the GPU timeline, the new fence point won't be 
+		 * set until the GPU finishes processing all the commands prior to this Signal().
+		 */
+		GraphicsContext->SignalGPU();
 	}
 
 
@@ -353,7 +359,7 @@ namespace Engine
 		GraphicsContext->GraphicsCmdList->SetGraphicsRootSignature(GraphicsContext->RootSignature.Get());
 
 
-		auto vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VBuffer.get());
+		auto vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VertexBuffer.get());
 		auto indexBuffer = dynamic_cast<DX12IndexBuffer*>(geometry->IBuffer.get());
 
 

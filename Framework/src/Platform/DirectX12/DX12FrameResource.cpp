@@ -8,7 +8,7 @@ namespace Engine
 
 	}
 
-	DX12FrameResource::DX12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount, const char t)
+	DX12FrameResource::DX12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount, UINT id)
 	{
 		const auto dx12DeviceContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
 
@@ -28,9 +28,9 @@ namespace Engine
 		/**
 		 * Create a constant buffer and a pass buffer for this frame resource 
 		 */
-		PassBuffer = CreateScope<DX12UploadBuffer<PassConstants>>(dx12DeviceContext, passCount, true);
-		ConstantBuffer = CreateScope<DX12UploadBuffer<ObjectConstant>>(dx12DeviceContext, objectCount, true);
-		frTag = t;
+		PassBuffer		= CreateScope<DX12UploadBuffer<PassConstants>>(dx12DeviceContext, passCount, true);
+		ConstantBuffer	= CreateScope<DX12UploadBuffer<ObjectConstant>>(dx12DeviceContext, objectCount, true);
+		frId = id;
 	}
 
 }

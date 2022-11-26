@@ -29,8 +29,8 @@ namespace Engine
 	};
 
 
+	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
 
-	constexpr INT32 NUM_OF_RESOURCES = 3;
 
 	// Lightweight structure stores parameters to draw a shape.  This will
 	// vary from app-to-app.
@@ -45,7 +45,7 @@ namespace Engine
 		// Because we have an object cbuffer for each FrameResource, we have to apply the
 		// update to each FrameResource.  Thus, when we modify obect data we should set 
 		// NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
-		int NumFramesDirty = NUM_OF_RESOURCES;
+		int NumFramesDirty = NUMBER_OF_FRAME_RESOURCES;
 
 		// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
 		UINT ObjectConstantBufferIndex = -1;
@@ -58,6 +58,7 @@ namespace Engine
 		UINT StartIndexLocation = 0;
 		INT32 BaseVertexLocation = 0;
 		std::string args = "";
+		bool HasBeenUpdated = false;
 	};
 
 

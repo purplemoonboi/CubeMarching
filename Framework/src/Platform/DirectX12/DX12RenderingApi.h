@@ -40,7 +40,7 @@ namespace Engine
 		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override;
 
 		// @brief 
-		void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex, UINT opaqueItemCount) override;
+		void DrawOpaqueItems(const std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex) override;
 
 		GraphicsContext* GetGraphicsContext() const override { return GraphicsContext.get(); };
 

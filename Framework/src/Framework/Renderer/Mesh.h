@@ -38,16 +38,16 @@ namespace Engine
 		{}
 
 
-		static RefPointer<MeshGeometry> Create(std::string&& name)
+		static ScopePointer<MeshGeometry> Create(std::string&& name)
 		{
-			return CreateRef<MeshGeometry>(name);
+			return CreateScope<MeshGeometry>(name);
 		}
 
 		// @brief Returns the name of the mesh
 		const std::string& GetName() const { return Name; }
 
 		// @brief Contains the vertex data for drawing the mesh
-		RefPointer<VertexBuffer> VBuffer;
+		RefPointer<VertexBuffer> VertexBuffer;
 
 		// @brief Contains the indices for drawing the mesh
 		RefPointer<IndexBuffer> IBuffer;

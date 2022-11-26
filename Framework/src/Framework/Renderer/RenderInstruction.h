@@ -65,9 +65,9 @@ namespace Engine
 			RendererApiPtr->DrawIndexed(geometry, count);
 		}
 
-		static void DrawRenderItems(std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex = 0, UINT opaqueItemCount = 0)
+		static void DrawOpaqueItems(std::vector<RenderItem*> renderItems, UINT currentFrameResourceIndex)
 		{
-			RendererApiPtr->DrawRenderItems(renderItems, currentFrameResourceIndex, opaqueItemCount);
+			RendererApiPtr->DrawOpaqueItems(renderItems, currentFrameResourceIndex);
 		}
 
 

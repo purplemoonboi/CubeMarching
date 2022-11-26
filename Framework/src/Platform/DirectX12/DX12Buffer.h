@@ -102,37 +102,27 @@ namespace Engine
 
 		DX12UploadBufferManager
 		(
-			GraphicsContext* const graphicsContext,
-			ScopePointer<FrameResource>* const frameResources,
-			UINT count, 
-			bool isConstant, 
-			UINT frameResourceCount, 
+			GraphicsContext* graphicsContext,
+			const std::vector<ScopePointer<FrameResource>>& frameResources,
 			UINT renderItemsCount
 		);
 
 		~DX12UploadBufferManager() override = default;
 
-		void CreateMainPassConstBuffer
-		(
-			GraphicsContext* graphicsContext,
-			UINT32 passCount, 
-			UINT32 objectCount
-		) override;
 
 		void Bind() const override;
 
 		void UnBind() const override;
 
-		void Update(const MainCamera& camera, const DeltaTime& appTimeManager) override;
+		void UpdatePassBuffer(const MainCamera& camera, const DeltaTime& appTimeManager) override;
 
-		void UpdateConstantBuffer(std::vector<RenderItem*> items) override;
+		void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) override;
 
 		const INT32 GetCount() const override;
 
 
-
 		// @brief - Updates the current frame resource.
-		void UpdateCurrentFrameResource(FrameResource* const frameResource) override { CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource); }
+		void UpdateCurrentFrameResource(FrameResource* frameResource) override { CurrentFrameResource = dynamic_cast<DX12FrameResource*>(frameResource); }
 
 		// @brief - Returns a raw pointer to the frame resource.
 		FrameResource* GetCurrentFrameResource() const override { return CurrentFrameResource; }

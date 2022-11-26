@@ -18,11 +18,10 @@ namespace Engine
 	struct RendererData
 	{
 		// Constant data
-		static const UINT32 MaxTriangles = 100000;
-		static const UINT32 MaxVertices = MaxTriangles * 4;
-		static const UINT32 MaxIndices = MaxTriangles * 6;
-		static const UINT32 MaxTextureSlots = 32;
-		static const UINT32 MaxNumberOfFrameResources = 3;
+		static constexpr UINT32 MaxTriangles = 100000;
+		static constexpr UINT32 MaxVertices = MaxTriangles * 4;
+		static constexpr UINT32 MaxIndices = MaxTriangles * 6;
+		static constexpr UINT32 MaxTextureSlots = 32;
 
 		RefPointer<VertexArray> VertexArray;
 		RefPointer<Shader> VertexShader;
@@ -31,7 +30,7 @@ namespace Engine
 
 		ShaderLibrary ShaderLib;
 
-		std::unordered_map<std::string, RefPointer<MeshGeometry>> Geometries;
+		std::unordered_map<std::string, ScopePointer<MeshGeometry>> Geometries;
 
 		FrameResource* ActiveFrameResource;
 		UINT32 CurrentFrameResourceIndex = 0;
@@ -39,10 +38,11 @@ namespace Engine
 
 		std::vector<ScopePointer<FrameResource>> FrameResources;
 		std::vector<ScopePointer<RenderItem>> RenderItems;
+
 		std::vector<RenderItem*> OpaqueRenderItems;
 
 
-		RefPointer<UploadBufferManager> UploadBufferManager;
+		ScopePointer<UploadBufferManager> UploadBufferManager;
 		RefPointer<PipelineStateObject> Pso;
 
 		ScopePointer<MeshGeometry> Box;
@@ -89,20 +89,13 @@ namespace Engine
 		GeometryGenerator geoGen;
 		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 0);
 
-		// Cache the vertex offsets to each object in the concatenated vertex buffer.
-		UINT boxVertexOffset = 0;
-
-		// Cache the starting index for each object in the concatenated index buffer.
-		UINT boxIndexOffset = 0;
-
-
 		// Define the SubmeshGeometry that cover different 
 		// regions of the vertex/index buffers.
 
 		SubGeometry boxSubmesh;
 		boxSubmesh.IndexCount = (UINT)box.Indices32.size();
-		boxSubmesh.StartIndexLocation = boxIndexOffset;
-		boxSubmesh.BaseVertexLocation = boxVertexOffset;
+		boxSubmesh.StartIndexLocation = 0U;
+		boxSubmesh.BaseVertexLocation = 0U;
 
 		//
 		// Extract the vertex elements we are interested in and pack the
@@ -114,17 +107,25 @@ namespace Engine
 		std::vector<Vertex> vertices(totalVertexCount);
 
 		UINT k = 0;
-		for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
+		for (UINT32 i = 0; i < box.Vertices.size(); ++i, ++k)
 		{
 			vertices[k].Position = box.Vertices[i].Position;
-			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::DarkGreen);
+			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::Red);
 		}
 
-		std::vector<UINT16> indices;
-		indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
+		const UINT16 totalIndexCount = static_cast<UINT16>(box.GetIndices16().size());
+		std::vector<UINT16> indices(totalIndexCount);
+
+		for (UINT32 i = 0; i < totalIndexCount; ++i)
+		{
+			indices[i] = box.Indices32[i];
+		}
+
+		//indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
 
 
-		RefPointer<MeshGeometry> geo = MeshGeometry::Create("SceneGeo");
+
+		ScopePointer<MeshGeometry> geo = MeshGeometry::Create("SceneGeo");
 
 		/**
 		 * @brief Create one large vertex and index buffer to store all the geometry.
@@ -133,9 +134,9 @@ namespace Engine
 		
 		const UINT vbByteSize = static_cast<UINT>(vertices.size()) * sizeof(Vertex);
 
-		geo->VBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, static_cast<UINT>(vertices.size()));
+		geo->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, static_cast<UINT>(vertices.size()));
 
-		geo->VBuffer->SetLayout
+		geo->VertexBuffer->SetLayout
 		(
 			{
 			 {  "POSITION" , ShaderDataType::Float3	,	0	},
@@ -171,10 +172,7 @@ namespace Engine
 		RenderData.UploadBufferManager = UploadBufferManager::Create
 		(
 			api->GetGraphicsContext(),
-			RenderData.FrameResources.data(),
-			1,
-			true,
-			NUM_OF_RESOURCES,
+			RenderData.FrameResources,
 			RenderData.RenderItems.size()
 		);
 
@@ -187,20 +185,10 @@ namespace Engine
 			api->GetGraphicsContext(),
 			RenderData.VertexShader.get(),
 			RenderData.PixelShader.get(),
-			RenderData.Geometries["SceneGeo"]->VBuffer->GetLayout(),
+			RenderData.Geometries["SceneGeo"]->VertexBuffer->GetLayout(),
 			FillMode::Opaque
 		));
 
-		RenderData.PSOs.emplace("WireFrame", PipelineStateObject::Create
-		(
-			api->GetGraphicsContext(),
-			RenderData.VertexShader.get(),
-			RenderData.PixelShader.get(),
-			RenderData.Geometries["SceneGeo"]->VBuffer->GetLayout(),
-			FillMode::WireFrame
-		));
-
-	
 	}
 
 	void Renderer3D::Shutdown()
@@ -212,7 +200,7 @@ namespace Engine
 		/**
 		 *	Cycle throught the frame resources array
 		 */
-		RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUM_OF_RESOURCES;
+		RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUMBER_OF_FRAME_RESOURCES;
 		RenderData.ActiveFrameResource = RenderData.FrameResources[RenderData.CurrentFrameResourceIndex].get();
 
 		/**
@@ -232,13 +220,13 @@ namespace Engine
 		/**
 		 * Update each render item's CB if a change has been made
 		 */
-		RenderData.UploadBufferManager->UpdateConstantBuffer(RenderData.OpaqueRenderItems);
+		RenderData.UploadBufferManager->UpdateObjectBuffers(RenderData.OpaqueRenderItems);
 
 
 		/**
 		 * Update the main pass buffer
 		 */
-		RenderData.UploadBufferManager->Update(cam, appTimeManager);
+		RenderData.UploadBufferManager->UpdatePassBuffer(cam, appTimeManager);
 
 
 
@@ -255,7 +243,7 @@ namespace Engine
 		/**
 		 * Prepare scene geometry to the screen
 		 */
-		RenderInstruction::DrawRenderItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex, RenderData.OpaqueRenderItems.size());
+		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
 
 
 		//RenderInstruction::DrawIndexed(RenderData.Box, 0);
@@ -274,10 +262,10 @@ namespace Engine
 
 		auto boxRitem = RenderItem::Create
 		(
-			RenderData.Geometries["SceneGeo"].get(), 
-			"Box", 
-			0, 
-			Transform(10.0f, 0.5f, 0.0f, 0, 0, 0, 2.0f, 2.0f, 2.0f)
+			RenderData.Geometries["SceneGeo"].get(),
+			"Box",
+			0,
+			Transform(0.0f, 0.0f, 0.0f)
 		);
 
 		RenderData.RenderItems.push_back(std::move(boxRitem));
@@ -293,10 +281,16 @@ namespace Engine
 
 	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
 	{
-		const char tags[3]{ 'A', 'B', 'C' };
-		for (int i = 0; i < RendererData::MaxNumberOfFrameResources; ++i)
+		for (int i = 0; i < NUMBER_OF_FRAME_RESOURCES; ++i)
 		{
-			RenderData.FrameResources.push_back(FrameResource::Create(graphicsContext, 1, static_cast<UINT>(RenderData.RenderItems.size()), tags[i]));
+			RenderData.FrameResources.push_back(FrameResource::Create
+			(
+				graphicsContext, 
+				NUMBER_OF_FRAME_RESOURCES,
+				static_cast<UINT>(RenderData.RenderItems.size()),
+				i
+			)
+			);
 		}
 	}
 

@@ -36,7 +36,8 @@ project "Application"
 
 			defines
 			{
-				"CM_PLATFORM_WINDOWS"
+				"CM_PLATFORM_WINDOWS",
+				"USE_PIX"
 			}
 
 			filter "configurations:Debug"
