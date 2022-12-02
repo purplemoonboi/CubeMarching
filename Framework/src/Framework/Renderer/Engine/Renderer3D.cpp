@@ -474,18 +474,23 @@ namespace Engine
 
 			Vertex v;
 			v.Position = Triangles[i].Vertex[0];
+			v.Normal = Triangles[i].Normals[0];
 			vertices.push_back(v);
 			indices.push_back(index);
 
 			index++;
 
 			v.Position = Triangles[i].Vertex[1];
+			v.Normal = Triangles[i].Normals[1];
+
 			vertices.push_back(v);
 			indices.push_back(index);
 
 			index++;
 
 			v.Position = Triangles[i].Vertex[2];
+			v.Normal = Triangles[i].Normals[2];
+
 			vertices.push_back(v);
 			indices.push_back(index);
 
