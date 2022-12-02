@@ -77,29 +77,27 @@ namespace Engine
 				Window.OnUpdate();
 
 
-				if(MouseData.MouseDown > 0)
+				if(MouseData.MouseClicked > 0)
 				{
+					auto hwnd = static_cast<HWND>(Window.GetNativeWindow());
+					SetCapture(hwnd);
+					MouseData.MouseClicked = 0;
+					CORE_TRACE("Mouse Clicked Event");
 					MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-					MouseData.PX = MouseData.X;
-					MouseData.PY = MouseData.Y;
 					MouseData.CallBack(me);
 				}
-				else
+				if(MouseData.MouseReleased > 0)
 				{
-
+					ReleaseCapture();
 					MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-					MouseData.PX = MouseData.X;
-					MouseData.PY = MouseData.Y;
 					MouseData.CallBack(me);
 				}
 
-				MouseData.PButton = MouseData.Button;
 
-				if(MouseData.X != MouseData.PX)
+				if(MouseData.MouseMoved == 1)
 				{
-					MouseData.PX = MouseData.X;
-					MouseData.PX = MouseData.Y;
-					MouseMovedEvent mm(MouseData.X, MouseData.Y);
+					MouseData.MouseMoved = 0;
+					MouseMovedEvent mm(MouseData.X, MouseData.Y, MouseData.Button);
 					MouseData.CallBack(mm);
 				}
 
@@ -253,23 +251,28 @@ namespace Engine
 			((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
 			return 0;
 
+
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 
-			MouseData.MouseDown = 1;
+			
+
+			MouseData.MouseClicked = 1;
+			MouseData.MouseReleased = 0;
 			MouseData.X = GET_X_LPARAM(lParam);
 			MouseData.Y = GET_Y_LPARAM(lParam);
 			MouseData.Button = wParam;
+			CORE_TRACE("Mouse button {0} clicked at {1}, {2}", wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))
 
-			CORE_TRACE("Mouse button down")
 
 				return 0;
 		case WM_LBUTTONUP:
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
 
-			MouseData.MouseDown = 0;
+			MouseData.MouseClicked = 0;
+			MouseData.MouseReleased = 1;
 			MouseData.X = GET_X_LPARAM(lParam);
 			MouseData.Y = GET_Y_LPARAM(lParam);
 			MouseData.Button = wParam;
@@ -279,10 +282,10 @@ namespace Engine
 				return 0;
 		case WM_MOUSEMOVE:
 
+			MouseData.Button = wParam;
 			MouseData.X = GET_X_LPARAM(lParam);
 			MouseData.Y = GET_Y_LPARAM(lParam);
-
-			CORE_TRACE("Mouse moved")
+			MouseData.MouseMoved = 1;
 
 				return 0;
 		case WM_KEYUP:

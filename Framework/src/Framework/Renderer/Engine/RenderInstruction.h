@@ -1,5 +1,5 @@
 #pragma once
-#include "RendererAPI.h"
+#include "Framework/Renderer/Api/RendererAPI.h"
 
 namespace Engine
 {
@@ -65,7 +65,11 @@ namespace Engine
 			RendererApiPtr->DrawIndexed(geometry, count);
 		}
 
-		static void DrawOpaqueItems(std::vector<RenderItem*> renderItems, UINT currentFrameResourceIndex)
+		static void DrawOpaqueItems
+		(
+			const std::vector<RenderItem*>& renderItems, 
+			UINT currentFrameResourceIndex
+		)
 		{
 			RendererApiPtr->DrawOpaqueItems(renderItems, currentFrameResourceIndex);
 		}

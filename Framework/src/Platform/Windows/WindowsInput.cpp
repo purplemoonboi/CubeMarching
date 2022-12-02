@@ -6,14 +6,15 @@
 
 namespace Engine
 {
-	static bool IsKeyPressed(INT32 keycode)
+	bool Input::IsKeyPressed(INT32 keycode)
 	{
 		return (GetAsyncKeyState(keycode) & 0x8000) != 0;
 	}
 
-	static bool IsMouseButtonPressed(UINT64 button)
+	bool Input::IsMouseButtonPressed(UINT64 button)
 	{
-		if ((button & MK_LBUTTON) != 0)
+		
+		if ((button & GetKeyState(MK_LBUTTON)) != 0)
 		{
 			return true;
 		}
@@ -21,23 +22,25 @@ namespace Engine
 		{
 			return true;
 		}
+
+		return false;
 	}
 
-	static std::pair<float, float> GetMousePosition()
+	std::pair<float, float> Input::GetMousePosition()
 	{
 		LPPOINT mousePos = {};
-		auto b = GetCursorPos(mousePos);
-		float pos[2];
-		if(b)
+		const BOOL valid = GetCursorPos(mousePos);
+		float x, y;
+		if(valid)
 		{
-			pos[0] = static_cast<float>(mousePos[0].x);
-			pos[1] = static_cast<float>(mousePos[0].y);
+			x = static_cast<float>(mousePos[0].x);
+			y = static_cast<float>(mousePos[0].y);
 		}
 		else
 		{
 			DWORD err = GetLastError();
 		}
 
-		return { pos[0], pos[1] };
+		return { x, y };
 	}
 }

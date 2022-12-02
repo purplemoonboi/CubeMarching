@@ -1,6 +1,9 @@
 #include "DX12Buffer.h"
 
+#include "DX12Material.h"
+#include "Framework/Core/Log/Log.h"
 #include "Framework/Core/Time/DeltaTime.h"
+#include "Framework/Renderer/Api/FrameResource.h"
 #include "Platform/DirectX12/DX12FrameResource.h"
 #include "Platform/DirectX12/DX12GraphicsContext.h"
 #include "Platform/DirectX12/DX12UploadBuffer.h"
@@ -155,7 +158,7 @@ namespace Engine
 		return ibv;
 	}
 
-	DX12UploadBufferManager::DX12UploadBufferManager
+	DX12BufferView::DX12BufferView
 	(
 		GraphicsContext* graphicsContext,
 		const std::vector<ScopePointer<FrameResource>>& frameResources,
@@ -234,6 +237,52 @@ namespace Engine
 				dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
 			}
 
+			/**
+			 * Size of the material buffer in bytes
+			 */
+			const UINT64 materialBufferSizeInBytes = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
+			/**
+			 * Get the constant buffer as a resource.
+			 */
+			const auto materialBuffer = dx12FrameResource->MaterialBuffer.get();
+
+			/**
+			 * Fetch the GPU address of the constant buffer
+			 */
+			D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
+
+			for (UINT32 i = 0; i < objectCount; ++i)
+			{
+				/**
+				 * Offset to the ith address in memory
+				 */
+				materialBufferAddress += i * materialBufferSizeInBytes;
+
+				/**
+				 * Offset to the object CBV in the heap
+				 */
+				const UINT32 heapIndex = frameIndex * objectCount + i;
+
+				/**
+				 * Retrieve the descriptor handle
+				 */
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
+				handle.Offset(heapIndex, dx12GraphicsContext->GetCbvDescSize());
+
+
+				/**
+				* Create a view for the constant buffer
+				*/
+				D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
+				mbvDesc.BufferLocation = materialBufferAddress;
+				mbvDesc.SizeInBytes = materialBufferSizeInBytes;
+
+				/**
+				 * Create CBV view
+				 */
+				dx12GraphicsContext->Device->CreateConstantBufferView(&mbvDesc, handle);
+			}
+
 
 			/**
 			 * After we've create a constant buffer for each render item, create the global pass buffer for
@@ -271,19 +320,18 @@ namespace Engine
 
 			dx12FrameResource->IsInitialised = true;
 		}
-
 	}
 
 
-	void DX12UploadBufferManager::Bind() const
+	void DX12BufferView::Bind() const
 	{
 	}
 
-	void DX12UploadBufferManager::UnBind() const
+	void DX12BufferView::UnBind() const
 	{
 	}
 
-	void DX12UploadBufferManager::UpdatePassBuffer(const MainCamera& camera, const DeltaTime& appTimeManager)
+	void DX12BufferView::UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime)
 	{
 		/**
 		 * Get the camera's view and projection matrix
@@ -308,32 +356,33 @@ namespace Engine
 		XMStoreFloat4x4(&MainPassConstantBuffer.InvProj,		XMMatrixTranspose(invProj));
 		XMStoreFloat4x4(&MainPassConstantBuffer.ViewProj,		XMMatrixTranspose(viewProj));
 		XMStoreFloat4x4(&MainPassConstantBuffer.InvViewProj,	XMMatrixTranspose(invViewProj));
-
-		
-		MainPassConstantBuffer.EyePosW = camera.GetPosition();
-
 		/**
 		 *
 		 *	Upload the camera data such as the position, near and far planes
 		 *	and time data such as delta and elapsed time.
 		 *
 		 */
-
+		MainPassConstantBuffer.EyePosW = camera.GetPosition();
 		MainPassConstantBuffer.RenderTargetSize	= XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
 		MainPassConstantBuffer.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
 		MainPassConstantBuffer.NearZ = 1.0f;
 		MainPassConstantBuffer.FarZ = 1000.0f;
-
-		//TODO: NEED TO FIX APP TIME MANAGER CLASS PREVENTING OVERRIDES FROM OVERRIDING???
-		MainPassConstantBuffer.TotalTime = 0.0f;
-		MainPassConstantBuffer.DeltaTime = appTimeManager;
+		MainPassConstantBuffer.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
+		MainPassConstantBuffer.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
+		MainPassConstantBuffer.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+		MainPassConstantBuffer.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
+		MainPassConstantBuffer.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
+		MainPassConstantBuffer.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
+		MainPassConstantBuffer.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
+		MainPassConstantBuffer.TotalTime = elapsedTime;
+		MainPassConstantBuffer.DeltaTime = deltaTime;
 
 
 		const auto currentPassCB = CurrentFrameResource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
 
-	void DX12UploadBufferManager::UpdateObjectBuffers(std::vector<RenderItem*>& renderItems)
+	void DX12BufferView::UpdateObjectBuffers(std::vector<RenderItem*>& renderItems)
 	{
 
 		const auto constantBuffer = CurrentFrameResource->ConstantBuffer.get();
@@ -371,7 +420,32 @@ namespace Engine
 
 	}
 
-	const INT32 DX12UploadBufferManager::GetCount() const
+	void DX12BufferView::UpdateMaterialBuffers(std::vector<Material*>& materials)
+	{
+		const auto materialBuffer = CurrentFrameResource->MaterialBuffer.get();
+
+		for (auto& material : materials)
+		{
+			const auto dx12Material = dynamic_cast<DX12Material*>(material);
+			if (dx12Material->DirtyFrameCount > 0)
+			{
+				XMMATRIX matTransform = XMLoadFloat4x4(&dx12Material->GetMaterialTransform());
+
+				MaterialConstants matConstants;
+				matConstants.DiffuseAlbedo = dx12Material->GetDiffuse();
+				matConstants.FresnelR0 = dx12Material->GetFresnelR0();
+				matConstants.Roughness = dx12Material->GetRoughness();
+				XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
+
+				materialBuffer->CopyData(dx12Material->MaterialBufferIndex, matConstants);
+
+				// Next FrameResource need to be updated too.
+				dx12Material->DirtyFrameCount--;
+			}
+		}
+	}
+
+	const INT32 DX12BufferView::GetCount() const
 	{
 
 		return 0;

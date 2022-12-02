@@ -1,4 +1,5 @@
 #include "EditorLayer.h"
+#include "EditorLayer.h"
 
 #include "Framework/Scene/Scene.h"
 
@@ -23,45 +24,57 @@ namespace Engine
     {
     }
 
-    void EditorLayer::OnUpdate(const DeltaTime& timer)
+    void EditorLayer::OnUpdate(const DeltaTime& deltaTime)
     {
         MainCamera* mc = World->GetSceneCamera();
 
-        
+        const float elapsedTime = Application::Get()->GetApplicationTimeManager()->TimeElapsed();
+
+
+        if(CurrentMouseX != MouseLastX)
+        {
+            Remap(CurrentMouseX, 0, 1920, -1, 1);
+            Remap(CurrentMouseY, 0, 1080, -1, 1);
+        }
+       
 
         //User input
-        if(LeftMButton)
+        if (MouseMoved && LeftMButton)
         {
             // Make each pixel correspond to a quarter of a degree.
-            float dx = DirectX::XMConvertToRadians(0.25f * MouseDownX - DeltaMouseX);
-            float dy = DirectX::XMConvertToRadians(0.25f * MouseDownY - DeltaMouseY);
+            float dx = DirectX::XMConvertToRadians(90.f * CurrentMouseX);
+            float dy = DirectX::XMConvertToRadians(90.f * CurrentMouseY);
 
 
             // Update angles based on input to orbit camera around box.
-            mc->UpdateCameraZenith(dx, timer);
-            mc->UpdateCamerasAzimuth(dy, timer);
+            mc->UpdateCamerasAzimuth(dx, deltaTime);
+            mc->UpdateCameraZenith(dy, deltaTime);
         }
-        else if(RightMButton)
+        if(RightMButton)
         {
             // Make each pixel correspond to 0.2 unit in the scene.
-            float dx = 0.05f * MouseDownX - MouseLastX;
-            float dy = 0.05f * MouseDownY - MouseLastY;
+            float dx = 50.f * CurrentMouseX;
+            float dy = 50.f * CurrentMouseY;
 
 
             // Update the camera radius based on input.
-           mc->UpdateCamerasDistanceToTarget(dx - dy, timer);
+           mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
         }
 
-       
-        MouseLastX = DeltaMouseX;
-        MouseLastY = DeltaMouseY;
+        CORE_TRACE("Delta Mouse {0}, {1}", CurrentMouseX, CurrentMouseY);
 
-        World->OnUpdate(timer);
+        MouseLastX = CurrentMouseX;
+        MouseLastY = CurrentMouseY;
+
+
+        World->OnUpdate(deltaTime.GetSeconds(), elapsedTime);
     }
 
     void EditorLayer::OnRender(const DeltaTime& timer)
     {
-        World->OnRender(timer);
+        const float elapsedTime = Application::Get()->GetApplicationTimeManager()->TimeElapsed();
+
+        World->OnRender(timer.GetSeconds(), elapsedTime);
     }
 
     void EditorLayer::OnImGuiRender()
@@ -104,7 +117,6 @@ namespace Engine
             LeftMButton = true;
             MouseDownX = (float)mEvent.GetMouseX();
             MouseDownY = (float)mEvent.GetMouseY();
-            CORE_TRACE("Button down");
         }
         if ((mEvent.GetMouseButton() & MK_RBUTTON) != 0)
         {
@@ -131,11 +143,15 @@ namespace Engine
 
     bool EditorLayer::OnMouseMove(MouseMovedEvent& mEvent)
     {
-        DeltaMouseX = mEvent.GetXCoordinate();
-        DeltaMouseY = mEvent.GetYCoordinate();
+        CurrentMouseX = mEvent.GetXCoordinate();
+        CurrentMouseY = mEvent.GetYCoordinate();
+        MouseMoved = true;
 
         return false;
     }
 
-  
+    void EditorLayer::Remap(float& x, float clx, float cmx, float nlx, float nmx)
+    {
+        x = nlx + (x - clx) * (nmx - nlx) / (cmx - clx);
+    }
 }

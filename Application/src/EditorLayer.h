@@ -33,8 +33,10 @@ namespace Engine
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
 	private:
-		float DeltaMouseX = 0;
-		float DeltaMouseY = 0;
+		void Remap(float& x, float clx, float cmx, float nlx, float nmx);
+
+		float CurrentMouseX = 0;
+		float CurrentMouseY = 0;
 		float MouseDownX = 0;
 		float MouseDownY = 0;
 		float MouseLastX = 0;
@@ -42,6 +44,7 @@ namespace Engine
 
 		bool LeftMButton = false;
 		bool RightMButton = false;
+		bool MouseMoved = false;
 
 		Scene* World;
 	};

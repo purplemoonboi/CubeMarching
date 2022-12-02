@@ -11,19 +11,19 @@ namespace Engine
 		SceneCamera = new MainCamera(1920, 1080);
 	}
 
-	void Scene::OnUpdate(const float timer)
+	void Scene::OnUpdate(const float deltaTime, const float elapsedTime)
 	{
 
 		/** process scripts and entities */
-		SceneCamera->Update(timer);
+		SceneCamera->Update(deltaTime);
 
 	}
 
-	void Scene::OnRender(const float timer)
+	void Scene::OnRender(const float deltaTime, const float elapsedTime) const
 	{
 		/** process drawing instructions */
 
-		Renderer3D::BeginScene(*SceneCamera, timer);
+		Renderer3D::BeginScene(*SceneCamera, deltaTime, elapsedTime);
 
 		
 

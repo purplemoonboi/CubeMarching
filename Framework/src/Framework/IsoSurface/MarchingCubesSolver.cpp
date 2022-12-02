@@ -455,13 +455,14 @@
 			v1 = XMLoadFloat3(&tri.Vertex[1]);
 			v2 = XMLoadFloat3(&tri.Vertex[2]);
 
-			n0 = XMVector3Cross(XMVector3Normalize((v0 - v2)), XMVector3Normalize((v0 - v1)));
+
+        	n0 = XMVector3Cross(XMVector3Normalize(XMVectorSubtract(v0, v1)), XMVector3Normalize(XMVectorSubtract(v0, v1)));
 			XMVector3Normalize(n0);
 
-			n1 = XMVector3Cross(XMVector3Normalize((v1 - v0)), XMVector3Normalize((v1 - v0)));
+			n1 = XMVector3Cross(XMVector3Normalize(XMVectorSubtract(v1 , v0)), XMVector3Normalize(XMVectorSubtract(v1 , v0)));
 			XMVector3Normalize(n1);
 
-			n2 = XMVector3Cross(XMVector3Normalize((v2 - v0)), XMVector3Normalize((v2 - v1)));
+			n2 = XMVector3Cross(XMVector3Normalize(XMVectorSubtract(v2 , v0)), XMVector3Normalize(XMVectorSubtract(v2 , v1)));
 			XMVector3Normalize(n2);
 
 			n = (n0 + n1 + n2) * 0.333f;

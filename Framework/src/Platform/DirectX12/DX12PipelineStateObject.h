@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 
-#include "Framework/Renderer/Buffer.h"
-#include "Framework/Renderer/PipelineStateObject.h"
+#include "Framework/Renderer/Buffers/Buffer.h"
+#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 
 
 #include "Platform/DirectX12/DirectX12.h"

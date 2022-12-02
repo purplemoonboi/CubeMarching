@@ -1,6 +1,5 @@
 #pragma once
 #include "Framework/Core/Log/Log.h"
-#include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Camera/MainCamera.h"
 
 
@@ -11,6 +10,7 @@ namespace Engine
 	class GraphicsContext;
 	class RenderItem;
 	class FrameResource;
+	class Material;
 
 	enum class ShaderDataType
 	{
@@ -188,19 +188,21 @@ namespace Engine
 	};
 
 
-	class UploadBufferManager
+	class BufferView
 	{
 	public:
 
-		virtual ~UploadBufferManager() = default;
+		virtual ~BufferView() = default;
 
 		virtual void Bind() const = 0;
 
 		virtual void UnBind() const = 0;
 
-		virtual void UpdatePassBuffer(const MainCamera& camera, const DeltaTime& appTimeManager) = 0;
+		virtual void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime) = 0;
 
 		virtual void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) = 0;
+
+		virtual void UpdateMaterialBuffers(std::vector<Material*>& materials) = 0;
 
 		virtual void UpdateCurrentFrameResource(FrameResource* frameResource) = 0;
 
@@ -208,7 +210,7 @@ namespace Engine
 
 		virtual const INT32 GetCount() const = 0;
 
-		static ScopePointer<UploadBufferManager> Create
+		static ScopePointer<BufferView> Create
 		(
 			GraphicsContext* graphicsContext, 
 			const std::vector<ScopePointer<FrameResource>>& frameResources, 

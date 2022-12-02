@@ -1,5 +1,5 @@
 #pragma once
-#include "Framework/Renderer/Buffer.h"
+#include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Primitives/GeometryBuilder.h"
 #include "DirectX12.h"
 
@@ -96,27 +96,29 @@ namespace Engine
 	};
 
 
-	class DX12UploadBufferManager : public UploadBufferManager
+	class DX12BufferView : public BufferView
 	{
 	public:
 
-		DX12UploadBufferManager
+		DX12BufferView
 		(
 			GraphicsContext* graphicsContext,
 			const std::vector<ScopePointer<FrameResource>>& frameResources,
 			UINT renderItemsCount
 		);
 
-		~DX12UploadBufferManager() override = default;
+		~DX12BufferView() override = default;
 
 
 		void Bind() const override;
 
 		void UnBind() const override;
 
-		void UpdatePassBuffer(const MainCamera& camera, const DeltaTime& appTimeManager) override;
+		void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime) override;
 
 		void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) override;
+
+		void UpdateMaterialBuffers(std::vector<Material*>& materials) override;
 
 		const INT32 GetCount() const override;
 
@@ -135,6 +137,7 @@ namespace Engine
 
 		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.
 		PassConstants MainPassConstantBuffer;
+
 
 	};
 

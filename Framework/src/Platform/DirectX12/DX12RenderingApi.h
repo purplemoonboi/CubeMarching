@@ -1,8 +1,8 @@
 #pragma once
-#include "Framework/Renderer/RendererAPI.h"
 #include "DX12FrameBuffer.h"
 #include "DX12GraphicsContext.h"
 #include "DX12FrameResource.h"
+#include "Framework/Renderer/Api/RendererAPI.h"
 
 
 namespace Engine
@@ -40,7 +40,11 @@ namespace Engine
 		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override;
 
 		// @brief 
-		void DrawOpaqueItems(const std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex) override;
+		void DrawOpaqueItems
+		(
+			const std::vector<RenderItem*>& renderItems,
+			UINT currentFrameResourceIndex
+		) override;
 
 		GraphicsContext* GetGraphicsContext() const override { return GraphicsContext.get(); };
 

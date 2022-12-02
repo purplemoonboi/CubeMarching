@@ -307,3 +307,8 @@ int TriangleTable[256][16] =
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 	};
 
+[numthreads(8,1, 1)]
+void PolygoniseScalarField()
+{
+
+}

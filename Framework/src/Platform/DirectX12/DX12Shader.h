@@ -1,5 +1,5 @@
 #pragma once
-#include "Framework/Renderer/Shader.h"
+#include "Framework/Renderer/Resources/Shader.h"
 #include "DirectX12.h"
 
 namespace Engine

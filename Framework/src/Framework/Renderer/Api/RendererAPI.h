@@ -2,10 +2,10 @@
 #include <Windows.h>
 
 #include "FrameResource.h"
-#include "VertexArray.h"
-#include "RenderItems.h"
-#include "PipelineStateObject.h"
 #include "Framework/Core/Core.h"
+#include "Framework/Renderer/Buffers/VertexArray.h"
+#include "Framework/Renderer/Engine/Mesh.h"
+#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 
 namespace Engine
 {
@@ -47,7 +47,11 @@ namespace Engine
 
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
-		virtual void DrawOpaqueItems(const std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex) = 0;
+		virtual void DrawOpaqueItems
+		(
+			const std::vector<RenderItem*>& renderItems,
+			UINT currentFrameResourceIndex
+		) = 0;
 
 		virtual void Flush() = 0;
 

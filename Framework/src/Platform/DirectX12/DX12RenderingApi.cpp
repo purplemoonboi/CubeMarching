@@ -67,7 +67,6 @@ namespace Engine
 			nullptr
 		));
 
-		GraphicsContext->BuildRootSignatureUsingCBVTables();
 	}
 
 
@@ -200,32 +199,17 @@ namespace Engine
 	}
 
 
-	void DX12RenderingApi::DrawOpaqueItems(const std::vector<RenderItem*>& renderItems, UINT currentFrameResourceIndex)
+	void DX12RenderingApi::DrawOpaqueItems
+	(
+		const std::vector<RenderItem*>& renderItems,
+		UINT currentFrameResourceIndex
+	)
 	{
-
-		/**
-		 *
-		 *	 We offset to the respective pass buffer and set the root
-		 *	 argument to use *that* pass buffer.
-		 *
-		 */
-		const auto passBufferOffset = GraphicsContext->GetPassConstBufferViewOffset();
-		const INT32 passBufferIndex = passBufferOffset + currentFrameResourceIndex;
-
-		auto passBufferHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
-
-		/**
-		 * Offset to the render item's pass buffer 
-		 */
-		passBufferHandle.Offset(passBufferIndex, GraphicsContext->GetCbvDescSize());
-
-
 		/**
 		*	The pass buffer is *bound* to the 1st register.
 		*/
-		GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(1, passBufferHandle);
-
-
+		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
+		GraphicsContext->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
 
 		const auto opaqueItemCount = static_cast<UINT>(renderItems.size());
 
@@ -233,43 +217,33 @@ namespace Engine
 		for (auto& renderItem : renderItems)
 		{
 			const auto renderItemDerived = dynamic_cast<DX12RenderItem*>(renderItem);
-
-			
 			const auto dx12VertexBuffer  = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
-			const auto  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
+			const auto dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
 			/**
-			 *
 			 * bind the vertex and index buffers
-			 *
 			 */
 			GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &dx12VertexBuffer->GetVertexBufferView());
 			GraphicsContext->GraphicsCmdList->IASetIndexBuffer(&dx12IndexBuffer->GetIndexBufferView());
 			GraphicsContext->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
 			/**
-			 * Offset to the CBV in the descriptor heap for this objectand for this frame resource.
-			 */
-			const UINT cbvIndex = currentFrameResourceIndex * opaqueItemCount + renderItem->ObjectConstantBufferIndex;
-
-			/**
-			 *	 Retrieve the current render item's cbuffer index and bind this to the shader.
-			 */
-			auto cbvHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(GraphicsContext->CbvHeap->GetGPUDescriptorHandleForHeapStart());
-			cbvHandle.Offset(cbvIndex, GraphicsContext->GetCbvDescSize());
-
-			/**
 			 *	The constant buffer is *bound* to the 0th register.
 			 */
-			GraphicsContext->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, cbvHandle);
+			const UINT objConstBufferByteSize = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
+			const UINT matConstBufferByteSize = DX12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
+
+			ID3D12Resource* objectConstantBuffer	 = CurrentFrameResource->ConstantBuffer->Resource();
+			ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
+
+			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + (renderItem->ObjectConstantBufferIndex * objConstBufferByteSize);
+			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + (renderItem->Material->GetBufferIndex() * matConstBufferByteSize);
+
+			GraphicsContext->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+			GraphicsContext->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
 			/**
-			 * 
-			 * All render items now share the same vertex and index buffer.
 			 *
-			 * So we need to apply an offset to obtain the correct index configuration
-			 *	for the current render item.
-			 * 
 			 */
 			GraphicsContext->GraphicsCmdList->DrawIndexedInstanced
 			(

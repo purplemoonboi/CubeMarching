@@ -9,12 +9,14 @@ namespace Engine
 	class MouseMovedEvent : public Event
 	{
 	public:
-		MouseMovedEvent(float x, float y)
+		MouseMovedEvent(float x, float y, INT32 button)
 			: 
-			MouseX(x), MouseY(y) {}
+			MouseX(x), MouseY(y), Button(button) {}
 
 		float GetXCoordinate() const { return MouseX; }
 		float GetYCoordinate() const { return MouseY; }
+
+		INT32 GetButton() const { return Button; }
 
 		std::string ToString() const override
 		{
@@ -27,8 +29,9 @@ namespace Engine
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 
 	private:
-
 		float MouseX, MouseY;
+		INT32 Button;
+
 	};
 
 

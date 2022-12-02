@@ -1,8 +1,9 @@
 #pragma once
 #include <intsafe.h>
+#include <DirectXCollision.h>
 
-#include "Mesh.h"
-
+#include "Framework/Renderer/Engine/Mesh.h"
+#include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Core/core.h"
 
 namespace Engine
@@ -29,7 +30,6 @@ namespace Engine
 	};
 
 
-	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
 
 
 	// Lightweight structure stores parameters to draw a shape.  This will
@@ -39,7 +39,7 @@ namespace Engine
 		RenderItem() = default;
 		virtual ~RenderItem() = default;
 
-		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, std::string&& drawArgs, UINT constantBufferIndex, Transform transform);
+		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, Material* material, std::string&& drawArgs, UINT constantBufferIndex, Transform transform);
 
 		// Dirty flag indicating the object data has changed and we need to update the constant buffer.
 		// Because we have an object cbuffer for each FrameResource, we have to apply the
@@ -52,6 +52,10 @@ namespace Engine
 
 		// A raw pointer to geometry
 		MeshGeometry* Geometry;
+
+		Material* Material;
+
+		DirectX::BoundingBox Bounds;
 
 		// DrawIndexedInstanced parameters.
 		UINT IndexCount = 0;

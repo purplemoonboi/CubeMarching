@@ -1,5 +1,6 @@
 #pragma once
-#include "Buffer.h"
+#include "Framework/Renderer/Buffers/Buffer.h"
+#include "Framework/Renderer/Resources/Light.h"
 #include "Framework/Core/core.h"
 
 namespace Engine
@@ -8,7 +9,9 @@ namespace Engine
 	struct Vertex
 	{
 		DirectX::XMFLOAT3 Position;
-		DirectX::XMFLOAT4 Color;
+		DirectX::XMFLOAT3 Normal;
+		DirectX::XMFLOAT2 TexCoords;
+		DirectX::XMFLOAT4 Colour;
 	};
 
 	struct PassConstants
@@ -27,6 +30,13 @@ namespace Engine
 		float FarZ = 0.0f;
 		float TotalTime = 0.0f;
 		float DeltaTime = 0.0f;
+		DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		// Indices [0, NUM_DIR_LIGHTS) are directional lights;
+		// indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
+		// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
+		// are spot lights for a maximum of MaxLights per object.
+		Light Lights[MaxLights];
 	};
 
 	// Simple constant buffer
@@ -46,7 +56,8 @@ namespace Engine
 		static ScopePointer<FrameResource> Create
 		(
 			GraphicsContext* graphicsContext,
-			UINT passBufferCount, 
+			UINT passBufferCount,
+			UINT materialBufferCount,
 			UINT objectBufferCount, 
 			UINT id
 		);

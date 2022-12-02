@@ -1,11 +1,9 @@
 #pragma once
 #include <DirectXMath.h>
-#include "Framework/Core/Time/AppTimeManager.h"
 #include "../FDLuna/MathHelper.h"
 
 namespace Engine
 {
-	class DeltaTime;
 
 	class MainCamera
 	{
@@ -14,7 +12,7 @@ namespace Engine
 		virtual ~MainCamera() = default;
 
 
-		virtual void Update(const DeltaTime& deltaTime);
+		virtual void Update(const float deltaTime);
 
 		// @brief Returns the final matrix used in the constant buffer
 		const DirectX::XMMATRIX& GetWorldViewProjMat() const { return WorldViewProj; }

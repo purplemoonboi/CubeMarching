@@ -1,6 +1,6 @@
 #pragma once
 #include "DirectX12.h"
-#include "Framework/Renderer/GraphicsContext.h"
+#include "Framework/Renderer/Api/GraphicsContext.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -105,7 +105,6 @@ namespace Engine
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;
 
-		bool BuildRootSignatureUsingCBVTables(UINT numberOfSlots = 1);
 
 		bool BuildComputeRootSignature();
 	private:

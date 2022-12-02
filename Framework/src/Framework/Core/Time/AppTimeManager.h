@@ -4,7 +4,7 @@ class AppTimeManager
 {
 public:
 	AppTimeManager();
-	AppTimeManager(const AppTimeManager&) = delete;
+	//AppTimeManager(const AppTimeManager&) = delete;
 
 	double TimeElapsed() const;
 	double DeltaTime() const { return DTime; };

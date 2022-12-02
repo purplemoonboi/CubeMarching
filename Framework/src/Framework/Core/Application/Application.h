@@ -41,6 +41,9 @@ namespace Engine
 		// @brief Returns a pointer to the active window
 		WindowsWindow& GetWindow() { return Window; }
 
+		// @brief Returns a reference to the app time manager
+		AppTimeManager* GetApplicationTimeManager() { return &AppTimer; }
+
 		// @brief Returns this application
 		static Application* Get() { return SingletonInstance; }
 
@@ -93,12 +96,11 @@ namespace Engine
 		/* Used to capture mouse input from the OS */
 		struct MouseInputEventData
 		{
-			INT32 PX, PY;
 			INT32 X, Y;
-			UINT64 PButton;
 			UINT64 Button;
-			UINT8 MouseDown = 0;
-		
+			UINT8 MouseClicked = 0;
+			UINT8 MouseReleased = 0;
+			UINT8 MouseMoved = 0;
 			std::function<void(Event&)> CallBack;
 		};
 

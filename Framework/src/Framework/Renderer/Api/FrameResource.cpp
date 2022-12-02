@@ -8,7 +8,7 @@
 
 namespace Engine
 {
-	ScopePointer<FrameResource> FrameResource::Create(GraphicsContext* graphicsContext, UINT passCount, UINT objectCount, UINT id)
+	ScopePointer<FrameResource> FrameResource::Create(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount, UINT id)
 	{
 		switch(RendererAPI::GetAPI())
 		{
@@ -16,7 +16,7 @@ namespace Engine
 			case RendererAPI::Api::OpenGL:	CORE_ASSERT(false, "OpenGL is not a supported api!");	return nullptr;
 			case RendererAPI::Api::Vulkan:	CORE_ASSERT(false, "Vulkan is not a supported api!");	return nullptr;
 			case RendererAPI::Api::DX11:	CORE_ASSERT(false, "DirectX 11 is not a supported api!");	return nullptr;
-			case RendererAPI::Api::DX12:	return CreateScope<DX12FrameResource>(graphicsContext, passCount, objectCount, id);
+			case RendererAPI::Api::DX12:	return CreateScope<DX12FrameResource>(graphicsContext, passCount, materialBufferCount, objectCount, id);
 			default:
 				return nullptr;
 		}

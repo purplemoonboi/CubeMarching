@@ -1,11 +1,12 @@
 #include "DX12RenderItem.h"
-#include "Framework/Renderer/Buffer.h"
+#include "Framework/Renderer/Buffers/Buffer.h"
 
 namespace Engine
 {
 	DX12RenderItem::DX12RenderItem
 	(
 		MeshGeometry* geometry,
+		Engine::Material* material,
 		std::string&& drawArgs,
 		UINT constantBufferIndex,
 		Transform transform
@@ -21,6 +22,7 @@ namespace Engine
 		ObjectConstantBufferIndex = constantBufferIndex;
 
 		Geometry = geometry;
+		Material = material;
 		PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		IndexCount = Geometry->DrawArgs[drawArgs].IndexCount;
 		//IndexCount = Geometry->IBuffer->GetCount();

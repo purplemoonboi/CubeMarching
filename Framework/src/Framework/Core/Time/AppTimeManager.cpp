@@ -25,11 +25,11 @@ double AppTimeManager::TimeElapsed() const
 	//stop!
 	if(HasStopped)
 	{
-		return static_cast<float>((StopTime - PausedTime) - BaseTime * SecondPerCount);
+		return static_cast<double>((StopTime - PausedTime) - BaseTime * SecondPerCount);
 	}
 
 	//Similarly, subtract the pause time from current time before subtracting applications t0.
-	return static_cast<float>(((CurrentTime - PausedTime) - BaseTime) * SecondPerCount);
+	return static_cast<double>(((CurrentTime - PausedTime) - BaseTime) * SecondPerCount);
 }
 
 
@@ -63,7 +63,7 @@ void AppTimeManager::Stop()
 {
 	if (!HasStopped)
 	{
-		INT64 currentTime;
+		const INT64 currentTime = 0;
 		StopTime = currentTime;
 		HasStopped = true;
 	}

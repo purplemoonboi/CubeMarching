@@ -1,15 +1,18 @@
 #include "Renderer3D.h"
 
-#include "Buffer.h"
+
 #include "GeometryGenerator.h"
 #include "RenderInstruction.h"
-#include "VertexArray.h"
-#include "Shader.h"
-#include "RenderItems.h"
-#include "PipelineStateObject.h"
-#include "FrameResource.h"
+
 
 #include <DirectXColors.h>
+
+#include "Framework/Renderer/Api/FrameResource.h"
+#include "Framework/Renderer/Buffers/VertexArray.h"
+#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
+#include "Framework/Renderer/Resources/RenderItems.h"
+#include "Framework/Renderer/Resources/Shader.h"
+#include "Framework/Renderer/Resources/Material.h"
 
 namespace Engine
 {
@@ -31,25 +34,25 @@ namespace Engine
 
 
 		ShaderLibrary ShaderLibrary;
+		MaterialLibrary MaterialLibrary;
+		std::vector<Material*> Materials;
 
 		std::unordered_map<std::string, ScopePointer<MeshGeometry>> Geometries;
 
+		std::vector<ScopePointer<FrameResource>> FrameResources;
 		FrameResource* ActiveFrameResource;
 		UINT32 CurrentFrameResourceIndex = 0;
 
-
-		std::vector<ScopePointer<FrameResource>> FrameResources;
 		std::vector<ScopePointer<RenderItem>> RenderItems;
-
 		std::vector<RenderItem*> OpaqueRenderItems;
 
 
-		ScopePointer<UploadBufferManager> UploadBufferManager;
-		RefPointer<PipelineStateObject> Pso;
+		ScopePointer<BufferView> UploadBufferManager;
 
 		ScopePointer<MeshGeometry> Box;
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
+		RefPointer<PipelineStateObject> Pso;
 
 
 
@@ -81,8 +84,8 @@ namespace Engine
 	void Renderer3D::Init()
 	{
 		/** build and compile shaders */
-		RenderData.VertexShader  = Shader::Create(L"assets\\shaders\\color.hlsl",  "VS", "vs_5_1");
-		RenderData.PixelShader   = Shader::Create(L"assets\\shaders\\color.hlsl",  "PS", "ps_5_1");
+		RenderData.VertexShader  = Shader::Create(L"assets\\shaders\\Default.hlsl",  "VS", "vs_5_1");
+		RenderData.PixelShader   = Shader::Create(L"assets\\shaders\\Default.hlsl",  "PS", "ps_5_1");
 		RenderData.ComputeShader = Shader::Create(L"assets\\shaders\\VecAdd.hlsl", "CS", "cs_5_0");
 
 		RenderData.ShaderLibrary.Add("vs", std::move(RenderData.VertexShader));
@@ -96,7 +99,7 @@ namespace Engine
 		/**  Build the scene geometry  */
 
 		GeometryGenerator geoGen;
-		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 0);
+		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 1);
 
 		// Define the SubmeshGeometry that cover different 
 		// regions of the vertex/index buffers.
@@ -119,7 +122,8 @@ namespace Engine
 		for (UINT32 i = 0; i < box.Vertices.size(); ++i, ++k)
 		{
 			vertices[k].Position = box.Vertices[i].Position;
-			vertices[k].Color = DirectX::XMFLOAT4(DirectX::Colors::Red);
+			vertices[k].Normal = box.Vertices[i].Normal;
+			vertices[k].TexCoords = box.Vertices[i].TexC;
 		}
 
 		const UINT16 totalIndexCount = static_cast<UINT16>(box.GetIndices16().size());
@@ -146,8 +150,9 @@ namespace Engine
 		geo->VertexBuffer->SetLayout
 		(
 			{
-			 {  "POSITION" , ShaderDataType::Float3	,	0	},
-			 {  "COLOR"	    , ShaderDataType::Float4,  12	}
+			 {  "POSITION" , ShaderDataType::Float3	,	0		},
+			 {  "NORMAL"   , ShaderDataType::Float3	,	12	},
+			 {  "TEXCOORD" , ShaderDataType::Float2	,	24	},
 			}
 		);
 
@@ -167,6 +172,11 @@ namespace Engine
 		BuildMCBuffers();
 
 		/**
+		 * Build object materials.
+		 */
+		BuildMaterials();
+
+		/**
 		 * Build scene render items
 		 */
 		BuildRenderItems(api->GetGraphicsContext());
@@ -180,7 +190,7 @@ namespace Engine
 		/**
 		 * Build upload buffers
 		 */
-		RenderData.UploadBufferManager = UploadBufferManager::Create
+		RenderData.UploadBufferManager = BufferView::Create
 		(
 			api->GetGraphicsContext(),
 			RenderData.FrameResources,
@@ -205,7 +215,7 @@ namespace Engine
 	void Renderer3D::Shutdown()
 	{}
 
-	void Renderer3D::BeginScene(const MainCamera& cam, const DeltaTime& appTimeManager)
+	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
 	{
 
 		/**
@@ -222,7 +232,6 @@ namespace Engine
 
 
 
-
 		/**
 		 * Update the interal frame resource pointer
 		 */
@@ -233,16 +242,20 @@ namespace Engine
 		 */
 		RenderData.UploadBufferManager->UpdateObjectBuffers(RenderData.OpaqueRenderItems);
 
+		/**
+		 * Update each material in the scene
+		 */
+		RenderData.UploadBufferManager->UpdateMaterialBuffers(RenderData.Materials);
 
 		/**
 		 * Update the main pass buffer
 		 */
-		RenderData.UploadBufferManager->UpdatePassBuffer(cam, appTimeManager);
+		RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
 
 
 
 
-
+		
 
 
 		/**
@@ -274,6 +287,7 @@ namespace Engine
 		auto boxRitem = RenderItem::Create
 		(
 			RenderData.Geometries["SceneGeo"].get(),
+			RenderData.MaterialLibrary.Get("Green"),
 			"Box",
 			0,
 			Transform(0.0f, 0.0f, 0.0f)
@@ -285,9 +299,10 @@ namespace Engine
 		auto mcGeo = RenderItem::Create
 		(
 			RenderData.Geometries["mcGeo"].get(),
+			RenderData.MaterialLibrary.Get("Default"),
 			"mcDA",
 			1,
-			Transform(0.0f, 0.0f, 0.0f)
+			Transform(-10.0f, -10.0f, -10.0f)
 		);
 
 
@@ -302,6 +317,28 @@ namespace Engine
 		}
 	}
 
+	void Renderer3D::BuildMaterials()
+	{
+
+		auto mat = Material::Create("Green");
+		mat->SetAlbedo(0.2f, 0.8f, 0.3f);
+		mat->SetFresnel(0.02f, 0.02f, 0.02f);
+		mat->SetRoughness(0.1f);
+		mat->SetBufferIndex(0);
+		RenderData.MaterialLibrary.Add("Green", std::move(mat));
+
+		auto matB = Material::Create("Default");
+		matB->SetAlbedo(0.8f, 0.8f, 0.8f);
+		matB->SetFresnel(0.02f, 0.02f, 0.02f);
+		matB->SetRoughness(0.5f);
+		matB->SetBufferIndex(1);
+		RenderData.MaterialLibrary.Add("Default", std::move(matB));
+
+		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Green"));
+		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
+
+	}
+
 	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
 	{
 		for (int i = 0; i < NUMBER_OF_FRAME_RESOURCES; ++i)
@@ -309,8 +346,9 @@ namespace Engine
 			RenderData.FrameResources.push_back(FrameResource::Create
 			(
 				graphicsContext,
-				NUMBER_OF_FRAME_RESOURCES,
+				1,
 				static_cast<UINT>(RenderData.RenderItems.size()),
+				static_cast<UINT>(RenderData.MaterialLibrary.Size()),
 				i
 			)
 			);
@@ -466,8 +504,10 @@ namespace Engine
 		mcGeo->VertexBuffer->SetLayout
 		(
 			{
-				{"POSITION", ShaderDataType::Float3 },
-				{"COLOR", ShaderDataType::Float4	}
+				{"POSITION", ShaderDataType::Float3, 0 },
+				{"NORMAL",	  ShaderDataType::Float3, 12 },
+				{"TEXCOORD", ShaderDataType::Float2, 24 },
+				
 			}
 		);
 

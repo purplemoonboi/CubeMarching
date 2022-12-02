@@ -45,14 +45,12 @@ namespace Engine
 
 		std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
 
-		/** build shader layout */
-		const BufferElement& vertex = layout.GetElements()[0];
-		const BufferElement& colour = layout.GetElements()[1];
 
 		InputLayout =
 		{
-			{	"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{   "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+			{	"POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{	"NORMAL",    0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{	"TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,          0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		};
 
 		ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -76,9 +74,10 @@ namespace Engine
 		};
 
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		psoDesc.RasterizerState.FillMode = (fillMode == FillMode::Opaque) ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;
+		psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		psoDesc.SampleMask = UINT_MAX;
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.NumRenderTargets = 1;
@@ -88,17 +87,9 @@ namespace Engine
 		psoDesc.DSVFormat = dx12GraphicsContext->GetDepthStencilFormat();
 
 
-		if (fillMode == FillMode::WireFrame)
-		{
-			psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
-		}
-
-
 		HRESULT creationResult = S_OK;
 		creationResult  = dx12GraphicsContext->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
 		THROW_ON_FAILURE(creationResult);
-		HRESULT cb = dx12GraphicsContext->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(cb);
 	}
 
 	DX12PipelineStateObject::DX12PipelineStateObject(GraphicsContext* graphicsContext, Shader* computeShader)

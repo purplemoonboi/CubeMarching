@@ -1,7 +1,6 @@
 #pragma once
 #include <intsafe.h>
 #include "Framework/Camera/MainCamera.h";
-#include "Framework/Core/Time/AppTimeManager.h"
 
 #include "Framework/IsoSurface/MarchingCubesSolver.h"
 #include "Framework/Maths/Perlin.h"
@@ -10,14 +9,21 @@
 
 namespace Engine
 {
-	class DeltaTime;
-
+	
 	class RendererApi;
 	class GraphicsContext;
+
 
 	class Renderer3D
 	{
 	public:
+
+		enum class RenderLayer
+		{
+			Opaque = 0,
+			Transparent,
+			Translucence
+		};
 
 		// @brief - Resets command lists for Apis such as DirectX12 and Vulkan
 		static void PreInit();
@@ -33,7 +39,7 @@ namespace Engine
 
 		// @brief - Marks the start of rendering commands.
 		//		
-		static void BeginScene(const MainCamera& cam, const DeltaTime& appTimeManager);
+		static void BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime = 0.0f);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
@@ -48,6 +54,7 @@ namespace Engine
 		// @brief - Build the objects which will be rendered to the buffer.
 		static void BuildRenderItems(GraphicsContext* graphicsContext);
 
+		static void BuildMaterials();
 
 		//TODO: Temps
 		static void BuildScalarField();

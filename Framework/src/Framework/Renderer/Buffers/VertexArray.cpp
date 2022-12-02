@@ -1,6 +1,6 @@
 #include "Framework/cmpch.h"
 #include "VertexArray.h"
-#include "Framework/Renderer/RendererAPI.h"
+#include "Framework/Renderer/Api/RendererAPI.h"
 
 #include "Platform/DirectX12/DX12VertexArray.h"
 

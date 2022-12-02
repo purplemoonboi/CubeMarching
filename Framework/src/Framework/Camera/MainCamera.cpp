@@ -20,7 +20,7 @@ namespace Engine
 			Fov(fov),
 			ViewportWidthHeight(width, height),
 			MinDistance(5.0f),
-			MaxDistance(10.0f)
+			MaxDistance(250.0f)
 	{
 		/**
 		 *The window resized, so update the aspect ratioand recompute the projection matrix.
@@ -29,7 +29,7 @@ namespace Engine
 		DirectX::XMStoreFloat4x4(&Proj, P);
 	}
 
-	void MainCamera::Update(const DeltaTime& deltaTime)
+	void MainCamera::Update(const float deltaTime)
 	{
 		/**
 		 *	Convert Spherical to Cartesian coordinates.

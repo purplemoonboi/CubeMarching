@@ -40,6 +40,7 @@ namespace Engine
 			FillMode fillMode = FillMode::Opaque
 		);
 
+
 		static ScopePointer<PipelineStateObject> Create
 		(
 			GraphicsContext* graphicsContext,

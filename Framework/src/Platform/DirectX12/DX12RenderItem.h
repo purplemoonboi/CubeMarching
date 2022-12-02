@@ -1,7 +1,7 @@
 #pragma once
 #include "DirectX12.h"
 #include "MathHelper.h"
-#include "Framework/Renderer/RenderItems.h"
+#include "Framework/Renderer/Resources/RenderItems.h"
 
 namespace Engine
 {
@@ -14,6 +14,7 @@ namespace Engine
 		DX12RenderItem
 		(
 			MeshGeometry* geometry,
+			Engine::Material* material,
 			std::string&& drawArgs,
 			UINT constantBufferIndex,
 			Transform transform

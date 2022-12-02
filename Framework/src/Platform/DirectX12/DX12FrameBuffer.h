@@ -1,8 +1,7 @@
 #pragma once
 #include "DirectX12.h"
-#include "Framework/Renderer/FrameBuffer.h"
 #include "Framework/Core/Core.h"
-
+#include "Framework/Renderer/Buffers/FrameBuffer.h"
 
 
 namespace Engine

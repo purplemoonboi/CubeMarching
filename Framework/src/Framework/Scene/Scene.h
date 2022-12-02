@@ -14,8 +14,8 @@ namespace Engine
 		Scene& operator=(const Scene&) = delete;
 		Scene(const std::string& name);
 
-		void OnUpdate(const  float timer);
-		void OnRender(const  float timer);
+		void OnUpdate(const float deltaTime, const float elapsedTime);
+		void OnRender(const float deltaTime, const float elapsedTime) const;
 
 		MainCamera* GetSceneCamera() const { return SceneCamera; }
 
