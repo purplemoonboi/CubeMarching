@@ -37,6 +37,12 @@ namespace Engine
 			FillMode fillMode 
 		);
 
+		DX12PipelineStateObject
+		(
+			GraphicsContext* graphicsContext,
+			Shader* computeShader
+		);
+
 
 		// @brief We don't want to copy a PSO, hence inform compiler not to generate a copy constructor
 		DX12PipelineStateObject(const DX12PipelineStateObject&) = delete;

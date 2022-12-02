@@ -1,6 +1,9 @@
 #pragma once
 #include <Framework/Engine.h>
 #include "Framework/Core/Time/DeltaTime.h"
+#include "Framework/Core/Events/MouseEvent.h"
+#include "Framework/Core/Events/AppEvents.h"
+#include "Framework/Core/Events/KeyEvent.h"
 
 namespace Engine
 {
@@ -22,14 +25,23 @@ namespace Engine
 
 	private:
 
-		void OnWindowResize(WindowResizeEvent& wndResize);
+		bool OnWindowResize(WindowResizeEvent& wndResize);
 
-		void OnKeyPressed(KeyPressedEvent& keyEvent);
-		void OnKeyReleased(KeyReleasedEvent& keyEvent);
 
-		void OnMouseDown(MouseButtonPressedEvent& mEvent);
-		void OnMouseUp(MouseButtonPressedEvent& mEvent);
-		void OnMouseMove(MouseMovedEvent& mEvent);
+		bool OnMouseDown(MouseButtonPressedEvent& mEvent);
+		bool OnMouseUp(MouseButtonReleasedEvent& mEvent);
+		bool OnMouseMove(MouseMovedEvent& mEvent);
+
+	private:
+		float DeltaMouseX = 0;
+		float DeltaMouseY = 0;
+		float MouseDownX = 0;
+		float MouseDownY = 0;
+		float MouseLastX = 0;
+		float MouseLastY = 0;
+
+		bool LeftMButton = false;
+		bool RightMButton = false;
 
 		Scene* World;
 	};

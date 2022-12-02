@@ -21,6 +21,5 @@ namespace Engine
 
 	private:
 		MainCamera* SceneCamera;
-		POINT LastMousePos;
 	};
 }

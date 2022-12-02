@@ -6,8 +6,8 @@ public:
 	AppTimeManager();
 	AppTimeManager(const AppTimeManager&) = delete;
 
-	float TimeElapsed() const;
-	float DeltaTime() const { return Time; };
+	double TimeElapsed() const;
+	double DeltaTime() const { return DTime; };
 
 	void Reset();
 	void Start();
@@ -15,14 +15,10 @@ public:
 	void Tick();
 
 
-//	operator float() const { return Time; }
-
-	float GetSeconds() const { return Time; }
-
-	float GetMilliseconds() const { return Time * 1000.0f; }
+	double GetMilliseconds() const { return DTime * 1000.0; }
 
 private:
-	float Time;
+	double DTime;
 	double SecondPerCount;
 
 	INT64 BaseTime;

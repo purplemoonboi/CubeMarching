@@ -45,13 +45,13 @@ namespace Engine
 
 		virtual const std::string& GetName() const = 0;
 
-		static RefPointer<Shader> Create(const std::string& filepath);
+		static ScopePointer<Shader> Create(const std::string& filepath);
 
-		static RefPointer<Shader> Create(std::string&& filepath);
+		static ScopePointer<Shader> Create(std::string&& filepath);
 
-		static RefPointer<Shader> Create(const std::wstring& filePath, const std::string& entryPoint, const std::string& target, D3D_SHADER_MACRO* defines = nullptr);
+		static ScopePointer<Shader> Create(const std::wstring& filePath, const std::string& entryPoint, const std::string& target, D3D_SHADER_MACRO* defines = nullptr);
 
-		static RefPointer<Shader> Create(std::wstring&& filePath, std::string&& entryPoint, std::string&& target, D3D_SHADER_MACRO* defines = nullptr);
+		static ScopePointer<Shader> Create(std::wstring&& filePath, std::string&& entryPoint, std::string&& target, D3D_SHADER_MACRO* defines = nullptr);
 	};
 
 
@@ -60,20 +60,20 @@ namespace Engine
 	{
 	public:
 
-		static void Add(const RefPointer<Shader>& shader);
+		static void Add(ScopePointer<Shader> shader);
 		
-		static void Add(const std::string& name, const RefPointer<Shader>& shader);
+		static void Add(const std::string& name, ScopePointer<Shader> shader);
 		
-		static RefPointer<Shader> Load(const std::string& filePath);
+		static ScopePointer<Shader> Load(const std::string& filePath);
 		
-		static RefPointer<Shader> Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
+		static ScopePointer<Shader> Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
 		
-		static RefPointer<Shader> Get(const std::string& name);
+		static Shader* Get(const std::string& name);
 		
 		static bool Exists(const std::string& name);
 
 	private:
-		static std::unordered_map<std::string, RefPointer<Shader>> Shaders;
+		static std::unordered_map<std::string, ScopePointer<Shader>> Shaders;
 	};
 
 

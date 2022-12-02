@@ -9,7 +9,7 @@ AppTimeManager::AppTimeManager()
 	PreviousTime(0),
 	CurrentTime(0),
 	HasStopped(false),
-	Time(0.0f),
+	DTime(0.0),
 	StopTime(0)
 {
 	INT64 countsPerSecond;
@@ -18,7 +18,7 @@ AppTimeManager::AppTimeManager()
 	SecondPerCount = 1.0 / static_cast<double>(countsPerSecond);
 }
 
-float AppTimeManager::TimeElapsed() const
+double AppTimeManager::TimeElapsed() const
 {
 	//If the application has been paused, don't track the time passed since.
 	//This carries forward in future pause events, hence subtract pause time from
@@ -47,7 +47,7 @@ void AppTimeManager::Reset()
 void AppTimeManager::Start()
 {
 	INT64 startTime;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&startTime);
+	QueryPerformanceCounter((LARGE_INTEGER*)&startTime);
 
 
 	if(HasStopped)
@@ -73,22 +73,23 @@ void AppTimeManager::Tick()
 {
 	if(HasStopped)
 	{
-		Time = 0.0f;
+		DTime = 0.0;
+		return;
 	}
 
 	INT64 currentTime;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&currentTime);
+	QueryPerformanceCounter((LARGE_INTEGER*)&currentTime);
 
 	CurrentTime = currentTime;
 	//Delta from last frame
-	Time = (CurrentTime - PreviousTime) * SecondPerCount;
+	DTime = (CurrentTime - PreviousTime) * SecondPerCount;
 	PreviousTime = CurrentTime;
 
 	//DXSDK mentions if the CPU enters power save mode or the current process
 	//is moved to a another processor, delta time can become negative.
-	if(Time < 0.0f)
+	if(DTime < 0.0)
 	{
-		Time = 0.0;
+		DTime = 0.0;
 	}
 }
 

@@ -58,6 +58,7 @@ namespace Engine
 		ComPtr<ID3D12CommandAllocator>		CmdListAlloc;
 		ComPtr<ID3D12Fence>					Fence;
 		ComPtr<ID3D12RootSignature>			RootSignature;
+		ComPtr<ID3D12RootSignature>			ComputeRootSignature;
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
@@ -105,6 +106,8 @@ namespace Engine
 		UINT64 GPU_TO_CPU_SYNC_COUNT = 0;
 
 		bool BuildRootSignatureUsingCBVTables(UINT numberOfSlots = 1);
+
+		bool BuildComputeRootSignature();
 	private:
 
 		// @brief Creates the command object responsible for recording commands to be sent to the

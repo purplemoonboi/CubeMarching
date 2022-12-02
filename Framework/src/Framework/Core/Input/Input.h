@@ -9,7 +9,7 @@ namespace Engine
 	{
 	public:
 		static bool IsKeyPressed(INT32 keycode);
-		static bool IsMouseButonPressed(INT32 button);
+		static bool IsMouseButtonPressed(UINT64 button);
 		static std::pair<float, float> GetMousePosition();
 	};
 }

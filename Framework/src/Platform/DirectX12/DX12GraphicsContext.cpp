@@ -4,7 +4,7 @@
 
 #include <filesystem>
 #include <shlobj.h>
-#include <pix3.h>
+#include <pix.h>
 
 static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 {
@@ -452,6 +452,53 @@ namespace Engine
 		);
 
 		return true;
+	}
+
+	bool DX12GraphicsContext::BuildComputeRootSignature()
+	{
+		// Root parameter can be a table, root descriptor or root constants.
+		CD3DX12_ROOT_PARAMETER slotRootParameter[3];
+
+		// Perfomance TIP: Order from most frequent to least frequent.
+		slotRootParameter[0].InitAsShaderResourceView(0);
+		slotRootParameter[1].InitAsShaderResourceView(1);
+		slotRootParameter[2].InitAsUnorderedAccessView(0);
+
+		// A root signature is an array of root parameters.
+		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
+		(3,
+			slotRootParameter,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_NONE
+		);
+
+		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+		ComPtr<ID3DBlob> serializedRootSig = nullptr;
+		ComPtr<ID3DBlob> errorBlob = nullptr;
+		HRESULT hr = D3D12SerializeRootSignature
+		(
+			&rootSigDesc, 
+			D3D_ROOT_SIGNATURE_VERSION_1,
+			serializedRootSig.GetAddressOf(),
+			errorBlob.GetAddressOf()
+		);
+
+		if (errorBlob != nullptr)
+		{
+			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		}
+
+		THROW_ON_FAILURE(hr);
+
+		THROW_ON_FAILURE(Device->CreateRootSignature
+		(
+			0,
+			serializedRootSig->GetBufferPointer(),
+			serializedRootSig->GetBufferSize(),
+			IID_PPV_ARGS(ComputeRootSignature.GetAddressOf()
+			)
+		));
 	}
 
 

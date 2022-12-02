@@ -11,9 +11,16 @@ namespace Engine
 		return (GetAsyncKeyState(keycode) & 0x8000) != 0;
 	}
 
-	static bool IsMouseButonPressed(INT32 button)
+	static bool IsMouseButtonPressed(UINT64 button)
 	{
-		return (GetAsyncKeyState(button) & WM_LBUTTONDOWN) || (GetAsyncKeyState(button) & WM_RBUTTONDOWN) != 0;
+		if ((button & MK_LBUTTON) != 0)
+		{
+			return true;
+		}
+		if ((button & MK_RBUTTON) != 0)
+		{
+			return true;
+		}
 	}
 
 	static std::pair<float, float> GetMousePosition()

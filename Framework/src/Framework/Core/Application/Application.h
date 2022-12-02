@@ -3,7 +3,9 @@
 #include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Core/Layer/LayerStack.h"
 #include "Framework/Core/Events/AppEvents.h"
+#include "Framework/Core/Events/MouseEvent.h"
 #include "Platform/Windows/WindowsWindow.h"
+
 
 namespace Engine
 {
@@ -23,7 +25,7 @@ namespace Engine
 		virtual ~Application();
 
 		// @brief Processes application based events 
-		void OnApplicatonEvent(Event& event);
+		void OnApplicationEvent(Event& event);
 
 		// @brief Core application loop
 		void Run();
@@ -48,6 +50,14 @@ namespace Engine
 		//		  invalidate buffer command. (Rebuilds buffer)
 		bool OnWindowResize(WindowResizeEvent& windowResize);
 
+		// @brief Event callback bound to the system, processes and handles
+		//		  received events from the user.
+		// @param[in] A handle to the window
+		// @param[in] The event received from the system
+		// @param[in] A wide parameter
+		// @param[in] A long parameter
+		LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 	private:
 
 		void UpdateTimer();
@@ -70,11 +80,29 @@ namespace Engine
 
 	protected:
 
-		// unique ptr to the system window
+		// System window
 		WindowsWindow Window;
+
+
+		// System Keyboard
+		//KeyBoard Keyboard;
 
 		//A time manager
 		AppTimeManager AppTimer;
+
+		/* Used to capture mouse input from the OS */
+		struct MouseInputEventData
+		{
+			INT32 PX, PY;
+			INT32 X, Y;
+			UINT64 PButton;
+			UINT64 Button;
+			UINT8 MouseDown = 0;
+		
+			std::function<void(Event&)> CallBack;
+		};
+
+		MouseInputEventData MouseData;
 
 	};
 

@@ -12,7 +12,8 @@ namespace Engine
 		WindowsWindow() = default;
 		WindowsWindow
 		(
-			HINSTANCE hInstance, 
+			HINSTANCE hInstance,
+			WNDPROC wndProc,
 			INT32 width, 
 			INT32 height, 
 			const std::wstring& windowCaption = L"DX12 Engine"
@@ -45,14 +46,6 @@ namespace Engine
 		bool IsVSync() const override { return VSync; }
 
 
-		// @brief Event callback bound to the system, processes and handles
-		//		  received events from the user.
-		// @param[in] A handle to the window
-		// @param[in] The event received from the system
-		// @param[in] A wide parameter
-		// @param[in] A long parameter
-		LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 
 		// @brief Set the applications on event process
 		void SetEventCallBack(const WindowCallback& callBack) override { WindowsData.AppEventCallBack = callBack; }
@@ -66,7 +59,7 @@ namespace Engine
 
 		// @brief Initialises new window parameters and registers the
 		//		  window to the system.
-		bool InitialiseWindow(HINSTANCE hInstance, const std::wstring& windowCaption = L"DX12 Engine");
+		bool InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption = L"DX12 Engine");
 
 
 		// @brief Encapsulating window data.
@@ -97,6 +90,11 @@ namespace Engine
 		bool IsClosing;
 		bool WindowCreated;
 		bool VSync;
+
+	public:
+
+		void UpdateWindowData(INT32 width, INT32 height, bool isMinimised, bool isMaximised, bool isClosing, bool isResizing, bool vSync);
+
 	};
 }
 

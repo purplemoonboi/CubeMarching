@@ -50,7 +50,7 @@ namespace Engine
 		RefPointer<VertexBuffer> VertexBuffer;
 
 		// @brief Contains the indices for drawing the mesh
-		RefPointer<IndexBuffer> IBuffer;
+		RefPointer<IndexBuffer> IndexBuffer;
 
 		// A MeshGeometry may store multiple geometries in one vertex/index buffer.
 		// Use this container to define the Submesh geometries so we can draw

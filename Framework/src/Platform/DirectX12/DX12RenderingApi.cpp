@@ -5,7 +5,7 @@
 #include "DX12Shader.h"
 #include "DX12RenderItem.h"
 #include "DX12PipelineStateObject.h"
-
+#include "DX12FrameResource.h"
 #include "Framework/Core/Log/Log.h"
 
 namespace Engine
@@ -236,7 +236,7 @@ namespace Engine
 
 			
 			const auto dx12VertexBuffer  = dynamic_cast<DX12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
-			const auto  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IBuffer.get());
+			const auto  dx12IndexBuffer   = dynamic_cast<DX12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
 			/**
 			 *
@@ -360,7 +360,7 @@ namespace Engine
 
 
 		auto vertexBuffer = dynamic_cast<DX12VertexBuffer*>(geometry->VertexBuffer.get());
-		auto indexBuffer = dynamic_cast<DX12IndexBuffer*>(geometry->IBuffer.get());
+		auto indexBuffer = dynamic_cast<DX12IndexBuffer*>(geometry->IndexBuffer.get());
 
 
 		GraphicsContext->GraphicsCmdList->IASetVertexBuffers(0, 1, &vertexBuffer->GetVertexBufferView());

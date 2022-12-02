@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cmpch.h"
+#include "Framework/cmpch.h"
 #include "Event.h"
 
 
@@ -77,9 +77,9 @@ namespace Engine
 	class MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonPressedEvent(INT32 button)
+		MouseButtonPressedEvent(INT32 button, INT32 x, INT32 y)
 			:
-			MouseButtonEvent(button) {}
+			MouseButtonEvent(button), X(x), Y(y) {}
 
 		std::string ToString() const override
 		{
@@ -88,15 +88,23 @@ namespace Engine
 			return StringStream.str();
 		}
 
+		INT32 GetMouseX() const { return X; }
+		INT32 GetMouseY() const { return Y; }
+
 		EVENT_CLASS_TYPE(MouseButtonPressed)
+
+	protected:
+
+		INT32 X, Y;
+
 	};
 
 	class MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonReleasedEvent(INT32 button)
+		MouseButtonReleasedEvent(INT32 button, INT32 x, INT32 y)
 			: 
-			MouseButtonEvent(button) {}
+			MouseButtonEvent(button), X(x), Y(y) {}
 
 		std::string ToString() const override
 		{
@@ -105,6 +113,13 @@ namespace Engine
 			return StringStream.str();
 		}
 
+		INT32 GetMouseX() const { return X; }
+		INT32 GetMouseY() const { return Y; }
+
 		EVENT_CLASS_TYPE(MouseButtonReleased)
+
+	protected:
+
+		INT32 X, Y;
 	};
 }

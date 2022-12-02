@@ -10,12 +10,6 @@
 #include "Core/Time/DeltaTime.h"
 #include "Core/Time/AppTimeManager.h"
 
-/** events */
-#include "Core/Events/Event.h"
-#include "Core/Events/MouseEvent.h"
-#include "Core/Events/KeyEvent.h"
-#include "Core/Events/AppEvents.h"
-
 /** input */
 #include "Core/Input/Input.h"
 #include "Core/Input/KeyCodes.h"

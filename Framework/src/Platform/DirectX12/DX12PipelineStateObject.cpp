@@ -101,6 +101,30 @@ namespace Engine
 		THROW_ON_FAILURE(cb);
 	}
 
+	DX12PipelineStateObject::DX12PipelineStateObject(GraphicsContext* graphicsContext, Shader* computeShader)
+	{
+
+		const auto dx12GraphicsContext = dynamic_cast<DX12GraphicsContext*>(graphicsContext);
+		const auto dx12ComputeShader = dynamic_cast<DX12Shader*>(computeShader);
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
+		computePsoDesc.pRootSignature = dx12GraphicsContext->ComputeRootSignature.Get();
+		computePsoDesc.CS =
+		{
+			reinterpret_cast<BYTE*>(dx12ComputeShader->GetComPointer()->GetBufferPointer()),
+			dx12ComputeShader->GetComPointer()->GetBufferSize()
+		};
+
+		computePsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		THROW_ON_FAILURE
+		(
+			dx12GraphicsContext->Device->CreateComputePipelineState
+			(
+				&computePsoDesc, IID_PPV_ARGS(&Pso)
+			)
+		);
+	}
+
 	DX12PipelineStateObject::~DX12PipelineStateObject()
 	{
 

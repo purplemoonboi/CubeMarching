@@ -21,7 +21,7 @@ namespace Engine
 		virtual ~PipelineStateObject() = default;
 
 
-		static RefPointer<PipelineStateObject> Create
+		static ScopePointer<PipelineStateObject> Create
 		(
 			GraphicsContext* graphicsContext,
 			const std::string& vertexShader,
@@ -31,13 +31,19 @@ namespace Engine
 		);
 
 
-		static RefPointer<PipelineStateObject> Create
+		static ScopePointer<PipelineStateObject> Create
 		(
 			GraphicsContext* graphicsContext,
 			Shader* vertexShader,
 			Shader* pixelShader,
 			const BufferLayout& layout,
 			FillMode fillMode = FillMode::Opaque
+		);
+
+		static ScopePointer<PipelineStateObject> Create
+		(
+			GraphicsContext* graphicsContext,
+			Shader* computeShader
 		);
 	};
 }

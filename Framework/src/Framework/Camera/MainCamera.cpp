@@ -18,7 +18,9 @@ namespace Engine
 			NearPlane(nearPlane),
 			FarPlane(farPlane),
 			Fov(fov),
-			ViewportWidthHeight(width, height)
+			ViewportWidthHeight(width, height),
+			MinDistance(5.0f),
+			MaxDistance(10.0f)
 	{
 		/**
 		 *The window resized, so update the aspect ratioand recompute the projection matrix.
@@ -55,11 +57,29 @@ namespace Engine
 
 	}
 
-	void MainCamera::SetPosition(float x, float y, float z)
+	void MainCamera::UpdateCameraZenith(float pitch, float deltaTime)
 	{
-		Position.x += x;
-		Position.y += y;
-		Position.z += z;
+		Phi += pitch * deltaTime;
+		MathHelper::Clamp(Phi, 0.1f, MathHelper::Pi - 0.1f);
+	}
+
+	void MainCamera::UpdateCamerasAzimuth(float yaw, float deltaTime)
+	{
+		Theta += yaw * deltaTime;
+
+	}
+
+	void MainCamera::UpdateCamerasDistanceToTarget(float delta, float deltaTime)
+	{
+		DistanceToTarget += delta * deltaTime;
+		DistanceToTarget = MathHelper::Clamp(DistanceToTarget, MinDistance, MaxDistance);
+	}
+
+	void MainCamera::PassNextPosition(float x, float y, float z)
+	{
+		NextPosition.x = x;
+		NextPosition.y = y;
+		NextPosition.z = z;
 	}
 
 	void MainCamera::RecalculateAspectRatio(float width, float height, float nearPlane, float farPlane, float fov)

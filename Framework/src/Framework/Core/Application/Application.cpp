@@ -9,6 +9,11 @@ namespace Engine
 {
 	Application* Application::SingletonInstance = nullptr;
 
+	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		return Application::Get()->MsgProc(hwnd, msg, wParam, lParam);
+	}
+
 	Application::Application(HINSTANCE hInstance, const std::wstring& appName)
 		:
 		IsRunning(true)
@@ -20,9 +25,11 @@ namespace Engine
 		SingletonInstance = this;
 
 		// TODO: Create a windows window
-		Window = WindowsWindow(hInstance, 1920, 1080, L"Engine");
+		Window = WindowsWindow(hInstance, MainWndProc, 1920, 1080, L"Engine");
 		// Bind the applications on event function to capture application specific events.
-		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicatonEvent));
+		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
+
+		MouseData.CallBack = BIND_DELEGATE(Application::OnApplicationEvent);
 
 		// TODO: Initialise the renderer
 		Renderer::InitD3D(static_cast<HWND>(Window.GetNativeWindow()), 1920, 1080);
@@ -32,7 +39,7 @@ namespace Engine
 	{
 	}
 
-	void Application::OnApplicatonEvent(Event& event)
+	void Application::OnApplicationEvent(Event& event)
 	{
 		EventDispatcher dispatcher(event);
 
@@ -63,15 +70,45 @@ namespace Engine
 			}
 			else
 			{
+				AppTimer.Tick();
+
 
 				//Process any events...
 				Window.OnUpdate();
 
+
+				if(MouseData.MouseDown > 0)
+				{
+					MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
+					MouseData.PX = MouseData.X;
+					MouseData.PY = MouseData.Y;
+					MouseData.CallBack(me);
+				}
+				else
+				{
+
+					MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
+					MouseData.PX = MouseData.X;
+					MouseData.PY = MouseData.Y;
+					MouseData.CallBack(me);
+				}
+
+				MouseData.PButton = MouseData.Button;
+
+				if(MouseData.X != MouseData.PX)
+				{
+					MouseData.PX = MouseData.X;
+					MouseData.PX = MouseData.Y;
+					MouseMovedEvent mm(MouseData.X, MouseData.Y);
+					MouseData.CallBack(mm);
+				}
+
+
 				if (!Window.IsWndMinimised() && IsRunning)
 				{
-					AppTimer.Tick();
 
 					UpdateTimer();
+
 
 					//Update each layer
 					for(Layer* layer : LayerStack)
@@ -117,6 +154,153 @@ namespace Engine
 		return false;
 	}
 
+	LRESULT Application::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		bool isClosing = false;
+		bool isMaximised = false;
+		bool isMinimised = false;
+		bool isResizing = false;
+
+		switch (msg)
+		{
+		case WM_QUIT:
+			isClosing = true;
+			return 0;
+		case WM_ACTIVATE:
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				//	Timer.Stop();
+			}
+			else
+			{
+				//	mTimer.Start();
+			}
+			return 0;
+		case WM_SIZE:
+			// Save the new client area dimensions.
+			if (wParam == SIZE_MINIMIZED)
+			{
+				isMinimised = true;
+				isMaximised = false;
+			}
+			else if (wParam == SIZE_MAXIMIZED)
+			{
+				isMinimised = false;
+				isMaximised = true;
+
+			}
+			else if (wParam == SIZE_RESTORED)
+			{
+
+				// Restoring from minimized state?
+				if (isMinimised)
+				{
+					isMinimised = false;
+				}
+
+				// Restoring from maximized state?
+				else if (isMaximised)
+				{
+					isMaximised = false;
+				}
+				else if (isResizing)
+				{
+					// If user is dragging the resize bars, we do not resize 
+					// the buffers here because as the user continuously 
+					// drags the resize bars, a stream of WM_SIZE messages are
+					// sent to the window, and it would be pointless (and slow)
+					// to resize for each WM_SIZE message received from dragging
+					// the resize bars.  So instead, we reset after the user is 
+					// done resizing the window and releases the resize bars, which 
+					// sends a WM_EXITSIZEMOVE message.
+				}
+				else // Api call such as SetWindowPos or mSwapChain->SetFullscreenState.
+				{
+
+				}
+
+				//Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), isMinimised, isMaximised, isClosing, isResizing,  false);
+			}
+			return 0;
+			// WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
+		case WM_ENTERSIZEMOVE:
+			isResizing = true;
+			//mTimer.Stop();
+			return 0;
+
+			// WM_EXITSIZEMOVE is sent when the user releases the resize bars.
+			// Here we reset everything based on the new window dimensions.
+		case WM_EXITSIZEMOVE:
+			isResizing = false;
+			//mTimer.Start();
+
+			return 0;
+
+			// WM_DESTROY is sent when the window is being destroyed.
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			return 0;
+
+			// The WM_MENUCHAR message is sent when a menu is active and the user presses 
+			// a key that does not correspond to any mnemonic or accelerator key. 
+		case WM_MENUCHAR:
+			// Don't beep when we alt-enter.
+			return MAKELRESULT(0, MNC_CLOSE);
+
+			// Catch this message so to prevent the window from becoming too small.
+		case WM_GETMINMAXINFO:
+			((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
+			((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
+			return 0;
+
+		case WM_LBUTTONDOWN:
+		case WM_MBUTTONDOWN:
+		case WM_RBUTTONDOWN:
+
+			MouseData.MouseDown = 1;
+			MouseData.X = GET_X_LPARAM(lParam);
+			MouseData.Y = GET_Y_LPARAM(lParam);
+			MouseData.Button = wParam;
+
+			CORE_TRACE("Mouse button down")
+
+				return 0;
+		case WM_LBUTTONUP:
+		case WM_MBUTTONUP:
+		case WM_RBUTTONUP:
+
+			MouseData.MouseDown = 0;
+			MouseData.X = GET_X_LPARAM(lParam);
+			MouseData.Y = GET_Y_LPARAM(lParam);
+			MouseData.Button = wParam;
+
+			CORE_TRACE("Mouse button up")
+
+				return 0;
+		case WM_MOUSEMOVE:
+
+			MouseData.X = GET_X_LPARAM(lParam);
+			MouseData.Y = GET_Y_LPARAM(lParam);
+
+			CORE_TRACE("Mouse moved")
+
+				return 0;
+		case WM_KEYUP:
+			if (wParam == VK_ESCAPE)
+			{
+				PostQuitMessage(0);
+			}
+			else if ((int)wParam == VK_F2)
+				//Set4xMsaaState(!m4xMsaaState);
+
+				return 0;
+		}
+
+
+		return DefWindowProc(hwnd, msg, wParam, lParam);
+	}
+
+
 	void Application::UpdateTimer()
 	{
 
@@ -137,7 +321,8 @@ namespace Engine
 			std::wstring windowText = L"Engine fps: " + fpsStr +
 				L"   mspf: " + mspfStr;
 
-			SetWindowText(static_cast<HWND>(Window.GetNativeWindow()), windowText.c_str());
+			const auto wnd = static_cast<HWND>(Window.GetNativeWindow());
+			SetWindowText(wnd, windowText.c_str());
 
 			// Reset for next average.
 			frameCnt = 0;

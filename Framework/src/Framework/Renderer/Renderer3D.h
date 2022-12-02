@@ -3,6 +3,11 @@
 #include "Framework/Camera/MainCamera.h";
 #include "Framework/Core/Time/AppTimeManager.h"
 
+#include "Framework/IsoSurface/MarchingCubesSolver.h"
+#include "Framework/Maths/Perlin.h"
+
+
+
 namespace Engine
 {
 	class DeltaTime;
@@ -43,6 +48,11 @@ namespace Engine
 		// @brief - Build the objects which will be rendered to the buffer.
 		static void BuildRenderItems(GraphicsContext* graphicsContext);
 
+
+		//TODO: Temps
+		static void BuildScalarField();
+		static void PolygoniseScalarField();
+		static void BuildMCBuffers();
 
 		struct RenderingStats
 		{

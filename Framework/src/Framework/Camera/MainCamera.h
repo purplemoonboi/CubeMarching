@@ -19,8 +19,16 @@ namespace Engine
 		// @brief Returns the final matrix used in the constant buffer
 		const DirectX::XMMATRIX& GetWorldViewProjMat() const { return WorldViewProj; }
 
+		// @brief - Update the camera's current zenith angle.
+		void UpdateCameraZenith(float pitch, float deltaTime);
 
-		void SetPosition(float x, float y, float z);
+		// @brief - Update the camera's current azimuth angle.
+		void UpdateCamerasAzimuth(float yaw, float deltaTime);
+
+		// @brief - Update the camera's distance to the target object.
+		void UpdateCamerasDistanceToTarget(float delta, float deltaTime);
+
+		void PassNextPosition(float x, float y, float z);
 		// @brief Returns the position of the camera
 		const DirectX::XMFLOAT3 GetPosition() const { return Position; }
 
@@ -58,6 +66,8 @@ namespace Engine
 	private:
 
 		float DistanceToTarget;
+		float MinDistance;
+		float MaxDistance;
 
 		float Phi;
 		float Theta;
@@ -69,6 +79,7 @@ namespace Engine
 		float AspectRatio;
 
 		DirectX::XMFLOAT3 Position;
+		DirectX::XMFLOAT3 NextPosition;
 
 
 		DirectX::XMVECTOR Target;
