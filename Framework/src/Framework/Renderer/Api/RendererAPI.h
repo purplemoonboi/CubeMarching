@@ -3,13 +3,15 @@
 
 #include "FrameResource.h"
 #include "Framework/Core/Core.h"
+#include "Framework/Renderer/Buffers/FrameBuffer.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
 #include "Framework/Renderer/Engine/Mesh.h"
+#include "Framework/Renderer/Engine/RendererStatus.h"
 #include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 
 namespace Engine
 {
-
+	class Texture;
 
 	class RendererAPI
 	{
@@ -26,12 +28,12 @@ namespace Engine
 
 		};
 
-
+		
 	public:
 
 		virtual void Init() = 0;
 
-		virtual void InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight) = 0;
+		virtual void InitD3D12(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight) = 0;
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
@@ -47,26 +49,30 @@ namespace Engine
 
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
+		virtual void PreRender() = 0;
+
+		virtual void PostRender() = 0;
+
 		virtual void DrawOpaqueItems
 		(
 			const std::vector<RenderItem*>& renderItems,
 			UINT currentFrameResourceIndex
 		) = 0;
 
+
+
 		virtual void Flush() = 0;
 
 		static Api GetAPI() { return RenderingApi; }
 
-		virtual GraphicsContext* GetGraphicsContext() const = 0;
+		[[nodiscard]] virtual GraphicsContext* GetGraphicsContext() const = 0;
 
-	protected:
+		[[nodiscard]] virtual FrameBuffer* GetFrameBuffer() const = 0;
 
-		//RefPointer<GraphicsContext> GraphicsContext;
 
 	private:
 
 		static Api RenderingApi;
-
 
 	};
 }

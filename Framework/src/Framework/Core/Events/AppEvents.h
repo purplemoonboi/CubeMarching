@@ -12,8 +12,8 @@ namespace Engine
 		Width(w), Height(h)
 		{}
 
-		UINT32 GetWidth() const { return Width; }
-		UINT32 GetHeight() const { return Height; }
+		INT32 GetWidth() const { return Width; }
+		INT32 GetHeight() const { return Height; }
 
 		std::string ToString() const override
 		{
@@ -26,7 +26,7 @@ namespace Engine
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
 	private:
-		UINT32 Width, Height;
+		INT32 Width, Height;
 	};
 
 	class WindowCloseEvent : public Event

@@ -2,13 +2,18 @@
 #include "Application.h"
 
 #include "Framework/Core/Log/Log.h"
-#include "Framework/Renderer/Renderer.h"
+#include "Framework/Renderer/Engine/Renderer.h"
 
+#include <imgui.h>
+
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace Engine
 {
 	Application* Application::SingletonInstance = nullptr;
 
+	
 	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		return Application::Get()->MsgProc(hwnd, msg, wParam, lParam);
@@ -25,7 +30,7 @@ namespace Engine
 		SingletonInstance = this;
 
 		// TODO: Create a windows window
-		Window = WindowsWindow(hInstance, MainWndProc, 1920, 1080, L"Engine");
+		Window = Win32Window(hInstance, MainWndProc, 1920, 1080, L"Engine");
 		// Bind the applications on event function to capture application specific events.
 		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
 
@@ -33,6 +38,10 @@ namespace Engine
 
 		// TODO: Initialise the renderer
 		Renderer::InitD3D(static_cast<HWND>(Window.GetNativeWindow()), 1920, 1080);
+
+		ImGuiLayer = new class ImGuiLayer();
+		PushOverlay(ImGuiLayer);
+		IsRunning = true;
 	}
 
 	Application::~Application()
@@ -72,52 +81,64 @@ namespace Engine
 			{
 				AppTimer.Tick();
 
-
-				//Process any events...
-				Window.OnUpdate();
-
-
-				if(MouseData.MouseClicked > 0)
+				auto const rendererStatus = Renderer::RendererStatus();
+				if(rendererStatus != RendererStatus::INITIALISING ||
+					rendererStatus != RendererStatus::INVALIDATING_BUFFER)
 				{
-					auto hwnd = static_cast<HWND>(Window.GetNativeWindow());
-					SetCapture(hwnd);
-					MouseData.MouseClicked = 0;
-					CORE_TRACE("Mouse Clicked Event");
-					MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-					MouseData.CallBack(me);
-				}
-				if(MouseData.MouseReleased > 0)
-				{
-					ReleaseCapture();
-					MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-					MouseData.CallBack(me);
-				}
+					//Process any events...
+					Window.OnUpdate();
 
 
-				if(MouseData.MouseMoved == 1)
-				{
-					MouseData.MouseMoved = 0;
-					MouseMovedEvent mm(MouseData.X, MouseData.Y, MouseData.Button);
-					MouseData.CallBack(mm);
-				}
-
-
-				if (!Window.IsWndMinimised() && IsRunning)
-				{
-
-					UpdateTimer();
-
-
-					//Update each layer
-					for(Layer* layer : LayerStack)
+					if (MouseData.MouseClicked > 0)
 					{
-						layer->OnUpdate(AppTimer.DeltaTime());
+						auto hwnd = static_cast<HWND>(Window.GetNativeWindow());
+						SetCapture(hwnd);
+						MouseData.MouseClicked = 0;
+						CORE_TRACE("Mouse Clicked Event");
+						MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
+						MouseData.CallBack(me);
+					}
+					if (MouseData.MouseReleased > 0)
+					{
+						ReleaseCapture();
+						MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
+						MouseData.CallBack(me);
+					}
+					if (MouseData.MouseMoved == 1)
+					{
+						MouseData.MouseMoved = 0;
+						MouseMovedEvent mm(MouseData.X, MouseData.Y, MouseData.Button);
+						MouseData.CallBack(mm);
 					}
 
-					//Render each layer
-					for(Layer* layer : LayerStack)
+
+					if (!Window.IsWndMinimised() && IsRunning)
 					{
-						layer->OnRender(AppTimer.DeltaTime());
+
+						UpdateTimer();
+
+
+						//Update each layer
+						for (Layer* layer : LayerStack)
+						{
+							layer->OnUpdate(AppTimer.DeltaTime());
+						}
+
+						//Render each layer
+						//ImGuiLayer::Begin();
+						for (Layer* layer : LayerStack)
+						{
+							//layer->OnImGuiRender();
+							layer->OnRender(AppTimer.DeltaTime());
+						}
+
+						//Render ImGui
+						/*ImGuiLayer::Begin();
+						for(Layer* overlay : LayerStack)
+						{
+							overlay->OnImGuiRender();
+						}
+						ImGuiLayer::End();*/
 					}
 				}
 			}
@@ -140,13 +161,12 @@ namespace Engine
 	{
 		CORE_TRACE("Resize event");
 
-		if(windowResize.GetHeight() == 0 || windowResize.GetWidth() == 0)
+		if(windowResize.GetHeight() == 0 || windowResize.GetWidth() == 0 || 
+			windowResize.GetWidth() > 8196 || windowResize.GetHeight() > 8196)
 		{
-			IsRunning = false;
 			return false;
 		}
 
-		IsRunning = true;
 		Renderer::OnWindowResize(0, 0, windowResize.GetWidth(), windowResize.GetHeight());
 
 		return false;
@@ -154,6 +174,11 @@ namespace Engine
 
 	LRESULT Application::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
+		if(ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+		{
+			return true;
+		}
+
 		bool isClosing = false;
 		bool isMaximised = false;
 		bool isMinimised = false;
@@ -167,11 +192,11 @@ namespace Engine
 		case WM_ACTIVATE:
 			if (LOWORD(wParam) == WA_INACTIVE)
 			{
-				//	Timer.Stop();
+				AppTimer.Stop();
 			}
 			else
 			{
-				//	mTimer.Start();
+				AppTimer.Start();
 			}
 			return 0;
 		case WM_SIZE:
@@ -180,12 +205,14 @@ namespace Engine
 			{
 				isMinimised = true;
 				isMaximised = false;
+				Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), true, false, false, false, false);
+				AppTimer.Stop();
 			}
 			else if (wParam == SIZE_MAXIMIZED)
 			{
 				isMinimised = false;
 				isMaximised = true;
-
+				Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), false, true, false, false, false);
 			}
 			else if (wParam == SIZE_RESTORED)
 			{
@@ -203,34 +230,25 @@ namespace Engine
 				}
 				else if (isResizing)
 				{
-					// If user is dragging the resize bars, we do not resize 
-					// the buffers here because as the user continuously 
-					// drags the resize bars, a stream of WM_SIZE messages are
-					// sent to the window, and it would be pointless (and slow)
-					// to resize for each WM_SIZE message received from dragging
-					// the resize bars.  So instead, we reset after the user is 
-					// done resizing the window and releases the resize bars, which 
-					// sends a WM_EXITSIZEMOVE message.
+					/*don't resize here, wait until the WM_ENTERSIZEMOVE has fired. */
 				}
 				else // Api call such as SetWindowPos or mSwapChain->SetFullscreenState.
 				{
-
+					Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), false, false, false, false, false);
 				}
 
-				//Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), isMinimised, isMaximised, isClosing, isResizing,  false);
+
 			}
 			return 0;
 			// WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
 		case WM_ENTERSIZEMOVE:
 			isResizing = true;
-			//mTimer.Stop();
 			return 0;
-
 			// WM_EXITSIZEMOVE is sent when the user releases the resize bars.
 			// Here we reset everything based on the new window dimensions.
 		case WM_EXITSIZEMOVE:
 			isResizing = false;
-			//mTimer.Start();
+			AppTimer .Start();
 
 			return 0;
 

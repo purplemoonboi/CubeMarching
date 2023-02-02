@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
+	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 3;
 
 
 	class Material
@@ -23,9 +23,9 @@ namespace Engine
 
 		virtual void SetBufferIndex(INT32 index) = 0;
 
-		virtual INT32 GetBufferIndex() const = 0;
+		[[nodiscard]] virtual INT32 GetBufferIndex() const = 0;
 
-		virtual const std::string& GetName() const = 0;
+		[[nodiscard]] virtual const std::string& GetName() const = 0;
 
 	protected:
 

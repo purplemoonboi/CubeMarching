@@ -13,17 +13,13 @@ namespace Engine
 	public:
 		GraphicsContext() = default;
 		virtual ~GraphicsContext() = default;
-		GraphicsContext(const GraphicsContext&) = delete;
-		GraphicsContext(GraphicsContext&&) = delete;
-		auto operator=(const GraphicsContext&) noexcept -> GraphicsContext& = delete;
-		auto operator=(GraphicsContext&&) noexcept -> GraphicsContext&& = delete;
 
 
 		virtual void Init() = 0;
 
 		virtual void SwapBuffers() = 0;
 
-		static RefPointer<GraphicsContext> Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
+		static ScopePointer<GraphicsContext> Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
 
 	};
 }

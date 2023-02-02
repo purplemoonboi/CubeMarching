@@ -4,13 +4,15 @@
 #include "Framework/Core/Layer/LayerStack.h"
 #include "Framework/Core/Events/AppEvents.h"
 #include "Framework/Core/Events/MouseEvent.h"
-#include "Platform/Windows/WindowsWindow.h"
+#include "Platform/Windows/Win32Window.h"
+
+#include "Framework/ImGui/Layer/ImGuiLayer.h"
 
 
 namespace Engine
 {
 
-	class DX12GraphicsContext;
+	class D3D12Context;
 
 
 	class Application
@@ -39,10 +41,12 @@ namespace Engine
 		void PushOverlay(Layer* overlay);
 
 		// @brief Returns a pointer to the active window
-		WindowsWindow& GetWindow() { return Window; }
+		Win32Window& GetWindow() { return Window; }
 
 		// @brief Returns a reference to the app time manager
 		AppTimeManager* GetApplicationTimeManager() { return &AppTimer; }
+
+		ImGuiLayer* GetImGuiLayer() { return ImGuiLayer; }
 
 		// @brief Returns this application
 		static Application* Get() { return SingletonInstance; }
@@ -68,6 +72,8 @@ namespace Engine
 		// container for all the apps layers
 		LayerStack LayerStack;
 
+		ImGuiLayer* ImGuiLayer;
+
 		// Reflects the state of the app currently running
 		bool IsRunning;
 
@@ -84,7 +90,7 @@ namespace Engine
 	protected:
 
 		// System window
-		WindowsWindow Window;
+		Win32Window Window;
 
 
 		// System Keyboard

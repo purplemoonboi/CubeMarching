@@ -33,7 +33,17 @@ namespace Engine
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
 	private:
+		RefPointer<FrameBuffer> FrameBuffer;
+
+
+
+	private:
 		void Remap(float& x, float clx, float cmx, float nlx, float nmx);
+
+		bool IsViewportFocused;
+		bool IsViewportHovered;
+
+		XMFLOAT2 ViewportSize;
 
 		float CurrentMouseX = 0;
 		float CurrentMouseY = 0;
@@ -46,6 +56,7 @@ namespace Engine
 		bool RightMButton = false;
 		bool MouseMoved = false;
 
+		AppTimeManager* TimerManager;
 		Scene* World;
 	};
 

@@ -2,7 +2,7 @@
 #include "Material.h"
 #include "Framework/Renderer/Api/RendererAPI.h"
 
-#include "Platform/DirectX12/DX12Material.h"
+#include "Platform/DirectX12/Materials/D3D12Material.h"
 
 namespace Engine
 {
@@ -14,7 +14,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<DX12Material>(std::move(name));
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Material>(std::move(name));
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

@@ -14,9 +14,12 @@
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Framework/Renderer/Resources/Material.h"
 
+#include "IsoSurface/VoxelWorld.h"
+
 namespace Engine
 {
 
+	Renderer3D::RenderingStats Renderer3D::ProfileStats;
 
 	struct RendererData
 	{
@@ -30,8 +33,6 @@ namespace Engine
 
 		ScopePointer<Shader> VertexShader;
 		ScopePointer<Shader> PixelShader;
-		ScopePointer<Shader> ComputeShader;
-
 
 		ShaderLibrary ShaderLibrary;
 		MaterialLibrary MaterialLibrary;
@@ -47,17 +48,17 @@ namespace Engine
 		std::vector<RenderItem*> OpaqueRenderItems;
 
 
-		ScopePointer<BufferView> UploadBufferManager;
+		ScopePointer<ResourceBuffer> UploadBufferManager;
 
 		ScopePointer<MeshGeometry> Box;
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
 		RefPointer<PipelineStateObject> Pso;
 
-
-
 		// Struct capturing performance
 		Renderer3D::RenderingStats RendererStats;
+
+		class VoxelWorld* voxelWorld;
 	};
 
 	static RendererData RenderData;
@@ -86,90 +87,33 @@ namespace Engine
 		/** build and compile shaders */
 		RenderData.VertexShader  = Shader::Create(L"assets\\shaders\\Default.hlsl",  "VS", "vs_5_1");
 		RenderData.PixelShader   = Shader::Create(L"assets\\shaders\\Default.hlsl",  "PS", "ps_5_1");
-		RenderData.ComputeShader = Shader::Create(L"assets\\shaders\\VecAdd.hlsl", "CS", "cs_5_0");
 
 		RenderData.ShaderLibrary.Add("vs", std::move(RenderData.VertexShader));
 		RenderData.ShaderLibrary.Add("ps", std::move(RenderData.PixelShader));
-		RenderData.ShaderLibrary.Add("cs", std::move(RenderData.ComputeShader));
 
 		RenderData.VertexShader.reset();
 		RenderData.PixelShader.reset();
-		RenderData.ComputeShader.reset();
 
 		/**  Build the scene geometry  */
-
-		GeometryGenerator geoGen;
-		GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 1);
-
-		// Define the SubmeshGeometry that cover different 
-		// regions of the vertex/index buffers.
-
-		SubGeometry boxSubmesh;
-		boxSubmesh.IndexCount = (UINT)box.Indices32.size();
-		boxSubmesh.StartIndexLocation = 0U;
-		boxSubmesh.BaseVertexLocation = 0U;
-
-		//
-		// Extract the vertex elements we are interested in and pack the
-		// vertices of all the meshes into one vertex buffer.
-		//
-
-		auto totalVertexCount = box.Vertices.size();
-
-		std::vector<Vertex> vertices(totalVertexCount);
-
-		UINT k = 0;
-		for (UINT32 i = 0; i < box.Vertices.size(); ++i, ++k)
-		{
-			vertices[k].Position = box.Vertices[i].Position;
-			vertices[k].Normal = box.Vertices[i].Normal;
-			vertices[k].TexCoords = box.Vertices[i].TexC;
-		}
-
-		const UINT16 totalIndexCount = static_cast<UINT16>(box.GetIndices16().size());
-		std::vector<UINT16> indices(totalIndexCount);
-
-		for (UINT32 i = 0; i < totalIndexCount; ++i)
-		{
-			indices[i] = box.Indices32[i];
-		}
-
-
-
-		ScopePointer<MeshGeometry> geo = MeshGeometry::Create("SceneGeo");
-
-		/**
-		 * @brief Create one large vertex and index buffer to store all the geometry.
-		 */
 		const auto api = RenderInstruction::GetApiPtr();
-		
-		const UINT vbByteSize = static_cast<UINT>(vertices.size()) * sizeof(Vertex);
-
-		geo->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, static_cast<UINT>(vertices.size()));
-
-		geo->VertexBuffer->SetLayout
-		(
-			{
-			 {  "POSITION" , ShaderDataType::Float3	,	0		},
-			 {  "NORMAL"   , ShaderDataType::Float3	,	12	},
-			 {  "TEXCOORD" , ShaderDataType::Float2	,	24	},
-			}
-		);
-
-		const UINT ibByteSize = static_cast<UINT>(indices.size()) * sizeof(UINT16);
-
-		geo->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(), indices.data(), ibByteSize, static_cast<UINT>(indices.size()));
-
-		/** store the attributes of each submesh */
-		geo->DrawArgs["Box"] = boxSubmesh;
 
 
-		RenderData.Geometries[geo->GetName()] = std::move(geo);
-
-
+	
 		BuildScalarField();
 		PolygoniseScalarField();
 		BuildMCBuffers();
+	
+
+		RenderData.voxelWorld = new class VoxelWorld();
+		RenderData.voxelWorld->ComputeShader = Shader::Create(L"assets\\shaders\\MarchingCube.hlsl", "GenerateChunk", "cs_5_0");
+		RenderData.voxelWorld->Init(api->GetGraphicsContext());
+
+		///*
+		// * The buffer size can be given by...
+		// *
+		// * '	(X - 1) * (Y - 1) * (Z - 1) * 5 * sizeof(Triangle)	'
+		// *
+		// */
 
 		/**
 		 * Build object materials.
@@ -190,7 +134,7 @@ namespace Engine
 		/**
 		 * Build upload buffers
 		 */
-		RenderData.UploadBufferManager = BufferView::Create
+		RenderData.UploadBufferManager = ResourceBuffer::Create
 		(
 			api->GetGraphicsContext(),
 			RenderData.FrameResources,
@@ -206,7 +150,7 @@ namespace Engine
 			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.Get("vs"),
 			RenderData.ShaderLibrary.Get("ps"),
-			RenderData.Geometries["SceneGeo"]->VertexBuffer->GetLayout(),
+			RenderData.Geometries["McGeo"]->VertexBuffer->GetLayout(),
 			FillMode::Opaque
 		));
 
@@ -217,6 +161,7 @@ namespace Engine
 
 	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
 	{
+		
 
 		/**
 		 *	Cycle throught the frame resources array
@@ -253,16 +198,15 @@ namespace Engine
 		RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
 
 
+		RenderInstruction::PreRender();
 
-
-		
-
-
+		/*generate one chunk*/
+		RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f });
+		/*take the chunk data and copy it into the vertex buffer*/
 		/**
 		 * Clear the back buffer ready for rendering
 		 */
-		RenderInstruction::SetClearColour(0, RenderData.PSOs["Opaque"].get());
-
+		RenderInstruction::SetClearColour(NULL, RenderData.PSOs["Opaque"].get());
 
 		/**
 		 * Prepare scene geometry to the screen
@@ -270,7 +214,6 @@ namespace Engine
 		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
 
 
-		//RenderInstruction::DrawIndexed(RenderData.Box, 0);
 	}
 
 	void Renderer3D::EndScene()
@@ -278,29 +221,19 @@ namespace Engine
 		/**
 		 *	Render the scene geometry to the scene
 		 */
+		ProfileStats.DrawCalls = 1;
 		RenderInstruction::Flush();
+		RenderInstruction::PostRender();
 	}
 
 	void Renderer3D::BuildRenderItems(GraphicsContext* graphicsContext)
 	{
 
-		auto boxRitem = RenderItem::Create
-		(
-			RenderData.Geometries["SceneGeo"].get(),
-			RenderData.MaterialLibrary.Get("Green"),
-			"Box",
-			0,
-			Transform(0.0f, 0.0f, 0.0f)
-		);
-
-		RenderData.RenderItems.push_back(std::move(boxRitem));
-
-
 		auto mcGeo = RenderItem::Create
 		(
-			RenderData.Geometries["mcGeo"].get(),
+			RenderData.Geometries["McGeo"].get(),
 			RenderData.MaterialLibrary.Get("Default"),
-			"mcDA",
+			"March",
 			1,
 			Transform(-10.0f, -10.0f, -10.0f)
 		);
@@ -320,23 +253,13 @@ namespace Engine
 	void Renderer3D::BuildMaterials()
 	{
 
-		auto mat = Material::Create("Green");
-		mat->SetAlbedo(0.2f, 0.8f, 0.3f);
-		mat->SetFresnel(0.02f, 0.02f, 0.02f);
-		mat->SetRoughness(0.1f);
-		mat->SetBufferIndex(0);
-		RenderData.MaterialLibrary.Add("Green", std::move(mat));
-
 		auto matB = Material::Create("Default");
 		matB->SetAlbedo(0.8f, 0.8f, 0.8f);
 		matB->SetFresnel(0.02f, 0.02f, 0.02f);
 		matB->SetRoughness(0.5f);
 		matB->SetBufferIndex(1);
 		RenderData.MaterialLibrary.Add("Default", std::move(matB));
-
-		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Green"));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
-
 	}
 
 	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
@@ -355,10 +278,14 @@ namespace Engine
 		}
 	}
 
+
+
+
+
 	const UINT32 Dimensions = 32;
 	static constexpr  UINT32 WorldSize = Dimensions * Dimensions * Dimensions;
 
-	constexpr float WorldResolution = 0.1f;
+	constexpr float WorldResolution = 0.5f;
 
 	////////////////////////////////////////////////////////
 	
@@ -448,13 +375,13 @@ namespace Engine
 	void Renderer3D::PolygoniseScalarField()
 	{
 
-		MarchingCubesSolver mcSolver;
+		MarchingCubesCPU mcSolver;
 
 		const double isoLevelT = 3;
 
 		for (const auto& voxel : VoxelWorld)
 		{
-			UINT32 count = mcSolver.PolygoniseScalarField(voxel, isoLevelT, &Triangles);
+			UINT32 count = mcSolver.PolygoniseScalarField(voxel, IsoValue, &Triangles);
 		}
 	}
 
@@ -462,7 +389,7 @@ namespace Engine
 	{
 		const auto api = RenderInstruction::GetApiPtr();
 
-		ScopePointer<MeshGeometry> mcGeo = CreateScope<MeshGeometry>("mcGeo");
+		ScopePointer<MeshGeometry> mcGeo = CreateScope<MeshGeometry>("McGeo");
 
 		std::vector<Vertex> vertices;
 		std::vector<UINT16> indices;
@@ -494,7 +421,8 @@ namespace Engine
 			vertices.push_back(v);
 			indices.push_back(index);
 
-
+			ProfileStats.TriCount += 1;
+			ProfileStats.PolyCount += 3;
 			index++;
 		}
 
@@ -505,7 +433,7 @@ namespace Engine
 		const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 		const UINT ibByteSize = (UINT)indices.size() * sizeof(UINT16);
 
-		mcGeo->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, vertices.size());
+		mcGeo->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, vertices.size(), true);
 		mcGeo->VertexBuffer->SetLayout
 		(
 			{
@@ -524,7 +452,7 @@ namespace Engine
 		sub.IndexCount = mcGeo->IndexBuffer->GetCount();
 		sub.StartIndexLocation = 0;
 
-		mcGeo->DrawArgs["mcDA"] = sub;
+		mcGeo->DrawArgs["March"] = sub;
 
 		/*Store the marching cubes algorithm into the global geometry handler*/
 		RenderData.Geometries[mcGeo->GetName()] = std::move(mcGeo);

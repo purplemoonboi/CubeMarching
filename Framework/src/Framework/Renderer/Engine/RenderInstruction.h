@@ -3,6 +3,8 @@
 
 namespace Engine
 {
+	
+
 
 	class RenderInstruction
 	{
@@ -15,7 +17,7 @@ namespace Engine
 
 		static void InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight)
 		{
-			RendererApiPtr->InitD3D(windowHandle, viewportWidth, viewportHeight);
+			RendererApiPtr->InitD3D12(windowHandle, viewportWidth, viewportHeight);
 		}
 
 		static void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
@@ -48,9 +50,14 @@ namespace Engine
 			RendererApiPtr->UpdateFrameResource(frameResource);
 		}
 
-		static void DrawDemoScene()
+		static void PreRender()
 		{
-		//	RendererApiPtr->Draw();
+			RendererApiPtr->PreRender();
+		}
+
+		static void PostRender()
+		{
+			RendererApiPtr->PostRender();
 		}
 
 		static RendererAPI* GetApiPtr() { return RendererApiPtr; }

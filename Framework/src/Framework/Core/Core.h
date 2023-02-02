@@ -2,7 +2,7 @@
 #include <memory>
 #include <utility>
 
-// @brief A macro for shifting bits by 'x' amount. (very lazy)
+// @brief A macro for shifting bits by 'x' amount.
 #define BIT(x) (1 << x)
 
 // @brief A macro for binding function addresses to events

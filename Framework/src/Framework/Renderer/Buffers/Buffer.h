@@ -161,15 +161,14 @@ namespace Engine
 
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
-
 		virtual void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) = 0;
-
+		virtual void Release() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
-
-		virtual const BufferLayout& GetLayout() const = 0;
-
+		[[nodiscard]] virtual const BufferLayout& GetLayout() const = 0;
+		[[nodiscard]] virtual const void* GetSystemData() const = 0;
+		[[nodiscard]] virtual const void* GetResourceData() const = 0;
 		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, UINT size, UINT vertexCount);
-		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size, UINT vertexCount);
+		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
 
 	};
 
@@ -182,17 +181,17 @@ namespace Engine
 
 		virtual void UnBind() const = 0;
 
-		virtual const INT32 GetCount() = 0;
+		virtual INT32 GetCount() const = 0;
 
 		static RefPointer<IndexBuffer> Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT indexCount);
 	};
 
 
-	class BufferView
+	class ResourceBuffer
 	{
 	public:
 
-		virtual ~BufferView() = default;
+		virtual ~ResourceBuffer() = default;
 
 		virtual void Bind() const = 0;
 
@@ -210,7 +209,7 @@ namespace Engine
 
 		virtual const INT32 GetCount() const = 0;
 
-		static ScopePointer<BufferView> Create
+		static ScopePointer<ResourceBuffer> Create
 		(
 			GraphicsContext* graphicsContext, 
 			const std::vector<ScopePointer<FrameResource>>& frameResources, 

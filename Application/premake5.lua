@@ -14,7 +14,7 @@ project "Application"
 				"vendor/Microsoft/**.h",
 				"vendor/Microsoft/**.cpp",
 				"vendor/FDLuna/**.h",
-				"vendor/FDLuna/**.cpp"
+				"vendor/FDLuna/**.cpp",
 			}
 
 			includedirs 
@@ -23,7 +23,6 @@ project "Application"
 				"%{wks.location}/Framework/vendor/Microsoft",
 				"%{wks.location}/Framework/vendor/FDLuna",
 				"%{wks.location}/Framework/src"
-				
 			}
 
 			links

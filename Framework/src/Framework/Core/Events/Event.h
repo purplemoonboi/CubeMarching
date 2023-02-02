@@ -39,26 +39,22 @@ namespace Engine
 
 	public:
 
-		virtual EventType GetEventType() const = 0;
-		virtual const char* GetName()    const = 0;
-		virtual int GetCategoryFlags()   const = 0;
-		virtual std::string ToString()   const { return GetName(); }
-		const bool HasEventBeenHandled() { return IsHandled; }
+		[[nodiscard]] virtual EventType GetEventType() const = 0;
+		[[nodiscard]] virtual const char* GetName()    const = 0;
+		[[nodiscard]] virtual int GetCategoryFlags()   const = 0;
+		[[nodiscard]] virtual std::string ToString()   const { return GetName(); }
+		[[nodiscard]] bool HasEventBeenHandled() const { return IsHandled; }
 
-		// @brief Bitwise '&' to evaluate if 'this' event --(the event we're processing)-- is in the category.
-		bool InCategory(EventCategory category)
+		[[nodiscard]] bool InCategory(EventCategory category) const 
 		{
 			return GetCategoryFlags() & category;
 		}
 
-
-		
 		bool IsHandled = false;
-
 	};
 
 
-	// @brief 
+
 	class EventDispatcher
 	{
 		template<typename T>
@@ -75,7 +71,7 @@ namespace Engine
 		{
 			if (Event.GetEventType() == T::GetStaticType())
 			{
-				Event.IsHandled = function(*(T*)&Event);
+				Event.IsHandled = function(*static_cast<T*>(&Event));
 				return true;
 			}
 			return false;

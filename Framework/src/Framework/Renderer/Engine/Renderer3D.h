@@ -2,7 +2,7 @@
 #include <intsafe.h>
 #include "Framework/Camera/MainCamera.h";
 
-#include "Framework/IsoSurface/MarchingCubesSolver.h"
+#include "IsoSurface/MarchingCubesCPU.h"
 #include "Framework/Maths/Perlin.h"
 
 
@@ -73,9 +73,9 @@ namespace Engine
 			UINT32 GetTotalIndexCount() { return 0; }
 		};
 
-		//static RenderingStats& GetRenderingStats();
+		static const RenderingStats& GetProfileData() { return ProfileStats; }
 
-
+		static RenderingStats ProfileStats;
 	};
 
 

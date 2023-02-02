@@ -4,7 +4,7 @@
 #include "Shader.h"
 #include "Framework/Renderer/Api/RendererAPI.h"
 
-#include "Platform/DirectX12/DX12Shader.h"
+#include "Platform/DirectX12/Shaders/D3D12Shader.h"
 
 
 namespace Engine
@@ -18,7 +18,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<DX12Shader>(filePath);
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(filePath);
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
@@ -33,7 +33,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<DX12Shader>(std::move(filepath));
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(std::move(filepath));
 
 		}
 
@@ -49,7 +49,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<DX12Shader>(filePath, entryPoint, target, defines);
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(filePath, entryPoint, target, defines);
 
 		}
 
@@ -65,7 +65,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<DX12Shader>(std::move(filePath), std::move(entryPoint), std::move(target), defines);
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(std::move(filePath), std::move(entryPoint), std::move(target), defines);
 
 		}
 

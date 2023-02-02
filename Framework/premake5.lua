@@ -17,7 +17,12 @@ project "Framework"
 				"vendor/Microsoft/**.h",
 				"vendor/Microsoft/**.cpp",
 				"vendor/FDLuna/**.h",
-				"vendor/FDLuna/**.cpp"
+				"vendor/FDLuna/**.cpp",
+				"vendor/ImGui/backends/imgui_impl_dx12.h",
+				"vendor/ImGui/backends/imgui_impl_dx12.cpp",
+				"vendor/ImGui/backends/imgui_impl_win32.h",
+				"vendor/ImGui/backends/imgui_impl_win32.cpp"
+			
 			}
 
 			includedirs
@@ -25,14 +30,16 @@ project "Framework"
 				"src",
 				"vendor/spdlog/include",
 				"vendor/DX12/Microsoft",
-				"vendor/FDLuna"
+				"vendor/FDLuna",
+				"vendor/ImGui"
 			}
 
 			links
 			{
 			   "d3dcompiler",
 			   "D3D12",
-			   "dxgi"
+			   "dxgi",
+			   "ImGui"
 			}
 
 			flags { "NoPCH" }

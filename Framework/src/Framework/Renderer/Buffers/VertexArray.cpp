@@ -2,7 +2,7 @@
 #include "VertexArray.h"
 #include "Framework/Renderer/Api/RendererAPI.h"
 
-#include "Platform/DirectX12/DX12VertexArray.h"
+#include "Platform/DirectX12/Buffers/DX12VertexArray.h"
 
 namespace Engine
 {
