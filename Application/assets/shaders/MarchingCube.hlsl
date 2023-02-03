@@ -121,6 +121,6 @@ void GenerateChunk(int3 threadId : SV_DispatchThreadID)
 
     int edgeCase = edgeTable[caseNumber];
 
-
+   // triangles.Append(tri);
 
 }

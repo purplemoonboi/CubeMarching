@@ -13,7 +13,6 @@
 #include "Framework/Core/Log/Log.h"
 #include "Framework/ImGui/Platform/ImGuiImplD3D12.h"
 
-#define NSIGHT_REPORT_FORCE_FAILED_QUERY_INTERFACES 
 
 namespace Engine
 {

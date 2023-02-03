@@ -74,6 +74,7 @@ namespace Engine
 		CD3DX12_GPU_DESCRIPTOR_HANDLE ScalarFieldSrvGpu;
 
 		ComPtr<ID3D12Resource> CS_OutputVertexResource;
+		ComPtr<ID3D12Resource> CS_Counter_Resource;
 		ComPtr<ID3D12Resource> CS_Readback_OutputVertexResource;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;

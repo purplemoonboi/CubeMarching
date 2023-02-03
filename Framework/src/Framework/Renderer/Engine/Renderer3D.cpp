@@ -104,9 +104,9 @@ namespace Engine
 		BuildMCBuffers();
 	
 
-		RenderData.voxelWorld = new class VoxelWorld();
+		/*RenderData.voxelWorld = new class VoxelWorld();
 		RenderData.voxelWorld->ComputeShader = Shader::Create(L"assets\\shaders\\MarchingCube.hlsl", "GenerateChunk", "cs_5_0");
-		RenderData.voxelWorld->Init(api->GetGraphicsContext());
+		RenderData.voxelWorld->Init(api->GetGraphicsContext());*/
 
 		///*
 		// * The buffer size can be given by...
@@ -201,7 +201,7 @@ namespace Engine
 		RenderInstruction::PreRender();
 
 		/*generate one chunk*/
-		RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f });
+		//RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f });
 		/*take the chunk data and copy it into the vertex buffer*/
 		/**
 		 * Clear the back buffer ready for rendering

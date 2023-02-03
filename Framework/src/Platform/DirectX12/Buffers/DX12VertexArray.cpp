@@ -2,32 +2,32 @@
 
 namespace Engine
 {
-	DX12VertexArray::DX12VertexArray()
+	D3D12VertexArray::D3D12VertexArray()
 	{
 
 	}
 
-	DX12VertexArray::~DX12VertexArray()
+	D3D12VertexArray::~D3D12VertexArray()
 	{
 
 	}
 
-	void DX12VertexArray::Bind() const
+	void D3D12VertexArray::Bind() const
 	{
 
 	}
 
-	void DX12VertexArray::UnBind() const
+	void D3D12VertexArray::UnBind() const
 	{
 
 	}
 
-	void DX12VertexArray::AddVertexBuffer(const RefPointer<VertexBuffer>& vertexBuffer)
+	void D3D12VertexArray::AddVertexBuffer(const RefPointer<VertexBuffer>& vertexBuffer)
 	{
 
 	}
 
-	void DX12VertexArray::SetIndexBuffer(const RefPointer<IndexBuffer>& indexBuffer)
+	void D3D12VertexArray::SetIndexBuffer(const RefPointer<IndexBuffer>& indexBuffer)
 	{
 
 	}

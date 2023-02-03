@@ -4,12 +4,12 @@
 
 namespace Engine
 {
-	class DX12VertexArray : public VertexArray
+	class D3D12VertexArray : public VertexArray
 	{
 	public:
-		DX12VertexArray();
+		D3D12VertexArray();
 
-		~DX12VertexArray() override;
+		~D3D12VertexArray() override;
 
 		void Bind() const override;
 

@@ -184,15 +184,18 @@ namespace Engine
 		ScalarFieldSrvGpu = gpuHandleOffset;
 
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.Buffer.StructureByteStride = sizeof(MCTriangle);
+		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.CounterOffsetInBytes = 0;
+		uavDesc.Buffer.NumElements = VoxelWorldSize;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-		uavDesc.Texture2D.MipSlice = 0;
-
 
 		/*create the view describing our output buffer. note to offset on the GPU address*/
 		Context->Device->CreateUnorderedAccessView(
 			CS_OutputVertexResource.Get(),
-			nullptr, 
+			CS_Counter_Resource.Get(), 
 			&uavDesc,
 			cpuHandleOffset.Offset(1, srvDescriptorSize)
 		);
@@ -207,20 +210,47 @@ namespace Engine
 
 	void VoxelWorld::BuildResources()
 	{
-		/**
-		 * create the append buffer resource
-		 */
+		constexpr UINT64 bufferWidth = (UINT64)(VoxelWorldSize * VoxelWorldSize * VoxelWorldSize * sizeof(MCTriangle));
+
+		/* create the resource to be used by the UAV */
 		const HRESULT vertexResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(VoxelWorldVertexBufferSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
 			IID_PPV_ARGS(&CS_OutputVertexResource)
 		);
 		THROW_ON_FAILURE(vertexResult);
 
+		/*create a description for the counter buffer. */
+		D3D12_RESOURCE_DESC Desc = {};
+		Desc.Alignment = 0;
+		Desc.DepthOrArraySize = 1;
+		Desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		Desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		Desc.Format = DXGI_FORMAT_UNKNOWN;
+		Desc.Height = 1;
+		Desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		Desc.MipLevels = 1;
+		Desc.SampleDesc.Count = 1;
+		Desc.SampleDesc.Quality = 0;
+		Desc.Width = bufferWidth;
+		
+		const HRESULT counterResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&Desc,
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&CS_Counter_Resource)
+		);
+		THROW_ON_FAILURE(counterResult);
+
+
+		/*create a readback buffer*/
 		const HRESULT readbackResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
@@ -231,11 +261,6 @@ namespace Engine
 			IID_PPV_ARGS(&CS_Readback_OutputVertexResource)
 		);
 		THROW_ON_FAILURE(readbackResult);
-
-		/**
-		 * create the texture resource
-		 */
-
 
 
 		/*Fill the raw texture with noise values*/
