@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 3;
+	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
 
 
 	class Material

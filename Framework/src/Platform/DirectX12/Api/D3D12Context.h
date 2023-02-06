@@ -21,6 +21,7 @@ namespace Engine
 		void LogAdapterOutputs(IDXGIAdapter* adapter);
 
 		void LogAdapters();
+		ComPtr<ID3D12Debug> DebugController;
 
 	public:
 
@@ -44,6 +45,8 @@ namespace Engine
 			UINT voxelWorldResources,
 			UINT frameResourceCount
 		);
+
+
 
 		ComPtr<ID3D12Device>				Device;
 		ComPtr<IDXGISwapChain>				SwapChain;

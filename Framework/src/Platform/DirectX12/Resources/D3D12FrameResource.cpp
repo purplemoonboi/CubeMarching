@@ -15,15 +15,9 @@ namespace Engine
 		/**
 		 * Create a command allocator for this resource
 		 */
-		THROW_ON_FAILURE
-		(
-			dx12DeviceContext->Device->CreateCommandAllocator
-			(
-				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				IID_PPV_ARGS(CmdListAlloc.GetAddressOf()
-				)
-			)
-		);
+		const HRESULT cmdAllocResult = dx12DeviceContext->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+			IID_PPV_ARGS(CmdListAlloc.GetAddressOf()));
+		THROW_ON_FAILURE(cmdAllocResult);
 
 		/**
 		 * Create buffers for this resource

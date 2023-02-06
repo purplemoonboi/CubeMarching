@@ -9,7 +9,8 @@
 
 namespace Engine
 {
-	
+	struct MCTriangle;
+
 	class RendererApi;
 	class GraphicsContext;
 
@@ -76,6 +77,8 @@ namespace Engine
 		static const RenderingStats& GetProfileData() { return ProfileStats; }
 
 		static RenderingStats ProfileStats;
+
+		static void BuildVoxelWorld(MCTriangle* data);
 	};
 
 

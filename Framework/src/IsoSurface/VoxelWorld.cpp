@@ -16,19 +16,24 @@ namespace Engine
 		Context = dynamic_cast<D3D12Context*>(c);
 		BuildComputeRootSignature();
 		BuildPso();
-		BuildResourceViews(nullptr);
+		BuildResourcesAndViews();
+		CreateReadBackBuffer();
+
 		return true;
 	}
 
-	void VoxelWorld::GenerateChunk(DirectX::XMFLOAT3 chunkID)
+	MCTriangle* VoxelWorld::GenerateChunk(DirectX::XMFLOAT3 chunkID)
 	{
+		THROW_ON_FAILURE(Context->CmdListAlloc->Reset());
+		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), ComputeState.Get()));
+
 
 		ID3D12DescriptorHeap* srvHeap[] = { SrvUavHeap.Get() };
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		Context->GraphicsCmdList->SetPipelineState(ComputeState.Get());
 
 		// #1 - Bind the compute shader root signature.
 		Context->GraphicsCmdList->SetComputeRootSignature(ComputeRootSignature.Get());
-		Context->GraphicsCmdList->SetPipelineState(ComputeState.Get());
 
 		// #2 - Set the compute shader variables.
 		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0,	 1,		&WorldSettings.IsoValue,			0);
@@ -39,56 +44,55 @@ namespace Engine
 		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0,	 3,		coord,		4);
 
 		// Set the density texture
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1,
-			ScalarFieldSrvGpu);
+		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, ScalarFieldSrvGpu);
 
 		// Set the output buffer.
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(2,
-			OutputVertexUavGpu);
-
+		Context->GraphicsCmdList->SetComputeRootDescriptorTable(2, OutputVertexUavGpu);
 
 		// #3 - Dispatch the work onto the GPU.
 		constexpr UINT32 dimension = 32;
 		Context->GraphicsCmdList->Dispatch(dimension, dimension, dimension);
 
+
 		// #4 - Read back the vertices into the vertex buffer.
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CS_OutputVertexResource.Get(),
-				D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE));
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 		
 
 		// Copy vertices from the compute shader into the vertex buffer for rendering
-		Context->GraphicsCmdList->CopyResource(CS_Readback_OutputVertexResource.Get(), CS_OutputVertexResource.Get());
+		Context->GraphicsCmdList->CopyResource(ReadbackBuffer.Get(), OutputBuffer.Get());
 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CS_OutputVertexResource.Get(),
-				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON));
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
+				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	
+		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
+		ID3D12CommandList* cmdLists[] = { Context->GraphicsCmdList.Get() };
+		Context->CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
+		Context->FlushCommandQueue();
 
-		//THROW_ON_FAILURE(CS_Readback_OutputVertexResource->Map(0, nullptr,
-		//	reinterpret_cast<void**>(RawTriBuffer)));
 
-		//const MCTriangle* tris[] = { RawTriBuffer };
-		//constexpr INT32 count = _countof(tris);
-		//INT32 index = 0;
+		THROW_ON_FAILURE(ReadbackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&RawTriBuffer)));
 
-		//CS_Readback_OutputVertexResource->Unmap(0, nullptr);
+		MCVertex v  = RawTriBuffer[0].VertexA;
+		MCVertex vb = RawTriBuffer[0].VertexB;
+		MCVertex vc = RawTriBuffer[0].VertexC;
 
+		return RawTriBuffer;
 	}
 
 
 	void VoxelWorld::BuildComputeRootSignature()
 	{
-		CD3DX12_DESCRIPTOR_RANGE srvTable;
-		srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-
-		CD3DX12_DESCRIPTOR_RANGE uavTable;
-		uavTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+		CD3DX12_DESCRIPTOR_RANGE table0;
+		table0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+		CD3DX12_DESCRIPTOR_RANGE table1;
+		table1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[3];
-		// Perfomance TIP: Order from most frequent to least frequent.
 		slotRootParameter[0].InitAsConstants(5, 0); // world settings view
-		slotRootParameter[1].InitAsDescriptorTable(1, &srvTable); // density texture view
-		slotRootParameter[2].InitAsDescriptorTable(1, &uavTable);// output buffer view
+		slotRootParameter[1].InitAsDescriptorTable(1, &table0); // density texture view
+		slotRootParameter[2].InitAsDescriptorTable(1, &table1);// output buffer view
 
 		// A root signature is an array of root parameters.
 		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter,
@@ -135,14 +139,15 @@ namespace Engine
 			d3dCsShader->GetShader()->GetBufferSize()
 		};
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		THROW_ON_FAILURE(Context->Device->CreateComputePipelineState
+		const HRESULT csPipelineState = Context->Device->CreateComputePipelineState
 		(
 			&desc, 
 			IID_PPV_ARGS(&ComputeState)
-		));
+		);
+		THROW_ON_FAILURE(csPipelineState);
 	}
 
-	void VoxelWorld::BuildResourceViews(ID3D12Resource* pCounterResource)
+	void VoxelWorld::BuildResourcesAndViews()
 	{
 		/**
 		 * create our SRV heap
@@ -155,133 +160,46 @@ namespace Engine
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		HRESULT heapResult = Context->Device->CreateDescriptorHeap(&srvHeapDesc,
 			IID_PPV_ARGS(&SrvUavHeap));
-
 		THROW_ON_FAILURE(heapResult);
 
-		/**
-		 * get the offset to our voxel world resources in the heap
-		 */
-		const UINT32 srvDescriptorSize = Context->CbvSrvUavDescriptorSize;
-		/* get a pointer to the beginning of the descriptors in the heap. */
-		auto cpuHandleOffset = CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(), 
-			0, srvDescriptorSize);
-		auto gpuHandleOffset = CD3DX12_GPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetGPUDescriptorHandleForHeapStart(),
-			0, srvDescriptorSize);
+		const HRESULT deviceRemovedReasonSrvHeap = Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReasonSrvHeap);
 
+		CreateScalarField();
 
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-		srvDesc.Texture3D.MostDetailedMip = 0;
-		srvDesc.Texture3D.MipLevels = 1;
-		
-		Context->Device->CreateShaderResourceView(
-			CS_Texture.Get(), 
-			&srvDesc, 
-			cpuHandleOffset
-		);
-		ScalarFieldSrvGpu = gpuHandleOffset;
-
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-		uavDesc.Buffer.StructureByteStride = sizeof(MCTriangle);
-		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-		uavDesc.Buffer.FirstElement = 0;
-		uavDesc.Buffer.CounterOffsetInBytes = 0;
-		uavDesc.Buffer.NumElements = VoxelWorldSize;
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-
-		/*create the view describing our output buffer. note to offset on the GPU address*/
-		Context->Device->CreateUnorderedAccessView(
-			CS_OutputVertexResource.Get(),
-			CS_Counter_Resource.Get(), 
-			&uavDesc,
-			cpuHandleOffset.Offset(1, srvDescriptorSize)
-		);
-
-		OutputVertexUavGpu = gpuHandleOffset.Offset(1, srvDescriptorSize);
-
-		BuildResources();
+		CreateOutputBuffer();
 	}
 
 	#include "Framework/Maths/Perlin.h"
 
 
-	void VoxelWorld::BuildResources()
+	void VoxelWorld::CreateScalarField()
 	{
-		constexpr UINT64 bufferWidth = (UINT64)(VoxelWorldSize * VoxelWorldSize * VoxelWorldSize * sizeof(MCTriangle));
-
-		/* create the resource to be used by the UAV */
-		const HRESULT vertexResult = Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			nullptr,
-			IID_PPV_ARGS(&CS_OutputVertexResource)
-		);
-		THROW_ON_FAILURE(vertexResult);
-
-		/*create a description for the counter buffer. */
-		D3D12_RESOURCE_DESC Desc = {};
-		Desc.Alignment = 0;
-		Desc.DepthOrArraySize = 1;
-		Desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		Desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-		Desc.Format = DXGI_FORMAT_UNKNOWN;
-		Desc.Height = 1;
-		Desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		Desc.MipLevels = 1;
-		Desc.SampleDesc.Count = 1;
-		Desc.SampleDesc.Quality = 0;
-		Desc.Width = bufferWidth;
-		
-		const HRESULT counterResult = Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&Desc,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			nullptr,
-			IID_PPV_ARGS(&CS_Counter_Resource)
-		);
-		THROW_ON_FAILURE(counterResult);
-
-
-		/*create a readback buffer*/
-		const HRESULT readbackResult = Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(VoxelWorldVertexBufferSize),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&CS_Readback_OutputVertexResource)
-		);
-		THROW_ON_FAILURE(readbackResult);
-
+		/**
+		 * get the offset to our voxel world resources in the heap
+		 */
+		const UINT32 srvDescriptorSize = Context->CbvSrvUavDescriptorSize;
+		/* get a pointer to the beginning of the descriptors in the heap. */
+		auto cpuHandleOffset = CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),
+			0, srvDescriptorSize);
+		auto gpuHandleOffset = CD3DX12_GPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetGPUDescriptorHandleForHeapStart(),
+			0, srvDescriptorSize);
 
 		/*Fill the raw texture with noise values*/
-		RawScalarTexture.reserve(VoxelWorldSize * VoxelWorldSize * VoxelWorldSize);
+		RawScalarTexture.reserve(VoxelWorldSize * VoxelWorldSize);
 		for (UINT32 i = 0; i < VoxelWorldSize; ++i)
 		{
 			for (UINT32 j = 0; j < VoxelWorldSize; ++j)
 			{
 				for (UINT32 k = 0; k < VoxelWorldSize; ++k)
 				{
-					RawScalarTexture.push_back(Perlin(
-						(float)i * 0.001f, 
-						(float)j * 0.001f, 
-						(float)k * 0.001f)
-					);
+					RawScalarTexture.push_back(Perlin((float)i * 0.01f, (float)j * 0.01f, (float)k * 0.01f));
 				}
 			}
 		}
 
 		/* create the upload buffer and copy the noise data into the buffer. */
-		CS_Texture = D3D12BufferUtils::Create_Texture3D_UploadAndDefaultBuffers
+		CS_Texture = D3D12BufferUtils::CreateTexture3D
 		(
 			Context->Device.Get(),
 			Context->GraphicsCmdList.Get(),
@@ -292,6 +210,97 @@ namespace Engine
 			DXGI_FORMAT_R32_FLOAT,
 			CS_Upload_Texture
 		);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		srvDesc.Texture3D.MipLevels = -1;
+		srvDesc.Texture3D.MostDetailedMip = 0;
+
+		Context->Device->CreateShaderResourceView(CS_Texture.Get(), &srvDesc, cpuHandleOffset);
+		ScalarFieldSrvGpu = gpuHandleOffset.Offset(1, srvDescriptorSize);
+
+		const HRESULT deviceRemovedReasonSrv = Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReasonSrv);
+	}
+
+	void VoxelWorld::CreateOutputBuffer()
+	{
+		/**
+		 * get the offset to our voxel world resources in the heap
+		 */
+		const UINT32 srvDescriptorSize = Context->CbvSrvUavDescriptorSize;
+		/* get a pointer to the beginning of the descriptors in the heap. */
+		auto cpuHandleOffset = CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),
+			0, srvDescriptorSize);
+		auto gpuHandleOffset = CD3DX12_GPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetGPUDescriptorHandleForHeapStart(),
+			0, srvDescriptorSize);
+
+		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(MCTriangle));
+
+
+		const HRESULT vertexResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&OutputBuffer)
+		);
+		THROW_ON_FAILURE(vertexResult);
+
+		const HRESULT counterResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(4, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&CounterResource)
+		);
+		THROW_ON_FAILURE(counterResult);
+
+		/** create views for the vertex buffer */
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavDesc.Buffer.StructureByteStride = sizeof(MCTriangle);
+		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		uavDesc.Buffer.FirstElement = 0;
+		uavDesc.Buffer.CounterOffsetInBytes = 0;
+		uavDesc.Buffer.NumElements = NumberOfBufferElements;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		/* create the view describing our output buffer. note to offset on the GPU address */
+		Context->Device->CreateUnorderedAccessView(
+			OutputBuffer.Get(),
+			CounterResource.Get(),
+			&uavDesc,
+			cpuHandleOffset.Offset(1, srvDescriptorSize)
+		);
+
+		OutputVertexUavGpu = gpuHandleOffset.Offset(1, srvDescriptorSize);
+
+		const HRESULT deviceRemovedReasonUav = Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReasonUav);
+	}
+
+	void VoxelWorld::CreateReadBackBuffer()
+	{
+		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(MCTriangle));
+
+		/*create a readback buffer*/
+		const HRESULT readbackResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&ReadbackBuffer)
+		);
+		THROW_ON_FAILURE(readbackResult);
 	}
 }
 

@@ -97,16 +97,13 @@ namespace Engine
 		/**  Build the scene geometry  */
 		const auto api = RenderInstruction::GetApiPtr();
 
-
-	
 		BuildScalarField();
 		PolygoniseScalarField();
 		BuildMCBuffers();
-	
 
-		/*RenderData.voxelWorld = new class VoxelWorld();
+		RenderData.voxelWorld = new class VoxelWorld();
 		RenderData.voxelWorld->ComputeShader = Shader::Create(L"assets\\shaders\\MarchingCube.hlsl", "GenerateChunk", "cs_5_0");
-		RenderData.voxelWorld->Init(api->GetGraphicsContext());*/
+		RenderData.voxelWorld->Init(api->GetGraphicsContext());
 
 		///*
 		// * The buffer size can be given by...
@@ -201,7 +198,8 @@ namespace Engine
 		RenderInstruction::PreRender();
 
 		/*generate one chunk*/
-		//RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f });
+		RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f });
+
 		/*take the chunk data and copy it into the vertex buffer*/
 		/**
 		 * Clear the back buffer ready for rendering
@@ -278,184 +276,4 @@ namespace Engine
 		}
 	}
 
-
-
-
-
-	const UINT32 Dimensions = 32;
-	static constexpr  UINT32 WorldSize = Dimensions * Dimensions * Dimensions;
-
-	constexpr float WorldResolution = 0.5f;
-
-	////////////////////////////////////////////////////////
-	
-
-	static double IsoValue = 0;
-	static std::vector<Voxel> VoxelWorld;
-	static std::vector<Triangle> Triangles;
-
-	void Renderer3D::BuildScalarField()
-	{
-		
-		VoxelWorld.resize(WorldSize);
-
-		const UINT32 DEPTH = Dimensions;
-		const UINT32 WIDTH = Dimensions;
-		const UINT32 BREADTH = Dimensions;
-
-		/*
-		 * For each voxel initialise the positions and values for each
-		 * corner point.
-		 */
-		UINT32 count = 0;
-
-		for (INT32 k = 0; k < DEPTH; ++k)
-		{
-			for (INT32 j = 0; j < WIDTH; ++j)
-			{
-				for (INT32 i = 0; i < BREADTH; ++i)
-				{
-					const UINT32 ijk = count;
-					double freqGain = 2.0f;
-					double amplitudeLoss = 0.5f;
-					double freq = 0.03f;
-					double amplitude = 100.0f;
-
-					/**
-					 * Simple FBM
-					 */
-					for (INT32 o = 0; o < 8; ++o)
-					{
-						/* A */
-						VoxelWorld[ijk].Position[0] = XMFLOAT3(i, j, k);
-						VoxelWorld[ijk].Value[0] += Perlin(i * freq, j * freq, k * freq) * amplitude;
-
-						/* B */
-						VoxelWorld[ijk].Position[1] = XMFLOAT3(i + 1, j, k);
-						VoxelWorld[ijk].Value[1] += Perlin((i + 1) * freq, j * freq, k * freq) * amplitude;
-
-						/* C */
-						VoxelWorld[ijk].Position[2] = XMFLOAT3(i + 1, j + 1, k);
-						VoxelWorld[ijk].Value[2] += Perlin((i + 1) * freq, (j + 1) * freq, k * freq) * amplitude;
-
-						/* D */
-						VoxelWorld[ijk].Position[3] = XMFLOAT3(i, j + 1, k);
-						VoxelWorld[ijk].Value[3] += Perlin(i * freq, (j + 1) * freq, k * freq) * amplitude;
-
-
-						/* E */
-						VoxelWorld[ijk].Position[4] = XMFLOAT3(i, j, k - 1);
-						VoxelWorld[ijk].Value[4] += Perlin(i * freq, j * freq, (k - 1) * freq) * amplitude;
-
-						/* F */
-						VoxelWorld[ijk].Position[5] = XMFLOAT3(i + 1, j, k - 1);
-						VoxelWorld[ijk].Value[5] += Perlin((i + 1) * freq, j * freq, (k - 1) * freq) * amplitude;
-
-						/* G */
-						VoxelWorld[ijk].Position[6] = XMFLOAT3(i + 1, j + 1, k - 1);
-						VoxelWorld[ijk].Value[6] += Perlin((i + 1) * freq, (j + 1) * freq, (k - 1) * freq) * amplitude;
-
-						/* H */
-						VoxelWorld[ijk].Position[7] = XMFLOAT3(i, j + 1, k - 1);
-						VoxelWorld[ijk].Value[7] += Perlin(i * freq, (j + 1) * freq, (k - 1) * freq) * amplitude;
-
-						freq *= freqGain;
-						amplitude *= amplitudeLoss;
-
-					}
-
-
-
-					++count;
-				}
-			}
-		}
-	}
-
-	void Renderer3D::PolygoniseScalarField()
-	{
-
-		MarchingCubesCPU mcSolver;
-
-		const double isoLevelT = 3;
-
-		for (const auto& voxel : VoxelWorld)
-		{
-			UINT32 count = mcSolver.PolygoniseScalarField(voxel, IsoValue, &Triangles);
-		}
-	}
-
-	void Renderer3D::BuildMCBuffers()
-	{
-		const auto api = RenderInstruction::GetApiPtr();
-
-		ScopePointer<MeshGeometry> mcGeo = CreateScope<MeshGeometry>("McGeo");
-
-		std::vector<Vertex> vertices;
-		std::vector<UINT16> indices;
-
-		UINT index = 0;
-
-		for(INT32 i = 0; i < Triangles.size(); ++i)
-		{
-
-			Vertex v;
-			v.Position = Triangles[i].Vertex[0];
-			v.Normal = Triangles[i].Normals[0];
-			vertices.push_back(v);
-			indices.push_back(index);
-
-			index++;
-
-			v.Position = Triangles[i].Vertex[1];
-			v.Normal = Triangles[i].Normals[1];
-
-			vertices.push_back(v);
-			indices.push_back(index);
-
-			index++;
-
-			v.Position = Triangles[i].Vertex[2];
-			v.Normal = Triangles[i].Normals[2];
-
-			vertices.push_back(v);
-			indices.push_back(index);
-
-			ProfileStats.TriCount += 1;
-			ProfileStats.PolyCount += 3;
-			index++;
-		}
-
-		/*Build the index array*/
-
-
-		/*Build CPU and GPU buffers*/
-		const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-		const UINT ibByteSize = (UINT)indices.size() * sizeof(UINT16);
-
-		mcGeo->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), vertices.data(), vbByteSize, vertices.size(), true);
-		mcGeo->VertexBuffer->SetLayout
-		(
-			{
-				{"POSITION", ShaderDataType::Float3, 0 },
-				{"NORMAL",	  ShaderDataType::Float3, 12 },
-				{"TEXCOORD", ShaderDataType::Float2, 24 },
-				
-			}
-		);
-
-		
-		mcGeo->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(), indices.data(), ibByteSize, indices.size());
-
-		SubGeometry sub;
-		sub.BaseVertexLocation = 0;
-		sub.IndexCount = mcGeo->IndexBuffer->GetCount();
-		sub.StartIndexLocation = 0;
-
-		mcGeo->DrawArgs["March"] = sub;
-
-		/*Store the marching cubes algorithm into the global geometry handler*/
-		RenderData.Geometries[mcGeo->GetName()] = std::move(mcGeo);
-
-	}
 }

@@ -16,7 +16,7 @@ namespace Engine
 		// @param[in] A pointer to the initial vertex data.
 		// @param[in] The WorldSize in bytes
 		// @param[in] A reference to the upload buffer.
-		static ComPtr<ID3D12Resource> Create_Vertex_UploadAndDefaultBuffers
+		static ComPtr<ID3D12Resource> CreateVertexBuffer
 		(
 			ID3D12Device* device,
 			ID3D12GraphicsCommandList* graphicsCmdList,
@@ -31,7 +31,7 @@ namespace Engine
 		// @param[in] A pointer to the initial vertex data.
 		// @param[in] The WorldSize in bytes
 		// @param[in] A reference to the upload buffer.
-		static ComPtr<ID3D12Resource> Create_Texture3D_UploadAndDefaultBuffers
+		static ComPtr<ID3D12Resource> CreateTexture3D
 		(
 			ID3D12Device* device,
 			ID3D12GraphicsCommandList* graphicsCmdList,
@@ -49,7 +49,7 @@ namespace Engine
 		// @param[in] A pointer to the initial vertex data.
 		// @param[in] The WorldSize in bytes
 		// @param[in] A reference to the upload buffer.
-		static ComPtr<ID3D12Resource> Create_Texture2D_UploadAndDefaultBuffers
+		static ComPtr<ID3D12Resource> CreateTexture2D
 		(
 			ID3D12Device* device,
 			ID3D12GraphicsCommandList* graphicsCmdList,

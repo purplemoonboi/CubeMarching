@@ -31,20 +31,28 @@ namespace Engine
 		MCVertex VertexB;
 		MCVertex VertexC;
 	};
-	constexpr UINT32 VoxelWorldSize = 32;
-	constexpr UINT VoxelWorldVertexBufferSize = (VoxelWorldSize - 1) * (VoxelWorldSize - 1) * (VoxelWorldSize - 1) * 5 * sizeof(MCTriangle);
 
+	struct CustomStruct
+	{
+		float scalar = 0;
+		DirectX::XMFLOAT3 vec = { 0,0,0 };
+	};
+
+	constexpr UINT64 VoxelWorldSize = 32;
+	constexpr UINT64 NumberOfBufferElements = VoxelWorldSize * VoxelWorldSize * VoxelWorldSize;
+	constexpr UINT64 VoxelWorldVertexBufferSize = NumberOfBufferElements * 5 * sizeof(MCTriangle);
+	constexpr UINT64 DebugBufferSize = VoxelWorldSize * sizeof(CustomStruct);
 
 	struct CBSettings
 	{
 		float IsoValue = 0;
 		float PlanetRadius = 10;
-		UINT32 TextureSize = 32;
-		UINT32 NumOfPointsPerAxis = 32;
+		UINT32 TextureSize = VoxelWorldSize;
+		UINT32 NumOfPointsPerAxis = VoxelWorldSize;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
 	};
 
-
+	
 
 	class VoxelWorld
 	{
@@ -53,10 +61,9 @@ namespace Engine
 
 		VoxelWorld() = default;
 
-
 		bool Init(GraphicsContext* context);
 
-		void GenerateChunk(DirectX::XMFLOAT3 chunkID);
+		MCTriangle* GenerateChunk(DirectX::XMFLOAT3 chunkID);
 
 		D3D12Context* Context = nullptr;
 
@@ -71,11 +78,14 @@ namespace Engine
 		ComPtr<ID3D12Resource> CS_Upload_Texture;
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE ScalarFieldSrvCpu;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE ScalarFieldUavCpu;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE ScalarFieldSrvGpu;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE ScalarFieldUavGpu;
 
-		ComPtr<ID3D12Resource> CS_OutputVertexResource;
-		ComPtr<ID3D12Resource> CS_Counter_Resource;
-		ComPtr<ID3D12Resource> CS_Readback_OutputVertexResource;
+		ComPtr<ID3D12Resource> OutputBuffer;
+		ComPtr<ID3D12Resource> CounterResource;
+		ComPtr<ID3D12Resource> ReadbackBuffer;
+
 		CD3DX12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
 
@@ -84,16 +94,20 @@ namespace Engine
 
 		MCTriangle* RawTriBuffer;
 
-		void BuildResourceViews(ID3D12Resource* pCounterResource);
 
 	private:
+
+		void BuildResourcesAndViews();
 
 		void BuildComputeRootSignature();
 
 		void BuildPso();
 
-		void BuildResources();
+		void CreateScalarField();
 
+		void CreateOutputBuffer();
+
+		void CreateReadBackBuffer();
 	};
 
 }

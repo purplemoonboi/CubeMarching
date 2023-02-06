@@ -6,7 +6,7 @@
 namespace Engine
 {
 	// Upload buffer methods
-	ComPtr<ID3D12Resource> D3D12BufferUtils::Create_Vertex_UploadAndDefaultBuffers
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateVertexBuffer
 	(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* graphicsCmdList,
@@ -91,7 +91,7 @@ namespace Engine
 		return defaultBuffer;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::Create_Texture3D_UploadAndDefaultBuffers
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateTexture3D
 	(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* graphicsCmdList,
@@ -130,9 +130,11 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(defaultResult);
 
-		const UINT64 uploadBufferSize = sizeof(float) * width * height * depth;
+		const UINT numberOfResources = 1;
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultBuffer.Get(),
+			0, numberOfResources);
 
-		HRESULT uploadResult = device->CreateCommittedResource
+		const HRESULT uploadResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -146,8 +148,8 @@ namespace Engine
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = initData;
-		subResourceData.RowPitch = sizeof(float) * width;
-		subResourceData.SlicePitch = subResourceData.RowPitch * height * depth;
+		subResourceData.RowPitch = width;
+		subResourceData.SlicePitch = height * depth;
 		
 
 		// Schedule to copy the data to the default buffer resource.
@@ -165,7 +167,7 @@ namespace Engine
 		);
 
 		// Copy the data into the upload heap
-		UpdateSubresources<1>
+		UpdateSubresources
 			(
 				graphicsCmdList,
 				defaultBuffer.Get(),
@@ -195,7 +197,7 @@ namespace Engine
 		return defaultBuffer;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::Create_Texture2D_UploadAndDefaultBuffers
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateTexture2D
 	(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* graphicsCmdList, 
@@ -209,10 +211,11 @@ namespace Engine
 		ComPtr<ID3D12Resource> defaultBuffer;
 		D3D12_RESOURCE_DESC texDesc;
 		ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
-		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		texDesc.Alignment = 0;
 		texDesc.Width = width;
 		texDesc.Height = height;
+		texDesc.DepthOrArraySize = 1;
 		texDesc.MipLevels = 1;
 		texDesc.Format = format;
 		texDesc.SampleDesc.Count = 1;
@@ -221,19 +224,21 @@ namespace Engine
 		texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 		//Create the committed resource
-		THROW_ON_FAILURE(device->CreateCommittedResource
+		const HRESULT defaultResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
-			&texDesc,
+			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_FLOAT, width, height),
+			//&texDesc,
 			D3D12_RESOURCE_STATE_COMMON,
 			nullptr,
-			IID_PPV_ARGS(defaultBuffer.GetAddressOf())
-		));
+			IID_PPV_ARGS(&defaultBuffer)
+		);
+		THROW_ON_FAILURE(defaultResult);
 
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultBuffer.Get(),
 			0, texDesc.DepthOrArraySize * texDesc.MipLevels);
-		THROW_ON_FAILURE(device->CreateCommittedResource
+		HRESULT uploadResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -241,13 +246,14 @@ namespace Engine
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(uploadBuffer.GetAddressOf())
-		));
+		);
+		THROW_ON_FAILURE(uploadResult);
 
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = initData;
-		subResourceData.RowPitch = 16 * width;
-		subResourceData.SlicePitch = subResourceData.RowPitch;
+		subResourceData.RowPitch = width * sizeof(float);
+		subResourceData.SlicePitch = subResourceData.RowPitch * height;
 
 		// Schedule to copy the data to the default buffer resource.
 		// Make instruction to copy CPU buffer into intermediate upload heap
@@ -264,7 +270,7 @@ namespace Engine
 		);
 
 		// Copy the data into the upload heap
-		UpdateSubresources<1>
+		UpdateSubresources
 			(
 				graphicsCmdList,
 				defaultBuffer.Get(),
@@ -286,6 +292,9 @@ namespace Engine
 				D3D12_RESOURCE_STATE_GENERIC_READ
 			)
 		);
+
+		const HRESULT deviceRemovedReason = device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
 
 		// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
 		//			  because the cmd list has NOT executed the copy.
