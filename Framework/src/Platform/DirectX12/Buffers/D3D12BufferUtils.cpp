@@ -19,7 +19,7 @@ namespace Engine
 
 
 		//Create the committed resource
-		THROW_ON_FAILURE(device->CreateCommittedResource
+		const HRESULT vertexResult= device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -27,7 +27,8 @@ namespace Engine
 			D3D12_RESOURCE_STATE_COMMON,
 			nullptr,
 			IID_PPV_ARGS(defaultBuffer.GetAddressOf())
-		));
+		);
+		THROW_ON_FAILURE(vertexResult);
 
 
 		THROW_ON_FAILURE(device->CreateCommittedResource
@@ -116,7 +117,7 @@ namespace Engine
 		texDesc.SampleDesc.Count = 1;
 		texDesc.SampleDesc.Quality = 0;
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		//Create the committed resource
 		const HRESULT defaultResult = device->CreateCommittedResource

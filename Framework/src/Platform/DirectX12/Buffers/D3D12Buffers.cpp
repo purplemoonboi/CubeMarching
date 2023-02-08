@@ -198,137 +198,59 @@ namespace Engine
 
 		const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
-		
-
-		/**
-		 * Size of the constant buffer in bytes
-		 */
 		const UINT64 constantBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 
-		/**
-		 * Total number of render items
-		 */
 		const UINT32 objectCount = renderItemsCount;
 
-		/**
-		 *	Need a CBV descriptor for each object for each frame resource.
-		 */
 		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
 		{
 			const auto dx12FrameResource = dynamic_cast<D3D12FrameResource*>(frameResources[frameIndex].get());
 
-			/**
-			 * Get the constant buffer as a resource.
-			 */
 			const auto constantBuffer = dx12FrameResource->ConstantBuffer.get();
-
-			/**
-			 * Fetch the GPU address of the constant buffer
-			 */
 			D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
 
 			for (UINT32 i = 0; i < objectCount; ++i)
 			{
-				/**
-				 * Offset to the ith address in memory
-				 */
 				constantBufferAddress += i * constantBufferSizeInBytes;
 
-				/**
-				 * Offset to the object CBV in the heap
-				 */
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				/**
-				 * Retrieve the descriptor handle 
-				 */
 				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
 				handle.Offset(heapIndex, dx12GraphicsContext->CbvSrvUavDescriptorSize);
 
-
-				/**
-				* Create a view for the constant buffer
-				*/
 				D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 				cbvDesc.BufferLocation = constantBufferAddress;
 				cbvDesc.SizeInBytes = constantBufferSizeInBytes;
-
-				/**
-				 * Create CBV view
-				 */
 				dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
 			}
 
-			/**
-			 * Size of the material buffer in bytes
-			 */
 			const UINT64 materialBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
-			/**
-			 * Get the constant buffer as a resource.
-			 */
-			const auto materialBuffer = dx12FrameResource->MaterialBuffer.get();
 
-			/**
-			 * Fetch the GPU address of the constant buffer
-			 */
+			const auto materialBuffer = dx12FrameResource->MaterialBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
 
 			for (UINT32 i = 0; i < objectCount; ++i)
 			{
-				/**
-				 * Offset to the ith address in memory
-				 */
+
 				materialBufferAddress += i * materialBufferSizeInBytes;
 
-				/**
-				 * Offset to the object CBV in the heap
-				 */
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				/**
-				 * Retrieve the descriptor handle
-				 */
 				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
 				handle.Offset(heapIndex, dx12GraphicsContext->CbvSrvUavDescriptorSize);
 
-
-				/**
-				* Create a view for the constant buffer
-				*/
 				D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
 				mbvDesc.BufferLocation = materialBufferAddress;
 				mbvDesc.SizeInBytes = materialBufferSizeInBytes;
 
-				/**
-				 * Create CBV view
-				 */
 				dx12GraphicsContext->Device->CreateConstantBufferView(&mbvDesc, handle);
 			}
 
-
-			/**
-			 * After we've create a constant buffer for each render item, create the global pass buffer for
-			 * the current resource.
-			 */
-
-			/**
-			 * Calculate the size of the 'PassConstants' buffer in bytes
-			 */
 			const UINT64 passConstantBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
-
-			/**
-			 * Create the pass buffer for this resource.
-			 */
 			const auto passConstantBuffer = dx12FrameResource->PassBuffer->Resource();
 
-			/**
-			* Fetch the GPU address of the constant buffer
-			*/
 			const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
 
-			/**
-			 * Offset to the object in the heap
-			 */
 			const UINT32 heapIndex = dx12GraphicsContext->GetPassConstBufferViewOffset() + frameIndex;
 
 			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());

@@ -13,6 +13,7 @@
 #include "Framework/Renderer/Resources/RenderItems.h"
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Framework/Renderer/Resources/Material.h"
+#include "IsoSurface/PerlinCompute.h"
 
 #include "IsoSurface/VoxelWorld.h"
 
@@ -20,6 +21,7 @@ namespace Engine
 {
 
 	Renderer3D::RenderingStats Renderer3D::ProfileStats;
+	::GeometryGenerator Renderer3D::Geo;
 
 	struct RendererData
 	{
@@ -50,7 +52,6 @@ namespace Engine
 
 		ScopePointer<ResourceBuffer> UploadBufferManager;
 
-		ScopePointer<MeshGeometry> Box;
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
 		RefPointer<PipelineStateObject> Pso;
@@ -59,6 +60,7 @@ namespace Engine
 		Renderer3D::RenderingStats RendererStats;
 
 		class VoxelWorld* voxelWorld;
+		PerlinCompute* PerlinCompute;
 	};
 
 	static RendererData RenderData;
@@ -97,13 +99,33 @@ namespace Engine
 		/**  Build the scene geometry  */
 		const auto api = RenderInstruction::GetApiPtr();
 
-		BuildScalarField();
-		PolygoniseScalarField();
-		BuildMCBuffers();
-
 		RenderData.voxelWorld = new class VoxelWorld();
 		RenderData.voxelWorld->ComputeShader = Shader::Create(L"assets\\shaders\\MarchingCube.hlsl", "GenerateChunk", "cs_5_0");
-		RenderData.voxelWorld->Init(api->GetGraphicsContext());
+		RenderData.voxelWorld->Init(api->GetGraphicsContext(), api->GetMemoryManager());
+
+		RenderData.PerlinCompute = new PerlinCompute();
+		RenderData.PerlinCompute->PerlinShader = Shader::Create(L"assets\\shaders\\Perlin.hlsl", "ComputeNoise3D", "cs_5_0");
+		RenderData.PerlinCompute->Init(api->GetGraphicsContext(), api->GetMemoryManager());
+
+		/*Initialise a plane*/
+		
+		auto geo = Geo.CreateQuad(1,1,1,1,1);
+
+		ScopePointer<MeshGeometry> Plane = CreateScope<MeshGeometry>("Plane");
+
+		const UINT64 size = geo.Vertices.size() * sizeof(Vertex);
+		const UINT64 inSize = geo.Indices32.size() * sizeof(UINT32);
+
+		Plane->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), geo.Vertices.data(),
+			size, geo.Vertices.size(), false);
+		
+		Plane->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(), geo.GetIndices16().data(), 
+			inSize, geo.Indices32.size());
+
+		SubGeometry sGeo = { (UINT)geo.GetIndices16().size(), 0, 0 };
+		Plane->DrawArgs.emplace("Plane", sGeo);
+
+		RenderData.Geometries.emplace("Plane", std::move(Plane));
 
 		///*
 		// * The buffer size can be given by...
@@ -139,7 +161,12 @@ namespace Engine
 		);
 
 		/** create the pso */
-
+		const BufferLayout layout =
+		{
+			{"POSITION",	ShaderDataType::Float3, 0,  0},
+			{"NORMAL",		ShaderDataType::Float3, 12, 1},
+			{"TEXCOORD",	ShaderDataType::Float2, 24, 2},
+		};
 
 		/** build the pipeline state objects */
 		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
@@ -147,9 +174,18 @@ namespace Engine
 			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.Get("vs"),
 			RenderData.ShaderLibrary.Get("ps"),
-			RenderData.Geometries["McGeo"]->VertexBuffer->GetLayout(),
+			layout,
 			FillMode::Opaque
 		));
+
+		//RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
+		//(
+		//	api->GetGraphicsContext(),
+		//	RenderData.ShaderLibrary.Get("vs"),
+		//	RenderData.ShaderLibrary.Get("ps"),
+		//	layout,
+		//	FillMode::WireFrame
+		//));
 
 	}
 
@@ -158,7 +194,6 @@ namespace Engine
 
 	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
 	{
-		
 
 		/**
 		 *	Cycle throught the frame resources array
@@ -195,10 +230,20 @@ namespace Engine
 		RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
 
 
-		RenderInstruction::PreRender();
+
+		PerlinArgs pa;
+		pa.Gain = 2.f;
+		pa.Loss = 0.5f;
+		pa.Octaves = 8;
+		RenderData.PerlinCompute->Generate3DTexture(pa, VoxelWorldSize, VoxelWorldSize, VoxelWorldSize);
+
+
 
 		/*generate one chunk*/
-		RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f });
+		RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f }, RenderData.PerlinCompute->ScalarTexture.get());
+
+		RenderInstruction::PreRender();
+
 
 		/*take the chunk data and copy it into the vertex buffer*/
 		/**
@@ -229,9 +274,9 @@ namespace Engine
 
 		auto mcGeo = RenderItem::Create
 		(
-			RenderData.Geometries["McGeo"].get(),
+			RenderData.Geometries["Plane"].get(),
 			RenderData.MaterialLibrary.Get("Default"),
-			"March",
+			"Plane",
 			1,
 			Transform(-10.0f, -10.0f, -10.0f)
 		);

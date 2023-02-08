@@ -189,3 +189,20 @@ float4 snoise_grad(float3 v)
     float4 px = float4(dot(x0, g0), dot(x1, g1), dot(x2, g2), dot(x3, g3));
     return 42.0 * float4(grad, dot(m4, px));
 }
+
+cbuffer cbSettings : register(b0)
+{
+    float Octaves;
+    float Gain;
+    float Loss;
+    float Pad;
+};
+
+RWTexture3D<float> Noise3D : register(u0);
+
+[numthreads(1,1,1)]
+void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
+{
+    const float3 thisId = (float3) threadId;
+    Noise3D[threadId] = snoise(thisId * 0.01);
+}

@@ -1,5 +1,7 @@
 #pragma once
 #include <intsafe.h>
+
+#include "GeometryGenerator.h"
 #include "Framework/Camera/MainCamera.h";
 
 #include "IsoSurface/MarchingCubesCPU.h"
@@ -57,10 +59,6 @@ namespace Engine
 
 		static void BuildMaterials();
 
-		//TODO: Temps
-		static void BuildScalarField();
-		static void PolygoniseScalarField();
-		static void BuildMCBuffers();
 
 		struct RenderingStats
 		{
@@ -77,6 +75,8 @@ namespace Engine
 		static const RenderingStats& GetProfileData() { return ProfileStats; }
 
 		static RenderingStats ProfileStats;
+
+		static GeometryGenerator Geo;
 
 		static void BuildVoxelWorld(MCTriangle* data);
 	};

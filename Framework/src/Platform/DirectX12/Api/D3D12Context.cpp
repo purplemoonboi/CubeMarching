@@ -186,6 +186,7 @@ namespace Engine
 		return true;
 	}
 
+
 	bool D3D12Context::CreateCommandObjects()
 	{
 		//Create the command queue description

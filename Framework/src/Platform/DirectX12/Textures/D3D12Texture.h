@@ -9,6 +9,7 @@ constexpr SIZE_T MAX_NAME_MEM_ALLOC = 64;
 
 namespace Engine
 {
+	class D3D12MemoryManager;
 	using Microsoft::WRL::ComPtr;
 
 
@@ -18,31 +19,50 @@ namespace Engine
 	public:
 
 		D3D12Texture(const std::wstring& filePath);
+		D3D12Texture(UINT64 width, UINT32 height, UINT16 depthOrArrays, TextureDimension dimension, TextureFormat textureFormat);
 		~D3D12Texture() override;
 
-		void Create(UINT32 width, UINT32 height,
-			GraphicsContext* context = nullptr,
+		void InitialiseResource(
+			const void* initData,
 			TextureDimension dimension = TextureDimension::Two,
-			TextureFormat format = TextureFormat::R32G32B32A32
+			GraphicsContext* context = nullptr,
+			MemoryManager* memManager = nullptr
 		) override;
 
+		void LoadFromFile(const std::wstring& fileName) override;
 
-		INT32 Width;
-		INT32 Height;
-		UINT MipLevels;
+		UINT64 GetWidth() override;
+		UINT32 GetHeight() override;
+		UINT16 GetDepth() override;
+		TextureDimension GetTextureDimension() override;
+		TextureFormat GetTextureFormat() override;
+
+		UINT64 Width;
+		UINT32 Height;
+		UINT16 Depth;
+		UINT MipLevels = -1;
 		std::string Name;
 		std::wstring FileName;
 
-		ComPtr<ID3D12Resource> Texture;
-
 		DXGI_FORMAT Format;
-		D3D12_SRV_DIMENSION Dimension;
 
-		/**
-		 * @brief In essence, out pointers to the resource view on the CPU and GPU.
-		 */
-		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceView_CPU_Handle;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE ResourceView_GPU_Handle;
+		ComPtr<ID3D12Resource> GpuResource;
+		ComPtr<ID3D12Resource> UploadBuffer;
+		BYTE* RawData = nullptr;
+
+
+		D3D12_SRV_DIMENSION Dimension;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandleSrv;
+		INT32 SrvIndex = -1;
+
+		D3D12_UAV_DIMENSION DimensionUav;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandleUav;
+		INT32 UavIndex = -1;
+	private:
+
+		void CreateResourceViews(ID3D12Device* device, D3D12MemoryManager* memManager);
+
+
 	};
 }
 

@@ -1,42 +1,53 @@
 #include "PerlinCompute.h"
 
+#include "Framework/Maths/Perlin.h"
+#include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
+#include "Platform/DirectX12/Shaders/D3D12Shader.h"
+#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 
 namespace Engine
 {
-	void PerlinCompute::Init(GraphicsContext* context)
+
+	void PerlinCompute::Init(GraphicsContext* context, MemoryManager* memManager)
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
+		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
 
 		BuildComputeRootSignature();
-
-		ScalarField = std::make_unique<D3D12Texture>(L" ");
-		ScalarField->Create(32, 32, Context, 
-			TextureDimension::Three);
-
-		CopyField = std::make_unique<D3D12Texture>(L" ");
-		CopyField->Create(32, 32, Context,
-			TextureDimension::Three);
+		BuildPipelineState();
+		BuildResource();
 	}
 
-	void PerlinCompute::Generate3DTexture(PerlinArgs args)
+	void PerlinCompute::Generate3DTexture(PerlinArgs args, UINT X, UINT Y, UINT Z)
 	{
+		const HRESULT cmdAllocResult = Context->CmdListAlloc->Reset();
+		THROW_ON_FAILURE(cmdAllocResult);
+
+		const HRESULT cmdGraphicsResult = Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), Pso.Get());
+		THROW_ON_FAILURE(cmdGraphicsResult);
+
+		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
+		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		Context->GraphicsCmdList->SetPipelineState(Pso.Get());
+
+		auto resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
+		Context->GraphicsCmdList->SetComputeRootSignature(ComputeRootSignature.Get());
+
+		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Gain, 1);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Loss, 2);
+		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
 
 
-		// #3 - Dispatch the work onto the GPU.
-		Context->GraphicsCmdList->Dispatch(1, 1, 1);
-
-		// #4 - Read back the vertices into the vertex buffer.
 		Context->GraphicsCmdList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(ScalarField->Texture.Get(),
-				D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE));
+			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
+				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		// Copy vertices from the compute shader into the vertex buffer for rendering
-		Context->GraphicsCmdList->CopyResource(CopyField->Texture.Get(), ScalarField->Texture.Get());
+		Context->GraphicsCmdList->Dispatch(X, Y, Z);
 
 		Context->GraphicsCmdList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(ScalarField->Texture.Get(),
-				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON));
-
+			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ));
 
 		// Execute the commands and flush
 		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
@@ -48,29 +59,23 @@ namespace Engine
 	void PerlinCompute::BuildComputeRootSignature()
 	{
 
-		CD3DX12_DESCRIPTOR_RANGE srvTable;
-		srvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 		CD3DX12_DESCRIPTOR_RANGE uavTable;
 		uavTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
-		// Root parameter can be a table, root descriptor or root constants.
-		CD3DX12_ROOT_PARAMETER slotRootParameter[3];
-
-		// Perfomance TIP: Order from most frequent to least frequent.
-		slotRootParameter[0].InitAsConstants(5, 0); // world settings view
-		slotRootParameter[1].InitAsDescriptorTable(1, &srvTable); // density texture view
-		slotRootParameter[2].InitAsDescriptorTable(1, &uavTable);// output buffer view
+		CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+		slotRootParameter[0].InitAsConstants(3, 0); // perlin settings
+		slotRootParameter[1].InitAsDescriptorTable(1, &uavTable);// texture
 
 		// A root signature is an array of root parameters.
-		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter,
+		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter,
 			0,
 			nullptr,
-			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+			D3D12_ROOT_SIGNATURE_FLAG_NONE
 		);
 
 		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
 		ComPtr<ID3DBlob> serializedRootSig = nullptr;
 		ComPtr<ID3DBlob> errorBlob = nullptr;
-		HRESULT hr = D3D12SerializeRootSignature
+		const HRESULT serialisedResult = D3D12SerializeRootSignature
 		(
 			&rootSigDesc,
 			D3D_ROOT_SIGNATURE_VERSION_1,
@@ -80,19 +85,79 @@ namespace Engine
 
 		if (errorBlob != nullptr) { ::OutputDebugStringA((char*)errorBlob->GetBufferPointer()); }
 
-		THROW_ON_FAILURE(hr);
-		THROW_ON_FAILURE(Context->Device->CreateRootSignature
+		THROW_ON_FAILURE(serialisedResult);
+		const HRESULT rootSigResult = Context->Device->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),
 			serializedRootSig->GetBufferSize(),
 			IID_PPV_ARGS(ComputeRootSignature.GetAddressOf()
 			)
-		));
+		);
+		THROW_ON_FAILURE(rootSigResult);
 	}
 
-	void PerlinCompute::BuildComputeResourceDescriptors()
+	void PerlinCompute::BuildPipelineState()
 	{
+		const auto d3d12Shader = dynamic_cast<D3D12Shader*>(PerlinShader.get());
+		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
+		desc.pRootSignature = ComputeRootSignature.Get();
+		desc.CS =
+		{
+			reinterpret_cast<BYTE*>(d3d12Shader->GetShader()->GetBufferPointer()),
+			d3d12Shader->GetShader()->GetBufferSize()
+		};
+		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+		const HRESULT csPipelineState = Context->Device->CreateComputePipelineState
+		(
+			&desc,
+			IID_PPV_ARGS(&Pso)
+		);
+		THROW_ON_FAILURE(csPipelineState);
+
+	}
+
+	void PerlinCompute::BuildResource()
+	{
+
+		for (INT32 i = 0; i < VoxelWorldSize; ++i)
+			for (INT32 j = 0; j < VoxelWorldSize; ++j)
+				for (INT32 k = 0; k < VoxelWorldSize; ++k)
+					RawTexture.push_back(Perlin(i * 0.01f, j * 0.01f, k * 0.01f));
+
+		ScalarTexture = std::make_unique<D3D12Texture>(
+			VoxelWorldSize, VoxelWorldSize, VoxelWorldSize,
+			TextureDimension::Three, TextureFormat::R_FLOAT_32
+			);
+
+		ScalarTexture->InitialiseResource
+		(
+			RawTexture.data(),
+			TextureDimension::Three,
+			Context,
+			MemManager
+		);
+
+		
+	}
+
+	void PerlinCompute::CreateReadBackBuffer()
+	{
+
+		const auto bufferWidth = (ScalarTexture->GetWidth() * ScalarTexture->GetHeight() * ScalarTexture->GetDepth() * sizeof(float));
+
+		const HRESULT readBackResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&ReadBackBuffer)
+		);
+
+		THROW_ON_FAILURE(readBackResult);
+
 	}
 }
 

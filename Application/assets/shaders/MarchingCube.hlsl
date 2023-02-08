@@ -17,6 +17,7 @@ struct Triangle
 	Vertex vertexA;
 };
 
+
 cbuffer cbSettings : register(b0)
 {
 	float isoLevel;
@@ -26,321 +27,97 @@ cbuffer cbSettings : register(b0)
 	float3 chunkCoord;
 };
 
+cbuffer marchingCubeData : register(b1)
+{
+    int triangulation[256][16];
+};
 
-//TODO:CHANGE ME BACK TO TEX3D
 Texture3D<float> DensityTexture : register(t0);
+//StructuredBuffer<DataTable> Data : register(t1);
 AppendStructuredBuffer<Triangle> triangles : register(u0);
-
 
 float3 interpolation(float3 edgeVertex1, float valueAtVertex1, float3 edgeVertex2, float valueAtVertex2)
 {
     return (edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1) / (valueAtVertex2 - valueAtVertex1));
 }
 
-[numthreads(8,8,8)]
-void GenerateChunk(int3 threadId : SV_DispatchThreadID)
+
+
+float3 interpolateVerts(float4 v1, float4 v2)
 {
-    /* calculate the offsets of the corners using the thread id */
-    float3 corners[8];
-    corners[0] = float3(threadId);
-    corners[1] = corners[0] + float3(0.f, 1.f, 0.f);
-    corners[2] = corners[0] + float3(1.f, 1.f, 0.f);
-    corners[3] = corners[0] + float3(1.f, 0.f, 0.f);
-
-    corners[4] = corners[0] + float3(0.f, 0.f, 1.f);
-    corners[5] = corners[0] + float3(0.f, 1.f, 1.f);
-    corners[6] = corners[0] + float3(1.f, 1.f, 1.f);
-    corners[7] = corners[0] + float3(1.f, 0.f, 1.f);
-
-
-
-    float3 localCoords[8];
-    float cellDensity[8];
-    int caseNumber = 0;
-    for (int i = 0; i < 8; i++)
-    {
-        localCoords[i] = corners[i];
-        int3 index = int3(corners[i]);
-        cellDensity[i] = DensityTexture.Load(int4(index, 0));
-        if (cellDensity[i] < isoLevel)
-        {
-            caseNumber |= 1 << i;
-        }
-    }
-
-
-    if(edgeTable[caseNumber]== 0)
-        return;
-
-    if(caseNumber >= 128)
-        return;
-
-    float3 vertexList[12];
-    float3 tangentList[12];
-
-	if(edgeTable[caseNumber] & 1)
-    {
-        vertexList[0] = interpolation(corners[0], cellDensity[0], corners[1], cellDensity[1]);
-        tangentList[0] = normalize(cellDensity[1] - cellDensity[0]);
-    }
-
-    if(edgeTable[caseNumber] & 2)
-    {
-        vertexList[1] = interpolation(corners[1], cellDensity[1], corners[2], cellDensity[2]);
-        tangentList[1] = normalize(cellDensity[2] - cellDensity[1]);
-    }
-
-    if(edgeTable[caseNumber] & 4)
-    {
-        vertexList[2] = interpolation(corners[2], cellDensity[2], corners[3], cellDensity[3]);
-        tangentList[2] = normalize(cellDensity[3] - cellDensity[2]);
-    }
-
-    if (edgeTable[caseNumber] & 8)
-    {
-        vertexList[3] = interpolation(corners[3], cellDensity[3], corners[0], cellDensity[0]);
-        tangentList[3] = normalize(cellDensity[3] - cellDensity[0]);
-    }
-
-    if (edgeTable[caseNumber] & 16)
-    {
-        vertexList[4] = interpolation(corners[4], cellDensity[4], corners[5], cellDensity[5]);
-        tangentList[4] = normalize(cellDensity[5] - cellDensity[4]);
-    }
-
-    if (edgeTable[caseNumber] & 32)
-    {
-        vertexList[5] = interpolation(corners[5], cellDensity[5], corners[6], cellDensity[6]);
-        tangentList[5] = normalize(cellDensity[6] - cellDensity[5]);
-    }
-
-    if (edgeTable[caseNumber] & 64)
-    {
-        vertexList[6] = interpolation(corners[6], cellDensity[6], corners[7], cellDensity[7]);
-        tangentList[6] = normalize(cellDensity[7] - cellDensity[6]);
-    }
-
-    if (edgeTable[caseNumber] & 128)
-    {
-        vertexList[7] = interpolation(corners[7], cellDensity[7], corners[4], cellDensity[4]);
-        tangentList[7] = normalize(cellDensity[7] - cellDensity[4]);
-    }
-
-    if (edgeTable[caseNumber] & 256)
-    {
-        vertexList[8] = interpolation(corners[0], cellDensity[0], corners[4], cellDensity[4]);
-        tangentList[8] = normalize(cellDensity[4] - cellDensity[0]);
-    }
-
-    if (edgeTable[caseNumber] & 512)
-    {
-        vertexList[9] = interpolation(corners[1], cellDensity[1], corners[5], cellDensity[5]);
-        tangentList[9] = normalize(cellDensity[5] - cellDensity[1]);
-    }
-
-    if (edgeTable[caseNumber] & 1024)
-    {
-        vertexList[10] = interpolation(corners[2], cellDensity[2], corners[6], cellDensity[6]);
-        tangentList[10] = normalize(cellDensity[6] - cellDensity[2]);
-    }
-
-    if (edgeTable[caseNumber] & 2048)
-    {
-        vertexList[11] = interpolation(corners[3], cellDensity[3], corners[7], cellDensity[7]);
-        tangentList[11] = normalize(cellDensity[7] - cellDensity[3]);
-    }
-
-
-    Triangle tri = (Triangle)0;
-    for (i = 0; triangulation[caseNumber][i] != -1; i+= 3)
-    {
-        int index = triangulation[caseNumber][i];
-        tri.vertexA.position = vertexList[index];
-        index = triangulation[caseNumber][i + 1];
-        tri.vertexB.position = vertexList[index];
-        index = triangulation[caseNumber][i + 2];
-        tri.vertexC.position = vertexList[index];
-
-        const float3 n0 = cross(normalize(tri.vertexA.position - tri.vertexB.position), normalize(tri.vertexA.position - tri.vertexC.position));
-        const float3 n1 = cross(normalize(tri.vertexB.position - tri.vertexA.position), normalize(tri.vertexB.position - tri.vertexC.position));
-        const float3 n2 = cross(normalize(tri.vertexC.position - tri.vertexA.position), normalize(tri.vertexC.position - tri.vertexB.position));
-
-        tri.vertexA.normal = n0;
-        tri.vertexB.normal = n1;
-        tri.vertexC.normal = n2;
-
-        tri.vertexA.id = threadId.xy;
-        tri.vertexB.id = threadId.xy;
-        tri.vertexC.id = threadId.xy;
-
-        triangles.Append(tri);
-    }
-
-
-    //Triangle s;
-    //s.vertexA.id = threadId.x;
-    //s.vertexA.position = float3(0, 0, 0);
-    //s.vertexA.normal = float3(1, 1, 1);
-    //s.vertexB.id = threadId.y;
-    //s.vertexB.position = float3(4, 4, 4);
-    //s.vertexB.normal = float3(1, 1, 1);
-    //s.vertexC.id = threadId.z;
-    //s.vertexC.position = float3(8, 8, 8);
-    //s.vertexC.normal = float3(1, 1, 1);
-
+    float t = (isoLevel - v1.w) / (v2.w - v1.w);
+    return v1.xyz + t * (v2.xyz - v1.xyz);
 }
 
-
+int indexFromCoord(int x, int y, int z) {
+    return z * numPointsPerAxis * numPointsPerAxis + y * numPointsPerAxis + x;
+}
 
 [numthreads(8, 8, 8)]
-void GenerateChunkB(int3 threadId : SV_DispatchThreadID)
+void GenerateChunk(int3 threadId : SV_DispatchThreadID)
 {
-    /* calculate the offsets of the corners using the thread id */
-    float3 corners[8];
-    corners[0] = float3(threadId);
-    corners[1] = corners[0] + float3(0.f, 1.f, 0.f);
-    corners[2] = corners[0] + float3(1.f, 1.f, 0.f);
-    corners[3] = corners[0] + float3(1.f, 0.f, 0.f);
-
-    corners[4] = corners[0] + float3(0.f, 0.f, 1.f);
-    corners[5] = corners[0] + float3(0.f, 1.f, 1.f);
-    corners[6] = corners[0] + float3(1.f, 1.f, 1.f);
-    corners[7] = corners[0] + float3(1.f, 0.f, 1.f);
-
-
-
-    float3 localCoords[8];
-    float cellDensity[8];
-    int caseNumber = 0;
-    for (int i = 0; i < 8; i++)
+ 
+    // Stop one point before the end because voxel includes neighbouring points
+    if (threadId.x >= numPointsPerAxis - 1 || threadId.y >= numPointsPerAxis - 1 || threadId.z >= numPointsPerAxis - 1)
     {
-        localCoords[i] = corners[i];
-        int3 index = int3(corners[i]);
-        cellDensity[i] = DensityTexture.Load(int4(index, 0));
-        if (cellDensity[i] < isoLevel)
-        {
-            caseNumber |= 1 << i;
-        }
-    }
-
-
-    if (edgeTable[caseNumber] == 0)
         return;
-
-    if (caseNumber < 128)
-        return;
-
-    float3 vertexList[12];
-    float3 tangentList[12];
-
-    if (edgeTable[caseNumber] & 1)
-    {
-        vertexList[0] = interpolation(corners[0], cellDensity[0], corners[1], cellDensity[1]);
-        tangentList[0] = normalize(cellDensity[1] - cellDensity[0]);
     }
 
-    if (edgeTable[caseNumber] & 2)
+    // 8 corners of the current cube
+    const float cubeCorners[8] =
     {
-        vertexList[1] = interpolation(corners[1], cellDensity[1], corners[2], cellDensity[2]);
-        tangentList[1] = normalize(cellDensity[2] - cellDensity[1]);
-    }
+        DensityTexture[threadId.xyz],
+        DensityTexture[float3(threadId.x + 1, threadId.y, threadId.z)],
+        DensityTexture[float3(threadId.x + 1, threadId.y, threadId.z + 1)],
+        DensityTexture[float3(threadId.x, threadId.y, threadId.z + 1)],
+        DensityTexture[float3(threadId.x, threadId.y + 1, threadId.z)],
+        DensityTexture[float3(threadId.x + 1, threadId.y + 1, threadId.z)],
+        DensityTexture[float3(threadId.x + 1, threadId.y + 1, threadId.z + 1)],
+        DensityTexture[float3(threadId.x, threadId.y + 1, threadId.z + 1)]
+    };
 
-    if (edgeTable[caseNumber] & 4)
+    // Calculate unique index for each cube configuration.
+    // There are 256 possible values
+    // A value of 0 means cube is entirely inside surface; 255 entirely outside.
+    // The value is used to look up the edge table, which indicates which edges of the cube are cut by the isosurface.
+    int cubeIndex = 0;
+    if (cubeCorners[0] < isoLevel)
+        cubeIndex |= 1;
+    if (cubeCorners[1] < isoLevel)
+        cubeIndex |= 2;
+    if (cubeCorners[2] < isoLevel)
+        cubeIndex |= 4;
+    if (cubeCorners[3] < isoLevel)
+        cubeIndex |= 8;
+    if (cubeCorners[4] < isoLevel)
+        cubeIndex |= 16;
+    if (cubeCorners[5] < isoLevel)
+        cubeIndex |= 32;
+    if (cubeCorners[6] < isoLevel)
+        cubeIndex |= 64;
+    if (cubeCorners[7] < isoLevel)
+        cubeIndex |= 128;
+
+    // Create triangles for current cube configuration
+    for (int i = 0; triangulation[cubeIndex][i] != -1; i += 3)
     {
-        vertexList[2] = interpolation(corners[2], cellDensity[2], corners[3], cellDensity[3]);
-        tangentList[2] = normalize(cellDensity[3] - cellDensity[2]);
-    }
+        // Get indices of corner points A and B for each of the three edges
+        // of the cube that need to be joined to form the triangle.
+        int a0 = cornerIndexAFromEdge[triangulation[cubeIndex][i]];
+        int b0 = cornerIndexBFromEdge[triangulation[cubeIndex][i]];
 
-    if (edgeTable[caseNumber] & 8)
-    {
-        vertexList[3] = interpolation(corners[3], cellDensity[3], corners[0], cellDensity[0]);
-        tangentList[3] = normalize(cellDensity[3] - cellDensity[0]);
-    }
+        int a1 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 1]];
+        int b1 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 1]];
 
-    if (edgeTable[caseNumber] & 16)
-    {
-        vertexList[4] = interpolation(corners[4], cellDensity[4], corners[5], cellDensity[5]);
-        tangentList[4] = normalize(cellDensity[5] - cellDensity[4]);
-    }
+        int a2 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 2]];
+        int b2 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 2]];
 
-    if (edgeTable[caseNumber] & 32)
-    {
-        vertexList[5] = interpolation(corners[5], cellDensity[5], corners[6], cellDensity[6]);
-        tangentList[5] = normalize(cellDensity[6] - cellDensity[5]);
-    }
-
-    if (edgeTable[caseNumber] & 64)
-    {
-        vertexList[6] = interpolation(corners[6], cellDensity[6], corners[7], cellDensity[7]);
-        tangentList[6] = normalize(cellDensity[7] - cellDensity[6]);
-    }
-
-    if (edgeTable[caseNumber] & 128)
-    {
-        vertexList[7] = interpolation(corners[7], cellDensity[7], corners[4], cellDensity[4]);
-        tangentList[7] = normalize(cellDensity[7] - cellDensity[4]);
-    }
-
-    if (edgeTable[caseNumber] & 256)
-    {
-        vertexList[8] = interpolation(corners[0], cellDensity[0], corners[4], cellDensity[4]);
-        tangentList[8] = normalize(cellDensity[4] - cellDensity[0]);
-    }
-
-    if (edgeTable[caseNumber] & 512)
-    {
-        vertexList[9] = interpolation(corners[1], cellDensity[1], corners[5], cellDensity[5]);
-        tangentList[9] = normalize(cellDensity[5] - cellDensity[1]);
-    }
-
-    if (edgeTable[caseNumber] & 1024)
-    {
-        vertexList[10] = interpolation(corners[2], cellDensity[2], corners[6], cellDensity[6]);
-        tangentList[10] = normalize(cellDensity[6] - cellDensity[2]);
-    }
-
-    if (edgeTable[caseNumber] & 2048)
-    {
-        vertexList[11] = interpolation(corners[3], cellDensity[3], corners[7], cellDensity[7]);
-        tangentList[11] = normalize(cellDensity[7] - cellDensity[3]);
-    }
-
-
-    Triangle tri = (Triangle) 0;
-    for (i = 0; triangulationB[caseNumber - 128][i] != -1; i += 3)
-    {
-        int index = triangulationB[caseNumber - 128][i];
-        tri.vertexA.position = vertexList[index];
-        index = triangulationB[caseNumber - 128][i + 1];
-        tri.vertexB.position = vertexList[index];
-        index = triangulationB[caseNumber - 128][i + 2];
-        tri.vertexC.position = vertexList[index];
-
-        const float3 n0 = cross(normalize(tri.vertexA.position - tri.vertexB.position), normalize(tri.vertexA.position - tri.vertexC.position));
-        const float3 n1 = cross(normalize(tri.vertexB.position - tri.vertexA.position), normalize(tri.vertexB.position - tri.vertexC.position));
-        const float3 n2 = cross(normalize(tri.vertexC.position - tri.vertexA.position), normalize(tri.vertexC.position - tri.vertexB.position));
-
-        tri.vertexA.normal = n0;
-        tri.vertexB.normal = n1;
-        tri.vertexC.normal = n2;
-
-        tri.vertexA.id = threadId.xy;
-        tri.vertexB.id = threadId.xy;
-        tri.vertexC.id = threadId.xy;
-
+        Triangle tri = (Triangle)0;
+        tri.vertexA.position = interpolateVerts(cubeCorners[a0], cubeCorners[b0]);
+        tri.vertexB.position = interpolateVerts(cubeCorners[a1], cubeCorners[b1]);
+        tri.vertexC.position = interpolateVerts(cubeCorners[a2], cubeCorners[b2]);
         triangles.Append(tri);
     }
 
-
-    //Triangle s;
-    //s.vertexA.id = threadId.x;
-    //s.vertexA.position = float3(0, 0, 0);
-    //s.vertexA.normal = float3(1, 1, 1);
-    //s.vertexB.id = threadId.y;
-    //s.vertexB.position = float3(4, 4, 4);
-    //s.vertexB.normal = float3(1, 1, 1);
-    //s.vertexC.id = threadId.z;
-    //s.vertexC.position = float3(8, 8, 8);
-    //s.vertexC.normal = float3(1, 1, 1);
-
 }
+

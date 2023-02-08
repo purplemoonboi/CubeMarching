@@ -37,7 +37,7 @@ namespace Engine
 		void ExecuteGraphicsCommandList() const;
 		void SignalGPU() const;
 
-		// @brief Create the descriptors for the constant buffer view and resource view.
+		// @brief InitialiseResource the descriptors for the constant buffer view and resource view.
 		bool CreateCbvSrvUavHeap
 		(
 			UINT opaqueRenderItemCount,
@@ -69,13 +69,10 @@ namespace Engine
 
 		
 		UINT32 CbvSrvUavDescriptorSize;
-		UINT VoxelWorld_Resource_HeapOffset;
+		UINT PassConstantBufferViewOffset;
 
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 GPU_TO_CPU_SYNC_COUNT;
-
-
-		UINT PassConstantBufferViewOffset;
 
 	private:
 

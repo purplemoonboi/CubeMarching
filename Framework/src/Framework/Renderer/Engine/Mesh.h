@@ -1,4 +1,5 @@
 #pragma once
+#include <DirectXCollision.h>
 #include <string>
 #include <unordered_map>
 #include "Framework/Renderer/Buffers/Buffer.h"

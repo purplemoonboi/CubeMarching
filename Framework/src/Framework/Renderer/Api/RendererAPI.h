@@ -7,6 +7,7 @@
 #include "Framework/Renderer/Buffers/VertexArray.h"
 #include "Framework/Renderer/Engine/Mesh.h"
 #include "Framework/Renderer/Engine/RendererStatus.h"
+#include "Framework/Renderer/Memory/MemoryManager.h"
 #include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 
 namespace Engine
@@ -69,6 +70,7 @@ namespace Engine
 
 		[[nodiscard]] virtual FrameBuffer* GetFrameBuffer() const = 0;
 
+		[[nodiscard]] virtual MemoryManager* GetMemoryManager() const = 0;
 
 	private:
 

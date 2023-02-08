@@ -40,7 +40,7 @@ namespace Engine
 		{
 			srvDesc.Format = resource.Format;
 			srvDesc.Texture2D.MipLevels = resource.MipLevels;
-			Device->CreateShaderResourceView(resource.Texture.Get(), &srvDesc, hDescriptor);
+			Device->CreateShaderResourceView(resource.GpuResource.Get(), &srvDesc, hDescriptor);
 			hDescriptor.Offset(1, CbvSrvUavDescriptorSize);
 		}
 

@@ -5,11 +5,13 @@
 
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 
 
 namespace Engine
 {
 	struct ObjectConstant;
+
 
 	class D3D12RenderingApi : public RendererAPI
 	{
@@ -54,13 +56,20 @@ namespace Engine
 
 		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return D3D12FrameBuffer.get(); };
 
+		[[nodiscard]] MemoryManager* GetMemoryManager() const override { return D3D12MemoryManager.get(); }
 
 	private:
+		
+
 		// A unique pointer to the graphics context
 		ScopePointer<D3D12Context> D3D12Context = nullptr;
 
 		// A unique pointer to the frame buffer
 		ScopePointer<D3D12FrameBuffer> D3D12FrameBuffer = nullptr;
+
+		// A unique pointer to the Api's memory allocator class.
+		ScopePointer<D3D12MemoryManager> D3D12MemoryManager = nullptr;
+
 
 		D3D12FrameResource* CurrentFrameResource = nullptr;
 

@@ -1,18 +1,18 @@
 #include "D3D12RenderingApi.h"
 
-#include "imgui.h"
-#include "backends/imgui_impl_dx12.h"
+
 #include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/Directx12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
 #include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Textures/D3D12Texture.h"
 
 #include "Framework/Core/Log/Log.h"
 #include "Framework/ImGui/Platform/ImGuiImplD3D12.h"
 
+#include <imgui.h>
+#include <backends/imgui_impl_dx12.h>
 
 namespace Engine
 {
@@ -44,6 +44,9 @@ namespace Engine
 	{
 		/** builds our cbv descriptor etc */
 		D3D12Context = std::make_unique<class D3D12Context>(windowHandle, viewportWidth, viewportHeight);
+
+		D3D12MemoryManager = std::make_unique<class D3D12MemoryManager>();
+		D3D12MemoryManager->InitialiseSrvUavHeap(D3D12Context.get(), 32);
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
