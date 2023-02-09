@@ -78,7 +78,7 @@ namespace Engine
 
 		static GeometryGenerator Geo;
 
-		static void BuildVoxelWorld(MCTriangle* data);
+		static void BuildVoxelWorld(MCTriangle* data, GraphicsContext* gContext);
 	};
 
 

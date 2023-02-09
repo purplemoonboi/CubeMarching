@@ -33,15 +33,7 @@ cbuffer marchingCubeData : register(b1)
 };
 
 Texture3D<float> DensityTexture : register(t0);
-//StructuredBuffer<DataTable> Data : register(t1);
 AppendStructuredBuffer<Triangle> triangles : register(u0);
-
-float3 interpolation(float3 edgeVertex1, float valueAtVertex1, float3 edgeVertex2, float valueAtVertex2)
-{
-    return (edgeVertex1 + (isoLevel - valueAtVertex1) * (edgeVertex2 - edgeVertex1) / (valueAtVertex2 - valueAtVertex1));
-}
-
-
 
 float3 interpolateVerts(float4 v1, float4 v2)
 {
@@ -99,25 +91,34 @@ void GenerateChunk(int3 threadId : SV_DispatchThreadID)
         cubeIndex |= 128;
 
     // Create triangles for current cube configuration
-    for (int i = 0; triangulation[cubeIndex][i] != -1; i += 3)
-    {
-        // Get indices of corner points A and B for each of the three edges
-        // of the cube that need to be joined to form the triangle.
-        int a0 = cornerIndexAFromEdge[triangulation[cubeIndex][i]];
-        int b0 = cornerIndexBFromEdge[triangulation[cubeIndex][i]];
+    //for (int i = 0; triangulation[cubeIndex][i] != -1; i += 3)
+    //{
+    //    // Get indices of corner points A and B for each of the three edges
+    //    // of the cube that need to be joined to form the triangle.
+    //    int a0 = cornerIndexAFromEdge[triangulation[cubeIndex][i]];
+    //    int b0 = cornerIndexBFromEdge[triangulation[cubeIndex][i]];
 
-        int a1 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 1]];
-        int b1 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 1]];
+    //    int a1 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 1]];
+    //    int b1 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 1]];
 
-        int a2 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 2]];
-        int b2 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 2]];
+    //    int a2 = cornerIndexAFromEdge[triangulation[cubeIndex][i + 2]];
+    //    int b2 = cornerIndexBFromEdge[triangulation[cubeIndex][i + 2]];
 
-        Triangle tri = (Triangle)0;
-        tri.vertexA.position = interpolateVerts(cubeCorners[a0], cubeCorners[b0]);
-        tri.vertexB.position = interpolateVerts(cubeCorners[a1], cubeCorners[b1]);
-        tri.vertexC.position = interpolateVerts(cubeCorners[a2], cubeCorners[b2]);
-        triangles.Append(tri);
-    }
+    //    Triangle tri = (Triangle)0;
+    //    //tri.vertexA.position = interpolateVerts(cubeCorners[a0], cubeCorners[b0]);
+    //    //tri.vertexB.position = interpolateVerts(cubeCorners[a1], cubeCorners[b1]);
+    //    //tri.vertexC.position = interpolateVerts(cubeCorners[a2], cubeCorners[b2]);
+
+      
+    //}
+    Triangle tri = (Triangle) 0;
+
+    tri.vertexA.position = float3(100, 100, 100);
+    tri.vertexB.position = float3(200,200,200);
+    tri.vertexC.position = float3(300,300,300);
+
+   // triangles[threadId.x] = tri;
+    triangles.Append(tri);
 
 }
 

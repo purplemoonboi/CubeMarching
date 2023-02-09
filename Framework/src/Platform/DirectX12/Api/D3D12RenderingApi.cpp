@@ -245,14 +245,14 @@ namespace Engine
 			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			/*D3D12Context->GraphicsCmdList->DrawIndexedInstanced
+			D3D12Context->GraphicsCmdList->DrawIndexedInstanced
 			(
 				renderItem->IndexCount,
 				1,
 				renderItem->StartIndexLocation, 
 				renderItem->BaseVertexLocation, 
 				0
-			);*/
+			);
 
 			
 		}

@@ -131,10 +131,11 @@ namespace Engine
 		srvDesc.Texture3D.MipLevels = 1;
 		srvDesc.Texture3D.MostDetailedMip = 0;
 
-		auto handle = memManager->GetResourceHandle(1);
+		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memManager->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), 2, memManager->GetResourceHeapSize());
+		auto gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(memManager->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart(), 2, memManager->GetResourceHeapSize());
 
-		device->CreateShaderResourceView(GpuResource.Get(), &srvDesc, handle.CpuCurrentHandle);
-		GpuHandleSrv = handle.GpuCurrentHandle;
+		device->CreateShaderResourceView(GpuResource.Get(), &srvDesc, handle);
+		GpuHandleSrv = gpuHandle;
 
 
 		/**
@@ -149,10 +150,10 @@ namespace Engine
 		uavDesc.Texture3D.WSize = Depth;
 		uavDesc.Texture3D.FirstWSlice = 0;
 
-		device->CreateUnorderedAccessView(GpuResource.Get(), nullptr, &uavDesc,
-			handle.CpuCurrentHandle.Offset(1, memManager->GetResourceHeapSize()));
+		device->CreateUnorderedAccessView(GpuResource.Get(), nullptr, &uavDesc, 
+			handle.Offset(1, memManager->GetResourceHeapSize()));
 
-			GpuHandleUav = handle.GpuCurrentHandle.Offset(1, memManager->GetResourceHeapSize());
+		GpuHandleUav = gpuHandle.Offset(1, memManager->GetResourceHeapSize());
 
 		const HRESULT deviceRemovedReasonUav = device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReasonUav);

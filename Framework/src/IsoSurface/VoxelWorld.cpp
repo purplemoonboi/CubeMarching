@@ -191,17 +191,18 @@ namespace Engine
 		uavDesc.Buffer.NumElements = NumberOfBufferElements;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
-		auto handle = MemManager->GetResourceHandle(1);
+		auto handle = MemManager->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+		auto gpuHandle = MemManager->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
 
 		/* create the view describing our output buffer. note to offset on the GPU address */
 		Context->Device->CreateUnorderedAccessView(
 			OutputBuffer.Get(),
 			CounterResource.Get(),
 			&uavDesc,
-			handle.CpuCurrentHandle
+			handle
 		);
 
-		OutputVertexUavGpu = handle.GpuCurrentHandle;
+		OutputVertexUavGpu = gpuHandle;
 
 		const HRESULT deviceRemovedReasonUav = Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReasonUav);
@@ -231,12 +232,14 @@ namespace Engine
 
 		const UINT sizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MCData));
 
-		const auto handle = MemManager->GetResourceHandle(1);
+		const auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(MemManager->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), 1, MemManager->GetResourceHeapSize());
+		const auto gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(MemManager->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart(), 1, MemManager->GetResourceHeapSize());
+
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = TriangulationTable->Resource()->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = sizeInBytes;
-		Context->Device->CreateConstantBufferView(&cbvDesc, handle.CpuCurrentHandle);
-		ConstantBufferCbv = handle.GpuCurrentHandle;
+		Context->Device->CreateConstantBufferView(&cbvDesc, handle);
+		ConstantBufferCbv = gpuHandle;
 
 		TriangulationTable->CopyData(0, TriTableRawData);
 
