@@ -38,8 +38,8 @@ project "Framework"
 			{
 			   "d3dcompiler",
 			   "D3D12",
-			   "dxgi",
-			   "ImGui"
+			   "dxgi"--,
+			   --"ImGui"
 			}
 
 			flags { "NoPCH" }

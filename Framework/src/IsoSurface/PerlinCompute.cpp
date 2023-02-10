@@ -69,7 +69,7 @@ namespace Engine
 
 		D3D12_RANGE readBackRange = { 0, sizeof(float) * 32 * 32 * 32 };
 		float* data = nullptr;
-		HRESULT readBackResult = ReadBackBuffer->Map(0, &readBackRange, reinterpret_cast<void**>(&data));
+		HRESULT readBackResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
 		THROW_ON_FAILURE(readBackResult);
 
 		float value = data[0];
