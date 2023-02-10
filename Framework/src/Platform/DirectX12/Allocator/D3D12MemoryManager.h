@@ -31,7 +31,7 @@ namespace Engine
 
 		[[nodiscard]] ID3D12DescriptorHeap* GetDescriptorHeap() const { return SrvUavHeap.Get(); }
 
-
+		[[nodiscard]] UINT64 GetCurrentHandleOffset() const { return HandleOffset; }
 
 	private:
 		bool IsInitialised = false;

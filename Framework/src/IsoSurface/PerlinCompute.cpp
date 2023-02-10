@@ -63,12 +63,21 @@ namespace Engine
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-		D3D12_RANGE readBackRange = { 0, sizeof(float) * 32 * 32 * 32 };
 
 		Context->FlushCommandQueue();
 
-		float* rawData = nullptr;
-		THROW_ON_FAILURE(ReadBackBuffer->Map(0, &readBackRange, reinterpret_cast<void**>(&rawData)));
+
+		D3D12_RANGE readBackRange = { 0, sizeof(float) * 32 * 32 * 32 };
+		float* data = nullptr;
+		HRESULT readBackResult = ReadBackBuffer->Map(0, &readBackRange, reinterpret_cast<void**>(&data));
+		THROW_ON_FAILURE(readBackResult);
+
+		float value = data[0];
+		float valueB = data[512];
+		float valueC = data[4096];
+
+		D3D12_RANGE unMapRange = { 0,0 };
+		ReadBackBuffer->Unmap(0, &unMapRange);
 
 		int i = 0;
 	}
