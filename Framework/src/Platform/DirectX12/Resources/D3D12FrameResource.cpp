@@ -8,7 +8,7 @@ namespace Engine
 
 	}
 
-	D3D12FrameResource::D3D12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount, UINT id)
+	D3D12FrameResource::D3D12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount)
 	{
 		const auto dx12DeviceContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
@@ -25,7 +25,7 @@ namespace Engine
 		PassBuffer		= CreateScope<D3D12UploadBuffer<PassConstants>>(dx12DeviceContext, passCount, true);
 		MaterialBuffer  = CreateScope<D3D12UploadBuffer<MaterialConstants>>(dx12DeviceContext, materialBufferCount, true);
 		ConstantBuffer	= CreateScope<D3D12UploadBuffer<ObjectConstant>>(dx12DeviceContext, objectCount, true);
-		frId = id;
+
 	}
 
 }

@@ -70,12 +70,17 @@ namespace Engine
 		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	
+
+
 		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
+
 		ID3D12CommandList* cmdLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
+
 		Context->FlushCommandQueue();
 
 		THROW_ON_FAILURE(ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&RawTriBuffer)));
+
 
 		return RawTriBuffer;
 	}
@@ -84,7 +89,6 @@ namespace Engine
 	void VoxelWorld::BuildComputeRootSignature()
 	{
 		
-
 		CD3DX12_DESCRIPTOR_RANGE table0;
 		table0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 		CD3DX12_DESCRIPTOR_RANGE table1;
@@ -162,7 +166,7 @@ namespace Engine
 		const HRESULT vertexResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
+			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
 			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
@@ -173,7 +177,7 @@ namespace Engine
 		const HRESULT counterResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
+			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
 			&CD3DX12_RESOURCE_DESC::Buffer(4, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
@@ -193,7 +197,7 @@ namespace Engine
 
 		auto handle = MemManager->GetDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
 		auto gpuHandle = MemManager->GetDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
-
+		OutputVertexUavGpu = gpuHandle;
 		/* create the view describing our output buffer. note to offset on the GPU address */
 		Context->Device->CreateUnorderedAccessView(
 			OutputBuffer.Get(),
@@ -202,7 +206,7 @@ namespace Engine
 			handle
 		);
 
-		OutputVertexUavGpu = gpuHandle;
+		
 
 		const HRESULT deviceRemovedReasonUav = Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReasonUav);

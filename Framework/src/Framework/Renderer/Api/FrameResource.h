@@ -58,11 +58,9 @@ namespace Engine
 			GraphicsContext* graphicsContext,
 			UINT passBufferCount,
 			UINT materialBufferCount,
-			UINT objectBufferCount, 
-			UINT id
+			UINT objectBufferCount
 		);
 
 		bool IsInitialised = false;
-		UINT frId = -1;
 	};
 }

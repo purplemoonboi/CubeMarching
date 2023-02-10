@@ -21,7 +21,7 @@ namespace Engine
 {
 
 	Renderer3D::RenderingStats Renderer3D::ProfileStats;
-	::GeometryGenerator Renderer3D::Geo;
+    GeometryGenerator Geo;
 
 	struct RendererData
 	{
@@ -109,24 +109,8 @@ namespace Engine
 
 		/*Initialise a plane*/
 		
-		auto boxData = Geo.CreateBox(100, 1, 100, 5);
-
-		const UINT vbSizeInBytes = sizeof(Vertex) * boxData.Vertices.size();
-		const UINT ibSizeInBytes = sizeof(UINT16) * boxData.GetIndices16().size();
-
-		ScopePointer<MeshGeometry> Box = CreateScope<MeshGeometry>("Box");
-		Box->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
-			boxData.Vertices.data(), 
-			vbSizeInBytes,
-			boxData.Vertices.size(),
-			false
-		);
-		Box->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(), 
-			boxData.GetIndices16().data(),
-			ibSizeInBytes, 
-			boxData.GetIndices16().size());
-
-			RenderData.Geometries.emplace("Box", std::move(Box));
+		std::string name = "cube";
+		CreateCube(4, 4, 4, name, 0);
 
 		///*
 		// * The buffer size can be given by...
@@ -261,7 +245,8 @@ namespace Engine
 		/**
 		 * Prepare scene geometry to the screen
 		 */
-		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
+		//TODO: FIX ME!
+		//RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
 
 
 	}
@@ -278,17 +263,28 @@ namespace Engine
 
 	void Renderer3D::BuildRenderItems(GraphicsContext* graphicsContext)
 	{
+		float x = 0.f, y = 0.f, z = 0.f;
+		UINT baseVertexLocation = 0;
+		for (auto& geo : RenderData.Geometries)
+		{
+			auto box = RenderItem::Create
+			(
+				geo.second.get(),
+				RenderData.MaterialLibrary.Get("Default"),
+				geo.first.c_str(),
+				1,
+				Transform(x, y, z)
+			);
 
-		auto box = RenderItem::Create
-		(
-			RenderData.Geometries["Box"].get(),
-			RenderData.MaterialLibrary.Get("Default"),
-			"Box",
-			1,
-			Transform(-10, 10, -10)
-		);
+			box->IndexCount = box->Geometry->IndexBuffer->GetCount();
+			box->BaseVertexLocation = baseVertexLocation;
+			baseVertexLocation += box->Geometry->VertexBuffer->GetCount();
 
-		RenderData.RenderItems.push_back(std::move(box));
+			RenderData.RenderItems.push_back(std::move(box));
+			x += 10;
+		}
+
+	
 
 		for (auto& renderItem : RenderData.RenderItems)
 		{
@@ -385,10 +381,114 @@ namespace Engine
 				graphicsContext,
 				1,
 				static_cast<UINT>(RenderData.RenderItems.size()),
-				static_cast<UINT>(RenderData.MaterialLibrary.Size()),
-				i
+				static_cast<UINT>(RenderData.MaterialLibrary.Size())
 			)
 			);
+		}
+	}
+
+	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
+	{
+		auto api = RenderInstruction::GetApiPtr();
+		auto cubeData = Geo.CreateBox(x, y, z, subDivisions);
+
+		ScopePointer<MeshGeometry> cubeGeometry = CreateScope<MeshGeometry>(name);
+		const UINT vbSizeInBytes = sizeof(Vertex) * cubeData.Vertices.size();
+		const UINT ibSizeInBytes = sizeof(UINT16) * cubeData.GetIndices16().size();
+
+		cubeGeometry->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), 
+			cubeData.Vertices.data(), vbSizeInBytes, cubeData.Vertices.size(), false);
+
+		BufferLayout layout = BufferLayout
+		({ 
+			{ "VERTEX",	  ShaderDataType::Float3, 0,   0 },
+			{ "NORMAL",	  ShaderDataType::Float3, 12,  1 },
+			{ "TEXCOORDS", ShaderDataType::Float2, 24, 2 } 
+		});
+		
+		cubeGeometry->VertexBuffer->SetLayout(layout);
+
+		cubeGeometry->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+			cubeData.GetIndices16().data(), ibSizeInBytes, cubeData.GetIndices16().size());
+
+		if (RenderData.Geometries.find(name) == RenderData.Geometries.end())
+		{
+			RenderData.Geometries.emplace(name, std::move(cubeGeometry));
+		}
+		else
+		{
+			name.append("_0");
+			RenderData.Geometries.emplace(name, std::move(cubeGeometry));
+		}
+	}
+
+	void Renderer3D::CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name,  UINT32 subSivisions)
+	{
+		auto api = RenderInstruction::GetApiPtr();
+		auto planeData = Geo.CreateQuad(x, y, z, w, h);
+
+		ScopePointer<MeshGeometry> planeGeometry = CreateScope<MeshGeometry>(name);
+		const UINT vbSizeInBytes = sizeof(Vertex) * planeData.Vertices.size();
+		const UINT ibSizeInBytes = sizeof(UINT16) * planeData.GetIndices16().size();
+
+		planeGeometry->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+			planeData.Vertices.data(), vbSizeInBytes, planeData.Vertices.size(), false);
+
+		planeGeometry->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+			planeData.GetIndices16().data(), ibSizeInBytes, planeData.GetIndices16().size());
+
+		BufferLayout layout = BufferLayout
+		({
+			{ "VERTEX",	  ShaderDataType::Float3, 0,   0 },
+			{ "NORMAL",	  ShaderDataType::Float3, 12,  1 },
+			{ "TEXCOORDS", ShaderDataType::Float2, 24, 2 }
+			});
+
+		planeGeometry->VertexBuffer->SetLayout(layout);
+
+		if (RenderData.Geometries.find(name) == RenderData.Geometries.end())
+		{
+			RenderData.Geometries.emplace(name, std::move(planeGeometry));
+		}
+		else
+		{
+			name.append("_0");
+			RenderData.Geometries.emplace(name, std::move(planeGeometry));
+		}
+	}
+
+	void Renderer3D::CreateSphere(float radius, std::string& name, UINT32 lateralResolution, UINT32 longitudeResolution)
+	{
+		auto api = RenderInstruction::GetApiPtr();
+		auto sphereData = Geo.CreateSphere(radius, lateralResolution, longitudeResolution);
+
+		ScopePointer<MeshGeometry> sphereGeometry = CreateScope<MeshGeometry>(name);
+		const UINT vbSizeInBytes = sizeof(Vertex) * sphereData.Vertices.size();
+		const UINT ibSizeInBytes = sizeof(UINT16) * sphereData.GetIndices16().size();
+
+		sphereGeometry->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+			sphereData.Vertices.data(), vbSizeInBytes, sphereData.Vertices.size(), false);
+
+		sphereGeometry->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+			sphereData.GetIndices16().data(), ibSizeInBytes, sphereData.GetIndices16().size());
+
+		BufferLayout layout = BufferLayout
+		({
+			{ "VERTEX",	  ShaderDataType::Float3, 0,   0 },
+			{ "NORMAL",	  ShaderDataType::Float3, 12,  1 },
+			{ "TEXCOORDS", ShaderDataType::Float2, 24, 2 }
+			});
+
+		sphereGeometry->VertexBuffer->SetLayout(layout);
+
+		if (RenderData.Geometries.find(name) == RenderData.Geometries.end())
+		{
+			RenderData.Geometries.emplace(name, std::move(sphereGeometry));
+		}
+		else
+		{
+			name.append("_0");
+			RenderData.Geometries.emplace(name, std::move(sphereGeometry));
 		}
 	}
 

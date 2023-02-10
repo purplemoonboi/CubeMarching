@@ -48,8 +48,8 @@ namespace Engine
 		ComPtr<ID3D12Resource> CounterResource;
 
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
+		D3D12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
+		D3D12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
 
 
 		std::vector<float> RawScalarTexture;

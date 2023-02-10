@@ -42,6 +42,7 @@ namespace Engine
 		[[nodiscard]] const void* GetSystemData() const override;
 		[[nodiscard]] const void* GetResourceData() const override;
 
+		[[nodiscard]] UINT32 GetCount() override { return VertexCount; }
 
 		// @brief Returns the view into the vertex buffer;
 		[[nodiscard]] D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const;

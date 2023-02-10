@@ -164,6 +164,7 @@ namespace Engine
 		virtual void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) = 0;
 		virtual void Release() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
+		virtual UINT32 GetCount() = 0;
 		[[nodiscard]] virtual const BufferLayout& GetLayout() const = 0;
 		[[nodiscard]] virtual const void* GetSystemData() const = 0;
 		[[nodiscard]] virtual const void* GetResourceData() const = 0;

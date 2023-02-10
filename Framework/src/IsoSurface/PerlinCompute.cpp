@@ -16,6 +16,7 @@ namespace Engine
 		BuildComputeRootSignature();
 		BuildPipelineState();
 		BuildResource();
+		CreateReadBackBuffer();
 	}
 
 	void PerlinCompute::Generate3DTexture(PerlinArgs args, UINT X, UINT Y, UINT Z)
@@ -47,13 +48,27 @@ namespace Engine
 
 		Context->GraphicsCmdList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ));
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		Context->GraphicsCmdList->CopyResource(ReadBackBuffer.Get(), resource->GpuResource.Get());
+
+		Context->GraphicsCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
+				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_GENERIC_READ));
 
 		// Execute the commands and flush
 		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
+
+
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
 		Context->FlushCommandQueue();
+
+		float* rawData = nullptr;
+		THROW_ON_FAILURE(ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&rawData)));
+
+		int i = 0;
 	}
 
 	void PerlinCompute::BuildComputeRootSignature()
@@ -61,6 +76,7 @@ namespace Engine
 
 		CD3DX12_DESCRIPTOR_RANGE uavTable;
 		uavTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+
 		CD3DX12_ROOT_PARAMETER slotRootParameter[2];
 		slotRootParameter[0].InitAsConstants(3, 0); // perlin settings
 		slotRootParameter[1].InitAsDescriptorTable(1, &uavTable);// texture

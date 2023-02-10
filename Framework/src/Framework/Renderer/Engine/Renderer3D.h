@@ -1,6 +1,6 @@
 #pragma once
 #include <intsafe.h>
-
+#include <string>
 #include "GeometryGenerator.h"
 #include "Framework/Camera/MainCamera.h";
 
@@ -57,8 +57,13 @@ namespace Engine
 		// @brief - Build the objects which will be rendered to the buffer.
 		static void BuildRenderItems(GraphicsContext* graphicsContext);
 
-		static void BuildMaterials();
+		static void BuildMaterials(); 
 
+		static void CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions = 1);
+
+		static void CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name, UINT32 subSivisions = 1);
+
+		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
 		struct RenderingStats
 		{
@@ -76,7 +81,6 @@ namespace Engine
 
 		static RenderingStats ProfileStats;
 
-		static GeometryGenerator Geo;
 
 		static void BuildVoxelWorld(MCTriangle* data, GraphicsContext* gContext);
 	};

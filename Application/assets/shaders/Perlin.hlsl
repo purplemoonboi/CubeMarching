@@ -204,5 +204,7 @@ RWTexture3D<float> Noise3D : register(u0);
 void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
 {
     const float3 thisId = (float3) threadId;
-    Noise3D[threadId] = snoise(thisId * 0.01);
+    //Noise3D[threadId] = snoise(thisId * 0.1);
+    Noise3D[threadId] = 100.0f;
+
 }

@@ -230,9 +230,6 @@ namespace Engine
 			D3D12Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
 			D3D12Context->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
-			/**
-			 *	The constant buffer is *bound* to the 0th register.
-			 */
 			const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 			const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
 
