@@ -149,7 +149,7 @@ namespace Engine
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = initData;
-		subResourceData.RowPitch = width;
+		subResourceData.RowPitch = width* sizeof(float);
 		subResourceData.SlicePitch = height * depth;
 		
 

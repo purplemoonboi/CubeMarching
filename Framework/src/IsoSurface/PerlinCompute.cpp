@@ -63,10 +63,12 @@ namespace Engine
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
+		D3D12_RANGE readBackRange = { 0, sizeof(float) * 32 * 32 * 32 };
+
 		Context->FlushCommandQueue();
 
 		float* rawData = nullptr;
-		THROW_ON_FAILURE(ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&rawData)));
+		THROW_ON_FAILURE(ReadBackBuffer->Map(0, &readBackRange, reinterpret_cast<void**>(&rawData)));
 
 		int i = 0;
 	}
@@ -139,7 +141,7 @@ namespace Engine
 		for (INT32 i = 0; i < VoxelWorldSize; ++i)
 			for (INT32 j = 0; j < VoxelWorldSize; ++j)
 				for (INT32 k = 0; k < VoxelWorldSize; ++k)
-					RawTexture.push_back(Perlin(i * 0.01f, j * 0.01f, k * 0.01f));
+					RawTexture.push_back(0);
 
 		ScalarTexture = std::make_unique<D3D12Texture>(
 			VoxelWorldSize, VoxelWorldSize, VoxelWorldSize,
