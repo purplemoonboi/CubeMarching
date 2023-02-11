@@ -225,12 +225,12 @@ namespace Engine
 
 
 			/*generate one chunk*/
-			auto data = RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f }, RenderData.PerlinCompute->ScalarTexture.get());
+			const auto data = RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f }, RenderData.PerlinCompute->ScalarTexture.get());
 
-			auto api = RenderInstruction::GetApiPtr();
+			const auto api = RenderInstruction::GetApiPtr();
 			BuildVoxelWorld(data, api->GetGraphicsContext());
 
-			//init = true;
+			init = true;
 		}
 
 		RenderInstruction::PreRender();
@@ -246,7 +246,7 @@ namespace Engine
 		 * Prepare scene geometry to the screen
 		 */
 		//TODO: FIX ME!
-		//RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
+		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
 
 
 	}
@@ -311,64 +311,63 @@ namespace Engine
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
 	}
 
-	void Renderer3D::BuildVoxelWorld(MCTriangle* data, GraphicsContext* gContext)
+	void Renderer3D::BuildVoxelWorld(const std::vector<MCTriangle> triangles, GraphicsContext* gContext)
 	{
-		//if (RenderData.Geometries.find("Terrain") == RenderData.Geometries.end())
-		//{
-		//	MCTriangle* raw[] = { data };
+		if (RenderData.Geometries.find("Terrain") == RenderData.Geometries.end())
+		{
+			std::vector<MCVertex> vertices;
+			std::vector<UINT16> indices;
+			UINT16 index = 0;
+			for(auto& tri : triangles)
+			{
+				vertices.push_back(tri.VertexA);
+				indices.push_back(index);
+				index++;
+				vertices.push_back(tri.VertexB);
+				indices.push_back(index);
+				index++;
+				vertices.push_back(tri.VertexC);
+				indices.push_back(index);
+				index++;
+			}
 
-		//	const UINT size = _countof(raw) * 3;
-		//	const UINT vbSizeInBytes = sizeof(MCTriangle) * size;
+			const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
+			const UINT vbSizeInBytes = sizeof(MCVertex) * vertices.size();
 
-		//	std::vector<MCVertex> vertices;
-		//	vertices.resize(size);
-		//	memcpy(&vertices, data, size);
+			ScopePointer<MeshGeometry> Terrain = CreateScope<MeshGeometry>("Terrain");
+			Terrain->VertexBuffer = VertexBuffer::Create(gContext, vertices.data(),
+				vbSizeInBytes, vertices.size(), true);
 
-		//	std::vector<UINT16> indices;
-		//	UINT16 index = 0;
-		//	for(const auto vertex : vertices)
-		//	{
-		//		indices.push_back(index);
-		//		index += 1;
-		//	}
+			Terrain->IndexBuffer = IndexBuffer::Create(gContext, indices.data(),
+				ibSizeInBytes, indices.size());
+		
+			RenderData.Geometries.emplace("Terrain", std::move(Terrain));
 
-		//	const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
+			ScopePointer<RenderItem> mcGeo = RenderItem::Create
+			(
+				RenderData.Geometries["Terrain"].get(),
+				RenderData.MaterialLibrary.Get("Default"),
+				"Terrain",
+				1,
+				Transform(0, 0, 0)
+			);
 
+			RenderData.OpaqueRenderItems.push_back(mcGeo.get());
+			RenderData.RenderItems.push_back(std::move(mcGeo));
+		}
+		else
+		{
 
-		//	ScopePointer<MeshGeometry> Terrain = CreateScope<MeshGeometry>("Terrain");
-		//	Terrain->VertexBuffer = VertexBuffer::Create(gContext, vertices.data(),
-		//		vbSizeInBytes, size, true);
+			auto terrain = RenderData.Geometries.at("Terrain").get();
 
-		//	Terrain->IndexBuffer = IndexBuffer::Create(gContext, indices.data(),
-		//		ibSizeInBytes, indices.size());
-		//
-		//	RenderData.Geometries.emplace("Terrain", std::move(Terrain));
+			D3D12VertexBuffer* buffer = dynamic_cast<D3D12VertexBuffer*>(terrain->VertexBuffer.get());
+			/*copy new vertices here!?*/
 
-		//	ScopePointer<RenderItem> mcGeo = RenderItem::Create
-		//	(
-		//		RenderData.Geometries["Terrain"].get(),
-		//		RenderData.MaterialLibrary.Get("Default"),
-		//		"Terrain",
-		//		1,
-		//		Transform(0, 0, 0)
-		//	);
+			//TODO: Maybe incorporate a chunks vertices into the update loop!
+			//TODO: Like updating the materials and other geo.
 
-		////	RenderData.OpaqueRenderItems.push_back(mcGeo.get());
-		////	RenderData.RenderItems.push_back(std::move(mcGeo));
-		//}
-		//else
-		//{
-
-		//	auto terrain = RenderData.Geometries.at("Terrain").get();
-
-		//	D3D12VertexBuffer* buffer = dynamic_cast<D3D12VertexBuffer*>(terrain->VertexBuffer.get());
-		//	/*copy new vertices here!?*/
-
-		//	//TODO: Maybe incorporate a chunks vertices into the update loop!
-		//	//TODO: Like updating the materials and other geo.
-
-		//}
-		//
+		}
+		
 
 	}
 

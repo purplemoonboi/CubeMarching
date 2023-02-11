@@ -32,7 +32,7 @@ namespace Engine
 
 		bool Init(GraphicsContext* context, MemoryManager* memManager);
 
-		MCTriangle* GenerateChunk(DirectX::XMFLOAT3 chunkID, Texture* texture);
+		const std::vector<MCTriangle>& GenerateChunk(DirectX::XMFLOAT3 chunkID, Texture* texture);
 
 		D3D12Context* Context = nullptr;
 		D3D12MemoryManager* MemManager = nullptr;
@@ -54,7 +54,7 @@ namespace Engine
 
 		std::vector<float> RawScalarTexture;
 
-		MCTriangle* RawTriBuffer;
+		std::vector<MCTriangle> RawTriBuffer;
 
 		ScopePointer<D3D12UploadBuffer<MCData>> TriangulationTable;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE ConstantBufferCbv;

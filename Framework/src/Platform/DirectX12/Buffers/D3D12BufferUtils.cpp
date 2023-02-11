@@ -105,14 +105,13 @@ namespace Engine
 	)
 	{
 		ComPtr<ID3D12Resource> defaultBuffer;
-		D3D12_RESOURCE_DESC texDesc;
-		ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
+		D3D12_RESOURCE_DESC texDesc{};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
 		texDesc.Alignment = 0;
 		texDesc.Width = width;
 		texDesc.Height = height;
 		texDesc.DepthOrArraySize = depth;
-		texDesc.MipLevels = 1;
+		texDesc.MipLevels = (depth > 6) ? 0U : 1U ;
 		texDesc.Format = format;
 		texDesc.SampleDesc.Count = 1;
 		texDesc.SampleDesc.Quality = 0;
@@ -131,9 +130,19 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(defaultResult);
 
-		const UINT numberOfResources = 1;
+		UINT32 numOfResources = 1;
+
+		if(texDesc.DepthOrArraySize > 6)
+		{
+			numOfResources = 1;
+		}
+		else
+		{
+			numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
+		}
+
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultBuffer.Get(),
-			0, numberOfResources);
+			0, numOfResources);
 
 		const HRESULT uploadResult = device->CreateCommittedResource
 		(
@@ -149,8 +158,9 @@ namespace Engine
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = initData;
-		subResourceData.RowPitch = width* sizeof(float);
-		subResourceData.SlicePitch = height * depth;
+		//TODO: Add a check for size of type
+		subResourceData.RowPitch = width * sizeof(float);
+		subResourceData.SlicePitch = subResourceData.RowPitch * height;
 		
 
 		// Schedule to copy the data to the default buffer resource.
@@ -167,6 +177,7 @@ namespace Engine
 			)
 		);
 
+
 		// Copy the data into the upload heap
 		UpdateSubresources
 			(
@@ -175,7 +186,7 @@ namespace Engine
 				uploadBuffer.Get(),
 				0,
 				0,
-				1,
+				numOfResources,
 				&subResourceData
 				);
 
@@ -210,8 +221,7 @@ namespace Engine
 	)
 	{
 		ComPtr<ID3D12Resource> defaultBuffer;
-		D3D12_RESOURCE_DESC texDesc;
-		ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
+		D3D12_RESOURCE_DESC texDesc{};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		texDesc.Alignment = 0;
 		texDesc.Width = width;
@@ -256,6 +266,9 @@ namespace Engine
 		subResourceData.RowPitch = width * sizeof(float);
 		subResourceData.SlicePitch = subResourceData.RowPitch * height;
 
+		const UINT32 numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
+
+
 		// Schedule to copy the data to the default buffer resource.
 		// Make instruction to copy CPU buffer into intermediate upload heap
 		// buffer.
@@ -278,7 +291,7 @@ namespace Engine
 				uploadBuffer.Get(),
 				0,
 				0,
-				1,
+				numOfResources,
 				&subResourceData
 				);
 

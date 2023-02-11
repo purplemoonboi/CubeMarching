@@ -6,9 +6,9 @@ namespace Engine
 {
 	struct MCVertex
 	{
-		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f };
-		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };
-		DirectX::XMFLOAT2 TexCoords = { 0.f, 0.f };
+		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f }; //12
+		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };	//12
+		DirectX::XMFLOAT2 TexCoords = { 0.f, 0.f };		//8
 	};
 
 	struct MCTriangle
@@ -31,7 +31,7 @@ namespace Engine
 
 	struct CBSettings
 	{
-		float IsoValue = 0;
+		float IsoValue = 0.03;
 		float PlanetRadius = 10;
 		UINT32 TextureSize = VoxelWorldSize;
 		UINT32 NumOfPointsPerAxis = VoxelWorldSize;

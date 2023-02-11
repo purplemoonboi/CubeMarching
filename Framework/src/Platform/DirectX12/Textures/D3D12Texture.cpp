@@ -14,7 +14,8 @@ namespace Engine
 		const std::wstring& filePath
 	)
 		:
-		GpuResource(nullptr)
+		GpuResource(nullptr),
+		UploadBuffer(nullptr)
 	{
 	}
 
@@ -23,14 +24,21 @@ namespace Engine
 		Width(width),
 		Height(height),
 		Depth(depthOrArrays),
-		Format(static_cast<DXGI_FORMAT>(textureFormat))
+		Format(static_cast<DXGI_FORMAT>(textureFormat)),
+		GpuResource(nullptr),
+		UploadBuffer(nullptr)
 	{
 	}
 
 	D3D12Texture::~D3D12Texture()
 	{
-		GpuResource->Release();
-		GpuResource = nullptr;
+		if (GpuResource != nullptr)
+		{
+			GpuResource->Release();
+			GpuResource = nullptr;
+			UploadBuffer->Release();
+			UploadBuffer = nullptr;
+		}
 	}
 
 	void D3D12Texture::InitialiseResource

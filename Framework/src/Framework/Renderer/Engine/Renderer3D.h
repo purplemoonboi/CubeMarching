@@ -28,13 +28,13 @@ namespace Engine
 			Translucence
 		};
 
-		// @brief - Resets command lists for Apis such as DirectX12 and Vulkan
+		// @brief - Resets command lists for Apis such as DirectX12
 		static void PreInit();
 
 		// @brief - Initialises descriptions of vertex buffer.
 		static void Init();
 
-		// @brief - Closes command lists for Apis such as DirectX12 and Vulkan
+		// @brief - Closes command lists for Apis such as DirectX12 
 		static void PostInit();
 
 		// @brief - Cleans the rendering system.
@@ -82,7 +82,7 @@ namespace Engine
 		static RenderingStats ProfileStats;
 
 
-		static void BuildVoxelWorld(MCTriangle* data, GraphicsContext* gContext);
+		static void BuildVoxelWorld(const std::vector<MCTriangle> triangles, GraphicsContext* gContext);
 	};
 
 

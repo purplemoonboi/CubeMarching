@@ -50,34 +50,13 @@ namespace Engine
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		Context->GraphicsCmdList->CopyResource(ReadBackBuffer.Get(), resource->GpuResource.Get());
-
-		Context->GraphicsCmdList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
-				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_GENERIC_READ));
 
 		// Execute the commands and flush
 		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
-
-
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-
 		Context->FlushCommandQueue();
 
-
-		D3D12_RANGE readBackRange = { 0, sizeof(float) * 32 * 32 * 32 };
-		float* data = nullptr;
-		HRESULT readBackResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
-		THROW_ON_FAILURE(readBackResult);
-
-		float value = data[0];
-		float valueB = data[512];
-		float valueC = data[4096];
-
-		D3D12_RANGE unMapRange = { 0,0 };
-		ReadBackBuffer->Unmap(0, &unMapRange);
 
 		int i = 0;
 	}
