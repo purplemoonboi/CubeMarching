@@ -75,7 +75,7 @@ namespace Engine
 		
 		}
 
-		BufferElement(std::string&& name, ShaderDataType type, INT32 alignedByteOffset, INT32 semanticIndex = 0, bool normalised = false)
+		BufferElement(std::string&& name, ShaderDataType type, UINT alignedByteOffset, INT32 semanticIndex = 0, bool normalised = false)
 			:
 			Name(std::move(name)), Type(type), Size(ShaderDataTypeSize(type)), Offset(alignedByteOffset), Normalised(normalised)
 		{

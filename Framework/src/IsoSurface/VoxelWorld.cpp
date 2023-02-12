@@ -21,7 +21,9 @@ namespace Engine
 		BuildPso();
 		CreateOutputBuffer();
 		CreateReadBackBuffer();
-		CreateConstantBuffer();
+
+		//CreateConstantBuffer();
+		CreateStructuredBuffer();
 
 		return true;
 	}
@@ -36,42 +38,85 @@ namespace Engine
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 		Context->GraphicsCmdList->SetPipelineState(ComputeState.Get());
 
-		// #1 - Bind the compute shader root signature.
+		//Bind compute shader buffers
 		Context->GraphicsCmdList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		// #2 - Set the compute shader variables.
 		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.IsoValue, 0);
 		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.TextureSize, 1);
 		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.PlanetRadius, 2);
 		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.NumOfPointsPerAxis, 3);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 3, &WorldSettings.ChunkCoord, 4);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 3, WorldOrigin, 4);
 
-
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, ConstantBufferCbv);
-		// Set the density texture
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(2, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
-
-		// Set the output buffer.
+		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
+		Context->GraphicsCmdList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
 		Context->GraphicsCmdList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
-		// #3 - Dispatch the work onto the GPU.
 		Context->GraphicsCmdList->Dispatch(VoxelWorldSize, VoxelWorldSize, VoxelWorldSize);
 
 
-		// #4 - Read back the vertices into the vertex buffer.
 		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-
-		// Copy vertices from the compute shader into the vertex buffer for rendering
 		Context->GraphicsCmdList->CopyResource(ReadBackBuffer.Get(), OutputBuffer.Get());
-
 
 		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
-		HRESULT cmdCloseResult = Context->GraphicsCmdList->Close();
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		Context->GraphicsCmdList->CopyResource(CounterReadback.Get(), CounterResource.Get());
+
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+		const INT32 rawData[1] = { 0 };
+		D3D12_SUBRESOURCE_DATA subResourceData = {};
+		subResourceData.pData = rawData;
+		subResourceData.RowPitch = sizeof(INT32);
+		subResourceData.SlicePitch = subResourceData.RowPitch;
+
+
+		// Schedule to copy the data to the default buffer resource.
+		// Make instruction to copy CPU buffer into intermediate upload heap
+		// buffer.
+		Context->GraphicsCmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				CounterResource.Get(),
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+				D3D12_RESOURCE_STATE_COPY_DEST
+			)
+		);
+
+		// Copy the data into the upload heap
+		UpdateSubresources
+		(
+			Context->GraphicsCmdList.Get(),
+			CounterResource.Get(),
+			CounterUpload.Get(),
+			0,
+			0,
+			1,
+			&subResourceData
+		);
+
+		// Add the instruction to transition back to read 
+		Context->GraphicsCmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				CounterResource.Get(),
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+			)
+		);
+
+		const HRESULT cmdCloseResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(cmdCloseResult);
 
 		ID3D12CommandList* cmdLists[] = { Context->GraphicsCmdList.Get() };
@@ -79,19 +124,24 @@ namespace Engine
 
 		Context->FlushCommandQueue();
 
+		INT32* count = nullptr;
+
+		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&count));
+		THROW_ON_FAILURE(countMapResult);
+
+		INT32 debug = *count;
+		CounterReadback->Unmap(0, nullptr);
+
 		MCTriangle* data;
-		HRESULT mappingResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
+		const HRESULT mappingResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
 		THROW_ON_FAILURE(mappingResult);
 
-		INT32 count = 32768;
-
 		RawTriBuffer.clear();
-		RawTriBuffer.reserve(count);
-		for(INT32 i = 0; i < count; ++i)
+		RawTriBuffer.reserve(*count);
+		for(INT32 i = 0; i < *count; ++i)
 		{
 			RawTriBuffer.push_back(data[i]);
 		}
-
 		ReadBackBuffer->Unmap(0, nullptr);
 
 		return RawTriBuffer;
@@ -101,22 +151,20 @@ namespace Engine
 	void VoxelWorld::BuildComputeRootSignature()
 	{
 		CD3DX12_DESCRIPTOR_RANGE table0;
-		table0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-		//TODO: 
-
+		table0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+		
 		CD3DX12_DESCRIPTOR_RANGE table1;
-		table1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+		table1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 
 		CD3DX12_DESCRIPTOR_RANGE table2;
 		table2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-		slotRootParameter[0].InitAsConstants(5, 0); // world settings view#
-
-		slotRootParameter[1].InitAsDescriptorTable(1, &table0); // world settings view
-		slotRootParameter[2].InitAsDescriptorTable(1, &table1); // density texture view
-		slotRootParameter[3].InitAsDescriptorTable(1, &table2);// output buffer view
+		slotRootParameter[0].InitAsConstants(5, 0);					// world settings view
+		slotRootParameter[1].InitAsDescriptorTable(1, &table0);		// density texture buffer 
+		slotRootParameter[2].InitAsShaderResourceView(1);			// tri table texture 
+		slotRootParameter[3].InitAsDescriptorTable(1, &table2);		// output buffer 
 
 		// A root signature is an array of root parameters.
 		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
@@ -142,14 +190,15 @@ namespace Engine
 		}
 
 		THROW_ON_FAILURE(hr);
-		THROW_ON_FAILURE(Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = Context->Device->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),
 			serializedRootSig->GetBufferSize(),
 			IID_PPV_ARGS(ComputeRootSignature.GetAddressOf()
 			)
-		));
+		);
+		THROW_ON_FAILURE(rootSigResult);
 	}
 
 	void VoxelWorld::BuildPso()
@@ -183,8 +232,8 @@ namespace Engine
 		const HRESULT vertexResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			//D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
-			D3D12_HEAP_FLAG_NONE,
+			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
+			//D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
@@ -197,8 +246,8 @@ namespace Engine
 		const HRESULT counterResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			//D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
-			D3D12_HEAP_FLAG_NONE,
+			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
+			//D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
@@ -247,11 +296,34 @@ namespace Engine
 		);
 
 		THROW_ON_FAILURE(readBackResult);
+
+		const HRESULT countReadBackResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(4),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&CounterReadback)
+		);
+		THROW_ON_FAILURE(countReadBackResult);
+
+		const HRESULT uploadBuffer = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(4),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(CounterUpload.GetAddressOf())
+		);
+		THROW_ON_FAILURE(uploadBuffer);
+
 	}
 
 	void VoxelWorld::CreateConstantBuffer()
 	{
-		constexpr UINT triangulationTableSize = 256 * 16;
+		/*constexpr UINT triangulationTableSize = 256 * 16;
 		TriangulationTable = CreateScope<D3D12UploadBuffer<MCData>>(Context, triangulationTableSize, true);
 
 		const UINT sizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MCData));
@@ -264,7 +336,24 @@ namespace Engine
 		Context->Device->CreateConstantBufferView(&cbvDesc, handle.CpuCurrentHandle);
 		ConstantBufferCbv = handle.GpuCurrentHandle;
 
-		TriangulationTable->CopyData(0, TriTableRawData);
+		TriangulationTable->CopyData(0, TriTableRawData);*/
+
+	}
+
+	void VoxelWorld::CreateStructuredBuffer()
+	{
+		constexpr auto bufferWidth = (4096 * sizeof(INT32));
+
+
+		TriangleBuffer = D3D12BufferUtils::CreateVertexBuffer(
+			Context->Device.Get(),
+			Context->GraphicsCmdList.Get(),
+			TriangleTable,
+			sizeof(INT32) * 4096,
+			UploadTriBuffer
+		);
+
+	
 
 	}
 }

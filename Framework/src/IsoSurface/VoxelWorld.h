@@ -27,7 +27,7 @@ namespace Engine
 	{
 	public:
 		CBSettings WorldSettings;
-
+		float WorldOrigin[3] = { 0,0,0 };
 		VoxelWorld() = default;
 
 		bool Init(GraphicsContext* context, MemoryManager* memManager);
@@ -46,19 +46,22 @@ namespace Engine
 
 		ComPtr<ID3D12Resource> OutputBuffer;
 		ComPtr<ID3D12Resource> CounterResource;
-
-
+		ComPtr<ID3D12Resource> CounterReadback;
+		ComPtr<ID3D12Resource> CounterUpload;
 		D3D12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
 		D3D12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
 
+		ComPtr<ID3D12Resource> TriangleBuffer;
+		ComPtr<ID3D12Resource> UploadTriBuffer;
+		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
 
 		std::vector<float> RawScalarTexture;
 
 		std::vector<MCTriangle> RawTriBuffer;
 
-		ScopePointer<D3D12UploadBuffer<MCData>> TriangulationTable;
+		//ScopePointer<D3D12UploadBuffer<MCData>> TriangulationTable;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE ConstantBufferCbv;
-		MCData TriTableRawData;
+		//MCData TriTableRawData;
 
 	private:
 
@@ -72,6 +75,8 @@ namespace Engine
 		void CreateReadBackBuffer();
 
 		void CreateConstantBuffer();
+
+		void CreateStructuredBuffer();
 
 	};
 

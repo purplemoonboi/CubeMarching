@@ -1,8 +1,5 @@
 
-#ifndef MARCHING_CUBES_DATA  
-#define MARCHING_CUBES_DATA  
-#include "MarchingCubeData.hlsli"
-#endif
+
 struct Vertex
 {
 	float3 position;
@@ -17,7 +14,6 @@ struct Triangle
 	Vertex vertexA;
 };
 
-
 cbuffer cbSettings : register(b0)
 {
 	float isoLevel;
@@ -27,108 +23,138 @@ cbuffer cbSettings : register(b0)
 	float3 chunkCoord;
 };
 
-cbuffer marchingCubeData : register(b1)
-{
-    int triangulation[256][16];
-};
-
 Texture3D<float> DensityTexture : register(t0);
-AppendStructuredBuffer<Triangle> triangles : register(u0);
+StructuredBuffer<int> TriangleTable : register(t1);
+RWStructuredBuffer<Triangle> triangles : register(u0);
 
-float3 interpolateVertex(float4 v1, float4 v2)
+float3 coordToWorld(int3 coord)
 {
-    float t = (isoLevel - v1.w) / (v2.w - v1.w);
-    return v1.xyz + t * (v2.xyz - v1.xyz);
+    return (coord / (textureSize - 1.0) - 0.5f) * planetSize;
 }
 
-int indexFromCoord(int x, int y, int z) {
-    return z * pointsPerAxis * pointsPerAxis + y * pointsPerAxis + x;
+int indexFromCoord(int3 coord)
+{
+    //coord = coord - int3(chunkCoord);
+    return coord.z * pointsPerAxis * pointsPerAxis + coord.y * pointsPerAxis + coord.x;
+}
+
+float sampleDensity(int3 coord)
+{
+    coord = max(0, min(coord, textureSize));
+    return DensityTexture.Load(float4(coord, 0));
+}
+
+float3 calculateNormal(int3 coord)
+{
+    int3 offsetX = int3(1, 0, 0);
+    int3 offsetY = int3(0, 1, 0);
+    int3 offsetZ = int3(0, 0, 1);
+
+    float dx = sampleDensity(coord + offsetX) - sampleDensity(coord - offsetX);
+    float dy = sampleDensity(coord + offsetY) - sampleDensity(coord - offsetY);
+    float dz = sampleDensity(coord + offsetZ) - sampleDensity(coord - offsetZ);
+
+    return normalize(float3(dx, dy, dz));
+}
+
+// Calculate the position of the vertex
+// The position lies somewhere along the edge defined by the two corner points.
+// Where exactly along the edge is determined by the values of each corner point.
+Vertex createVertex(int3 coordA, int3 coordB)
+{
+	
+    //float3 posA = coordToWorld(coordA);
+    //float3 posB = coordToWorld(coordB);
+    float densityA = sampleDensity(coordA);
+    float densityB = sampleDensity(coordB);
+
+	// Interpolate between the two corner points based on the density
+    float t = (isoLevel - densityA) / (densityB - densityA);
+    float3 position = coordA + t * (coordB - coordA);
+
+	// Normal:
+    float3 normalA = calculateNormal(coordA);
+    float3 normalB = calculateNormal(coordB);
+    float3 normal = normalize(normalA + t * (normalB - normalA));
+
+	// ID
+    int indexA = indexFromCoord(coordA);
+    int indexB = indexFromCoord(coordB);
+
+	// Create vertex
+    Vertex vertex;
+    vertex.position = position;
+    vertex.normal = normal;
+    vertex.id = int2(min(indexA, indexB), max(indexA, indexB));
+
+    return vertex;
 }
 
 [numthreads(8, 8, 8)]
-void GenerateChunk(int3 threadId : SV_DispatchThreadID)
+void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
- 
-    if (threadId.x >= pointsPerAxis - 1 || threadId.y >= pointsPerAxis - 1 || threadId.z >= pointsPerAxis - 1)
+    if (id.x >= pointsPerAxis - 1 || id.y >= pointsPerAxis - 1 || id.z >= pointsPerAxis - 1)
     {
         return;
     }
 
-    // 8 corners of the current cube
-    const float4 cubeCorners[8] =
+    int3 coord = id;// + int3(chunkCoord);
+
+    int3 cornerCoords[8];
+    cornerCoords[0] = coord + int3(0, 0, 0);
+    cornerCoords[1] = coord + int3(1, 0, 0);
+    cornerCoords[2] = coord + int3(1, 0, 1);
+    cornerCoords[3] = coord + int3(0, 0, 1);
+    cornerCoords[4] = coord + int3(0, 1, 0);
+    cornerCoords[5] = coord + int3(1, 1, 0);
+    cornerCoords[6] = coord + int3(1, 1, 1);
+    cornerCoords[7] = coord + int3(0, 1, 1);
+
+    int cubeConfiguration = 0;
+    for (int i = 0; i < 8; i++)
     {
-        float4(threadId.xyz,                                              DensityTexture[threadId.xyz]),
-        float4(float3(threadId.x + 1,   threadId.y,     threadId.z),      DensityTexture[int3(threadId.x + 1, threadId.y, threadId.z)]),
-        float4(float3(threadId.x + 1,   threadId.y,     threadId.z + 1),  DensityTexture[int3(threadId.x + 1, threadId.y, threadId.z + 1)]),
-        float4(float3(threadId.x,       threadId.y,     threadId.z + 1),  DensityTexture[int3(threadId.x, threadId.y, threadId.z + 1)]),
-        float4(float3(threadId.x,       threadId.y + 1, threadId.z),      DensityTexture[int3(threadId.x, threadId.y + 1, threadId.z)]),
-        float4(float3(threadId.x + 1,   threadId.y + 1, threadId.z),      DensityTexture[int3(threadId.x + 1, threadId.y + 1, threadId.z)]),
-        float4(float3(threadId.x + 1,   threadId.y + 1, threadId.z + 1),  DensityTexture[int3(threadId.x + 1, threadId.y + 1, threadId.z + 1)]),
-        float4(float3(threadId.x,       threadId.y + 1, threadId.z + 1),  DensityTexture[int3(threadId.x, threadId.y + 1, threadId.z + 1)])
-    };
 
-    // Calculate unique index for each cube configuration.
-    // There are 256 possible values
-    // A value of 0 means cube is entirely inside surface; 255 entirely outside.
-    // The value is used to look up the edge table, which indicates which edges of the cube are cut by the isosurface.
-    int cubeIndex = 0;
-    if (cubeCorners[0].w < isoLevel)
-        cubeIndex |= 1;
-    if (cubeCorners[1].w < isoLevel)
-        cubeIndex |= 2;
-    if (cubeCorners[2].w < isoLevel)
-        cubeIndex |= 4;
-    if (cubeCorners[3].w < isoLevel)
-        cubeIndex |= 8;
-    if (cubeCorners[4].w < isoLevel)
-        cubeIndex |= 16;
-    if (cubeCorners[5].w < isoLevel)
-        cubeIndex |= 32;
-    if (cubeCorners[6].w < isoLevel)
-        cubeIndex |= 64;
-    if (cubeCorners[7].w < isoLevel)
-        cubeIndex |= 128;
-
-    // Create triangles for current cube configuration
-    for (int i = 0; i < 16; i += 3)
-    {
-        if(triangulation[cubeIndex][i] == -1)
-            break;
-
-        // Get indices of corner points A and B for each of the three edges
-        // of the cube that need to be joined to form the triangle.
-        int a = triangulation[cubeIndex][i];
-        int a0 = cornerIndexAFromEdge[a];
-        int b0 = cornerIndexBFromEdge[a];
-
-        int b = triangulation[cubeIndex][i + 1];
-        int a1 = cornerIndexAFromEdge[b];
-        int b1 = cornerIndexBFromEdge[b];
-
-        int c = triangulation[cubeIndex][i + 2];
-        int a2 = cornerIndexAFromEdge[c];
-        int b2 = cornerIndexBFromEdge[c];
-
-        Triangle tri = (Triangle) 0;
-        //tri.vertexA.position = interpolateVertex(cubeCorners[a0], cubeCorners[b0]);
-        //tri.vertexB.position = interpolateVertex(cubeCorners[a1], cubeCorners[b1]);
-        //tri.vertexC.position = interpolateVertex(cubeCorners[a2], cubeCorners[b2]);
-
-        tri.vertexA.position = float3(a0, b0, cubeIndex);
-        tri.vertexB.position = float3(a1, b1, isoLevel);
-        tri.vertexC.position = float3(a2, b2, pointsPerAxis);
-
-        triangles.Append(tri);
-      
+        if (DensityTexture[cornerCoords[i]] > 0)
+        {
+            cubeConfiguration |= (1 << i);
+        }
     }
+	
+    int edgeIndices[16] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-    // Test for read back
+    for (int j = 0; j < 16; j++)
+    {
+        edgeIndices[j] = TriangleTable[(cubeConfiguration * 16) + j];
+    }
+ 
+   const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
+   const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
 
-    //Triangle tri = (Triangle) 0;
-    //tri.vertexA.position = float3(20, 20, 20);
-    //tri.vertexB.position = float3(10, 10, 10);
-    //tri.vertexC.position = (float3)threadId.xyz;
-    //triangles[triangles.IncrementCounter()] = tri;
+    for (i = 0; i < 16; i += 3)
+    {
+        if (edgeIndices[i] == -1)
+        {
+            break;
+        }
 
+        int edgeIndexA = edgeIndices[i];
+        int a0 = cornerIndexAFromEdge[edgeIndexA];
+        int a1 = cornerIndexBFromEdge[edgeIndexA];
+
+        int edgeIndexB = edgeIndices[i + 1];
+        int b0 = cornerIndexAFromEdge[edgeIndexB];
+        int b1 = cornerIndexBFromEdge[edgeIndexB];
+
+        int edgeIndexC = edgeIndices[i + 2];
+        int c0 = cornerIndexAFromEdge[edgeIndexC];
+        int c1 = cornerIndexBFromEdge[edgeIndexC];
+
+		// Create triangle
+        Triangle tri = (Triangle)0;
+        tri.vertexA = createVertex(cornerCoords[a0], cornerCoords[a1]);
+        tri.vertexB = createVertex(cornerCoords[b0], cornerCoords[b1]);
+        tri.vertexC = createVertex(cornerCoords[c0], cornerCoords[c1]);
+
+        triangles[triangles.IncrementCounter()] = tri;
+    }
 }
-

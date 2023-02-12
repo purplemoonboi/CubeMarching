@@ -109,41 +109,7 @@ namespace Engine
 
 		/*Initialise a plane*/
 		
-		std::string name = "cube";
-		CreateCube(4, 4, 4, name, 0);
-
-		///*
-		// * The buffer size can be given by...
-		// *
-		// * '	(X - 1) * (Y - 1) * (Z - 1) * 5 * sizeof(Triangle)	'
-		// *
-		// */
-
-		/**
-		 * Build object materials.
-		 */
-		BuildMaterials();
-
-		/**
-		 * Build scene render items
-		 */
-		BuildRenderItems(api->GetGraphicsContext());
-
-		/**
-		 * Build scene frame resources
-		 */
-		BuildFrameResources(api->GetGraphicsContext());
-
-
-		/**
-		 * Build upload buffers
-		 */
-		RenderData.UploadBufferManager = ResourceBuffer::Create
-		(
-			api->GetGraphicsContext(),
-			RenderData.FrameResources,
-			RenderData.RenderItems.size()
-		);
+		
 
 		/** create the pso */
 		const BufferLayout layout =
@@ -163,14 +129,14 @@ namespace Engine
 			FillMode::Opaque
 		));
 
-		//RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
-		//(
-		//	api->GetGraphicsContext(),
-		//	RenderData.ShaderLibrary.Get("vs"),
-		//	RenderData.ShaderLibrary.Get("ps"),
-		//	layout,
-		//	FillMode::WireFrame
-		//));
+		RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
+		(
+			api->GetGraphicsContext(),
+			RenderData.ShaderLibrary.Get("vs"),
+			RenderData.ShaderLibrary.Get("ps"),
+			layout,
+			FillMode::WireFrame
+		));
 
 	}
 
@@ -180,43 +146,14 @@ namespace Engine
 	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
 	{
 
-		/**
-		 *	Cycle throught the frame resources array
-		 */
-		RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUMBER_OF_FRAME_RESOURCES;
-		RenderData.ActiveFrameResource = RenderData.FrameResources[RenderData.CurrentFrameResourceIndex].get();
-
-		/**
-		 * Update the underlying fence and check if the GPU has finished executing
-		 * commands for the current frame resource.
-		 */
-		RenderInstruction::UpdateFrameResource(RenderData.ActiveFrameResource);
-
-
-
-		/**
-		 * Update the interal frame resource pointer
-		 */
-		RenderData.UploadBufferManager->UpdateCurrentFrameResource(RenderData.ActiveFrameResource);
-
-		/**
-		 * Update each render item's CB if a change has been made
-		 */
-		RenderData.UploadBufferManager->UpdateObjectBuffers(RenderData.OpaqueRenderItems);
-
-		/**
-		 * Update each material in the scene
-		 */
-		RenderData.UploadBufferManager->UpdateMaterialBuffers(RenderData.Materials);
-
-		/**
-		 * Update the main pass buffer
-		 */
-		RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
-
 		static bool init = false;
-		if(!init)
+		static bool build = false;
+		if (!init)
 		{
+			if(!build)
+				BuildMaterials();
+
+
 			PerlinArgs pa;
 			pa.Gain = 2.f;
 			pa.Loss = 0.5f;
@@ -227,28 +164,45 @@ namespace Engine
 			/*generate one chunk*/
 			const auto data = RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f }, RenderData.PerlinCompute->ScalarTexture.get());
 
-			const auto api = RenderInstruction::GetApiPtr();
-			BuildVoxelWorld(data, api->GetGraphicsContext());
+			if(!build)
+			{
+				RenderInstruction::ResetGraphicsCommandList();
 
-			init = true;
+				build = true;
+				const auto api = RenderInstruction::GetApiPtr();
+				BuildVoxelWorld(data, api->GetGraphicsContext());
+
+				init = true;
+
+				BuildRenderItems(api->GetGraphicsContext());
+				BuildFrameResources(api->GetGraphicsContext());
+
+				RenderData.UploadBufferManager = ResourceBuffer::Create
+				(
+					api->GetGraphicsContext(),
+					RenderData.FrameResources,
+					RenderData.RenderItems.size()
+				);
+
+				RenderInstruction::ExecGraphicsCommandList();
+			}
 		}
 
-		RenderInstruction::PreRender();
+		if(!RenderData.FrameResources.empty())
+		{
+			RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUMBER_OF_FRAME_RESOURCES;
+			RenderData.ActiveFrameResource = RenderData.FrameResources[RenderData.CurrentFrameResourceIndex].get();
 
+			RenderInstruction::UpdateFrameResource(RenderData.ActiveFrameResource);
+			RenderData.UploadBufferManager->UpdateCurrentFrameResource(RenderData.ActiveFrameResource);
+			RenderData.UploadBufferManager->UpdateObjectBuffers(RenderData.OpaqueRenderItems);
+			RenderData.UploadBufferManager->UpdateMaterialBuffers(RenderData.Materials);
+			RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
 
-		/*take the chunk data and copy it into the vertex buffer*/
-		/**
-		 * Clear the back buffer ready for rendering
-		 */
-		RenderInstruction::SetClearColour(NULL, RenderData.PSOs["Opaque"].get());
-
-		/**
-		 * Prepare scene geometry to the screen
-		 */
-		//TODO: FIX ME!
-		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
-
-
+			RenderInstruction::PreRender();
+			RenderInstruction::SetClearColour(NULL, RenderData.PSOs["Opaque"].get());
+			RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
+		}
 	}
 
 	void Renderer3D::EndScene()
@@ -256,18 +210,21 @@ namespace Engine
 		/**
 		 *	Render the scene geometry to the scene
 		 */
-		ProfileStats.DrawCalls = 1;
-		RenderInstruction::Flush();
-		RenderInstruction::PostRender();
+		if(!RenderData.FrameResources.empty())
+		{
+			ProfileStats.DrawCalls = 1;
+			RenderInstruction::Flush();
+			RenderInstruction::PostRender();
+		}
 	}
 
 	void Renderer3D::BuildRenderItems(GraphicsContext* graphicsContext)
 	{
-		float x = 0.f, y = 0.f, z = 0.f;
+		float x = -10.f, y = -10.f, z = -10.f;
 		UINT baseVertexLocation = 0;
 		for (auto& geo : RenderData.Geometries)
 		{
-			auto box = RenderItem::Create
+			auto renderItem = RenderItem::Create
 			(
 				geo.second.get(),
 				RenderData.MaterialLibrary.Get("Default"),
@@ -276,12 +233,11 @@ namespace Engine
 				Transform(x, y, z)
 			);
 
-			box->IndexCount = box->Geometry->IndexBuffer->GetCount();
-			box->BaseVertexLocation = baseVertexLocation;
-			baseVertexLocation += box->Geometry->VertexBuffer->GetCount();
+			renderItem->IndexCount = renderItem->Geometry->IndexBuffer->GetCount();
+			renderItem->BaseVertexLocation = baseVertexLocation;
+			baseVertexLocation += renderItem->Geometry->VertexBuffer->GetCount();
 
-			RenderData.RenderItems.push_back(std::move(box));
-			x += 10;
+			RenderData.RenderItems.push_back(std::move(renderItem));
 		}
 
 	
@@ -320,15 +276,12 @@ namespace Engine
 			UINT16 index = 0;
 			for(auto& tri : triangles)
 			{
-				vertices.push_back(tri.VertexA);
-				indices.push_back(index);
-				index++;
-				vertices.push_back(tri.VertexB);
-				indices.push_back(index);
-				index++;
 				vertices.push_back(tri.VertexC);
-				indices.push_back(index);
-				index++;
+				indices.push_back(++index);
+				vertices.push_back(tri.VertexB);
+				indices.push_back(++index);
+				vertices.push_back(tri.VertexA);
+				indices.push_back(++index);
 			}
 
 			const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
@@ -337,6 +290,14 @@ namespace Engine
 			ScopePointer<MeshGeometry> Terrain = CreateScope<MeshGeometry>("Terrain");
 			Terrain->VertexBuffer = VertexBuffer::Create(gContext, vertices.data(),
 				vbSizeInBytes, vertices.size(), true);
+
+			const BufferLayout layout =
+			{
+				{"POSITION",	ShaderDataType::Float3, 0, 0, false },
+				{"NORMAL",		ShaderDataType::Float3, 12,1, false },
+				{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
+			};
+			Terrain->VertexBuffer->SetLayout(layout);
 
 			Terrain->IndexBuffer = IndexBuffer::Create(gContext, indices.data(),
 				ibSizeInBytes, indices.size());
@@ -351,6 +312,10 @@ namespace Engine
 				1,
 				Transform(0, 0, 0)
 			);
+
+			mcGeo->IndexCount = indices.size();
+			mcGeo->BaseVertexLocation = 0;
+			mcGeo->StartIndexLocation = 0;
 
 			RenderData.OpaqueRenderItems.push_back(mcGeo.get());
 			RenderData.RenderItems.push_back(std::move(mcGeo));

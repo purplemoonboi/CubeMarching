@@ -223,9 +223,6 @@ namespace Engine
 			const auto d3d12VertexBuffer  = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
 			const auto d3d12IndexBuffer   = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
-			/**
-			 * bind the vertex and index buffers
-			 */
 			D3D12Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
 			D3D12Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
 			D3D12Context->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
@@ -233,8 +230,8 @@ namespace Engine
 			const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 			const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
 
-			ID3D12Resource* objectConstantBuffer	 = CurrentFrameResource->ConstantBuffer->Resource();
-			ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
+			ID3D12Resource* objectConstantBuffer	= CurrentFrameResource->ConstantBuffer->Resource();
+			ID3D12Resource* materialConstantBuffer	= CurrentFrameResource->MaterialBuffer->Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
 			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetBufferIndex() * matConstBufferByteSize;
@@ -242,13 +239,12 @@ namespace Engine
 			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			D3D12Context->GraphicsCmdList->DrawIndexedInstanced
+			D3D12Context->GraphicsCmdList->DrawInstanced
 			(
-				renderItem->IndexCount,
+				renderItem->Geometry->VertexBuffer->GetCount(),
 				1,
 				renderItem->StartIndexLocation, 
-				renderItem->BaseVertexLocation, 
-				0
+				renderItem->BaseVertexLocation
 			);
 
 			

@@ -58,7 +58,6 @@ namespace Engine
 		Context->FlushCommandQueue();
 
 
-		int i = 0;
 	}
 
 	void PerlinCompute::BuildComputeRootSignature()

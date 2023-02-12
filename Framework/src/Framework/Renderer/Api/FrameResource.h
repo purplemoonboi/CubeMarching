@@ -11,7 +11,6 @@ namespace Engine
 		DirectX::XMFLOAT3 Position;
 		DirectX::XMFLOAT3 Normal;
 		DirectX::XMFLOAT2 TexCoords;
-		DirectX::XMFLOAT4 Colour;
 	};
 
 	struct PassConstants

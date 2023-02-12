@@ -204,6 +204,35 @@ RWTexture3D<float> Noise3D : register(u0);
 void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
 {
     const float3 thisId = (float3) threadId;
-    Noise3D[threadId] = snoise(thisId * 0.1);
 
+    float noise = 0.0f;
+
+    if(threadId.y < 12)
+    {
+        float freq = 0.01f;
+        float ampl = 2.0f;
+        float3 seed = threadId;
+        for (int i = 0; i < 4; i++)
+        {
+            noise += snoise(thisId * 0.1) * ampl;
+            ampl *= 0.5f;
+            freq *= 2.0f;
+        }
+    }
+
+    if (threadId.y > 20)
+    {
+        float freq = 0.01f;
+        float ampl = 2.0f;
+        float3 seed = threadId;
+        for (int i = 0; i < 8; i++)
+        {
+            noise += snoise(thisId * 0.1) * ampl;
+            ampl *= 0.5f;
+            freq *= 2.0f;
+        }
+    }
+   
+        
+    Noise3D[threadId] = noise;
 }
