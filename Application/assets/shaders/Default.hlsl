@@ -65,7 +65,8 @@ struct VertexIn
 {
 	float3 PosL    : POSITION;
     float3 NormalL : NORMAL;
-    float2 Tex     : TEXCOORD;
+    float3 Tangent : TANGENT;
+    float2 TexCoord     : TEXCOORD;
 };
 
 struct VertexOut
@@ -73,6 +74,8 @@ struct VertexOut
 	float4 PosH    : SV_POSITION;
     float3 PosW    : POSITION;
     float3 NormalW : NORMAL;
+    float3 TangentW : TANGENT;
+    float2 TexCoord : TEXCOORD;
 };
 
 VertexOut VS(VertexIn vin)
@@ -86,6 +89,9 @@ VertexOut VS(VertexIn vin)
     // Assumes nonuniform scaling; otherwise, need to use inverse-transpose of world matrix.
     vout.NormalW = mul(vin.NormalL, (float3x3)gWorld);
 
+    vout.TangentW = mul(vin.Tangent, (float3x3) gWorld);
+
+    vout.TexCoord = vin.TexCoord;
     // Transform to homogeneous clip space.
     vout.PosH = mul(posW, gViewProj);
 

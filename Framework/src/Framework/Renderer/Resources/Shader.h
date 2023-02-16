@@ -22,6 +22,13 @@ namespace Engine
 		PS
 	};
 
+	struct ShaderArgs
+	{
+		std::wstring FilePath;
+		std::string EntryPoint;
+		std::string ShaderModel;
+	};
+
 	// @brief The shader class is a high level object which allows the user to allocate
 	// data onto the GPU.
 	// Needs implemented per Api

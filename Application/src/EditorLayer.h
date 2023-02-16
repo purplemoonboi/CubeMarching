@@ -5,6 +5,9 @@
 #include "Framework/Core/Events/AppEvents.h"
 #include "Framework/Core/Events/KeyEvent.h"
 
+#include "IsoSurface/PerlinCompute.h"
+#include "IsoSurface/VoxelWorld.h"
+
 namespace Engine
 {
 
@@ -33,9 +36,13 @@ namespace Engine
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
 	private:
+		VoxelWorldSettings VoxelSettings;
+		PerlinNoiseSettings PerlinSettings;
+
 		RefPointer<FrameBuffer> FrameBuffer;
 
-
+		ScopePointer<VoxelWorld> VoxelWorld;
+		ScopePointer<PerlinCompute> PerlinCompute;
 
 	private:
 		void Remap(float& x, float clx, float cmx, float nlx, float nmx);

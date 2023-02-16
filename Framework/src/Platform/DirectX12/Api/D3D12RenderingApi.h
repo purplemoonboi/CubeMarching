@@ -27,7 +27,7 @@ namespace Engine
 
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
 
-		void SetClearColour(const float colour[4], PipelineStateObject* pso) override;
+		void BindRenderPass(PipelineStateObject* pso) override;
 
 		void Flush() override;
 
@@ -46,7 +46,7 @@ namespace Engine
 
 
 		// @brief 
-		void DrawOpaqueItems
+		void DrawGeometry
 		(
 			const std::vector<RenderItem*>& renderItems,
 			UINT currentFrameResourceIndex

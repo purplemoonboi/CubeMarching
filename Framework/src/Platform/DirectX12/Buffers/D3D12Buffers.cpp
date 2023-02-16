@@ -386,6 +386,7 @@ namespace Engine
 		}
 	}
 
+
 	const INT32 D3D12ResourceBuffer::GetCount() const
 	{
 

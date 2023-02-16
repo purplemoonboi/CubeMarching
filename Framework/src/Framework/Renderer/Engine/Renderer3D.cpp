@@ -48,19 +48,18 @@ namespace Engine
 
 		std::vector<ScopePointer<RenderItem>> RenderItems;
 		std::vector<RenderItem*> OpaqueRenderItems;
+		std::vector<RenderItem*> WireFrameRenderItems;
 
 
 		ScopePointer<ResourceBuffer> UploadBufferManager;
 
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
-		RefPointer<PipelineStateObject> Pso;
 
-		// Struct capturing performance
+		UINT64 BaseVertexLocation = 0;
+
 		Renderer3D::RenderingStats RendererStats;
 
-		class VoxelWorld* voxelWorld;
-		PerlinCompute* PerlinCompute;
 	};
 
 	static RendererData RenderData;
@@ -68,56 +67,36 @@ namespace Engine
 
 	void Renderer3D::PreInit()
 	{
-		/** get the graphics context */
 		const auto api = RenderInstruction::GetApiPtr();
-
-		/** for apis such as DirectX12 and Vulkan, we need reset the command list before submitting instructions */
 		api->ResetCommandList();
 	}
 
 	void Renderer3D::PostInit()
 	{
-		/** get the graphics context */
 		const auto api = RenderInstruction::GetApiPtr();
-
-		/** tell the GPU to execute the init commands and wait until we're finished */
 		api->ExecCommandList();
 	}
 
 	void Renderer3D::Init()
 	{
-		/** build and compile shaders */
-		RenderData.VertexShader  = Shader::Create(L"assets\\shaders\\Default.hlsl",  "VS", "vs_5_1");
-		RenderData.PixelShader   = Shader::Create(L"assets\\shaders\\Default.hlsl",  "PS", "ps_5_1");
-
-		RenderData.ShaderLibrary.Add("vs", std::move(RenderData.VertexShader));
-		RenderData.ShaderLibrary.Add("ps", std::move(RenderData.PixelShader));
-
-		RenderData.VertexShader.reset();
-		RenderData.PixelShader.reset();
-
-		/**  Build the scene geometry  */
 		const auto api = RenderInstruction::GetApiPtr();
 
-		RenderData.voxelWorld = new class VoxelWorld();
-		RenderData.voxelWorld->ComputeShader = Shader::Create(L"assets\\shaders\\MarchingCube.hlsl", "GenerateChunk", "cs_5_0");
-		RenderData.voxelWorld->Init(api->GetGraphicsContext(), api->GetMemoryManager());
+		/** build and compile shaders */
+		auto vS = Shader::Create(L"assets\\shaders\\Default.hlsl", "VS", "vs_5_1");
+		auto pS = Shader::Create(L"assets\\shaders\\Default.hlsl", "PS", "ps_5_1");
 
-		RenderData.PerlinCompute = new PerlinCompute();
-		RenderData.PerlinCompute->PerlinShader = Shader::Create(L"assets\\shaders\\Perlin.hlsl", "ComputeNoise3D", "cs_5_0");
-		RenderData.PerlinCompute->Init(api->GetGraphicsContext(), api->GetMemoryManager());
+		RenderData.ShaderLibrary.Add("vs", std::move(vS));
+		RenderData.ShaderLibrary.Add("ps", std::move(pS));
 
-		/*Initialise a plane*/
-		
-		
-
-		/** create the pso */
 		const BufferLayout layout =
 		{
 			{"POSITION",	ShaderDataType::Float3, 0,  0},
 			{"NORMAL",		ShaderDataType::Float3, 12, 1},
 			{"TEXCOORD",	ShaderDataType::Float2, 24, 2},
 		};
+
+		BuildMaterials();
+
 
 		/** build the pipeline state objects */
 		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
@@ -138,6 +117,78 @@ namespace Engine
 			FillMode::WireFrame
 		));
 
+		auto gridData = Geo.CreateGrid(100, 100, 12, 12);
+		auto gridMesh = MeshGeometry::Create("EditorGrid");
+		gridMesh->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+			gridData.Vertices.data(),
+			sizeof(Vertex) * gridData.Vertices.size(),
+			gridData.Vertices.size(),
+			false);
+
+		gridMesh->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+			gridData.GetIndices16().data(),
+			sizeof(UINT16) * gridData.GetIndices16().size(),
+			gridData.GetIndices16().size());
+
+		SubGeometry geoArgs = {(UINT)gridMesh->IndexBuffer->GetCount(), 0, 0};
+		gridMesh->DrawArgs.emplace("EditorArgs", geoArgs);
+
+		RenderData.Geometries.emplace("EditorGrid", std::move(gridMesh));
+
+		ScopePointer<RenderItem> renderItem = RenderItem::Create
+		(
+			RenderData.Geometries["EditorGrid"].get(),
+			RenderData.MaterialLibrary.Get("Default"),
+			"EditorArgs",
+			0,
+			Transform(0, 0, 0)
+		);
+
+		RenderData.OpaqueRenderItems.push_back(renderItem.get());
+		RenderData.RenderItems.push_back(std::move(renderItem));
+
+
+
+		auto boxData = Geo.CreateBox(1, 1, 1, 1);
+		auto boxMesh = MeshGeometry::Create("Box");
+		boxMesh->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+			boxData.Vertices.data(),
+			sizeof(Vertex) * boxData.Vertices.size(),
+			boxData.Vertices.size(),
+			false);
+
+		boxMesh->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+			boxData.GetIndices16().data(),
+			sizeof(UINT16) * boxData.GetIndices16().size(),
+			boxData.GetIndices16().size());
+
+		SubGeometry boxArgs = { (UINT)boxMesh->IndexBuffer->GetCount(), 0, 0 };
+		boxMesh->DrawArgs.emplace("Box", boxArgs);
+
+		RenderData.Geometries.emplace("Box", std::move(boxMesh));
+
+		ScopePointer<RenderItem> boxItem = RenderItem::Create
+		(
+			RenderData.Geometries["Box"].get(),
+			RenderData.MaterialLibrary.Get("Green"),
+			"BoxArgs",
+			1,
+			Transform(0, 0, 0)
+		);
+
+		RenderData.OpaqueRenderItems.push_back(boxItem.get());
+		RenderData.RenderItems.push_back(std::move(boxItem));
+
+
+		RenderData.UploadBufferManager = ResourceBuffer::Create
+		(
+			api->GetGraphicsContext(),
+			RenderData.FrameResources,
+			RenderData.RenderItems.size()
+		);
+
+
+		BuildFrameResources(api->GetGraphicsContext());
 	}
 
 	void Renderer3D::Shutdown()
@@ -146,47 +197,6 @@ namespace Engine
 	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
 	{
 
-		static bool init = false;
-		static bool build = false;
-		if (!init)
-		{
-			if(!build)
-				BuildMaterials();
-
-
-			PerlinArgs pa;
-			pa.Gain = 2.f;
-			pa.Loss = 0.5f;
-			pa.Octaves = 8;
-			RenderData.PerlinCompute->Generate3DTexture(pa, VoxelWorldSize, VoxelWorldSize, VoxelWorldSize);
-
-
-			/*generate one chunk*/
-			const auto data = RenderData.voxelWorld->GenerateChunk({ 0.0f,0.f,0.f }, RenderData.PerlinCompute->ScalarTexture.get());
-
-			if(!build)
-			{
-				RenderInstruction::ResetGraphicsCommandList();
-
-				build = true;
-				const auto api = RenderInstruction::GetApiPtr();
-				BuildVoxelWorld(data, api->GetGraphicsContext());
-
-				init = true;
-
-				BuildRenderItems(api->GetGraphicsContext());
-				BuildFrameResources(api->GetGraphicsContext());
-
-				RenderData.UploadBufferManager = ResourceBuffer::Create
-				(
-					api->GetGraphicsContext(),
-					RenderData.FrameResources,
-					RenderData.RenderItems.size()
-				);
-
-				RenderInstruction::ExecGraphicsCommandList();
-			}
-		}
 
 		if(!RenderData.FrameResources.empty())
 		{
@@ -198,11 +208,16 @@ namespace Engine
 			RenderData.UploadBufferManager->UpdateObjectBuffers(RenderData.OpaqueRenderItems);
 			RenderData.UploadBufferManager->UpdateMaterialBuffers(RenderData.Materials);
 			RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
-
-			RenderInstruction::PreRender();
-			RenderInstruction::SetClearColour(NULL, RenderData.PSOs["Opaque"].get());
-			RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
 		}
+		
+
+		RenderInstruction::PreRender();
+
+		RenderInstruction::BindRenderPass(RenderData.PSOs["Opaque"].get());
+
+
+		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
+
 	}
 
 	void Renderer3D::EndScene()
@@ -215,36 +230,6 @@ namespace Engine
 			ProfileStats.DrawCalls = 1;
 			RenderInstruction::Flush();
 			RenderInstruction::PostRender();
-		}
-	}
-
-	void Renderer3D::BuildRenderItems(GraphicsContext* graphicsContext)
-	{
-		float x = -10.f, y = -10.f, z = -10.f;
-		UINT baseVertexLocation = 0;
-		for (auto& geo : RenderData.Geometries)
-		{
-			auto renderItem = RenderItem::Create
-			(
-				geo.second.get(),
-				RenderData.MaterialLibrary.Get("Default"),
-				geo.first.c_str(),
-				1,
-				Transform(x, y, z)
-			);
-
-			renderItem->IndexCount = renderItem->Geometry->IndexBuffer->GetCount();
-			renderItem->BaseVertexLocation = baseVertexLocation;
-			baseVertexLocation += renderItem->Geometry->VertexBuffer->GetCount();
-
-			RenderData.RenderItems.push_back(std::move(renderItem));
-		}
-
-	
-
-		for (auto& renderItem : RenderData.RenderItems)
-		{
-			RenderData.OpaqueRenderItems.push_back(renderItem.get());
 		}
 	}
 
@@ -267,85 +252,50 @@ namespace Engine
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
 	}
 
-	void Renderer3D::BuildVoxelWorld(const std::vector<MCTriangle> triangles, GraphicsContext* gContext)
+
+	void Renderer3D::CreateCustomMesh
+	(
+		ScopePointer<MeshGeometry> meshGeometry, 
+		const std::string& meshTag,
+		Transform transform
+	)
 	{
-		if (RenderData.Geometries.find("Terrain") == RenderData.Geometries.end())
+		if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
 		{
-			std::vector<MCVertex> vertices;
-			std::vector<UINT16> indices;
-			UINT16 index = 0;
-			for(auto& tri : triangles)
-			{
-				vertices.push_back(tri.VertexC);
-				indices.push_back(++index);
-				vertices.push_back(tri.VertexB);
-				indices.push_back(++index);
-				vertices.push_back(tri.VertexA);
-				indices.push_back(++index);
-			}
-
-			const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
-			const UINT vbSizeInBytes = sizeof(MCVertex) * vertices.size();
-
-			ScopePointer<MeshGeometry> Terrain = CreateScope<MeshGeometry>("Terrain");
-			Terrain->VertexBuffer = VertexBuffer::Create(gContext, vertices.data(),
-				vbSizeInBytes, vertices.size(), true);
-
-			const BufferLayout layout =
-			{
-				{"POSITION",	ShaderDataType::Float3, 0, 0, false },
-				{"NORMAL",		ShaderDataType::Float3, 12,1, false },
-				{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
-			};
-			Terrain->VertexBuffer->SetLayout(layout);
-
-			Terrain->IndexBuffer = IndexBuffer::Create(gContext, indices.data(),
-				ibSizeInBytes, indices.size());
 		
-			RenderData.Geometries.emplace("Terrain", std::move(Terrain));
+			RenderData.Geometries.emplace(meshTag, std::move(meshGeometry));
 
-			ScopePointer<RenderItem> mcGeo = RenderItem::Create
+			ScopePointer<RenderItem> customGeometry = RenderItem::Create
 			(
-				RenderData.Geometries["Terrain"].get(),
+				RenderData.Geometries[meshTag].get(),
 				RenderData.MaterialLibrary.Get("Default"),
-				"Terrain",
+				meshTag,
 				1,
-				Transform(0, 0, 0)
+				transform
 			);
 
-			mcGeo->IndexCount = indices.size();
-			mcGeo->BaseVertexLocation = 0;
-			mcGeo->StartIndexLocation = 0;
+			customGeometry->IndexCount = meshGeometry->IndexBuffer->GetCount();
+			customGeometry->BaseVertexLocation = RenderData.BaseVertexLocation;
+			RenderData.BaseVertexLocation += customGeometry->Geometry->VertexBuffer->GetCount();
 
-			RenderData.OpaqueRenderItems.push_back(mcGeo.get());
-			RenderData.RenderItems.push_back(std::move(mcGeo));
+			RenderData.OpaqueRenderItems.push_back(customGeometry.get());
+			RenderData.RenderItems.push_back(std::move(customGeometry));
 		}
-		else
-		{
-
-			auto terrain = RenderData.Geometries.at("Terrain").get();
-
-			D3D12VertexBuffer* buffer = dynamic_cast<D3D12VertexBuffer*>(terrain->VertexBuffer.get());
-			/*copy new vertices here!?*/
-
-			//TODO: Maybe incorporate a chunks vertices into the update loop!
-			//TODO: Like updating the materials and other geo.
-
-		}
-		
-
 	}
 
 	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
 	{
+		constexpr UINT32 maxObjCount = 16;
+		constexpr UINT32 maxMatCount = 16;
+
 		for (int i = 0; i < NUMBER_OF_FRAME_RESOURCES; ++i)
 		{
 			RenderData.FrameResources.push_back(FrameResource::Create
 			(
 				graphicsContext,
 				1,
-				static_cast<UINT>(RenderData.RenderItems.size()),
-				static_cast<UINT>(RenderData.MaterialLibrary.Size())
+				maxMatCount,
+				maxObjCount
 			)
 			);
 		}

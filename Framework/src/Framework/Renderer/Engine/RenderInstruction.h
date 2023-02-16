@@ -25,9 +25,9 @@ namespace Engine
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
-		static void SetClearColour(const float colour[4], PipelineStateObject* pso)
+		static void BindRenderPass(PipelineStateObject* pso)
 		{
-			RendererApiPtr->SetClearColour(colour, pso);
+			RendererApiPtr->BindRenderPass(pso);
 		}
 
 		static void ResetGraphicsCommandList()
@@ -78,7 +78,7 @@ namespace Engine
 			UINT currentFrameResourceIndex
 		)
 		{
-			RendererApiPtr->DrawOpaqueItems(renderItems, currentFrameResourceIndex);
+			RendererApiPtr->DrawGeometry(renderItems, currentFrameResourceIndex);
 		}
 
 

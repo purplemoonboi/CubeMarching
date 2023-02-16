@@ -3,6 +3,7 @@
 #include <string>
 #include "GeometryGenerator.h"
 #include "Framework/Camera/MainCamera.h";
+#include "Framework/Core/core.h"
 
 #include "IsoSurface/MarchingCubesCPU.h"
 #include "Framework/Maths/Perlin.h"
@@ -11,6 +12,8 @@
 
 namespace Engine
 {
+	struct Transform;
+	struct MeshGeometry;
 	struct MCTriangle;
 
 	class RendererApi;
@@ -24,8 +27,7 @@ namespace Engine
 		enum class RenderLayer
 		{
 			Opaque = 0,
-			Transparent,
-			Translucence
+			Transparent
 		};
 
 		// @brief - Resets command lists for Apis such as DirectX12
@@ -53,17 +55,15 @@ namespace Engine
 		// @brief - Build the frame resources for the scene
 		static void BuildFrameResources(GraphicsContext* graphicsContext);
 
-		//TODO: SIMILARLY MAYBE NOT HAVE THIS HERE
-		// @brief - Build the objects which will be rendered to the buffer.
-		static void BuildRenderItems(GraphicsContext* graphicsContext);
-
-		static void BuildMaterials(); 
+		static void BuildMaterials();
 
 		static void CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions = 1);
 
 		static void CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name, UINT32 subSivisions = 1);
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
+
+		static void CreateCustomMesh(ScopePointer<MeshGeometry> mesh, const std::string& meshTag, Transform transform);
 
 		struct RenderingStats
 		{
@@ -82,7 +82,6 @@ namespace Engine
 		static RenderingStats ProfileStats;
 
 
-		static void BuildVoxelWorld(const std::vector<MCTriangle> triangles, GraphicsContext* gContext);
 	};
 
 

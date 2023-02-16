@@ -2,6 +2,8 @@
 #include <DirectXMath.h>
 #include <intsafe.h>
 
+#include "Framework/Renderer/Api/FrameResource.h"
+
 namespace Engine
 {
 	struct MCVertex
@@ -11,11 +13,11 @@ namespace Engine
 		DirectX::XMFLOAT2 TexCoords = { 0.f, 0.f };		//8
 	};
 
-	struct MCTriangle
+	struct Triangle
 	{
-		MCVertex VertexA;
-		MCVertex VertexB;
-		MCVertex VertexC;
+		Vertex VertexA;
+		Vertex VertexB;
+		Vertex VertexC;
 	};
 
 	struct CustomStruct
@@ -24,16 +26,17 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 VoxelWorldSize = 32;
-	constexpr UINT64 NumberOfBufferElements = VoxelWorldSize * VoxelWorldSize * VoxelWorldSize;
-	constexpr UINT64 VoxelWorldVertexBufferSize = NumberOfBufferElements * 5 * sizeof(MCTriangle);
+	constexpr UINT64 ChunkWidth = 32;
+	constexpr UINT64 ChunkHeight = 128;
+	constexpr UINT64 NumberOfBufferElements = ChunkWidth * ChunkHeight * ChunkWidth;
+	constexpr UINT64 VoxelWorldVertexBufferSize = NumberOfBufferElements * 5 * sizeof(Triangle);
 
-	struct CBSettings
+	struct VoxelWorldSettings
 	{
 		float IsoValue = 0.0;
+		INT32 TextureSize = ChunkWidth;
 		float PlanetRadius = 10;
-		UINT32 TextureSize = VoxelWorldSize;
-		UINT32 NumOfPointsPerAxis = VoxelWorldSize;
+		INT32 NumOfPointsPerAxis = ChunkWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
 	};
 

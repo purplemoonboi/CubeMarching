@@ -7,7 +7,7 @@ namespace Engine
 	(
 		MeshGeometry* geometry,
 		Engine::Material* material,
-		std::string&& drawArgs,
+		const std::string& drawArgs,
 		UINT constantBufferIndex,
 		Transform transform
 	)
@@ -24,8 +24,7 @@ namespace Engine
 		Geometry = geometry;
 		Material = material;
 		PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		IndexCount = Geometry->DrawArgs[drawArgs].IndexCount;
-		//IndexCount = Geometry->IBuffer->GetCount();
+		IndexCount		   = Geometry->DrawArgs[drawArgs].IndexCount;
 		StartIndexLocation = Geometry->DrawArgs[drawArgs].StartIndexLocation;
 		BaseVertexLocation = Geometry->DrawArgs[drawArgs].BaseVertexLocation;
 

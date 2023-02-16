@@ -4,6 +4,7 @@ struct Vertex
 {
 	float3 position;
 	float3 normal;
+    float3 tangent;
 	float2 id;
 };
 
@@ -83,6 +84,7 @@ Vertex createVertex(int3 coordA, int3 coordB)
 
 	// Create vertex
     Vertex vertex;
+    vertex.tangent = float3(1, 0, 0);
     vertex.position = position;
     vertex.normal = normal;
     vertex.id = int2(min(indexA, indexB), max(indexA, indexB));

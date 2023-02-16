@@ -5,6 +5,7 @@
 
 namespace Engine
 {
+	struct ShaderArgs;
 	class MemoryManager;
 	class D3D12ReadBackBuffer;
 	class D3D12MemoryManager;
@@ -12,23 +13,28 @@ namespace Engine
 	class D3D12Shader;
 	class Shader;
 
-	struct PerlinArgs
+	struct PerlinNoiseSettings
 	{
 		float Octaves = 8;
 		float Gain = 2.0f;
 		float Loss = 0.5f;
-
+		float Ground = ChunkWidth / 2;
 	};
 
 	class PerlinCompute
 	{
 	public:
 
-		void Init(GraphicsContext* context, MemoryManager* memManager = nullptr);
+		void Init(GraphicsContext* context, MemoryManager* memManager, ShaderArgs args);
 
 
-		void Generate3DTexture(PerlinArgs args, UINT X, UINT Y, UINT Z);
+		void Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z);
 
+		[[nodiscard]] Texture* GetTexture() const { return ScalarTexture.get(); }
+
+		[[nodiscard]] const std::vector<float>& GetRawTexture() const { return RawTexture; }
+
+	private:
 
 		D3D12Context* Context;
 		D3D12MemoryManager* MemManager;
@@ -41,8 +47,6 @@ namespace Engine
 		ComPtr<ID3D12Resource> ReadBackBuffer;
 
 		std::vector<float> RawTexture;
-
-	private:
 
 		void BuildComputeRootSignature();
 

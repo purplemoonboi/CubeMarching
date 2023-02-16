@@ -115,49 +115,11 @@ namespace Engine
 #ifdef ENGINE_IMGUI_SUPPORT
 		ImGui::Render();
 #endif
-		/*
-		 * Reset current frame resource command allocator
-		 */
-		THROW_ON_FAILURE(CurrentFrameResource->CmdListAlloc->Reset());
+		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
+		THROW_ON_FAILURE(cmdResetResult);
+		const HRESULT cmdListResult = D3D12Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(cmdListResult);
 
-	
-		THROW_ON_FAILURE(D3D12Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr));
-
-	}
-
-	void D3D12RenderingApi::PostRender()
-	{
-		//TODO: not sure what this can be used for just now? Already have flush which handles cmd execution.
-	}
-
-	void D3D12RenderingApi::SetClearColour(const float colour[4], PipelineStateObject* pso)
-	{
-		
-		/**
-		 * begin recording commands for rendering the opaque layer.
-		 */
-
-// Reset the viewport and scissor rect whenever the command list is empty.
-		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		D3D12Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
-		D3D12Context->GraphicsCmdList->RSSetViewports(1, &D3D12FrameBuffer->GetViewport());
-		D3D12Context->GraphicsCmdList->RSSetScissorRects(1, &D3D12FrameBuffer->GetScissorsRect());
-
-		// Indicate there will be a transition made to the resource.
-		D3D12Context->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				D3D12FrameBuffer->CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_PRESENT,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			)
-		);
-
-		/**
-		 * Add an instruction to clear render target
-		 */
 		D3D12Context->GraphicsCmdList->ClearRenderTargetView
 		(
 			D3D12FrameBuffer->GetCurrentBackBufferViewCpu(),
@@ -166,55 +128,54 @@ namespace Engine
 			nullptr
 		);
 
-		/**
-		 * Add an instruction to clear the depth buffer
-		 */
-		D3D12Context->GraphicsCmdList->ClearDepthStencilView
-		(
-			D3D12FrameBuffer->GetDepthStencilViewCpu(),
-			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.0f,
-			0,
-			0,
-			nullptr
+		D3D12Context->GraphicsCmdList->ClearDepthStencilView(D3D12FrameBuffer->GetDepthStencilViewCpu(),
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr
 		);
 
-		/**
-		 * Set the current render target to the current back buffer
-		 */
-		D3D12Context->GraphicsCmdList->OMSetRenderTargets
-		(
-			1,
-			&D3D12FrameBuffer->GetCurrentBackBufferViewCpu(),
+	}
+
+	void D3D12RenderingApi::PostRender()
+	{
+		//TODO: not sure what this can be used for just now? Already have flush which handles cmd execution.
+	}
+
+	void D3D12RenderingApi::BindRenderPass(PipelineStateObject* pso)
+	{
+
+		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
+		D3D12Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
+		D3D12Context->GraphicsCmdList->RSSetViewports(1, &D3D12FrameBuffer->GetViewport());
+		D3D12Context->GraphicsCmdList->RSSetScissorRects(1, &D3D12FrameBuffer->GetScissorsRect());
+
+		// Indicate there will be a transition made to the resource.
+		D3D12Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+				D3D12FrameBuffer->CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET
+			)
+		);
+
+		D3D12Context->GraphicsCmdList->OMSetRenderTargets(1, &D3D12FrameBuffer->GetCurrentBackBufferViewCpu(),
 			true,
 			&D3D12FrameBuffer->GetDepthStencilViewCpu()
 		);
-		
+		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12Context->CbvHeap.Get() };
+		D3D12Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
 	}
 
 
 
-	void D3D12RenderingApi::DrawOpaqueItems
+	void D3D12RenderingApi::DrawGeometry
 	(
 		const std::vector<RenderItem*>& renderItems,
 		UINT currentFrameResourceIndex
 	)
 	{
-		/**
-		 * Set the descriptor heaps for the constant buffers (inc pass buffer)
-		 * Bind the root signature
-		 */
-		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12Context->CbvHeap.Get() };
-		D3D12Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		/* Bind the shader root signature */
 		D3D12Context->GraphicsCmdList->SetGraphicsRootSignature(D3D12Context->RootSignature.Get());
-
-		/**
-		*	The pass buffer is *bound* to the 1st register.
-		*/
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
 		D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
-
-		const auto opaqueItemCount = static_cast<UINT>(renderItems.size());
 
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -239,12 +200,13 @@ namespace Engine
 			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			D3D12Context->GraphicsCmdList->DrawInstanced
+			D3D12Context->GraphicsCmdList->DrawIndexedInstanced
 			(
-				renderItem->Geometry->VertexBuffer->GetCount(),
+				renderItem->Geometry->IndexBuffer->GetCount(),
 				1,
 				renderItem->StartIndexLocation, 
-				renderItem->BaseVertexLocation
+				renderItem->BaseVertexLocation,
+				0
 			);
 
 			

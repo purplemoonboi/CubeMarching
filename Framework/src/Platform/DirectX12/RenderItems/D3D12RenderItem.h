@@ -15,7 +15,7 @@ namespace Engine
 		(
 			MeshGeometry* geometry,
 			Engine::Material* material,
-			std::string&& drawArgs,
+			const std::string& drawArgs,
 			UINT constantBufferIndex,
 			Transform transform
 		);

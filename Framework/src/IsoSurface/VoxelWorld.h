@@ -26,13 +26,22 @@ namespace Engine
 	class VoxelWorld
 	{
 	public:
-		CBSettings WorldSettings;
-		float WorldOrigin[3] = { 0,0,0 };
 		VoxelWorld() = default;
 
-		bool Init(GraphicsContext* context, MemoryManager* memManager);
+		bool Init(GraphicsContext* context, MemoryManager* memManager, ShaderArgs args);
 
-		const std::vector<MCTriangle>& GenerateChunk(DirectX::XMFLOAT3 chunkID, Texture* texture);
+		void Dispatch
+		(
+			VoxelWorldSettings const& worldSettings,
+			DirectX::XMFLOAT3 chunkID, 
+			Texture* texture
+		);
+
+		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const { return RawTriBuffer; }
+
+		[[nodiscard]] MeshGeometry* GetTerrainMesh() const { return TerrainMeshGeometry.get(); }
+		
+	private:
 
 		D3D12Context* Context = nullptr;
 		D3D12MemoryManager* MemManager = nullptr;
@@ -42,28 +51,10 @@ namespace Engine
 		ComPtr<ID3D12PipelineState> ComputeState;
 
 		ScopePointer<Shader> ComputeShader;
-		ComPtr<ID3D12Resource> ReadBackBuffer;
 
-		ComPtr<ID3D12Resource> OutputBuffer;
-		ComPtr<ID3D12Resource> CounterResource;
-		ComPtr<ID3D12Resource> CounterReadback;
-		ComPtr<ID3D12Resource> CounterUpload;
-		D3D12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
-		D3D12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
 
-		ComPtr<ID3D12Resource> TriangleBuffer;
-		ComPtr<ID3D12Resource> UploadTriBuffer;
-		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
+		std::vector<Triangle> RawTriBuffer;
 
-		std::vector<float> RawScalarTexture;
-
-		std::vector<MCTriangle> RawTriBuffer;
-
-		//ScopePointer<D3D12UploadBuffer<MCData>> TriangulationTable;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE ConstantBufferCbv;
-		//MCData TriTableRawData;
-
-	private:
 
 
 		void BuildComputeRootSignature();
@@ -71,12 +62,25 @@ namespace Engine
 		void BuildPso();
 
 		void CreateOutputBuffer();
+		ComPtr<ID3D12Resource> OutputBuffer;
+		ComPtr<ID3D12Resource> CounterResource;
+		ComPtr<ID3D12Resource> CounterReadback;
+		ComPtr<ID3D12Resource> CounterUpload;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
+		D3D12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
 
 		void CreateReadBackBuffer();
-
-		void CreateConstantBuffer();
+		ComPtr<ID3D12Resource> ReadBackBuffer;
 
 		void CreateStructuredBuffer();
+		ComPtr<ID3D12Resource> TriangleBuffer;
+		ComPtr<ID3D12Resource> UploadTriBuffer;
+		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
+
+		void CreateVertexBuffers();
+		ScopePointer<MeshGeometry> TerrainMeshGeometry;
+		bool IsTerrainMeshGenerated = false;
 
 	};
 

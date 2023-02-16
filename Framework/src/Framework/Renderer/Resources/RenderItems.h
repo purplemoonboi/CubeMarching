@@ -39,7 +39,7 @@ namespace Engine
 		RenderItem() = default;
 		virtual ~RenderItem() = default;
 
-		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, Material* material, std::string&& drawArgs, UINT constantBufferIndex, Transform transform);
+		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, Material* material, const std::string& drawArgs, UINT constantBufferIndex, Transform transform);
 
 		// Dirty flag indicating the object data has changed and we need to update the constant buffer.
 		// Because we have an object cbuffer for each FrameResource, we have to apply the

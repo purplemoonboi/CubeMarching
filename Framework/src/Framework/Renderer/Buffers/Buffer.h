@@ -206,6 +206,7 @@ namespace Engine
 
 		virtual void UpdateCurrentFrameResource(FrameResource* frameResource) = 0;
 
+
 		virtual FrameResource* GetCurrentFrameResource() const = 0;
 
 		virtual const INT32 GetCount() const = 0;

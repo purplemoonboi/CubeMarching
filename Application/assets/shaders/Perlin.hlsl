@@ -195,7 +195,7 @@ cbuffer cbSettings : register(b0)
     float Octaves;
     float Gain;
     float Loss;
-    float Pad;
+    float Ground;
 };
 
 RWTexture3D<float> Noise3D : register(u0);
@@ -207,7 +207,7 @@ void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
 
     float noise = 0.0f;
 
-    if(threadId.y < 12)
+    if (threadId.y < 46)
     {
         float freq = 0.01f;
         float ampl = 2.0f;
@@ -219,20 +219,11 @@ void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
             freq *= 2.0f;
         }
     }
-
-    if (threadId.y > 20)
+    else
     {
-        float freq = 0.01f;
-        float ampl = 2.0f;
-        float3 seed = threadId;
-        for (int i = 0; i < 8; i++)
-        {
-            noise += snoise(thisId * 0.1) * ampl;
-            ampl *= 0.5f;
-            freq *= 2.0f;
-        }
+        noise = 1.0f;
     }
-   
+    
         
     Noise3D[threadId] = noise;
 }

@@ -16,15 +16,44 @@ namespace Engine
     {
         World = new Scene("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
+
+        VoxelWorld = CreateScope<class VoxelWorld>();
+        PerlinCompute = CreateScope<class PerlinCompute>();
     }
 
     EditorLayer::~EditorLayer()
     {
+
+        VoxelWorld.reset();
+        VoxelWorld = nullptr;
+
+        PerlinCompute.reset();
+        PerlinCompute = nullptr;
+
     }
 
     void EditorLayer::OnAttach()
     {
-        
+        auto api = RenderInstruction::GetApiPtr();
+
+
+        ShaderArgs args =
+        { L"assets\\shaders\\MarchingCube.hlsl" ,
+            "GenerateChunk",
+            "cs_5_0"
+        };
+        VoxelWorld->Init(api->GetGraphicsContext(), api->GetMemoryManager(), args);
+
+        ShaderArgs perlinArgs = 
+        {
+            L"assets\\shaders\\Perlin.hlsl",
+            "ComputeNoise3D",
+            "cs_5_0"
+        };
+        PerlinCompute->Init(api->GetGraphicsContext(), api->GetMemoryManager(), perlinArgs);
+
+
+
     }
 
     void EditorLayer::OnDetach()
@@ -73,6 +102,15 @@ namespace Engine
 
 
         World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
+
+
+  //      RenderInstruction::ResetGraphicsCommandList();
+
+		//PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
+  //  	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture());
+
+		//RenderInstruction::ExecGraphicsCommandList();
+
     }
 
     void EditorLayer::OnRender(const DeltaTime& timer)

@@ -8,10 +8,12 @@
 namespace Engine
 {
 
-	void PerlinCompute::Init(GraphicsContext* context, MemoryManager* memManager)
+	void PerlinCompute::Init(GraphicsContext* context, MemoryManager* memManager, ShaderArgs args)
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
+
+		PerlinShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
 
 		BuildComputeRootSignature();
 		BuildPipelineState();
@@ -19,7 +21,7 @@ namespace Engine
 		CreateReadBackBuffer();
 	}
 
-	void PerlinCompute::Generate3DTexture(PerlinArgs args, UINT X, UINT Y, UINT Z)
+	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)
 	{
 		const HRESULT cmdAllocResult = Context->CmdListAlloc->Reset();
 		THROW_ON_FAILURE(cmdAllocResult);
@@ -37,6 +39,7 @@ namespace Engine
 		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
 		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Gain, 1);
 		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Loss, 2);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Ground, 3);
 		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
 
 
@@ -67,7 +70,7 @@ namespace Engine
 		uavTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
 
 		CD3DX12_ROOT_PARAMETER slotRootParameter[2];
-		slotRootParameter[0].InitAsConstants(3, 0); // perlin settings
+		slotRootParameter[0].InitAsConstants(4, 0); // perlin settings
 		slotRootParameter[1].InitAsDescriptorTable(1, &uavTable);// texture
 
 		// A root signature is an array of root parameters.
@@ -125,13 +128,13 @@ namespace Engine
 	void PerlinCompute::BuildResource()
 	{
 
-		for (INT32 i = 0; i < VoxelWorldSize; ++i)
-			for (INT32 j = 0; j < VoxelWorldSize; ++j)
-				for (INT32 k = 0; k < VoxelWorldSize; ++k)
+		for (INT32 i = 0; i < ChunkWidth; ++i)
+			for (INT32 j = 0; j < ChunkWidth; ++j)
+				for (INT32 k = 0; k < ChunkWidth; ++k)
 					RawTexture.push_back(0);
 
 		ScalarTexture = std::make_unique<D3D12Texture>(
-			VoxelWorldSize, VoxelWorldSize, VoxelWorldSize,
+			ChunkWidth, ChunkWidth, ChunkWidth,
 			TextureDimension::Three, TextureFormat::R_FLOAT_32
 			);
 

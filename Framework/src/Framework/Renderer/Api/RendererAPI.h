@@ -38,7 +38,7 @@ namespace Engine
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
-		virtual void SetClearColour(const float colour[4], PipelineStateObject* pso) = 0;
+		virtual void BindRenderPass(PipelineStateObject* pso) = 0;
 
 		virtual void ResetCommandList() = 0;
 
@@ -54,7 +54,7 @@ namespace Engine
 
 		virtual void PostRender() = 0;
 
-		virtual void DrawOpaqueItems
+		virtual void DrawGeometry
 		(
 			const std::vector<RenderItem*>& renderItems,
 			UINT currentFrameResourceIndex

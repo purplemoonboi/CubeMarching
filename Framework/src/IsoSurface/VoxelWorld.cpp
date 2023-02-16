@@ -13,10 +13,13 @@ namespace Engine
 {
 
 
-	bool VoxelWorld::Init(GraphicsContext* c, MemoryManager* memManager)
+	bool VoxelWorld::Init(GraphicsContext* c, MemoryManager* memManager, ShaderArgs args)
 	{
 		Context = dynamic_cast<D3D12Context*>(c);
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
+
+		ComputeShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
+
 		BuildComputeRootSignature();
 		BuildPso();
 		CreateOutputBuffer();
@@ -28,7 +31,7 @@ namespace Engine
 		return true;
 	}
 
-	const std::vector<MCTriangle>& VoxelWorld::GenerateChunk(DirectX::XMFLOAT3 chunkID, Texture* texture)
+	void VoxelWorld::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture)
 	{
 		THROW_ON_FAILURE(Context->CmdListAlloc->Reset());
 		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), ComputeState.Get()));
@@ -41,17 +44,19 @@ namespace Engine
 		//Bind compute shader buffers
 		Context->GraphicsCmdList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.IsoValue, 0);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.TextureSize, 1);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.PlanetRadius, 2);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &WorldSettings.NumOfPointsPerAxis, 3);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 3, WorldOrigin, 4);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
+		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
+
+		const float coord[3] = {worldSettings.ChunkCoord.x, worldSettings.ChunkCoord.y, worldSettings.ChunkCoord.z};
+		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 3, coord, 4);
 
 		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
 		Context->GraphicsCmdList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
 		Context->GraphicsCmdList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
-		Context->GraphicsCmdList->Dispatch(VoxelWorldSize, VoxelWorldSize, VoxelWorldSize);
+		Context->GraphicsCmdList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
 
 
 		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
@@ -77,44 +82,21 @@ namespace Engine
 		subResourceData.RowPitch = sizeof(INT32);
 		subResourceData.SlicePitch = subResourceData.RowPitch;
 
-
-		// Schedule to copy the data to the default buffer resource.
-		// Make instruction to copy CPU buffer into intermediate upload heap
-		// buffer.
-		Context->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				CounterResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_COPY_DEST
-			)
-		);
+		));
 
 		// Copy the data into the upload heap
-		UpdateSubresources
-		(
-			Context->GraphicsCmdList.Get(),
-			CounterResource.Get(),
-			CounterUpload.Get(),
-			0,
-			0,
-			1,
-			&subResourceData
-		);
+		UpdateSubresources(Context->GraphicsCmdList.Get(), CounterResource.Get(), CounterUpload.Get(), 0, 0, 1, &subResourceData);
 
 		// Add the instruction to transition back to read 
-		Context->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				CounterResource.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-			)
-		);
+			));
 
 		const HRESULT cmdCloseResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(cmdCloseResult);
@@ -132,7 +114,7 @@ namespace Engine
 		INT32 debug = *count;
 		CounterReadback->Unmap(0, nullptr);
 
-		MCTriangle* data;
+		Triangle* data;
 		const HRESULT mappingResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
 		THROW_ON_FAILURE(mappingResult);
 
@@ -144,7 +126,10 @@ namespace Engine
 		}
 		ReadBackBuffer->Unmap(0, nullptr);
 
-		return RawTriBuffer;
+		if(!TerrainMeshGeometry)
+		{
+			CreateVertexBuffers();
+		}
 	}
 
 
@@ -226,9 +211,7 @@ namespace Engine
 	void VoxelWorld::CreateOutputBuffer()
 	{
 
-		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(MCTriangle));
-
-
+		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(Triangle));
 		const HRESULT vertexResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -258,7 +241,7 @@ namespace Engine
 		/** create views for the vertex buffer */
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-		uavDesc.Buffer.StructureByteStride = sizeof(MCTriangle);
+		uavDesc.Buffer.StructureByteStride = sizeof(Triangle);
 		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 		uavDesc.Buffer.FirstElement = 0;
 		uavDesc.Buffer.CounterOffsetInBytes = 0;
@@ -283,7 +266,7 @@ namespace Engine
 
 	void VoxelWorld::CreateReadBackBuffer()
 	{
-		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(MCTriangle));
+		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(Triangle));
 
 		const HRESULT readBackResult = Context->Device->CreateCommittedResource
 		(
@@ -319,24 +302,6 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(uploadBuffer);
 
-	}
-
-	void VoxelWorld::CreateConstantBuffer()
-	{
-		/*constexpr UINT triangulationTableSize = 256 * 16;
-		TriangulationTable = CreateScope<D3D12UploadBuffer<MCData>>(Context, triangulationTableSize, true);
-
-		const UINT sizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MCData));
-
-		const auto handle = MemManager->GetResourceHandle();
-
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-		cbvDesc.BufferLocation = TriangulationTable->Resource()->GetGPUVirtualAddress();
-		cbvDesc.SizeInBytes = sizeInBytes;
-		Context->Device->CreateConstantBufferView(&cbvDesc, handle.CpuCurrentHandle);
-		ConstantBufferCbv = handle.GpuCurrentHandle;
-
-		TriangulationTable->CopyData(0, TriTableRawData);*/
 
 	}
 
@@ -349,11 +314,43 @@ namespace Engine
 			Context->Device.Get(),
 			Context->GraphicsCmdList.Get(),
 			TriangleTable,
-			sizeof(INT32) * 4096,
+			bufferWidth,
 			UploadTriBuffer
 		);
+	}
 
-	
+	void VoxelWorld::CreateVertexBuffers()
+	{
+		std::vector<Vertex> vertices;
+		std::vector<UINT16> indices;
+		UINT16 index = 0;
+		for (auto& tri : RawTriBuffer)
+		{
+			vertices.push_back(tri.VertexC);
+			indices.push_back(++index);
+			vertices.push_back(tri.VertexB);
+			indices.push_back(++index);
+			vertices.push_back(tri.VertexA);
+			indices.push_back(++index);
+		}
+
+		const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
+		const UINT vbSizeInBytes = sizeof(Vertex) * vertices.size();
+
+		TerrainMeshGeometry = CreateScope<MeshGeometry>("Terrain");
+		TerrainMeshGeometry->VertexBuffer = VertexBuffer::Create(Context, vertices.data(),
+			vbSizeInBytes, vertices.size(), true);
+
+		const BufferLayout layout =
+		{
+			{"POSITION",	ShaderDataType::Float3, 0, 0, false },
+			{"NORMAL",		ShaderDataType::Float3, 12,1, false },
+			{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
+		};
+		TerrainMeshGeometry->VertexBuffer->SetLayout(layout);
+
+		TerrainMeshGeometry->IndexBuffer = IndexBuffer::Create(Context, indices.data(),
+			ibSizeInBytes, indices.size());
 
 	}
 }
