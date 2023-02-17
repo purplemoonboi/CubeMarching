@@ -3,6 +3,7 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 #include "Framework/Core/Log/Log.h"
+#include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
 namespace Engine
 {
@@ -92,9 +93,34 @@ namespace Engine
 		THROW_ON_FAILURE(creationResult);
 	}
 
-	D3D12PipelineStateObject::D3D12PipelineStateObject(GraphicsContext* graphicsContext, Shader* computeShader)
+	D3D12PipelineStateObject::D3D12PipelineStateObject
+	(
+		ComputeApi* computeContext, 
+		Shader* computeShader,
+		ComPtr<ID3D12RootSignature> rootSignature
+
+	)
 	{
 
+		const auto d3d12Shader = dynamic_cast<D3D12Shader*>(computeShader);
+		const auto d3d12ComputeApi = dynamic_cast<D3D12ComputeApi*>(computeContext);
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
+		desc.pRootSignature = rootSignature.Get();
+		desc.CS =
+		{
+			reinterpret_cast<BYTE*>(d3d12Shader->GetShader()->GetBufferPointer()),
+			d3d12Shader->GetShader()->GetBufferSize()
+		};
+		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+		const auto d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(Pso.Get());
+		const HRESULT csPipelineState = d3d12ComputeApi->Context->Device->CreateComputePipelineState
+		(
+			&desc,
+			IID_PPV_ARGS(&d3d12Pso->GetComPtr())
+		);
+		THROW_ON_FAILURE(csPipelineState);
 		
 	}
 

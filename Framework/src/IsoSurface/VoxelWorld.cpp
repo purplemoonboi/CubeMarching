@@ -36,42 +36,42 @@ namespace Engine
 		ComputeContext->ResetComputeCommandList(nullptr);
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
-		ComputeContext->ComputeCommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-		ComputeContext->ComputeCommandList->SetPipelineState(ComputeState.Get());
+		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		ComputeContext->CommandList->SetPipelineState(ComputeState.Get());
 
 		//Bind compute shader buffers
-		ComputeContext->ComputeCommandList->SetComputeRootSignature(ComputeRootSignature.Get());
+		ComputeContext->CommandList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
 
 		const float coord[3] = {worldSettings.ChunkCoord.x, worldSettings.ChunkCoord.y, worldSettings.ChunkCoord.z};
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 3, coord, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, coord, 4);
 
-		ComputeContext->ComputeCommandList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
-		ComputeContext->ComputeCommandList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
-		ComputeContext->ComputeCommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
+		ComputeContext->CommandList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
-		ComputeContext->ComputeCommandList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
+		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
 
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->ComputeCommandList->CopyResource(ReadBackBuffer.Get(), OutputBuffer.Get());
+		ComputeContext->CommandList->CopyResource(ReadBackBuffer.Get(), OutputBuffer.Get());
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->ComputeCommandList->CopyResource(CounterReadback.Get(), CounterResource.Get());
+		ComputeContext->CommandList->CopyResource(CounterReadback.Get(), CounterResource.Get());
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		const INT32 rawData[1] = { 0 };
@@ -80,17 +80,17 @@ namespace Engine
 		subResourceData.RowPitch = sizeof(INT32);
 		subResourceData.SlicePitch = subResourceData.RowPitch;
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				CounterResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_COPY_DEST
 		));
 
 		// Copy the data into the upload heap
-		UpdateSubresources(ComputeContext->ComputeCommandList.Get(), CounterResource.Get(), CounterUpload.Get(), 0, 0, 1, &subResourceData);
+		UpdateSubresources(ComputeContext->CommandList.Get(), CounterResource.Get(), CounterUpload.Get(), 0, 0, 1, &subResourceData);
 
 		// Add the instruction to transition back to read 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				CounterResource.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS

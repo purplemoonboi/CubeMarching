@@ -15,15 +15,13 @@
 
 namespace Engine
 {
+	using Microsoft::WRL::ComPtr;
+
 	class D3D12ReadBackBuffer;
 	class D3D12MemoryManager;
 
-
-	using Microsoft::WRL::ComPtr;
-
 	class D3D12Texture;
 	class D3D12Context;
-
 
 	class VoxelWorld
 	{
@@ -41,23 +39,19 @@ namespace Engine
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const { return RawTriBuffer; }
 
-		[[nodiscard]] MeshGeometry* GetTerrainMesh() const { return TerrainMeshGeometry.get(); }
+		[[nodiscard]] ScopePointer<MeshGeometry>& GetTerrainMesh() { return TerrainMeshGeometry; }
 		
 	private:
 
 		D3D12ComputeApi* ComputeContext = nullptr;
 		D3D12MemoryManager* MemManager = nullptr;
 
-
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;
 		ComPtr<ID3D12PipelineState> ComputeState;
 
 		ScopePointer<Shader> ComputeShader;
 
-
 		std::vector<Triangle> RawTriBuffer;
-
-
 
 		void BuildComputeRootSignature();
 
@@ -81,7 +75,7 @@ namespace Engine
 		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
 
 		void CreateVertexBuffers();
-		ScopePointer<MeshGeometry> TerrainMeshGeometry;
+		ScopePointer<MeshGeometry> TerrainMeshGeometry = nullptr;
 		bool IsTerrainMeshGenerated = false;
 
 	};

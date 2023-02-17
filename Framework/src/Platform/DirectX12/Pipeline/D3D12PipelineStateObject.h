@@ -9,10 +9,13 @@
 
 namespace Engine
 {
+	class ComputeApi;
 
 	class Shader;
 	class GraphicsContext;
 	class D3D12Context;
+
+	using Microsoft::WRL::ComPtr;
 	
 	class D3D12PipelineStateObject : public PipelineStateObject
 	{
@@ -39,8 +42,9 @@ namespace Engine
 
 		D3D12PipelineStateObject
 		(
-			GraphicsContext* graphicsContext,
-			Shader* computeShader
+			ComputeApi* computeContext,
+			Shader* computeShader,
+			ComPtr<ID3D12RootSignature> rootSignature
 		);
 
 
@@ -57,13 +61,12 @@ namespace Engine
 		~D3D12PipelineStateObject() override;
 
 		// @brief Returns a raw pointer to the pso.
-		ID3D12PipelineState* GetPipelineState() const { return Pso.Get(); }
+		[[nodiscard]] ID3D12PipelineState* GetPipelineState() const { return Pso.Get(); }
 
-
-
+		[[nodiscard]] ComPtr<ID3D12PipelineState> GetComPtr() const { return Pso; }
 
 	private:
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> Pso;
+		ComPtr<ID3D12PipelineState> Pso;
 
 		DXGI_FORMAT BackBufferFormat;
 		DXGI_FORMAT DepthBufferFormat;

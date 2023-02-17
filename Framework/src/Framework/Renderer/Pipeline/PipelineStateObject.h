@@ -1,8 +1,12 @@
 #pragma once
+#include <wrl/client.h>
+
 #include "Framework/Core/core.h"
+#include "Platform/DirectX12/Buffers/D3D12BufferUtils.h"
 
 namespace Engine
 {
+	class ComputeApi;
 	class BufferLayout;
 	class Shader;
 	class GraphicsContext;
@@ -43,8 +47,9 @@ namespace Engine
 
 		static ScopePointer<PipelineStateObject> Create
 		(
-			GraphicsContext* graphicsContext,
-			Shader* computeShader
+			ComputeApi* computeContext,
+			Shader* computeShader,
+			Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature
 		);
 	};
 }

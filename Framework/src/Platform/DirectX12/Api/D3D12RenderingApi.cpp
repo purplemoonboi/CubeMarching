@@ -26,7 +26,6 @@ namespace Engine
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
 
-
 		D3D12MemoryManager = std::make_unique<class D3D12MemoryManager>();
 		D3D12MemoryManager->InitialiseSrvUavHeap(Context, 32);
 
@@ -96,6 +95,7 @@ namespace Engine
 #ifdef ENGINE_IMGUI_SUPPORT
 		ImGui::Render();
 #endif
+
 		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
 		THROW_ON_FAILURE(cmdResetResult);
 		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);

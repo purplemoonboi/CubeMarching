@@ -5,6 +5,11 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Api/D3D12RenderingApi.h"
 
+#include <imgui.h>
+
+#include <backends/imgui_impl_dx12.h>
+#include <backends/imgui_impl_win32.h>
+
 namespace Engine
 {
 	ComPtr<ID3D12DescriptorHeap> ImGuiImplD3D12::ImGuiHeap = nullptr;
@@ -47,7 +52,6 @@ namespace Engine
 		{
 		}
 
-		//ImGui_ImplWin32_Init(context->GetHwnd());
 		ImGui_ImplWin32_Init(context->GetHwnd());
 		ImGui_ImplDX12_Init
 		(

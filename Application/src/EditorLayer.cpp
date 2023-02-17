@@ -38,7 +38,6 @@ namespace Engine
         auto api = RenderInstruction::GetApiPtr();
 
         ComputeInstruction::Init(api->GetGraphicsContext());
-
         auto csApi = ComputeInstruction::GetComputeApi();
 
         ShaderArgs args =
@@ -112,6 +111,7 @@ namespace Engine
 		PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
     	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture());
 
+        Renderer3D::CreateCustomMesh(std::move(VoxelWorld->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
 
     }
 

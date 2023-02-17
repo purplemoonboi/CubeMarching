@@ -41,7 +41,7 @@ namespace Engine
 		D3D12MemoryManager* MemManager;
 
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;
-		ComPtr<ID3D12PipelineState> Pso;
+		ScopePointer<PipelineStateObject> Pso;
 
 		ScopePointer<Shader> PerlinShader;
 		ScopePointer<Texture> ScalarTexture;

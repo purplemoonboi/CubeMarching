@@ -23,29 +23,29 @@ namespace Engine
 
 	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)
 	{
-		ComputeContext->ResetComputeCommandList(nullptr);
+		ComputeContext->ResetComputeCommandList(Pso.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
-		ComputeContext->ComputeCommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-		ComputeContext->ComputeCommandList->SetPipelineState(Pso.Get());
+		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		ComputeContext->CommandList->SetPipelineState(dynamic_cast<D3D12PipelineStateObject*>(Pso.get())->GetPipelineState());
 
 		auto resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
-		ComputeContext->ComputeCommandList->SetComputeRootSignature(ComputeRootSignature.Get());
+		ComputeContext->CommandList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Gain, 1);
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Loss, 2);
-		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Ground, 3);
-		ComputeContext->ComputeCommandList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
+		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
+		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Gain, 1);
+		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Loss, 2);
+		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Ground, 3);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
 
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1,
+		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		ComputeContext->ComputeCommandList->Dispatch(X, Y, Z);
+		ComputeContext->CommandList->Dispatch(X, Y, Z);
 
-		ComputeContext->ComputeCommandList->ResourceBarrier(1,
+		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
@@ -97,21 +97,8 @@ namespace Engine
 
 	void PerlinCompute::BuildPipelineState()
 	{
-		const auto d3d12Shader = dynamic_cast<D3D12Shader*>(PerlinShader.get());
-		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
-		desc.pRootSignature = ComputeRootSignature.Get();
-		desc.CS =
-		{
-			reinterpret_cast<BYTE*>(d3d12Shader->GetShader()->GetBufferPointer()),
-			d3d12Shader->GetShader()->GetBufferSize()
-		};
-		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		const HRESULT csPipelineState = ComputeContext->Context->Device->CreateComputePipelineState
-		(
-			&desc,
-			IID_PPV_ARGS(&Pso)
-		);
-		THROW_ON_FAILURE(csPipelineState);
+
+		Pso = PipelineStateObject::Create(ComputeContext, PerlinShader.get(), ComputeRootSignature);
 
 	}
 
@@ -119,12 +106,12 @@ namespace Engine
 	{
 
 		for (INT32 i = 0; i < ChunkWidth; ++i)
-			for (INT32 j = 0; j < ChunkWidth; ++j)
+			for (INT32 j = 0; j < ChunkHeight; ++j)
 				for (INT32 k = 0; k < ChunkWidth; ++k)
 					RawTexture.push_back(0);
 
 		ScalarTexture = std::make_unique<D3D12Texture>(
-			ChunkWidth, ChunkWidth, ChunkWidth,
+			ChunkWidth, ChunkHeight, ChunkWidth,
 			TextureDimension::Three, TextureFormat::R_FLOAT_32
 			);
 
@@ -136,7 +123,6 @@ namespace Engine
 			MemManager
 		);
 
-		
 	}
 
 	void PerlinCompute::CreateReadBackBuffer()
