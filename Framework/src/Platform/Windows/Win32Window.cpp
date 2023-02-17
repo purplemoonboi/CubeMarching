@@ -39,6 +39,8 @@ namespace Engine
 			CORE_ERROR("A window could be initialised.... terminating application.")
 		}
 
+
+
 	}
 
 	void Win32Window::OnUpdate()

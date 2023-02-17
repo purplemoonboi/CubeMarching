@@ -62,22 +62,24 @@ namespace Engine
 
 	D3D12Context::~D3D12Context()
 	{
-		if(Device != nullptr)
-		{
-			Device->Release();
-			Device = nullptr;
-		}
-		if(CommandQueue != nullptr)
-		{
-			FlushCommandQueue();
-			CommandQueue->Release();
-			CommandQueue = nullptr;
-		}
-		if(SwapChain != nullptr)
-		{
-			SwapChain->Release();
-			SwapChain = nullptr;
-		}
+		//if (CommandQueue != nullptr)
+		//{
+		//	FlushCommandQueue();
+		//	CommandQueue->Release();
+		//	CommandQueue = nullptr;
+		//}
+		//if (SwapChain != nullptr)
+		//{
+		//	SwapChain->Release();
+		//	SwapChain = nullptr;
+		//}
+		//if(Device != nullptr)
+		//{
+		//	Device->Release();
+		//	Device = nullptr;
+		//}
+		//
+		
 	}
 
 	void D3D12Context::Init()
@@ -85,10 +87,10 @@ namespace Engine
 
 		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
 		// This may happen if the application is launched through the PIX UI. 
-		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+		/*if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
 			LoadLibrary(GetLatestWinPixGpuCapturerPath_Cpp17().c_str());
-		}
+		}*/
 
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 		{

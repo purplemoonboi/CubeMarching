@@ -3,6 +3,8 @@
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "VoxelWorldConstantExpressions.h"
 
+#include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
+
 namespace Engine
 {
 	struct ShaderArgs;
@@ -25,7 +27,7 @@ namespace Engine
 	{
 	public:
 
-		void Init(GraphicsContext* context, MemoryManager* memManager, ShaderArgs args);
+		void Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args);
 
 
 		void Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z);
@@ -35,8 +37,7 @@ namespace Engine
 		[[nodiscard]] const std::vector<float>& GetRawTexture() const { return RawTexture; }
 
 	private:
-
-		D3D12Context* Context;
+		D3D12ComputeApi* ComputeContext;
 		D3D12MemoryManager* MemManager;
 
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;

@@ -10,14 +10,11 @@ namespace Engine
 	{
 	public:
 
-		static void Init()
-		{
-			RendererApiPtr->Init();
-		}
+	
 
-		static void InitD3D(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight)
+		static void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
 		{
-			RendererApiPtr->InitD3D12(windowHandle, viewportWidth, viewportHeight);
+			RendererApiPtr->Init(context, viewportWidth, viewportHeight);
 		}
 
 		static void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)

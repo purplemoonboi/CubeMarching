@@ -41,10 +41,12 @@ namespace Engine
 		DsvHeap = nullptr;
 	}
 
-	void D3D12FrameBuffer::Init(D3D12Context* context)
+	void D3D12FrameBuffer::Init(GraphicsContext* context)
 	{
-		DsvDescriptorSize = context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-		RtvDescriptorSize = context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		Context = dynamic_cast<D3D12Context*>(context);
+
+		DsvDescriptorSize = Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+		RtvDescriptorSize = Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 		// Resource 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
@@ -53,7 +55,7 @@ namespace Engine
 		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		rtvHeapDesc.NodeMask = 0;
 
-		THROW_ON_FAILURE(context->Device->CreateDescriptorHeap
+		THROW_ON_FAILURE(Context->Device->CreateDescriptorHeap
 		(
 			&rtvHeapDesc,
 			IID_PPV_ARGS(RtvHeap.GetAddressOf())
@@ -66,7 +68,7 @@ namespace Engine
 		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		dsvHeapDesc.NodeMask = 0;
 
-		THROW_ON_FAILURE(context->Device->CreateDescriptorHeap
+		THROW_ON_FAILURE(Context->Device->CreateDescriptorHeap
 		(
 			&dsvHeapDesc,
 			IID_PPV_ARGS(DsvHeap.GetAddressOf())
@@ -86,23 +88,14 @@ namespace Engine
 
 	void D3D12FrameBuffer::RebuildFrameBuffer(INT32 width, INT32 height)
 	{
-	}
-
-	void* D3D12FrameBuffer::GetColourAttachmentRendererID() const
-	{
-		return SwapChainBuffer[BackBufferIndex].Get();
-	}
-
-	void D3D12FrameBuffer::ResizeFrameBuffer(D3D12Context* graphicsContext)
-	{
-		CORE_ASSERT(graphicsContext->Device, "The 'D3D device' has failed...");
-		CORE_ASSERT(graphicsContext->SwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(graphicsContext->GraphicsCmdList, "The 'graphics command list' has failed...");
+		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
+		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
+		CORE_ASSERT(Context->GraphicsCmdList, "The 'graphics command list' has failed...");
 
 		// Flush before changing any resources.
-		graphicsContext->FlushCommandQueue();
+		Context->FlushCommandQueue();
 
-	    THROW_ON_FAILURE(graphicsContext->GraphicsCmdList->Reset(graphicsContext->CmdListAlloc.Get(), nullptr));
+		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), nullptr));
 
 		// Release the previous resources we will be recreating.
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
@@ -110,11 +103,11 @@ namespace Engine
 			SwapChainBuffer[i].Reset();
 		}
 
-		graphicsContext->DepthStencilBuffer.Reset();
+		Context->DepthStencilBuffer.Reset();
 
 
 		// Resize the swap chain.
-		THROW_ON_FAILURE(graphicsContext->SwapChain->ResizeBuffers
+		THROW_ON_FAILURE(Context->SwapChain->ResizeBuffers
 		(
 			SWAP_CHAIN_BUFFER_COUNT,
 			FrameBufferSpecs.Width, FrameBufferSpecs.Height,
@@ -129,16 +122,16 @@ namespace Engine
 
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
 		{
-			graphicsContext->SwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
+			Context->SwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
 
-			graphicsContext->Device->CreateRenderTargetView
+			Context->Device->CreateRenderTargetView
 			(
 				SwapChainBuffer[i].Get(),
-				nullptr, 
+				nullptr,
 				rtvHeapHandle
 			);
 
-			THROW_ON_FAILURE(graphicsContext->Device->GetDeviceRemovedReason());
+			THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
 
 			rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
@@ -159,8 +152,8 @@ namespace Engine
 		//   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
 		// we need to create the depth buffer resource with a typeless format.  
 		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-		depthStencilDesc.SampleDesc.Count = graphicsContext->GetMsaaState() ? 4 : 1;
-		depthStencilDesc.SampleDesc.Quality = graphicsContext->GetMsaaState() ? (graphicsContext->GetMsaaQaulity() - 1) : 0;
+		depthStencilDesc.SampleDesc.Count = Context->GetMsaaState() ? 4 : 1;
+		depthStencilDesc.SampleDesc.Quality = Context->GetMsaaState() ? (Context->GetMsaaQaulity() - 1) : 0;
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -171,17 +164,17 @@ namespace Engine
 		optClear.DepthStencil.Stencil = 0;
 
 
-		THROW_ON_FAILURE(graphicsContext->Device->CreateCommittedResource
+		THROW_ON_FAILURE(Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&depthStencilDesc,
 			D3D12_RESOURCE_STATE_COMMON,
 			&optClear,
-			IID_PPV_ARGS(graphicsContext->DepthStencilBuffer.GetAddressOf())
+			IID_PPV_ARGS(Context->DepthStencilBuffer.GetAddressOf())
 		));
 
-		THROW_ON_FAILURE(graphicsContext->Device->GetDeviceRemovedReason());
+		THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
 
 		// Create descriptor to mip level 0 of entire resource using the format of the resource.
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -190,35 +183,35 @@ namespace Engine
 		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		graphicsContext->Device->CreateDepthStencilView
+		Context->Device->CreateDepthStencilView
 		(
-			graphicsContext->DepthStencilBuffer.Get(), 
-			&dsvDesc, 
+			Context->DepthStencilBuffer.Get(),
+			&dsvDesc,
 			GetDepthStencilViewCpu()
 		);
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		graphicsContext->GraphicsCmdList->ResourceBarrier
+		Context->GraphicsCmdList->ResourceBarrier
 		(
-			1, 
+			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
 			(
-				graphicsContext->DepthStencilBuffer.Get(),
+				Context->DepthStencilBuffer.Get(),
 				D3D12_RESOURCE_STATE_COMMON,
 				D3D12_RESOURCE_STATE_DEPTH_WRITE
 			)
 		);
 
 		// Execute the resize commands.
-		THROW_ON_FAILURE(graphicsContext->GraphicsCmdList->Close());
+		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
 
-		ID3D12CommandList* cmdsLists[] = { graphicsContext->GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 
-		graphicsContext->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.
-		graphicsContext->FlushCommandQueue();
+		Context->FlushCommandQueue();
 
 
 		// Update the viewport transform to cover the client area.
@@ -230,6 +223,11 @@ namespace Engine
 		ScreenViewport.MaxDepth = 1.0f;
 
 		ScissorRect = { 0, 0, FrameBufferSpecs.Width, FrameBufferSpecs.Height };
+	}
+
+	void* D3D12FrameBuffer::GetColourAttachmentRendererID() const
+	{
+		return SwapChainBuffer[BackBufferIndex].Get();
 	}
 
 	void D3D12FrameBuffer::SetViewportDimensions(INT32 width, INT32 height)
@@ -253,24 +251,10 @@ namespace Engine
 		);
 	}
 
-	D3D12_GPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetCurrentBackBufferViewGpu() const
-	{
-		return CD3DX12_GPU_DESCRIPTOR_HANDLE
-		(
-			RtvHeap->GetGPUDescriptorHandleForHeapStart(),
-			BackBufferIndex,
-			RtvDescriptorSize
-		);
-	}
-
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetDepthStencilViewCpu() const
 	{
 		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
-	D3D12_GPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetDepthStencilViewGpu() const
-	{
-		return DsvHeap->GetGPUDescriptorHandleForHeapStart();
-	}
 
 }

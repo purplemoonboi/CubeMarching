@@ -6,6 +6,7 @@
 #include <../ImGui/imgui_internal.h>
 
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
+#include "Framework/Core/Compute/ComputeInstruction.h"
 
 namespace Engine
 {
@@ -36,13 +37,16 @@ namespace Engine
     {
         auto api = RenderInstruction::GetApiPtr();
 
+        ComputeInstruction::Init(api->GetGraphicsContext());
+
+        auto csApi = ComputeInstruction::GetComputeApi();
 
         ShaderArgs args =
         { L"assets\\shaders\\MarchingCube.hlsl" ,
             "GenerateChunk",
             "cs_5_0"
         };
-        VoxelWorld->Init(api->GetGraphicsContext(), api->GetMemoryManager(), args);
+        VoxelWorld->Init(csApi, api->GetMemoryManager(), args);
 
         ShaderArgs perlinArgs = 
         {
@@ -50,7 +54,7 @@ namespace Engine
             "ComputeNoise3D",
             "cs_5_0"
         };
-        PerlinCompute->Init(api->GetGraphicsContext(), api->GetMemoryManager(), perlinArgs);
+        PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
 
 
@@ -104,12 +108,10 @@ namespace Engine
         World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
 
 
-  //      RenderInstruction::ResetGraphicsCommandList();
 
-		//PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-  //  	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture());
+		PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
+    	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture());
 
-		//RenderInstruction::ExecGraphicsCommandList();
 
     }
 
@@ -241,7 +243,7 @@ namespace Engine
 
 
                 ImVec2 viewport_region = ImGui::GetContentRegionAvail();
-                XMFLOAT2 viewportRegionXF2 = { viewport_region.x, viewport_region.y };
+                DirectX::XMFLOAT2 viewportRegionXF2 = { viewport_region.x, viewport_region.y };
                 if (ViewportSize.x != viewportRegionXF2.x || ViewportSize.y != viewportRegionXF2.y)
                 {
                     ViewportSize = { viewport_region.x, viewport_region.y };
@@ -250,7 +252,7 @@ namespace Engine
                 auto const* api = RenderInstruction::GetApiPtr();
                 auto const* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
 
-                ImGui::Image((ImTextureID)frameBuffer->GetCurrentBackBufferViewGpu().ptr, ImVec2(ViewportSize.x, ViewportSize.y));
+                //ImGui::Image((ImTextureID)frameBuffer->GetCurrentBackBufferViewGpu().ptr, ImVec2(ViewportSize.x, ViewportSize.y));
 
 
                 ImGui::End();

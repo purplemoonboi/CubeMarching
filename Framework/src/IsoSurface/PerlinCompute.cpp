@@ -8,9 +8,9 @@
 namespace Engine
 {
 
-	void PerlinCompute::Init(GraphicsContext* context, MemoryManager* memManager, ShaderArgs args)
+	void PerlinCompute::Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args)
 	{
-		Context = dynamic_cast<D3D12Context*>(context);
+		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
 
 		PerlinShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
@@ -23,44 +23,34 @@ namespace Engine
 
 	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)
 	{
-		const HRESULT cmdAllocResult = Context->CmdListAlloc->Reset();
-		THROW_ON_FAILURE(cmdAllocResult);
-
-		const HRESULT cmdGraphicsResult = Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), Pso.Get());
-		THROW_ON_FAILURE(cmdGraphicsResult);
+		ComputeContext->ResetComputeCommandList(nullptr);
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
-		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-		Context->GraphicsCmdList->SetPipelineState(Pso.Get());
+		ComputeContext->ComputeCommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		ComputeContext->ComputeCommandList->SetPipelineState(Pso.Get());
 
 		auto resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
-		Context->GraphicsCmdList->SetComputeRootSignature(ComputeRootSignature.Get());
+		ComputeContext->ComputeCommandList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Gain, 1);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Loss, 2);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstant(0, args.Ground, 3);
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Gain, 1);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Loss, 2);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstant(0, args.Ground, 3);
+		ComputeContext->ComputeCommandList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
 
 
-		Context->GraphicsCmdList->ResourceBarrier(1,
+		ComputeContext->ComputeCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		Context->GraphicsCmdList->Dispatch(X, Y, Z);
+		ComputeContext->ComputeCommandList->Dispatch(X, Y, Z);
 
-		Context->GraphicsCmdList->ResourceBarrier(1,
+		ComputeContext->ComputeCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 
-		// Execute the commands and flush
-		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
-		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		Context->FlushCommandQueue();
-
-
+		ComputeContext->ExecuteComputeCommandList();
 	}
 
 	void PerlinCompute::BuildComputeRootSignature()
@@ -94,7 +84,7 @@ namespace Engine
 		if (errorBlob != nullptr) { ::OutputDebugStringA((char*)errorBlob->GetBufferPointer()); }
 
 		THROW_ON_FAILURE(serialisedResult);
-		const HRESULT rootSigResult = Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),
@@ -116,7 +106,7 @@ namespace Engine
 			d3d12Shader->GetShader()->GetBufferSize()
 		};
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		const HRESULT csPipelineState = Context->Device->CreateComputePipelineState
+		const HRESULT csPipelineState = ComputeContext->Context->Device->CreateComputePipelineState
 		(
 			&desc,
 			IID_PPV_ARGS(&Pso)
@@ -142,7 +132,7 @@ namespace Engine
 		(
 			RawTexture.data(),
 			TextureDimension::Three,
-			Context,
+			ComputeContext->Context,
 			MemManager
 		);
 
@@ -154,7 +144,7 @@ namespace Engine
 
 		const auto bufferWidth = (ScalarTexture->GetWidth() * ScalarTexture->GetHeight() * ScalarTexture->GetDepth() * sizeof(float));
 
-		const HRESULT readBackResult = Context->Device->CreateCommittedResource
+		const HRESULT readBackResult = ComputeContext->Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 			D3D12_HEAP_FLAG_NONE,

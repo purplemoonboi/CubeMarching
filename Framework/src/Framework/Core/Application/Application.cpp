@@ -4,6 +4,7 @@
 #include "Framework/Core/Log/Log.h"
 #include "Framework/Renderer/Engine/Renderer.h"
 
+
 #include <imgui.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -29,15 +30,14 @@ namespace Engine
 		CORE_ASSERT(!SingletonInstance, "An application instance already exists!");
 		SingletonInstance = this;
 
-		// TODO: Create a windows window
 		Window = Win32Window(hInstance, MainWndProc, 1920, 1080, L"Engine");
 		// Bind the applications on event function to capture application specific events.
 		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
 
 		MouseData.CallBack = BIND_DELEGATE(Application::OnApplicationEvent);
 
-		// TODO: Initialise the renderer
-		Renderer::InitD3D(static_cast<HWND>(Window.GetNativeWindow()), 1920, 1080);
+		auto handle = static_cast<HWND>(Window.GetNativeWindow());
+		Renderer::Init(handle, 1920, 1080);
 
 		ImGuiLayer = new class ImGuiLayer();
 		PushOverlay(ImGuiLayer);

@@ -9,10 +9,9 @@ namespace Engine
 	{
 	public:
 
-		
-		static void Dispatch(const BYTE* data, INT32 x, INT32 y, INT32 z)
+		static void Init(GraphicsContext* context)
 		{
-			Compute->Dispatch(data, x, y, z);
+			Compute->Init(context);
 		}
 
 		static void ResetComputeCommandList()
@@ -23,6 +22,11 @@ namespace Engine
 		static void ExecuteComputeCommandList()
 		{
 			Compute->ExecuteComputeCommandList();
+		}
+
+		static ComputeApi* GetComputeApi()
+		{
+			return Compute;
 		}
 
 	private:

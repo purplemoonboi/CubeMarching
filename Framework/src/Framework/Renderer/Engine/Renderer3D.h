@@ -5,8 +5,6 @@
 #include "Framework/Camera/MainCamera.h";
 #include "Framework/Core/core.h"
 
-#include "IsoSurface/MarchingCubesCPU.h"
-#include "Framework/Maths/Perlin.h"
 
 
 

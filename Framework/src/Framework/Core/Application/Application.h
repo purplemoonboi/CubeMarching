@@ -53,6 +53,7 @@ namespace Engine
 
 		//inline ImGuiLayer() { return ImGuiLayer; }
 
+
 		// @brief Captures a window resize event, if true dispatch a
 		//		  invalidate buffer command. (Rebuilds buffer)
 		bool OnWindowResize(WindowResizeEvent& windowResize);
@@ -92,6 +93,7 @@ namespace Engine
 		// System window
 		Win32Window Window;
 
+		ScopePointer<GraphicsContext> GraphicsContext;
 
 		// System Keyboard
 		//KeyBoard Keyboard;

@@ -8,6 +8,7 @@
 #include "IsoSurface/PerlinCompute.h"
 #include "IsoSurface/VoxelWorld.h"
 
+
 namespace Engine
 {
 
@@ -50,7 +51,7 @@ namespace Engine
 		bool IsViewportFocused;
 		bool IsViewportHovered;
 
-		XMFLOAT2 ViewportSize;
+		DirectX::XMFLOAT2 ViewportSize;
 
 		float CurrentMouseX = 0;
 		float CurrentMouseY = 0;

@@ -13,9 +13,10 @@ namespace Engine
 {
 
 
-	bool VoxelWorld::Init(GraphicsContext* c, MemoryManager* memManager, ShaderArgs args)
+	bool VoxelWorld::Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args)
 	{
-		Context = dynamic_cast<D3D12Context*>(c);
+		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
+
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
 
 		ComputeShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
@@ -25,7 +26,6 @@ namespace Engine
 		CreateOutputBuffer();
 		CreateReadBackBuffer();
 
-		//CreateConstantBuffer();
 		CreateStructuredBuffer();
 
 		return true;
@@ -33,47 +33,45 @@ namespace Engine
 
 	void VoxelWorld::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture)
 	{
-		THROW_ON_FAILURE(Context->CmdListAlloc->Reset());
-		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), ComputeState.Get()));
-
+		ComputeContext->ResetComputeCommandList(nullptr);
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
-		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-		Context->GraphicsCmdList->SetPipelineState(ComputeState.Get());
+		ComputeContext->ComputeCommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		ComputeContext->ComputeCommandList->SetPipelineState(ComputeState.Get());
 
 		//Bind compute shader buffers
-		Context->GraphicsCmdList->SetComputeRootSignature(ComputeRootSignature.Get());
+		ComputeContext->ComputeCommandList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
 
 		const float coord[3] = {worldSettings.ChunkCoord.x, worldSettings.ChunkCoord.y, worldSettings.ChunkCoord.z};
-		Context->GraphicsCmdList->SetComputeRoot32BitConstants(0, 3, coord, 4);
+		ComputeContext->ComputeCommandList->SetComputeRoot32BitConstants(0, 3, coord, 4);
 
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
-		Context->GraphicsCmdList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
-		Context->GraphicsCmdList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
+		ComputeContext->ComputeCommandList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
+		ComputeContext->ComputeCommandList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
+		ComputeContext->ComputeCommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
-		Context->GraphicsCmdList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
+		ComputeContext->ComputeCommandList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
 
 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
+		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		Context->GraphicsCmdList->CopyResource(ReadBackBuffer.Get(), OutputBuffer.Get());
+		ComputeContext->ComputeCommandList->CopyResource(ReadBackBuffer.Get(), OutputBuffer.Get());
 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
+		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
+		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		Context->GraphicsCmdList->CopyResource(CounterReadback.Get(), CounterResource.Get());
+		ComputeContext->ComputeCommandList->CopyResource(CounterReadback.Get(), CounterResource.Get());
 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
+		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		const INT32 rawData[1] = { 0 };
@@ -82,29 +80,23 @@ namespace Engine
 		subResourceData.RowPitch = sizeof(INT32);
 		subResourceData.SlicePitch = subResourceData.RowPitch;
 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				CounterResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_COPY_DEST
 		));
 
 		// Copy the data into the upload heap
-		UpdateSubresources(Context->GraphicsCmdList.Get(), CounterResource.Get(), CounterUpload.Get(), 0, 0, 1, &subResourceData);
+		UpdateSubresources(ComputeContext->ComputeCommandList.Get(), CounterResource.Get(), CounterUpload.Get(), 0, 0, 1, &subResourceData);
 
 		// Add the instruction to transition back to read 
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		ComputeContext->ComputeCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				CounterResource.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 			));
 
-		const HRESULT cmdCloseResult = Context->GraphicsCmdList->Close();
-		THROW_ON_FAILURE(cmdCloseResult);
-
-		ID3D12CommandList* cmdLists[] = { Context->GraphicsCmdList.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdLists), cmdLists);
-
-		Context->FlushCommandQueue();
+		ComputeContext->ExecuteComputeCommandList();
 
 		INT32* count = nullptr;
 
@@ -175,7 +167,7 @@ namespace Engine
 		}
 
 		THROW_ON_FAILURE(hr);
-		const HRESULT rootSigResult = Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),
@@ -197,7 +189,7 @@ namespace Engine
 			d3dCsShader->GetShader()->GetBufferSize()
 		};
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		const HRESULT csPipelineState = Context->Device->CreateComputePipelineState
+		const HRESULT csPipelineState = ComputeContext->Context->Device->CreateComputePipelineState
 		(
 			&desc, 
 			IID_PPV_ARGS(&ComputeState)
@@ -212,7 +204,7 @@ namespace Engine
 	{
 
 		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(Triangle));
-		const HRESULT vertexResult = Context->Device->CreateCommittedResource
+		const HRESULT vertexResult = ComputeContext->Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
@@ -226,7 +218,7 @@ namespace Engine
 
 		constexpr UINT64 sizeInBytes = sizeof(UINT32);
 
-		const HRESULT counterResult = Context->Device->CreateCommittedResource
+		const HRESULT counterResult = ComputeContext->Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
@@ -251,7 +243,7 @@ namespace Engine
 		auto handle = MemManager->GetResourceHandle();
 		OutputVertexUavGpu = handle.GpuCurrentHandle;
 		/* create the view describing our output buffer. note to offset on the GPU address */
-		Context->Device->CreateUnorderedAccessView(
+		ComputeContext->Context->Device->CreateUnorderedAccessView(
 			OutputBuffer.Get(),
 			CounterResource.Get(),
 			&uavDesc,
@@ -260,7 +252,7 @@ namespace Engine
 
 		
 
-		const HRESULT deviceRemovedReasonUav = Context->Device->GetDeviceRemovedReason();
+		const HRESULT deviceRemovedReasonUav = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReasonUav);
 	}
 
@@ -268,7 +260,7 @@ namespace Engine
 	{
 		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(Triangle));
 
-		const HRESULT readBackResult = Context->Device->CreateCommittedResource
+		const HRESULT readBackResult = ComputeContext->Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 			D3D12_HEAP_FLAG_NONE,
@@ -280,7 +272,7 @@ namespace Engine
 
 		THROW_ON_FAILURE(readBackResult);
 
-		const HRESULT countReadBackResult = Context->Device->CreateCommittedResource
+		const HRESULT countReadBackResult = ComputeContext->Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 			D3D12_HEAP_FLAG_NONE,
@@ -291,7 +283,7 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(countReadBackResult);
 
-		const HRESULT uploadBuffer = Context->Device->CreateCommittedResource
+		const HRESULT uploadBuffer = ComputeContext->Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -311,8 +303,8 @@ namespace Engine
 
 
 		TriangleBuffer = D3D12BufferUtils::CreateVertexBuffer(
-			Context->Device.Get(),
-			Context->GraphicsCmdList.Get(),
+			ComputeContext->Context->Device.Get(),
+			ComputeContext->Context->GraphicsCmdList.Get(),
 			TriangleTable,
 			bufferWidth,
 			UploadTriBuffer
@@ -338,7 +330,7 @@ namespace Engine
 		const UINT vbSizeInBytes = sizeof(Vertex) * vertices.size();
 
 		TerrainMeshGeometry = CreateScope<MeshGeometry>("Terrain");
-		TerrainMeshGeometry->VertexBuffer = VertexBuffer::Create(Context, vertices.data(),
+		TerrainMeshGeometry->VertexBuffer = VertexBuffer::Create(ComputeContext->Context, vertices.data(),
 			vbSizeInBytes, vertices.size(), true);
 
 		const BufferLayout layout =
@@ -349,7 +341,7 @@ namespace Engine
 		};
 		TerrainMeshGeometry->VertexBuffer->SetLayout(layout);
 
-		TerrainMeshGeometry->IndexBuffer = IndexBuffer::Create(Context, indices.data(),
+		TerrainMeshGeometry->IndexBuffer = IndexBuffer::Create(ComputeContext->Context, indices.data(),
 			ibSizeInBytes, indices.size());
 
 	}

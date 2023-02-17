@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+	class GraphicsContext;
 
 	struct  FrameBufferSpecifications
 	{
@@ -26,6 +27,7 @@ namespace Engine
 	public:
 		virtual ~FrameBuffer() = default;
 		virtual const FrameBufferSpecifications& GetSpecifications() const = 0;
+		virtual void Init(GraphicsContext* context) = 0;
 		virtual void Bind() = 0;
 		virtual void UnBind() = 0;
 		virtual void RebuildFrameBuffer(INT32 width, INT32 height) = 0;

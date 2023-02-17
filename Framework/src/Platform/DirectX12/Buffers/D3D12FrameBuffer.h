@@ -22,13 +22,12 @@ namespace Engine
 		D3D12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs);
 		~D3D12FrameBuffer() override;
 
-		void Init(D3D12Context* context);
+		void Init(GraphicsContext* context) override;
 
 		void Bind() override;
 		void UnBind() override;
 		void RebuildFrameBuffer(INT32 width, INT32 height) override;
 
-		void ResizeFrameBuffer(D3D12Context* graphicsContext);
 		void SetViewportDimensions(INT32 width, INT32 height);
 		void SetBackBufferIndex(INT32 value) { BackBufferIndex = value; }
 
@@ -41,9 +40,7 @@ namespace Engine
 		[[nodiscard]] UINT32 GetRtvDescSize() const { return RtvDescriptorSize; }
 		[[nodiscard]] UINT32 GetDsvDescSize() const { return DsvDescriptorSize; }
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferViewCpu() const;
-		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetCurrentBackBufferViewGpu() const;
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilViewCpu() const;
-		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetDepthStencilViewGpu() const;
 
 		[[nodiscard]] DXGI_FORMAT GetBackBufferFormat() const { return BackBufferFormat; }
 		[[nodiscard]] DXGI_FORMAT GetDepthStencilFormat() const { return DepthStencilFormat; }
@@ -77,6 +74,8 @@ namespace Engine
 	private:
 		INT32 BackBufferIndex;
 		FrameBufferSpecifications FrameBufferSpecs;
+
+		D3D12Context* Context = nullptr;
 	};
 
 }

@@ -3,25 +3,25 @@
 #include "Renderer3D.h"
 #include "RenderInstruction.h"
 
+#include "Framework/Core/Compute/ComputeInstruction.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Engine
 {
 	RendererStatus Renderer::RenderStatus = RendererStatus::RUNNING;
+	ScopePointer<GraphicsContext> Renderer::Context = nullptr;
 
-	void Renderer::Init()
-	{
-		RenderInstruction::Init();
 
-		Renderer3D::Init();
-
-	}
-
-	void Renderer::InitD3D(HWND windowHandle, INT32 bufferWidth, INT32 bufferHeight)
+	void Renderer::Init(HWND window, INT32 bufferWidth, INT32 bufferHeight)
 	{
 		// Initialise the api
-		RenderInstruction::InitD3D(windowHandle, bufferWidth, bufferHeight);
+		Context = GraphicsContext::Create(window,
+			bufferWidth, bufferHeight);
+
+		RenderInstruction::Init(Context.get(), bufferWidth, bufferHeight);
 
 		RenderStatus = RendererStatus::INITIALISING;
+
 
 		Renderer3D::PreInit();
 

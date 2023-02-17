@@ -10,6 +10,8 @@
 
 #include "VoxelWorldConstantExpressions.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
+#include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
+
 
 namespace Engine
 {
@@ -28,7 +30,7 @@ namespace Engine
 	public:
 		VoxelWorld() = default;
 
-		bool Init(GraphicsContext* context, MemoryManager* memManager, ShaderArgs args);
+		bool Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args);
 
 		void Dispatch
 		(
@@ -43,7 +45,7 @@ namespace Engine
 		
 	private:
 
-		D3D12Context* Context = nullptr;
+		D3D12ComputeApi* ComputeContext = nullptr;
 		D3D12MemoryManager* MemManager = nullptr;
 
 

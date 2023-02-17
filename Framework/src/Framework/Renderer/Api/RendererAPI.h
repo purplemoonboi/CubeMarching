@@ -32,9 +32,7 @@ namespace Engine
 		
 	public:
 
-		virtual void Init() = 0;
-
-		virtual void InitD3D12(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight) = 0;
+		virtual void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) = 0;
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
@@ -71,6 +69,7 @@ namespace Engine
 		[[nodiscard]] virtual FrameBuffer* GetFrameBuffer() const = 0;
 
 		[[nodiscard]] virtual MemoryManager* GetMemoryManager() const = 0;
+
 
 	private:
 

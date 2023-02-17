@@ -3,6 +3,7 @@
 #include "Framework/Core/Window.h"
 #include "Framework/Core/Events/Event.h"
 
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Engine
 {
@@ -18,9 +19,6 @@ namespace Engine
 			INT32 height, 
 			const std::wstring& windowCaption = L"DX12 Engine"
 		);
-
-	//	Win32Window(const Win32Window&) = delete;
-	//	Win32Window& operator=(const Win32Window&) = delete;
 
 
 		// @brief Returns the maximised boolean

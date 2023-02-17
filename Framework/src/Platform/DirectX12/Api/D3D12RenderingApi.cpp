@@ -1,6 +1,5 @@
 #include "D3D12RenderingApi.h"
 
-
 #include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/Directx12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
@@ -21,49 +20,31 @@ namespace Engine
 
 	D3D12RenderingApi::~D3D12RenderingApi()
 	{
-		/*if(D3D12Context.get() != nullptr)
-		{
-			D3D12Context.reset();
-			D3D12Context = nullptr;
-		}
-
-		if(D3D12FrameBuffer.get() != nullptr)
-		{
-			D3D12FrameBuffer.reset();
-			D3D12FrameBuffer = nullptr;
-		}*/
 	}
 
-	void D3D12RenderingApi::Init()
+	void D3D12RenderingApi::Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
 	{
-		D3D12Context = nullptr;
-		D3D12FrameBuffer = nullptr;
-	}
+		Context = dynamic_cast<D3D12Context*>(context);
 
-	void D3D12RenderingApi::InitD3D12(HWND windowHandle, INT32 viewportWidth, INT32 viewportHeight)
-	{
-		/** builds our cbv descriptor etc */
-		D3D12Context = std::make_unique<class D3D12Context>(windowHandle, viewportWidth, viewportHeight);
 
 		D3D12MemoryManager = std::make_unique<class D3D12MemoryManager>();
-		D3D12MemoryManager->InitialiseSrvUavHeap(D3D12Context.get(), 32);
+		D3D12MemoryManager->InitialiseSrvUavHeap(Context, 32);
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
 		fbs.Height = viewportHeight;
 
-		D3D12FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
-		D3D12FrameBuffer->Init(D3D12Context.get());
-		D3D12FrameBuffer->ResizeFrameBuffer(D3D12Context.get());
+		FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
+		FrameBuffer->Init(Context);
+		FrameBuffer->RebuildFrameBuffer(fbs.Width, fbs.Height);
 	}
 
 	void D3D12RenderingApi::SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 	{
-		if(D3D12Context != nullptr && D3D12FrameBuffer != nullptr)
+		if(Context != nullptr && FrameBuffer != nullptr)
 		{
 			CORE_TRACE("Buffer resize");
-			D3D12FrameBuffer->SetViewportDimensions(width, height);
-			D3D12FrameBuffer->ResizeFrameBuffer(D3D12Context.get());
+			FrameBuffer->RebuildFrameBuffer(width, height);
 		}
 	}
 
@@ -71,9 +52,9 @@ namespace Engine
 	{
 		// Reset the command allocator
 		// Reset the command list
-		THROW_ON_FAILURE(D3D12Context->GraphicsCmdList->Reset
+		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset
 		(
-			D3D12Context->CmdListAlloc.Get(),
+			Context->CmdListAlloc.Get(),
 			nullptr
 		));
 	}
@@ -82,11 +63,11 @@ namespace Engine
 	void D3D12RenderingApi::ExecCommandList()
 	{
 		// Execute the initialization commands.
-		HRESULT closureResult = D3D12Context->GraphicsCmdList->Close();
+		HRESULT closureResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closureResult);
-		ID3D12CommandList* cmdsLists[] = { D3D12Context->GraphicsCmdList.Get() };
-		D3D12Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-		D3D12Context->FlushCommandQueue();
+		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		Context->FlushCommandQueue();
 	}
 
 	void D3D12RenderingApi::UpdateFrameResource(FrameResource* const frameResource)
@@ -95,11 +76,11 @@ namespace Engine
 		// Has the GPU finished processing the commands of the current frame resource?
 		// If not, wait until the GPU has completed commands up to this fence point.
 		const UINT64 a = CurrentFrameResource->Fence;
-		const UINT64 b = D3D12Context->Fence->GetCompletedValue();
+		const UINT64 b = Context->Fence->GetCompletedValue();
 		if (a != 0 && b < a)
 		{
 			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			THROW_ON_FAILURE(D3D12Context->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle));
+			THROW_ON_FAILURE(Context->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle));
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
@@ -107,9 +88,9 @@ namespace Engine
 
 	void D3D12RenderingApi::PreRender()
 	{
-		CORE_ASSERT(D3D12Context->Device, "Device lost");
-		CORE_ASSERT(D3D12Context->GraphicsCmdList, "Graphics CmdL lost");
-		CORE_ASSERT(D3D12Context->CommandQueue, "Command queue lost");
+		CORE_ASSERT(Context->Device, "Device lost");
+		CORE_ASSERT(Context->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(Context->CommandQueue, "Command queue lost");
 		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
 
 #ifdef ENGINE_IMGUI_SUPPORT
@@ -117,18 +98,18 @@ namespace Engine
 #endif
 		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
 		THROW_ON_FAILURE(cmdResetResult);
-		const HRESULT cmdListResult = D3D12Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
+		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
 
-		D3D12Context->GraphicsCmdList->ClearRenderTargetView
+		Context->GraphicsCmdList->ClearRenderTargetView
 		(
-			D3D12FrameBuffer->GetCurrentBackBufferViewCpu(),
+			FrameBuffer->GetCurrentBackBufferViewCpu(),
 			DirectX::Colors::Aquamarine,
 			0,
 			nullptr
 		);
 
-		D3D12Context->GraphicsCmdList->ClearDepthStencilView(D3D12FrameBuffer->GetDepthStencilViewCpu(),
+		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr
 		);
 
@@ -143,24 +124,24 @@ namespace Engine
 	{
 
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		D3D12Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
-		D3D12Context->GraphicsCmdList->RSSetViewports(1, &D3D12FrameBuffer->GetViewport());
-		D3D12Context->GraphicsCmdList->RSSetScissorRects(1, &D3D12FrameBuffer->GetScissorsRect());
+		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
+		Context->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
+		Context->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
 
 		// Indicate there will be a transition made to the resource.
-		D3D12Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				D3D12FrameBuffer->CurrentBackBuffer(),
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+				FrameBuffer->CurrentBackBuffer(),
 				D3D12_RESOURCE_STATE_PRESENT,
 				D3D12_RESOURCE_STATE_RENDER_TARGET
 			)
 		);
 
-		D3D12Context->GraphicsCmdList->OMSetRenderTargets(1, &D3D12FrameBuffer->GetCurrentBackBufferViewCpu(),
+		Context->GraphicsCmdList->OMSetRenderTargets(1, &FrameBuffer->GetCurrentBackBufferViewCpu(),
 			true,
-			&D3D12FrameBuffer->GetDepthStencilViewCpu()
+			&FrameBuffer->GetDepthStencilViewCpu()
 		);
-		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12Context->CbvHeap.Get() };
-		D3D12Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		ID3D12DescriptorHeap* descriptorHeaps[] = { Context->CbvHeap.Get() };
+		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	}
 
@@ -173,9 +154,9 @@ namespace Engine
 	)
 	{
 		/* Bind the shader root signature */
-		D3D12Context->GraphicsCmdList->SetGraphicsRootSignature(D3D12Context->RootSignature.Get());
+		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
-		D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
+		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
 
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -184,9 +165,9 @@ namespace Engine
 			const auto d3d12VertexBuffer  = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
 			const auto d3d12IndexBuffer   = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
-			D3D12Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
-			D3D12Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
-			D3D12Context->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
+			Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
+			Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
+			Context->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
 			const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 			const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
@@ -197,10 +178,10 @@ namespace Engine
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
 			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetBufferIndex() * matConstBufferByteSize;
 
-			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
-			D3D12Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
+			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			D3D12Context->GraphicsCmdList->DrawIndexedInstanced
+			Context->GraphicsCmdList->DrawIndexedInstanced
 			(
 				renderItem->Geometry->IndexBuffer->GetCount(),
 				1,
@@ -217,45 +198,45 @@ namespace Engine
 	void D3D12RenderingApi::Flush()
 	{
 #ifdef ENGINE_IMGUI_SUPPORT
-		D3D12Context->GraphicsCmdList->SetDescriptorHeaps(1, ImGuiImplD3D12::ImGuiHeap.GetAddressOf());
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), D3D12Context->GraphicsCmdList.Get());
+		Context->GraphicsCmdList->SetDescriptorHeaps(1, ImGuiImplD3D12::ImGuiHeap.GetAddressOf());
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), Context->GraphicsCmdList.Get());
 #endif
 
 		// Now instruct we have made the changes to the buffer
-		D3D12Context->GraphicsCmdList->ResourceBarrier
+		Context->GraphicsCmdList->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
 			(
-				D3D12FrameBuffer->CurrentBackBuffer(),
+				FrameBuffer->CurrentBackBuffer(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
 				D3D12_RESOURCE_STATE_PRESENT
 			)
 		);
 
 
-		THROW_ON_FAILURE(D3D12Context->GraphicsCmdList->Close());
-		ID3D12CommandList* cmdsLists[] = { D3D12Context->GraphicsCmdList.Get() };
-		D3D12Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
+		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 #ifdef ENGINE_IMGUI_SUPPORT
 		ImGuiIO& io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault(nullptr, (void*)D3D12Context->GraphicsCmdList.Get());
+			ImGui::RenderPlatformWindowsDefault(nullptr, (void*)Context->GraphicsCmdList.Get());
 		}
 #endif
 	
-		THROW_ON_FAILURE(D3D12Context->SwapChain->Present(0, 0));
-		D3D12FrameBuffer->SetBackBufferIndex((D3D12FrameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
-		CurrentFrameResource->Fence = ++D3D12Context->GPU_TO_CPU_SYNC_COUNT;
+		THROW_ON_FAILURE(Context->SwapChain->Present(0, 0));
+		FrameBuffer->SetBackBufferIndex((FrameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+		CurrentFrameResource->Fence = ++Context->GPU_TO_CPU_SYNC_COUNT;
 		/**
 		 * Add an instruction to the command queue to set a new fence point. 
 		 * Because we are on the GPU timeline, the new fence point won't be 
 		 * set until the GPU finishes processing all the commands prior to this Signal().
 		 */
-		D3D12Context->CommandQueue->Signal(D3D12Context->Fence.Get(), D3D12Context->GPU_TO_CPU_SYNC_COUNT);
+		Context->CommandQueue->Signal(Context->Fence.Get(), Context->GPU_TO_CPU_SYNC_COUNT);
 	}
 
 }
