@@ -18,10 +18,11 @@ namespace Engine
 
 		void ExecuteComputeCommandList() override;
 
+		void FlushComputeQueue() override;
+
 		ComPtr<ID3D12GraphicsCommandList> CommandList;
 		D3D12Context* Context = nullptr;
 
-	private:
 
 		ComPtr<ID3D12CommandAllocator> CommandAllocator;
 		ComPtr<ID3D12CommandQueue> Queue;

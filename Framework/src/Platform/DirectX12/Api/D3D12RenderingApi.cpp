@@ -16,7 +16,7 @@
 namespace Engine
 {
 
-//#define ENGINE_IMGUI_SUPPORT 1
+#define ENGINE_IMGUI_SUPPORT 1
 
 	D3D12RenderingApi::~D3D12RenderingApi()
 	{
@@ -91,10 +91,6 @@ namespace Engine
 		CORE_ASSERT(Context->GraphicsCmdList, "Graphics CmdL lost");
 		CORE_ASSERT(Context->CommandQueue, "Command queue lost");
 		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
-
-#ifdef ENGINE_IMGUI_SUPPORT
-		ImGui::Render();
-#endif
 
 		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
 		THROW_ON_FAILURE(cmdResetResult);
@@ -181,28 +177,33 @@ namespace Engine
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			Context->GraphicsCmdList->DrawIndexedInstanced
-			(
-				renderItem->Geometry->IndexBuffer->GetCount(),
-				1,
-				renderItem->StartIndexLocation, 
-				renderItem->BaseVertexLocation,
-				0
-			);
+			if(renderItem->Geometry->GetName() == "Terrain")
+			{
+				Context->GraphicsCmdList->DrawInstanced
+				(
+					renderItem->Geometry->VertexBuffer->GetCount(),
+					1,
+					renderItem->StartIndexLocation,
+					renderItem->BaseVertexLocation
+				);
+			}
+			else
+			{
+				Context->GraphicsCmdList->DrawIndexedInstanced
+				(
+					renderItem->Geometry->IndexBuffer->GetCount(),
+					1,
+					renderItem->StartIndexLocation,
+					renderItem->BaseVertexLocation,
+					0
+				);
+			}
 
-			
 		}
-
 	}
 
 	void D3D12RenderingApi::Flush()
 	{
-#ifdef ENGINE_IMGUI_SUPPORT
-		Context->GraphicsCmdList->SetDescriptorHeaps(1, ImGuiImplD3D12::ImGuiHeap.GetAddressOf());
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), Context->GraphicsCmdList.Get());
-#endif
-
-		// Now instruct we have made the changes to the buffer
 		Context->GraphicsCmdList->ResourceBarrier
 		(
 			1,
@@ -214,29 +215,25 @@ namespace Engine
 			)
 		);
 
-
-		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
+		const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		THROW_ON_FAILURE(closeResult);
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-#ifdef ENGINE_IMGUI_SUPPORT
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault(nullptr, (void*)Context->GraphicsCmdList.Get());
-		}
-#endif
-	
-		THROW_ON_FAILURE(Context->SwapChain->Present(0, 0));
+#ifndef ENGINE_IMGUI_SUPPORT
+		const HRESULT presentResult = Context->SwapChain->Present(0, 0);
+		THROW_ON_FAILURE(presentResult);
 		FrameBuffer->SetBackBufferIndex((FrameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+#endif
 		CurrentFrameResource->Fence = ++Context->GPU_TO_CPU_SYNC_COUNT;
+
 		/**
 		 * Add an instruction to the command queue to set a new fence point. 
 		 * Because we are on the GPU timeline, the new fence point won't be 
 		 * set until the GPU finishes processing all the commands prior to this Signal().
 		 */
-		Context->CommandQueue->Signal(Context->Fence.Get(), Context->GPU_TO_CPU_SYNC_COUNT);
+		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), Context->GPU_TO_CPU_SYNC_COUNT);
+		THROW_ON_FAILURE(signalResult);
 	}
 
 }

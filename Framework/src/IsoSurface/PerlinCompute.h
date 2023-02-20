@@ -42,6 +42,8 @@ namespace Engine
 
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;
 		ScopePointer<PipelineStateObject> Pso;
+		//ComPtr<ID3D12PipelineState> Pso;
+
 
 		ScopePointer<Shader> PerlinShader;
 		ScopePointer<Texture> ScalarTexture;

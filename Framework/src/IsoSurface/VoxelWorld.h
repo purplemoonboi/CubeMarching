@@ -34,7 +34,8 @@ namespace Engine
 		(
 			VoxelWorldSettings const& worldSettings,
 			DirectX::XMFLOAT3 chunkID, 
-			Texture* texture
+			Texture* texture,
+			INT32 X, INT32 Y, INT32 Z
 		);
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const { return RawTriBuffer; }
@@ -47,7 +48,7 @@ namespace Engine
 		D3D12MemoryManager* MemManager = nullptr;
 
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;
-		ComPtr<ID3D12PipelineState> ComputeState;
+		ScopePointer<PipelineStateObject> ComputeState;
 
 		ScopePointer<Shader> ComputeShader;
 

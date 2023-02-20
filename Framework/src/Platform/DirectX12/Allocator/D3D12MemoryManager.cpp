@@ -27,7 +27,7 @@ namespace Engine
 			 * create our SRV heap
 			 */
 			D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-			srvHeapDesc.NumDescriptors = size;
+			srvHeapDesc.NumDescriptors = size + 1U;// +1 for ImGui
 			srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 			srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 			const HRESULT heapResult = context->Device->CreateDescriptorHeap(&srvHeapDesc,
@@ -42,6 +42,11 @@ namespace Engine
 			ResourceHandles.CpuCurrentHandle = SrvUavHeap->GetCPUDescriptorHandleForHeapStart();
 			ResourceHandles.GpuCurrentHandle = SrvUavHeap->GetGPUDescriptorHandleForHeapStart();
 
+			ImGuiHandleOffset = ((size + 1U) - 1U);
+			MaxHandleOffset = ImGuiHandleOffset;
+			ImGuiHandles.CpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(), ImGuiHandleOffset, SrvUavDescriptorSize);
+			ImGuiHandles.GpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), ImGuiHandleOffset, SrvUavDescriptorSize);
+
 			IsInitialised = true;
 			allocResult = heapResult;
 		}
@@ -55,9 +60,19 @@ namespace Engine
 		const auto offset = HandleOffset;
 		HandleOffset += off;
 
+		if(offset == ImGuiHandleOffset)
+		{
+			return
+			{
+				CD3DX12_GPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), 0, SrvUavDescriptorSize),
+				CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),  0, SrvUavDescriptorSize),
+				false
+			};
+		}
+
 		return {
 			 CD3DX12_GPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetGPUDescriptorHandleForHeapStart(), offset, SrvUavDescriptorSize),
-			CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),  offset, SrvUavDescriptorSize)
+			 CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),  offset, SrvUavDescriptorSize)
 		};
 	}
 }

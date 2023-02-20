@@ -196,6 +196,9 @@ cbuffer cbSettings : register(b0)
     float Gain;
     float Loss;
     float Ground;
+    float BoundingMaxX;
+    float BoundingMaxY;
+    float BoundingMaxZ;
 };
 
 RWTexture3D<float> Noise3D : register(u0);
@@ -204,26 +207,25 @@ RWTexture3D<float> Noise3D : register(u0);
 void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
 {
     const float3 thisId = (float3) threadId;
+    
+    float dist = distance(float3(32, 32, 32), thisId);
 
-    float noise = 0.0f;
-
-    if (threadId.y < 46)
+    float noise = 1;
+    if(dist > 30)
     {
-        float freq = 0.01f;
-        float ampl = 2.0f;
-        float3 seed = threadId;
-        for (int i = 0; i < 4; i++)
-        {
-            noise += snoise(thisId * 0.1) * ampl;
-            ampl *= 0.5f;
-            freq *= 2.0f;
-        }
-    }
-    else
-    {
-        noise = 1.0f;
+        noise = 0;
     }
     
-        
+    
+    //float freq = 0.01f;
+    //float ampl = 2.0f;
+    //float3 seed = threadId;
+    //for (int i = 0; i < 4; i++)
+    //{
+    //    noise += snoise(thisId * 0.1) * ampl;
+    //    ampl *= 0.5f;
+    //    freq *= 2.0f;
+    //}
+
     Noise3D[threadId] = noise;
 }

@@ -48,13 +48,9 @@ namespace Engine
 		);
 
 
-		// @brief We don't want to copy a PSO, hence inform compiler not to generate a copy constructor
 		D3D12PipelineStateObject(const D3D12PipelineStateObject&) = delete;
-		// @brief Again, remove the copy assignment operator as we don't want any copies being generated.
 		auto operator=(const D3D12PipelineStateObject&) noexcept -> D3D12PipelineStateObject& = delete;
-		// @brief We don't want to move a PSO, it should be an lvalue.
 		D3D12PipelineStateObject(D3D12PipelineStateObject&&) = delete;
-		// @brief Similarly, inform the compiler to remove to move assignment operator
 		auto operator=(const D3D12PipelineStateObject&&) noexcept -> D3D12PipelineStateObject&& = delete;
 
 

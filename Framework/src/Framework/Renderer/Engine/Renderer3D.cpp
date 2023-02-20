@@ -173,7 +173,7 @@ namespace Engine
 			RenderData.MaterialLibrary.Get("Green"),
 			"BoxArgs",
 			1,
-			Transform(0, 0, 0)
+			Transform(-5, 5, 5, 0, 45, 0, 10, 10, 10)
 		);
 
 		RenderData.OpaqueRenderItems.push_back(boxItem.get());
@@ -270,11 +270,11 @@ namespace Engine
 				RenderData.Geometries[meshTag].get(),
 				RenderData.MaterialLibrary.Get("Default"),
 				meshTag,
-				1,
+				2,
 				transform
 			);
 
-			customGeometry->IndexCount = meshGeometry->IndexBuffer->GetCount();
+			customGeometry->IndexCount = RenderData.Geometries["Terrain"]->IndexBuffer->GetCount();
 			customGeometry->BaseVertexLocation = RenderData.BaseVertexLocation;
 			RenderData.BaseVertexLocation += customGeometry->Geometry->VertexBuffer->GetCount();
 

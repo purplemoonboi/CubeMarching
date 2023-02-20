@@ -5,6 +5,7 @@
 
 namespace Engine
 {
+	class D3D12MemoryManager;
 	using Microsoft::WRL::ComPtr;
 
 	/** forward declarations */
@@ -23,12 +24,10 @@ namespace Engine
 			const UINT32 numOfFramesInFlight
 		);
 
-		static ID3D12DescriptorHeap* GetImGuiDescriptorHeap() { return ImGuiHeap.Get(); }
 
 		static void BeginRenderImpl();
 
 		static void EndRenderImpl();
 
-		static ComPtr<ID3D12DescriptorHeap> ImGuiHeap;
 	};
 }

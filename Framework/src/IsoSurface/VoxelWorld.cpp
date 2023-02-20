@@ -7,6 +7,8 @@
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 #include <../vendor/Microsoft/DDSTextureLoader.h>
 
+#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
+#include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 
 
 namespace Engine
@@ -31,13 +33,15 @@ namespace Engine
 		return true;
 	}
 
-	void VoxelWorld::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture)
+	void VoxelWorld::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture, INT32 X, INT32 Y, INT32 Z)
 	{
-		ComputeContext->ResetComputeCommandList(nullptr);
+		ComputeContext->ResetComputeCommandList(ComputeState.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-		ComputeContext->CommandList->SetPipelineState(ComputeState.Get());
+
+		auto const d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(ComputeState.get());
+		ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
 		//Bind compute shader buffers
 		ComputeContext->CommandList->SetComputeRootSignature(ComputeRootSignature.Get());
@@ -50,11 +54,14 @@ namespace Engine
 		const float coord[3] = {worldSettings.ChunkCoord.x, worldSettings.ChunkCoord.y, worldSettings.ChunkCoord.z};
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, coord, 4);
 
-		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, dynamic_cast<D3D12Texture*>(texture)->GpuHandleSrv);
+		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
+
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, d3d12Texture->GpuHandleSrv);
 		ComputeContext->CommandList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
-		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
+
+		ComputeContext->CommandList->Dispatch(X, Y, Z);
 
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),
@@ -96,7 +103,7 @@ namespace Engine
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 			));
 
-		ComputeContext->ExecuteComputeCommandList();
+		ComputeContext->FlushComputeQueue();
 
 		INT32* count = nullptr;
 
@@ -118,9 +125,10 @@ namespace Engine
 		}
 		ReadBackBuffer->Unmap(0, nullptr);
 
-		if(!TerrainMeshGeometry)
+		if(!IsTerrainMeshGenerated)
 		{
 			CreateVertexBuffers();
+			IsTerrainMeshGenerated = true;
 		}
 	}
 
@@ -180,21 +188,7 @@ namespace Engine
 
 	void VoxelWorld::BuildPso()
 	{
-		auto const d3dCsShader = dynamic_cast<D3D12Shader*>(ComputeShader.get());
-		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
-		desc.pRootSignature = ComputeRootSignature.Get();
-		desc.CS =
-		{
-			reinterpret_cast<BYTE*>(d3dCsShader->GetShader()->GetBufferPointer()),
-			d3dCsShader->GetShader()->GetBufferSize()
-		};
-		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-		const HRESULT csPipelineState = ComputeContext->Context->Device->CreateComputePipelineState
-		(
-			&desc, 
-			IID_PPV_ARGS(&ComputeState)
-		);
-		THROW_ON_FAILURE(csPipelineState);
+		ComputeState = PipelineStateObject::Create(ComputeContext, ComputeShader.get(), ComputeRootSignature);
 	}
 
 	#include "Framework/Maths/Perlin.h"
@@ -313,6 +307,9 @@ namespace Engine
 
 	void VoxelWorld::CreateVertexBuffers()
 	{
+		const HRESULT allocResult = ComputeContext->Context->CmdListAlloc->Reset();
+		const HRESULT listResult = ComputeContext->Context->GraphicsCmdList->Reset(ComputeContext->Context->CmdListAlloc.Get(), nullptr);
+
 		std::vector<Vertex> vertices;
 		std::vector<UINT16> indices;
 		UINT16 index = 0;
@@ -344,6 +341,10 @@ namespace Engine
 		TerrainMeshGeometry->IndexBuffer = IndexBuffer::Create(ComputeContext->Context, indices.data(),
 			ibSizeInBytes, indices.size());
 
+		const HRESULT closeResult = ComputeContext->Context->GraphicsCmdList->Close();
+		THROW_ON_FAILURE(closeResult);
+		ComputeContext->Context->ExecuteGraphicsCommandList();
+		ComputeContext->Context->FlushCommandQueue();
 	}
 }
 

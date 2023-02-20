@@ -16,6 +16,6 @@ namespace Engine
 		virtual void ResetComputeCommandList(PipelineStateObject* state = nullptr) = 0;
 		virtual void ExecuteComputeCommandList() = 0;
 
-
+		virtual void FlushComputeQueue() = 0;
 	};
 }

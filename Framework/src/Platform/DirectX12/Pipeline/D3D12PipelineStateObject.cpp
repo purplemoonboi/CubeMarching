@@ -114,11 +114,10 @@ namespace Engine
 		};
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		const auto d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(Pso.Get());
 		const HRESULT csPipelineState = d3d12ComputeApi->Context->Device->CreateComputePipelineState
 		(
 			&desc,
-			IID_PPV_ARGS(&d3d12Pso->GetComPtr())
+			IID_PPV_ARGS(&Pso)
 		);
 		THROW_ON_FAILURE(csPipelineState);
 		

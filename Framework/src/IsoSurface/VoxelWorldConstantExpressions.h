@@ -26,8 +26,8 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 32;
-	constexpr UINT64 ChunkHeight = 128;
+	constexpr UINT64 ChunkWidth = 64;
+	constexpr UINT64 ChunkHeight = 64;
 	constexpr UINT64 NumberOfBufferElements = ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 VoxelWorldVertexBufferSize = NumberOfBufferElements * 5 * sizeof(Triangle);
 

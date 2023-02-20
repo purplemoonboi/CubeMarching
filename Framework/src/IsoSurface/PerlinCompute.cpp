@@ -27,30 +27,33 @@ namespace Engine
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-		ComputeContext->CommandList->SetPipelineState(dynamic_cast<D3D12PipelineStateObject*>(Pso.get())->GetPipelineState());
 
-		auto resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
+		auto const d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(Pso.get());
+		ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
+
 		ComputeContext->CommandList->SetComputeRootSignature(ComputeRootSignature.Get());
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Gain, 1);
 		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Loss, 2);
 		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Ground, 3);
+
+		auto const resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
 
 
 		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
-				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+				D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		ComputeContext->CommandList->Dispatch(X, Y, Z);
 
 		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
 
 
-		ComputeContext->ExecuteComputeCommandList();
+		ComputeContext->FlushComputeQueue();
 	}
 
 	void PerlinCompute::BuildComputeRootSignature()
@@ -82,8 +85,8 @@ namespace Engine
 		);
 
 		if (errorBlob != nullptr) { ::OutputDebugStringA((char*)errorBlob->GetBufferPointer()); }
-
 		THROW_ON_FAILURE(serialisedResult);
+
 		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
 		(
 			0,
@@ -99,7 +102,7 @@ namespace Engine
 	{
 
 		Pso = PipelineStateObject::Create(ComputeContext, PerlinShader.get(), ComputeRootSignature);
-
+		
 	}
 
 	void PerlinCompute::BuildResource()
@@ -110,7 +113,7 @@ namespace Engine
 				for (INT32 k = 0; k < ChunkWidth; ++k)
 					RawTexture.push_back(0);
 
-		ScalarTexture = std::make_unique<D3D12Texture>(
+		ScalarTexture = CreateScope<D3D12Texture>(
 			ChunkWidth, ChunkHeight, ChunkWidth,
 			TextureDimension::Three, TextureFormat::R_FLOAT_32
 			);

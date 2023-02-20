@@ -40,6 +40,8 @@ namespace Engine
         ComputeInstruction::Init(api->GetGraphicsContext());
         auto csApi = ComputeInstruction::GetComputeApi();
 
+        RenderInstruction::ResetGraphicsCommandList();
+
         ShaderArgs args =
         { L"assets\\shaders\\MarchingCube.hlsl" ,
             "GenerateChunk",
@@ -55,7 +57,7 @@ namespace Engine
         };
         PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
-
+        RenderInstruction::ExecGraphicsCommandList();
 
     }
 
@@ -109,7 +111,7 @@ namespace Engine
 
 
 		PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-    	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture());
+    	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
 
         Renderer3D::CreateCustomMesh(std::move(VoxelWorld->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
 
@@ -117,7 +119,6 @@ namespace Engine
 
     void EditorLayer::OnRender(const DeltaTime& timer)
     {
-
         World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed());
     }
 
@@ -182,7 +183,7 @@ namespace Engine
             if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
             {
                 ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+                ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
             }
 
            // style.WindowMinSize.x = minWindowSize;
@@ -252,7 +253,7 @@ namespace Engine
                 auto const* api = RenderInstruction::GetApiPtr();
                 auto const* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
 
-                //ImGui::Image((ImTextureID)frameBuffer->GetCurrentBackBufferViewGpu().ptr, ImVec2(ViewportSize.x, ViewportSize.y));
+                ImGui::Image((ImTextureID)frameBuffer->GetColourAttachmentRendererID(), ImVec2(ViewportSize.x, ViewportSize.y));
 
 
                 ImGui::End();

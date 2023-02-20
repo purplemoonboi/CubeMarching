@@ -14,7 +14,15 @@ namespace Engine
 		{
 			CD3DX12_GPU_DESCRIPTOR_HANDLE GpuCurrentHandle;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE CpuCurrentHandle;
+			bool IsValid = true;
 		};
+
+		struct ImGuiHandles
+		{
+			CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandle;
+			CD3DX12_CPU_DESCRIPTOR_HANDLE CpuHandle;
+		};
+
 	public:
 
 		D3D12MemoryManager() = default;
@@ -33,13 +41,20 @@ namespace Engine
 
 		[[nodiscard]] UINT64 GetCurrentHandleOffset() const { return HandleOffset; }
 
+		[[nodiscard]] const ImGuiHandles* GetImGuiHandles() const { return &ImGuiHandles; }
+
 	private:
 		bool IsInitialised = false;
 		ComPtr<ID3D12DescriptorHeap> SrvUavHeap = nullptr;
+
 		Handles ResourceHandles;
+		ImGuiHandles ImGuiHandles;
 
 		UINT SrvUavDescriptorSize;
 		UINT64 SizeAllocated;
 		UINT64 HandleOffset = 0;
+
+		UINT64 MaxHandleOffset = 0;
+		UINT64 ImGuiHandleOffset = 0;
 	};
 }

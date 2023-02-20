@@ -125,20 +125,18 @@ namespace Engine
 						}
 
 						//Render each layer
-						//ImGuiLayer::Begin();
 						for (Layer* layer : LayerStack)
 						{
-							//layer->OnImGuiRender();
 							layer->OnRender(AppTimer.DeltaTime());
 						}
 
-						//Render ImGui
-						/*ImGuiLayer::Begin();
+						ImGuiLayer::Begin();
 						for(Layer* overlay : LayerStack)
 						{
 							overlay->OnImGuiRender();
 						}
-						ImGuiLayer::End();*/
+						ImGuiLayer::End();
+
 					}
 				}
 			}
