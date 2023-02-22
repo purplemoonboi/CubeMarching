@@ -220,7 +220,7 @@ namespace Engine
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-#ifndef ENGINE_IMGUI_SUPPORT
+#ifdef ENGINE_IMGUI_SUPPORT
 		const HRESULT presentResult = Context->SwapChain->Present(0, 0);
 		THROW_ON_FAILURE(presentResult);
 		FrameBuffer->SetBackBufferIndex((FrameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);

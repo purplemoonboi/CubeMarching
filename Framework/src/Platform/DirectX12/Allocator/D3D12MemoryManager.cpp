@@ -75,5 +75,8 @@ namespace Engine
 			 CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvUavHeap->GetCPUDescriptorHandleForHeapStart(),  offset, SrvUavDescriptorSize)
 		};
 	}
+
+
+
 }
 

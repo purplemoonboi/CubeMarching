@@ -33,20 +33,23 @@ RWStructuredBuffer<Output> outputBuffer : register(u0);
 
 // compute shader for generating the surface using Histo-Pyramid Marching Cubes
 [numthreads(8, 8, 8)]
-void main(uint3 dispatchThreadId : SV_DispatchThreadID) {
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
     uint3 cubeIndex = dispatchThreadId;
     uint3 cubeCornerIndex = cubeIndex * 2;
     uint level = 0;
     uint sum = 0;
 
     // calculate the sum of the values in the Histo-Pyramid up to the current level
-    for (level = 0; level < LEVELS; level++) {
+    for (level = 0; level < LEVELS; level++)
+    {
         uint histIndex = level * WIDTH * HEIGHT * DEPTH + cubeCornerIndex.z * WIDTH * HEIGHT + cubeCornerIndex.y * WIDTH + cubeCornerIndex.x;
         sum += histoPyramid[histIndex];
     }
 
     // skip the cube if it is completely inside or outside the surface
-    if (sum == 0 || sum == 4096) {
+    if (sum == 0 || sum == 4096) 
+    {
         return;
     }
 
@@ -83,14 +86,17 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID) {
     uint numVertices = 0;
 
     // calculate the vertex positions and normals for each triangle in the current cube
-    for (uint i = 0; i < 5; i++) {
+    for (uint i = 0; i < 5; i++) 
+    {
         uint edgeIndex = cubeIndex.z * WIDTH * HEIGHT * 3 + cubeIndex.y * WIDTH * 3 + cubeIndex.x * 3 + i * 2;
         uint edgeTableIndex = sum * 256 + edgeIndex;
 
-        for (uint j = 0; j < 3; j++) {
+        for (uint j = 0; j < 3; j++) 
+        {
             uint edge = edgeTable[edgeTableIndex * 3 + j];
 
-            if (edge == 0) {
+            if (edge == 0) 
+            {
                 break;
             }
 

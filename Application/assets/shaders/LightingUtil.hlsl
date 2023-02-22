@@ -167,4 +167,51 @@ float4 ComputeLighting(Light gLights[MaxLights], Material mat,
     return float4(result, 0.0f);
 }
 
+//Texture3D<float4> g_LightVolume : register(t0);
+//Texture2D<float> g_ShadowMap : register(t1);
+//SamplerState g_Sampler : register(s0);
+
+//cbuffer VolumetricSettings : register(b3)
+//{
+//    float LightVolumeSize;
+//    float MaxSteps;
+//    float DensityScale;
+//}
+
+//float4 ComputeLightVolumeDensity(float3 position)
+//{
+//    // Compute the density of the light at the given position
+//    // This can be a function of the distance from the center of the light and the distance from occluding objects
+//    // Return a float4 representing the density and color of the light at the position
+//}
+
+//float ComputeShadowFactor(float3 position)
+//{
+//    // Compute the shadow factor at the given position using the shadow map
+//    // This can be done by sampling the shadow map and comparing the depth of the fragment to the depth in the shadow map
+//    // Return a value between 0 and 1 representing the amount of light that is not occluded by objects
+//}
+
+//float4 ComputeVolumetricLighting(float3 ray_origin, float3 ray_direction)
+//{
+//    float3 step_size = 1.0 / LightVolumeSize;
+
+//    float3 position = ray_origin;
+//    float4 accumulated_light = 0;
+
+//    for (int i = 0; i < MaxSteps; i++)
+//    {
+//        float4 density = g_LightVolume.Sample(g_Sampler, position);
+//        float shadow_factor = ComputeShadowFactor(position);
+
+//        float4 transmitted_light = exp(-density * step_size * DensityScale);
+//        float4 attenuated_light = density * (1 - transmitted_light);
+
+//        accumulated_light += shadow_factor * attenuated_light * transmitted_light;
+
+//        position += ray_direction * step_size;
+//    }
+
+//    return accumulated_light;
+//}
 

@@ -1,13 +1,12 @@
 #include "VoxelWorld.h"
+#include <../vendor/Microsoft/DDSTextureLoader.h>
 
 #include "Framework/Core/Log/Log.h"
+#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
-#include <../vendor/Microsoft/DDSTextureLoader.h>
-
-#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 
 
