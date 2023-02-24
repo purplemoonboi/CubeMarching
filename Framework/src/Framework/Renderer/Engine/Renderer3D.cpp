@@ -20,7 +20,7 @@
 namespace Engine
 {
 
-	Renderer3D::RenderingStats Renderer3D::ProfileStats;
+	//Renderer3D::RenderingStats Renderer3D::ProfileStats;
     GeometryGenerator Geo;
 
 	struct RendererData
@@ -58,7 +58,7 @@ namespace Engine
 
 		UINT64 BaseVertexLocation = 0;
 
-		Renderer3D::RenderingStats RendererStats;
+		//Renderer3D::RenderingStats RendererStats;
 
 	};
 
@@ -227,7 +227,7 @@ namespace Engine
 		 */
 		if(!RenderData.FrameResources.empty())
 		{
-			ProfileStats.DrawCalls = 1;
+			//ProfileStats.DrawCalls = 1;
 			RenderInstruction::Flush();
 			RenderInstruction::PostRender();
 		}

@@ -3,6 +3,8 @@
 #include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/Directx12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
+#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 #include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
@@ -30,6 +32,7 @@ namespace Engine
 		D3D12MemoryManager->InitialiseSrvUavHeap(Context, 32);
 
 		D3D12BufferUtils::Init(Context->Device.Get(), Context->GraphicsCmdList.Get());
+		D3D12Utils::Init(Context->Device.Get(), D3D12MemoryManager.get());
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;

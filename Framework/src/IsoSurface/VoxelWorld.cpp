@@ -9,6 +9,8 @@
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 
+#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
 namespace Engine
 {
@@ -196,18 +198,7 @@ namespace Engine
 	void VoxelWorld::CreateOutputBuffer()
 	{
 
-		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(Triangle));
-		const HRESULT vertexResult = ComputeContext->Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
-			//D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			nullptr,
-			IID_PPV_ARGS(&OutputBuffer)
-		);
-		THROW_ON_FAILURE(vertexResult);
+	
 
 		constexpr UINT64 sizeInBytes = sizeof(UINT32);
 
@@ -215,7 +206,6 @@ namespace Engine
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
-			//D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 			nullptr,
@@ -233,61 +223,14 @@ namespace Engine
 		uavDesc.Buffer.NumElements = NumberOfBufferElements;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
-		auto handle = MemManager->GetResourceHandle();
-		OutputVertexUavGpu = handle.GpuCurrentHandle;
-		/* create the view describing our output buffer. note to offset on the GPU address */
-		ComputeContext->Context->Device->CreateUnorderedAccessView(
-			OutputBuffer.Get(),
-			CounterResource.Get(),
-			&uavDesc,
-			handle.CpuCurrentHandle
-		);
-
-		
-
-		const HRESULT deviceRemovedReasonUav = ComputeContext->Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReasonUav);
+		OutputVertexUavGpu = D3D12Utils::CreateUnorderedAccessView(uavDesc, OutputBuffer.Get());
 	}
 
 	void VoxelWorld::CreateReadBackBuffer()
 	{
-		constexpr auto bufferWidth = (NumberOfBufferElements * sizeof(Triangle));
-
-		const HRESULT readBackResult = ComputeContext->Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&ReadBackBuffer)
-		);
-
-		THROW_ON_FAILURE(readBackResult);
-
-		const HRESULT countReadBackResult = ComputeContext->Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(4),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&CounterReadback)
-		);
-		THROW_ON_FAILURE(countReadBackResult);
-
-		const HRESULT uploadBuffer = ComputeContext->Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(4),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(CounterUpload.GetAddressOf())
-		);
-		THROW_ON_FAILURE(uploadBuffer);
-
-
+		ReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer<Triangle>(NumberOfBufferElements);
+		CounterReadback = D3D12BufferUtils::CreateReadBackBuffer<UINT32>(4);
+		D3D12BufferUtils::CreateUploadBuffer<Triangle>(CounterUpload, 4);
 	}
 
 	void VoxelWorld::CreateStructuredBuffer()
@@ -296,8 +239,6 @@ namespace Engine
 
 
 		TriangleBuffer = D3D12BufferUtils::CreateVertexBuffer(
-			ComputeContext->Context->Device.Get(),
-			ComputeContext->Context->GraphicsCmdList.Get(),
 			TriangleTable,
 			bufferWidth,
 			UploadTriBuffer

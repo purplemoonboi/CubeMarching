@@ -75,9 +75,9 @@ namespace Engine
 			UINT32 GetTotalIndexCount() { return 0; }
 		};
 
-		static const RenderingStats& GetProfileData() { return ProfileStats; }
+		//static const RenderingStats& GetProfileData() { return ProfileStats; }
 
-		static RenderingStats ProfileStats;
+		//static RenderingStats ProfileStats;
 
 
 	};

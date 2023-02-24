@@ -3,10 +3,22 @@
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
-#include "Platform/DirectX12/Buffers/D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 namespace Engine
 {
+
+	D3D12Texture::~D3D12Texture()
+	{
+		if (GpuResource != nullptr)
+		{
+			GpuResource->Release();
+			GpuResource = nullptr;
+			UploadBuffer->Release();
+			UploadBuffer = nullptr;
+		}
+	}
 
 	D3D12Texture::D3D12Texture
 	(
@@ -65,19 +77,36 @@ namespace Engine
 			);
 		}
 
-		CreateResourceViews(d3dContext->Device.Get(), dynamic_cast<D3D12MemoryManager*>(memManager));
-		
-	}
+		D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+		desc.Format = Format;
+		desc.ViewDimension = Dimension;
+		desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = Format;
+		uavDesc.ViewDimension = DimensionUav;
 
-	D3D12Texture::~D3D12Texture()
-	{
-		if (GpuResource != nullptr)
+
+		if (Dimension == D3D12_SRV_DIMENSION_TEXTURE2D)
 		{
-			GpuResource->Release();
-			GpuResource = nullptr;
-			UploadBuffer->Release();
-			UploadBuffer = nullptr;
+			desc.Texture2D.MipLevels = MipLevels;
+			desc.Texture2D.MostDetailedMip = 0;
+			uavDesc.Texture2D.MipSlice = 0;
+			uavDesc.Texture2D.PlaneSlice = 0;
 		}
+		else if (Dimension == D3D12_SRV_DIMENSION_TEXTURE3D)
+		{
+			if (MipLevels != -1)
+				MipLevels = -1;
+
+			desc.Texture3D.MipLevels = MipLevels;
+			desc.Texture3D.MostDetailedMip = 0;
+			uavDesc.Texture3D.MipSlice = 0;
+			uavDesc.Texture3D.FirstWSlice = 0;
+		}
+
+		GpuHandleSrv = D3D12Utils::CreateShaderResourceView(desc, GpuResource.Get());
+		GpuHandleUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
+		
 	}
 
 	void D3D12Texture::LoadFromFile(const std::wstring& fileName)
@@ -109,49 +138,5 @@ namespace Engine
 		return static_cast<TextureFormat>(Format);
 	}
 
-	void D3D12Texture::CreateResourceViews(ID3D12Device* device, D3D12MemoryManager* memManager)
-	{
-
-		/**
-		 * create a shader resource view.
-		 */
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = Format;
-		srvDesc.ViewDimension = Dimension;
-		srvDesc.Texture3D.MipLevels = 1;
-		srvDesc.Texture3D.MostDetailedMip = 0;
-
-		auto handle = memManager->GetResourceHandle();
-
-		device->CreateShaderResourceView(GpuResource.Get(), &srvDesc, handle.CpuCurrentHandle);
-		GpuHandleSrv = handle.GpuCurrentHandle;
-
-
-		/**
-		 * create an unordered access view into the same resource.
-		 */
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = Format;
-		const HRESULT deviceRemovedReasonSrv = device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReasonSrv);
-		uavDesc.ViewDimension = DimensionUav;
-		uavDesc.Texture3D.MipSlice = 0;
-		uavDesc.Texture3D.WSize = Depth;
-		uavDesc.Texture3D.FirstWSlice = 0;
-
-		/*
-		* offset again to the next descriptor table
-		*/
-		handle = memManager->GetResourceHandle();
-
-		device->CreateUnorderedAccessView(GpuResource.Get(), nullptr, &uavDesc, 
-			handle.CpuCurrentHandle);
-
-		GpuHandleUav = handle.GpuCurrentHandle;
-
-		const HRESULT deviceRemovedReasonUav = device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReasonUav);
-	}
 }
 

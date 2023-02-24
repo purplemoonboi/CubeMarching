@@ -21,7 +21,6 @@ namespace Engine
 	class D3D12MemoryManager;
 
 	class D3D12Texture;
-	class D3D12Context;
 
 	class VoxelWorld
 	{
@@ -43,7 +42,7 @@ namespace Engine
 		[[nodiscard]] ScopePointer<MeshGeometry>& GetTerrainMesh() { return TerrainMeshGeometry; }
 		
 	private:
-
+		ID3D12Device* Device;
 		D3D12ComputeApi* ComputeContext = nullptr;
 		D3D12MemoryManager* MemManager = nullptr;
 

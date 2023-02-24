@@ -4,8 +4,6 @@
 
 #include <string>
 
-constexpr SIZE_T MAX_FILE_NAME_MEM_ALLOC = 128;
-constexpr SIZE_T MAX_NAME_MEM_ALLOC = 64;
 
 namespace Engine
 {
@@ -59,9 +57,7 @@ namespace Engine
 		D3D12_UAV_DIMENSION DimensionUav;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandleUav;
 		INT32 UavIndex = -1;
-	private:
 
-		void CreateResourceViews(ID3D12Device* device, D3D12MemoryManager* memManager);
 
 
 	};

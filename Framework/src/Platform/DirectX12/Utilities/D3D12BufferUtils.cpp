@@ -14,6 +14,7 @@ namespace Engine
 		Device = device;
 		GraphicsCmdList = graphicsCmdList;
 	}
+	
 
 	// Upload buffer methods
 	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateVertexBuffer
@@ -322,6 +323,17 @@ namespace Engine
 		//			  The buffer can be released after the caller knows the copy has been made.
 		return defaultBuffer;
 	}
+
+		ComPtr<ID3D12Resource> D3D12BufferUtils::CreateCounterResource(UINT32 counter)
+		{
+
+			return ComPtr<ID3D12Resource>();
+		}
+
+		ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackBuffer()
+		{
+			return ComPtr<ID3D12Resource>();
+		}
 
 	UINT D3D12BufferUtils::CalculateConstantBufferByteSize(UINT byteSize)
 	{
