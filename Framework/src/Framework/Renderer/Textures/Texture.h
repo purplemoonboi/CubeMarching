@@ -2,6 +2,8 @@
 #include <intsafe.h>
 #include <string>
 
+#include "Framework/Core/core.h"
+
 
 namespace Engine
 {
@@ -29,26 +31,35 @@ namespace Engine
 
 	enum class TextureDimension
 	{
-		One = 0,
-		Two,
-		Three,
-		Cube
+		Unknown = 0,
+		Buffer = 1,
+		Tex1D = 2,
+		Tex1DArray = 3,
+		Tex2D = 4,
+		Tex2DArray = 5,
+		Tex2DMa = 6,
+		Tex2DMArray = 7,
+		Tex3D = 8,
+		TexCube = 9,
+		TexCubeArray = 10,
+		RaytracingAccelerationStructure = 11
 	};
 
 	class Texture
 	{
 	public:
-		Texture();
-		virtual ~Texture();
+		Texture() = default;
+		virtual ~Texture() = 0;
 
-		virtual void InitialiseResource
+		static ScopePointer<Texture> Create
 		(
 			const void* initData,
-			TextureDimension dimension = TextureDimension::Two,
-			GraphicsContext * context = nullptr,
-			MemoryManager* memManager = nullptr
-		) = 0;
-
+			UINT32 width,
+			UINT32 height,
+			UINT16 depth = 1,
+			TextureDimension dimension = TextureDimension::Tex2D,
+			TextureFormat format = TextureFormat::RGBA_UINT_8
+		);
 
 		virtual void LoadFromFile
 		(

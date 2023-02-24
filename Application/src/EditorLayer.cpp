@@ -59,6 +59,7 @@ namespace Engine
 
         RenderInstruction::ExecGraphicsCommandList();
 
+        ViewportTexture = Texture::Create(nullptr, TextureDimension::Tex2D);
     }
 
     void EditorLayer::OnDetach()

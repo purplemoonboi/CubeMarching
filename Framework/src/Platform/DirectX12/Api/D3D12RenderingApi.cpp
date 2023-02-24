@@ -29,6 +29,8 @@ namespace Engine
 		D3D12MemoryManager = std::make_unique<class D3D12MemoryManager>();
 		D3D12MemoryManager->InitialiseSrvUavHeap(Context, 32);
 
+		D3D12BufferUtils::Init(Context->Device.Get(), Context->GraphicsCmdList.Get());
+
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
 		fbs.Height = viewportHeight;

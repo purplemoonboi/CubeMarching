@@ -10,6 +10,12 @@ namespace Engine
 	{
 	public:
 
+		static void Init
+		(
+			ID3D12Device* device,
+			ID3D12GraphicsCommandList* graphicsCmdList
+		);
+
 		// @brief Creates a default upload buffer.
 		// @param[in] A pointer to the application's device.
 		// @param[in] A pointer to the graphics command list.
@@ -18,8 +24,6 @@ namespace Engine
 		// @param[in] A reference to the upload buffer.
 		static ComPtr<ID3D12Resource> CreateVertexBuffer
 		(
-			ID3D12Device* device,
-			ID3D12GraphicsCommandList* graphicsCmdList,
 			const void* initData,
 			UINT64 byteSize,
 			ComPtr<ID3D12Resource>& uploadBuffer
@@ -33,8 +37,6 @@ namespace Engine
 		// @param[in] A reference to the upload buffer.
 		static ComPtr<ID3D12Resource> CreateTexture3D
 		(
-			ID3D12Device* device,
-			ID3D12GraphicsCommandList* graphicsCmdList,
 			UINT32 width,
 			UINT32 height,
 			UINT16 depth,
@@ -51,8 +53,6 @@ namespace Engine
 		// @param[in] A reference to the upload buffer.
 		static ComPtr<ID3D12Resource> CreateTexture2D
 		(
-			ID3D12Device* device,
-			ID3D12GraphicsCommandList* graphicsCmdList,
 			UINT32 width,
 			UINT32 height,
 			const void* initData,
@@ -62,5 +62,7 @@ namespace Engine
 
 		static UINT CalculateConstantBufferByteSize(UINT byteSize);
 
+		static ID3D12Device* Device;
+		static ID3D12GraphicsCommandList* GraphicsCmdList;
 	};
 }

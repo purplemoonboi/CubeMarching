@@ -8,26 +8,65 @@
 namespace Engine
 {
 
-
 	D3D12Texture::D3D12Texture
 	(
-		const std::wstring& filePath
+		const void* data, 
+		UINT32 width, 
+		UINT32 height, 
+		UINT16 depthOrArrays, 
+		TextureDimension dimension,
+		TextureFormat textureFormat
 	)
-		:
-		GpuResource(nullptr),
-		UploadBuffer(nullptr)
-	{
-	}
-
-	D3D12Texture::D3D12Texture(UINT64 width, UINT32 height, UINT16 depthOrArrays, TextureDimension dimension, TextureFormat textureFormat)
 		:
 		Width(width),
 		Height(height),
 		Depth(depthOrArrays),
 		Format(static_cast<DXGI_FORMAT>(textureFormat)),
+		Dimension(static_cast<D3D12_SRV_DIMENSION>(dimension)),
+		DimensionUav(static_cast<D3D12_UAV_DIMENSION>(dimension)),
 		GpuResource(nullptr),
 		UploadBuffer(nullptr)
 	{
+		
+		if (GpuResource != nullptr)
+		{
+			GpuResource->Release();
+			GpuResource = nullptr;
+			UploadBuffer->Release();
+			UploadBuffer = nullptr;
+		}
+		;
+
+		if (dimension == TextureDimension::Tex2D)
+		{
+			Dimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			DimensionUav = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+			GpuResource = D3D12BufferUtils::CreateTexture2D(
+				Width,
+				Height,
+				data,
+				Format,
+				UploadBuffer
+			);
+		}
+		if (dimension == TextureDimension::Tex3D)
+		{
+			Dimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+			DimensionUav = D3D12_UAV_DIMENSION_TEXTURE3D;
+
+			GpuResource = D3D12BufferUtils::CreateTexture3D(
+				Width,
+				Height,
+				Depth,
+				data,
+				Format,
+				UploadBuffer
+			);
+		}
+
+		CreateResourceViews(d3dContext->Device.Get(), dynamic_cast<D3D12MemoryManager*>(memManager));
+		
 	}
 
 	D3D12Texture::~D3D12Texture()
@@ -38,61 +77,6 @@ namespace Engine
 			GpuResource = nullptr;
 			UploadBuffer->Release();
 			UploadBuffer = nullptr;
-		}
-	}
-
-	void D3D12Texture::InitialiseResource
-	(
-		const void* initData,
-		TextureDimension dimension,
-		GraphicsContext* context,
-		MemoryManager* memManager
-	)
-	{
-		auto const d3dContext = dynamic_cast<D3D12Context*>(context);
-		if (d3dContext != nullptr)
-		{
-			if (GpuResource != nullptr)
-			{
-				GpuResource->Release();
-				GpuResource = nullptr;
-				UploadBuffer->Release();
-				UploadBuffer = nullptr;
-			}
-;
-			RawData = static_cast<BYTE*>(const_cast<void*>(initData));
-
-			if(dimension == TextureDimension::Two)
-			{
-				Dimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-				DimensionUav = D3D12_UAV_DIMENSION_TEXTURE2D;
-
-				GpuResource = D3D12BufferUtils::CreateTexture2D(d3dContext->Device.Get(),
-					d3dContext->GraphicsCmdList.Get(),
-					Width,
-					Height,
-					initData,
-					Format,
-					UploadBuffer
-				);
-			}
-			if(dimension == TextureDimension::Three)
-			{
-				Dimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-				DimensionUav = D3D12_UAV_DIMENSION_TEXTURE3D;
-				
-				GpuResource = D3D12BufferUtils::CreateTexture3D(d3dContext->Device.Get(),
-					d3dContext->GraphicsCmdList.Get(),
-					Width,
-					Height,
-					Depth,
-					initData,
-					Format,
-					UploadBuffer
-				);
-			}
-
-			CreateResourceViews(d3dContext->Device.Get(), dynamic_cast<D3D12MemoryManager*>(memManager));
 		}
 	}
 
@@ -117,13 +101,12 @@ namespace Engine
 
 	TextureDimension D3D12Texture::GetTextureDimension()
 	{
-		return (TextureDimension)Dimension;
+		return static_cast<TextureDimension>(Dimension);
 	}
 
 	TextureFormat D3D12Texture::GetTextureFormat()
 	{
-		//TODO: Implement a look up table to change between DX12 and Engine formats
-		return TextureFormat::R_FLOAT_32;
+		return static_cast<TextureFormat>(Format);
 	}
 
 	void D3D12Texture::CreateResourceViews(ID3D12Device* device, D3D12MemoryManager* memManager)

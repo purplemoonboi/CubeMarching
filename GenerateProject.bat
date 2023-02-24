@@ -1,2 +1,2 @@
-call vendor\bin\premake5\premake5.exe vs2019
+call Framework\vendor\premake5\premake5.exe vs2019
 PAUSE

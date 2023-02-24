@@ -118,7 +118,7 @@ namespace Engine
 			TextureDimension::Three, TextureFormat::R_FLOAT_32
 			);
 
-		ScalarTexture->InitialiseResource
+		ScalarTexture->Create
 		(
 			RawTexture.data(),
 			TextureDimension::Three,

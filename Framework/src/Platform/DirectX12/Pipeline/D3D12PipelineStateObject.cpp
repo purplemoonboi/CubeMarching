@@ -73,6 +73,7 @@ namespace Engine
 			reinterpret_cast<BYTE*>(PixelShader->GetShader()->GetBufferPointer()),
 			psSize
 		};
+		
 
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.RasterizerState.FillMode = (fillMode == FillMode::Opaque) ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;

@@ -18,16 +18,17 @@ namespace Engine
 	{
 	public:
 
-		D3D12Texture(const std::wstring& filePath);
-		D3D12Texture(UINT64 width, UINT32 height, UINT16 depthOrArrays, TextureDimension dimension, TextureFormat textureFormat);
+		D3D12Texture
+		(
+			const void* initData,
+			UINT32 width,
+			UINT32 height,
+			UINT16 depth,
+			TextureDimension dimension,
+			TextureFormat format
+		);
 		~D3D12Texture() override;
 
-		void InitialiseResource(
-			const void* initData,
-			TextureDimension dimension = TextureDimension::Two,
-			GraphicsContext* context = nullptr,
-			MemoryManager* memManager = nullptr
-		) override;
 
 		void LoadFromFile(const std::wstring& fileName) override;
 

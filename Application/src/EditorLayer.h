@@ -45,6 +45,8 @@ namespace Engine
 		ScopePointer<VoxelWorld> VoxelWorld;
 		ScopePointer<PerlinCompute> PerlinCompute;
 
+		ScopePointer<Texture> ViewportTexture;
+
 	private:
 		void Remap(float& x, float clx, float cmx, float nlx, float nmx);
 
