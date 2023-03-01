@@ -131,10 +131,10 @@ namespace Engine
 						}
 
 						//ImGuiLayer::Begin();
-						for(Layer* overlay : LayerStack)
-						{
-						//	overlay->OnImGuiRender();
-						}
+						//for(Layer* overlay : LayerStack)
+						//{
+						////	overlay->OnImGuiRender();
+						//}
 						//ImGuiLayer::End();
 
 					}

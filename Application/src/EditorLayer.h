@@ -12,6 +12,8 @@
 namespace Engine
 {
 
+	class Texture;
+
 	class EditorLayer : public Layer
 	{
 	public:

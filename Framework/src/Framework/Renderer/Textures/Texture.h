@@ -1,7 +1,7 @@
 #pragma once
 #include <intsafe.h>
 #include <string>
-
+#include <unordered_map>
 #include "Framework/Core/core.h"
 
 
@@ -45,20 +45,32 @@ namespace Engine
 		RaytracingAccelerationStructure = 11
 	};
 
+	struct TextureTypeSize
+	{
+		static std::unordered_map<TextureFormat, UINT64> TypeSize;
+	};
+
 	class Texture
 	{
 	public:
 		Texture() = default;
-		virtual ~Texture() = 0;
+		virtual ~Texture() = default;
 
 		static ScopePointer<Texture> Create
 		(
 			const void* initData,
 			UINT32 width,
 			UINT32 height,
-			UINT16 depth = 1,
-			TextureDimension dimension = TextureDimension::Tex2D,
-			TextureFormat format = TextureFormat::RGBA_UINT_8
+			UINT16 depth,
+			TextureFormat format 
+		);
+
+		static ScopePointer<Texture> Create
+		(
+			const void* initData,
+			UINT32 width,
+			UINT32 height,
+			TextureFormat format
 		);
 
 		virtual void LoadFromFile

@@ -25,10 +25,8 @@ namespace Engine
 		CopyMemory(SystemBuffer->GetBufferPointer(), 0, size);
 		
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateVertexBuffer
+		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
-			dx12GraphicsContext->Device.Get(),
-			dx12GraphicsContext->GraphicsCmdList.Get(),
 			nullptr,
 			size,
 			Gpu_UploadBuffer
@@ -50,10 +48,8 @@ namespace Engine
 		CopyMemory(SystemBuffer->GetBufferPointer(), vertices, size);
 
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateVertexBuffer
+		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
-			dx12GraphicsContext->Device.Get(),
-			dx12GraphicsContext->GraphicsCmdList.Get(),
 			vertices,
 			size,
 			Gpu_UploadBuffer
@@ -105,10 +101,8 @@ namespace Engine
 		}
 
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateVertexBuffer
+		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
-			dx12GraphicsContext->Device.Get(),
-			dx12GraphicsContext->GraphicsCmdList.Get(),
 			data,
 			size,
 			Gpu_UploadBuffer
@@ -154,10 +148,8 @@ namespace Engine
 		CopyMemory(SystemBuffer->GetBufferPointer(), indices, size);
 
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateVertexBuffer
+		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
-			dx12GraphicsContext->Device.Get(),
-			dx12GraphicsContext->GraphicsCmdList.Get(),
 			indices, 
 			IndexBufferByteSize, 
 			Gpu_UploadBuffer

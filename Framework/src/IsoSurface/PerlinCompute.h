@@ -37,8 +37,8 @@ namespace Engine
 		[[nodiscard]] const std::vector<float>& GetRawTexture() const { return RawTexture; }
 
 	private:
-		D3D12ComputeApi* ComputeContext;
-		D3D12MemoryManager* MemManager;
+		D3D12ComputeApi* ComputeContext = nullptr;
+		D3D12MemoryManager* MemManager = nullptr;
 
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;
 		ScopePointer<PipelineStateObject> Pso;
@@ -57,7 +57,6 @@ namespace Engine
 
 		void BuildResource();
 
-		void CreateReadBackBuffer();
 	};
 
 }

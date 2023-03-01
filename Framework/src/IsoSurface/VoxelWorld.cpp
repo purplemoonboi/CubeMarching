@@ -26,10 +26,9 @@ namespace Engine
 
 		BuildComputeRootSignature();
 		BuildPso();
+		CreateCounterBuffer();
 		CreateOutputBuffer();
-		CreateReadBackBuffer();
-
-		CreateStructuredBuffer();
+		CreateTriangulationTableBuffer();
 
 		return true;
 	}
@@ -58,7 +57,7 @@ namespace Engine
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, d3d12Texture->GpuHandleSrv);
-		ComputeContext->CommandList->SetComputeRootShaderResourceView(2, TriangleBuffer->GetGPUVirtualAddress());
+		ComputeContext->CommandList->SetComputeRootShaderResourceView(2, TriangulationTable->GetGPUVirtualAddress());
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
 
@@ -198,20 +197,8 @@ namespace Engine
 	void VoxelWorld::CreateOutputBuffer()
 	{
 
-	
-
-		constexpr UINT64 sizeInBytes = sizeof(UINT32);
-
-		const HRESULT counterResult = ComputeContext->Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS,
-			&CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			nullptr,
-			IID_PPV_ARGS(&CounterResource)
-		);
-		THROW_ON_FAILURE(counterResult);
+		OutputBuffer	= D3D12BufferUtils::CreateStructuredBuffer(sizeof(Triangle) * NumberOfBufferElements, true, true);
+		ReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(sizeof(Triangle) * NumberOfBufferElements);
 
 		/** create views for the vertex buffer */
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -223,32 +210,55 @@ namespace Engine
 		uavDesc.Buffer.NumElements = NumberOfBufferElements;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
-		OutputVertexUavGpu = D3D12Utils::CreateUnorderedAccessView(uavDesc, OutputBuffer.Get());
+		OutputVertexUavGpu = D3D12Utils::CreateUnorderedAccessView(uavDesc, OutputBuffer.Get(), CounterResource.Get());
 	}
 
-	void VoxelWorld::CreateReadBackBuffer()
+	void VoxelWorld::CreateCounterBuffer()
 	{
-		ReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer<Triangle>(NumberOfBufferElements);
-		CounterReadback = D3D12BufferUtils::CreateReadBackBuffer<UINT32>(4);
-		D3D12BufferUtils::CreateUploadBuffer<Triangle>(CounterUpload, 4);
+		/* create the counter buffer */
+		CounterResource = D3D12BufferUtils::CreateCounterResource(true, true);
+
+		/* create the counter read back buffer */
+		CounterReadback = D3D12BufferUtils::CreateReadBackBuffer(4);
+
+		/* create the counter upload buffer */
+		D3D12BufferUtils::CreateUploadBuffer(CounterUpload, 4);
 	}
 
-	void VoxelWorld::CreateStructuredBuffer()
+
+	void VoxelWorld::CreateTriangulationTableBuffer()
 	{
 		constexpr auto bufferWidth = (4096 * sizeof(INT32));
 
-
-		TriangleBuffer = D3D12BufferUtils::CreateVertexBuffer(
+		TriangulationTable = D3D12BufferUtils::CreateDefaultBuffer
+		(
 			TriangleTable,
 			bufferWidth,
-			UploadTriBuffer
+			UploadTriangulationTable
 		);
+
+		///** create views for the vertex buffer */
+		//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		//srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		//srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		//srvDesc.Buffer.NumElements = 4096;
+		//srvDesc.Buffer.StructureByteStride = sizeof(INT32);
+		//srvDesc.Buffer.FirstElement = 0;
+
+		//TriBufferSrv = D3D12Utils::CreateShaderResourceView(srvDesc, TriangulationTable.Get());
 	}
 
 	void VoxelWorld::CreateVertexBuffers()
 	{
+		if (RawTriBuffer.empty())
+			return;
+
 		const HRESULT allocResult = ComputeContext->Context->CmdListAlloc->Reset();
+		THROW_ON_FAILURE(allocResult);
 		const HRESULT listResult = ComputeContext->Context->GraphicsCmdList->Reset(ComputeContext->Context->CmdListAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(listResult);
 
 		std::vector<Vertex> vertices;
 		std::vector<UINT16> indices;

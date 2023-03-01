@@ -5,8 +5,9 @@
 #include <../ImGui/imgui.h>
 #include <../ImGui/imgui_internal.h>
 
-#include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 #include "Framework/Core/Compute/ComputeInstruction.h"
+#include "Framework/Renderer/Textures/Texture.h"
+#include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 
 namespace Engine
 {
@@ -35,10 +36,10 @@ namespace Engine
 
     void EditorLayer::OnAttach()
     {
-        auto api = RenderInstruction::GetApiPtr();
+        const auto api = RenderInstruction::GetApiPtr();
 
         ComputeInstruction::Init(api->GetGraphicsContext());
-        auto csApi = ComputeInstruction::GetComputeApi();
+        const auto csApi = ComputeInstruction::GetComputeApi();
 
         RenderInstruction::ResetGraphicsCommandList();
 
@@ -57,9 +58,10 @@ namespace Engine
         };
         PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
-        RenderInstruction::ExecGraphicsCommandList();
+        ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_8);
 
-        ViewportTexture = Texture::Create(nullptr, TextureDimension::Tex2D);
+
+        RenderInstruction::ExecGraphicsCommandList();
     }
 
     void EditorLayer::OnDetach()
@@ -110,11 +112,13 @@ namespace Engine
         World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
 
 
-
 		PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
     	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
 
-        Renderer3D::CreateCustomMesh(std::move(VoxelWorld->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
+        if(VoxelWorld->GetTerrainMesh() != nullptr)
+        {
+            Renderer3D::CreateCustomMesh(std::move(VoxelWorld->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
+        }
 
     }
 
@@ -227,10 +231,10 @@ namespace Engine
             {
                 ImGui::Begin("Profiling");
                 ImGui::Text("Settings:");
-                auto stats = Renderer3D::GetProfileData();
-                ImGui::Text("Draw Calls : %d", stats.DrawCalls);
-                ImGui::Text("Vert Count : %d", stats.PolyCount);
-                ImGui::Text("Tri  Count : %d", stats.TriCount);
+               // auto stats = Renderer3D::GetProfileData();
+               // ImGui::Text("Draw Calls : %d", stats.DrawCalls);
+               // ImGui::Text("Vert Count : %d", stats.PolyCount);
+               // ImGui::Text("Tri  Count : %d", stats.TriCount);
                 ImGui::End();
             }
 
@@ -252,9 +256,7 @@ namespace Engine
                 }
 
                 auto const* api = RenderInstruction::GetApiPtr();
-                auto const* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
-
-                ImGui::Image((ImTextureID)frameBuffer->GetColourAttachmentRendererID(), ImVec2(ViewportSize.x, ViewportSize.y));
+                ImGui::Image((ImTextureID)api->GetFrameBuffer()->GetColourAttachmentRendererID(), ImVec2(ViewportSize.x, ViewportSize.y));
 
 
                 ImGui::End();

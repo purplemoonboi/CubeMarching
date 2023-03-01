@@ -1,6 +1,6 @@
 #pragma once
 #include "Framework/Renderer/Memory/MemoryManager.h"
-#include "Platform/DirectX12/Buffers/D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
 
 namespace Engine

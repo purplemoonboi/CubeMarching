@@ -20,7 +20,7 @@ cbuffer cbSettings : register(b0)
 };
 
 Texture3D<float> DensityTexture : register(t0);
-StructuredBuffer<int> TriangleTable : register(t1);
+StructuredBuffer<int> EdgeTable : register(t1);
 RWStructuredBuffer<Vertex> vertices : register(u0);
 
 float3 coordToWorld(int3 coord)
@@ -95,10 +95,29 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     {
         return;
     }
-
+    
     int3 coord = id; // + int3(chunkCoord);
 
+    int3 cornerCoords[8];
+    cornerCoords[0] = coord + int3(0, 0, 0);
+    cornerCoords[1] = coord + int3(1, 0, 0);
+    cornerCoords[2] = coord + int3(1, 0, 1);
+    cornerCoords[3] = coord + int3(0, 0, 1);
+    cornerCoords[4] = coord + int3(0, 1, 0);
+    cornerCoords[5] = coord + int3(1, 1, 0);
+    cornerCoords[6] = coord + int3(1, 1, 1);
+    cornerCoords[7] = coord + int3(0, 1, 1);
+
+    int3 coord = id; // + int3(chunkCoord);
+    const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
+    const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
+
+
+    int edgeIndexA = edgeIndices[i];
+    int a0 = cornerIndexAFromEdge[edgeIndexA];
+    int a1 = cornerIndexBFromEdge[edgeIndexA];
     
+    Vertex vertex = createVertex(cornerCoords[c0], cornerCoords[c1]);
     
 }
 

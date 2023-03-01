@@ -16,15 +16,19 @@ namespace Engine
 
 	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Utils::CreateShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, ID3D12Resource* resource)
 	{
-		auto handles = MemoryManager->GetResourceHandle();
+		const auto handles = MemoryManager->GetResourceHandle();
 		Device->CreateShaderResourceView(resource, &desc, handles.CpuCurrentHandle);
+		const HRESULT deviceRemovedReason = Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
 		return handles.GpuCurrentHandle;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Utils::CreateUnorderedAccessView(const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc, ID3D12Resource* resource, ID3D12Resource* counterBuffer)
 	{
-		auto handles = MemoryManager->GetResourceHandle();
+		const auto handles = MemoryManager->GetResourceHandle();
 		Device->CreateUnorderedAccessView(resource, counterBuffer, &desc, handles.CpuCurrentHandle);
+		const HRESULT deviceRemovedReason = Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
 		return handles.GpuCurrentHandle;
 	}
 }

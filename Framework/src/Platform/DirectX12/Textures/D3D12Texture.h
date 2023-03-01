@@ -22,7 +22,14 @@ namespace Engine
 			UINT32 width,
 			UINT32 height,
 			UINT16 depth,
-			TextureDimension dimension,
+			TextureFormat format
+		);
+
+		D3D12Texture
+		(
+			const void* initData,
+			UINT32 width,
+			UINT32 height,
 			TextureFormat format
 		);
 		~D3D12Texture() override;

@@ -100,7 +100,8 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
         return;
     }
 
-    int3 coord = id;// + int3(chunkCoord);
+    
+    int3 coord = id; // + int3(chunkCoord);
 
     int3 cornerCoords[8];
     cornerCoords[0] = coord + int3(0, 0, 0);
@@ -122,15 +123,15 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
         }
     }
 	
-    int edgeIndices[16] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    int edgeIndices[16] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
     for (int j = 0; j < 16; j++)
     {
         edgeIndices[j] = TriangleTable[(cubeConfiguration * 16) + j];
     }
  
-   const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
-   const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
+    const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
+    const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
 
     for (i = 0; i < 16; i += 3)
     {
@@ -152,11 +153,12 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
         int c1 = cornerIndexBFromEdge[edgeIndexC];
 
 		// Create triangle
-        Triangle tri = (Triangle)0;
+        Triangle tri = (Triangle) 0;
         tri.vertexA = createVertex(cornerCoords[a0], cornerCoords[a1]);
         tri.vertexB = createVertex(cornerCoords[b0], cornerCoords[b1]);
         tri.vertexC = createVertex(cornerCoords[c0], cornerCoords[c1]);
 
         triangles[triangles.IncrementCounter()] = tri;
     }
+
 }

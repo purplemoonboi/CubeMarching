@@ -2,7 +2,6 @@
 
 #include "Framework/Core/Log/Log.h"
 
-
 namespace Engine
 {
 
@@ -14,10 +13,10 @@ namespace Engine
 		Device = device;
 		GraphicsCmdList = graphicsCmdList;
 	}
-	
+
 
 	// Upload buffer methods
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateVertexBuffer
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateDefaultBuffer
 	(
 		const void* initData,
 		UINT64 byteSize,
@@ -28,7 +27,7 @@ namespace Engine
 
 
 		//Create the committed resource
-		const HRESULT vertexResult= Device->CreateCommittedResource
+		const HRESULT vertexResult = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -101,18 +100,29 @@ namespace Engine
 		return defaultBuffer;
 	}
 
-	
+
 
 	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateTexture3D
 	(
 		UINT32 width,
 		UINT32 height,
 		UINT16 depth,
+		UINT16 mipLevels,
 		const void* initData,
 		DXGI_FORMAT format,
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
+		std::vector<INT8> rawData(0);
+		if(initData == nullptr)
+		{
+			rawData.reserve(width * height * depth);
+			for (INT32 i = 0; i < width; ++i)
+				for (INT32 j = 0; j < height; ++j)
+					for (INT32 k = 0; k < depth; ++k)
+						rawData.push_back(0);
+		}
+
 		ComPtr<ID3D12Resource> defaultBuffer;
 		D3D12_RESOURCE_DESC texDesc{};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
@@ -120,7 +130,7 @@ namespace Engine
 		texDesc.Width = width;
 		texDesc.Height = height;
 		texDesc.DepthOrArraySize = depth;
-		texDesc.MipLevels = (depth > 6) ? 0U : 1U ;
+		texDesc.MipLevels = mipLevels;
 		texDesc.Format = format;
 		texDesc.SampleDesc.Count = 1;
 		texDesc.SampleDesc.Quality = 0;
@@ -141,7 +151,7 @@ namespace Engine
 
 		UINT32 numOfResources = 1;
 
-		if(texDesc.DepthOrArraySize > 6)
+		if (texDesc.DepthOrArraySize > 6)
 		{
 			numOfResources = 1;
 		}
@@ -166,11 +176,10 @@ namespace Engine
 
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = initData;
-		//TODO: Add a check for size of type
+		subResourceData.pData = (initData != nullptr) ? initData : rawData.data();
 		subResourceData.RowPitch = width * sizeof(float);
 		subResourceData.SlicePitch = subResourceData.RowPitch * height;
-		
+
 
 		// Schedule to copy the data to the default buffer resource.
 		// Make instruction to copy CPU buffer into intermediate upload heap
@@ -189,15 +198,15 @@ namespace Engine
 
 		// Copy the data into the upload heap
 		UpdateSubresources
-			(
-				GraphicsCmdList,
-				defaultBuffer.Get(),
-				uploadBuffer.Get(),
-				0,
-				0,
-				numOfResources,
-				&subResourceData
-				);
+		(
+			GraphicsCmdList,
+			defaultBuffer.Get(),
+			uploadBuffer.Get(),
+			0,
+			0,
+			numOfResources,
+			&subResourceData
+		);
 
 		// Add the instruction to transition back to read 
 		GraphicsCmdList->ResourceBarrier
@@ -222,32 +231,49 @@ namespace Engine
 	(
 		UINT32 width,
 		UINT32 height,
+		UINT16 mipLevels,
 		const void* initData,
 		DXGI_FORMAT format,
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
+		std::vector<UINT32> rawData(0);
+		if (initData == nullptr)
+		{
+			rawData.reserve(width * height);
+			for (INT32 i = 0; i < width; ++i)
+			{
+				for (INT32 j = 0; j < height; ++j)
+				{
+					UINT8 r = 255U * ((float)i / (float)width);
+					UINT8 g = 255U * ((float)j / (float)height);
+					UINT8 b = 255U * ((float)i / (float)width);
+					UINT32 rgba = r << i | g << j | b << 8;
+					rawData.push_back(rgba);
+				}
+			}
+		}
 		ComPtr<ID3D12Resource> defaultBuffer;
+
 		D3D12_RESOURCE_DESC texDesc{};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		texDesc.Alignment = 0;
 		texDesc.Width = width;
 		texDesc.Height = height;
 		texDesc.DepthOrArraySize = 1;
-		texDesc.MipLevels = 1;
+		texDesc.MipLevels = mipLevels;
 		texDesc.Format = format;
 		texDesc.SampleDesc.Count = 1;
 		texDesc.SampleDesc.Quality = 0;
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		//Create the committed resource
 		const HRESULT defaultResult = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_FLOAT, width, height),
-			//&texDesc,
+			&texDesc,
 			D3D12_RESOURCE_STATE_COMMON,
 			nullptr,
 			IID_PPV_ARGS(&defaultBuffer)
@@ -269,8 +295,8 @@ namespace Engine
 
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = initData;
-		subResourceData.RowPitch = width * sizeof(float);
+		subResourceData.pData = (initData != nullptr) ? initData : rawData.data();
+		subResourceData.RowPitch = width * sizeof(UINT32);
 		subResourceData.SlicePitch = subResourceData.RowPitch * height;
 
 		const UINT32 numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
@@ -292,15 +318,15 @@ namespace Engine
 
 		// Copy the data into the upload heap
 		UpdateSubresources
-			(
-				GraphicsCmdList,
-				defaultBuffer.Get(),
-				uploadBuffer.Get(),
-				0,
-				0,
-				numOfResources,
-				&subResourceData
-				);
+		(
+			GraphicsCmdList,
+			defaultBuffer.Get(),
+			uploadBuffer.Get(),
+			0,
+			0,
+			numOfResources,
+			&subResourceData
+		);
 
 		// Add the instruction to transition back to read 
 		GraphicsCmdList->ResourceBarrier
@@ -324,16 +350,83 @@ namespace Engine
 		return defaultBuffer;
 	}
 
-		ComPtr<ID3D12Resource> D3D12BufferUtils::CreateCounterResource(UINT32 counter)
-		{
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
+	{
+		ComPtr<ID3D12Resource> counterBuffer = nullptr;
+		constexpr UINT64 sizeInBytes = sizeof(UINT32);
+		const D3D12_RESOURCE_FLAGS flags = (allowWrite) ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
+		const D3D12_HEAP_FLAGS heapFlags = (allowShaderAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
 
-			return ComPtr<ID3D12Resource>();
-		}
+		const HRESULT counterResult = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			heapFlags,
+			&CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes, flags),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+			nullptr,
+			IID_PPV_ARGS(&counterBuffer)
+		);
+		THROW_ON_FAILURE(counterResult);
+		return counterBuffer;
+	}
 
-		ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackBuffer()
-		{
-			return ComPtr<ID3D12Resource>();
-		}
+	void D3D12BufferUtils::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
+	{
+		const HRESULT result = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(resource.GetAddressOf())
+		);
+		THROW_ON_FAILURE(result);
+	}
+
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackBuffer(UINT32 bufferWidth)
+	{
+		ComPtr<ID3D12Resource> readBackResource = nullptr;
+
+		const HRESULT readBackResult = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&readBackResource)
+		);
+
+		THROW_ON_FAILURE(readBackResult);
+
+		return readBackResource;
+	}
+
+
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
+	{
+		
+		ComPtr<ID3D12Resource> buffer = nullptr;
+
+		const D3D12_RESOURCE_FLAGS bufferFlags = (allowWrite) ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
+		const D3D12_RESOURCE_STATES bufferState = (allowWrite) ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_COMMON;
+		const D3D12_HEAP_FLAGS heapFlags = (allowAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
+
+		const HRESULT result = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			heapFlags,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, bufferFlags),
+			bufferState,
+			nullptr,
+			IID_PPV_ARGS(&buffer)
+		);
+		THROW_ON_FAILURE(result);
+
+		return buffer;
+		
+	}
 
 	UINT D3D12BufferUtils::CalculateConstantBufferByteSize(UINT byteSize)
 	{

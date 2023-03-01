@@ -18,7 +18,6 @@ namespace Engine
 		BuildComputeRootSignature();
 		BuildPipelineState();
 		BuildResource();
-		CreateReadBackBuffer();
 	}
 
 	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)
@@ -113,38 +112,18 @@ namespace Engine
 				for (INT32 k = 0; k < ChunkWidth; ++k)
 					RawTexture.push_back(0);
 
-		ScalarTexture = CreateScope<D3D12Texture>(
-			ChunkWidth, ChunkHeight, ChunkWidth,
-			TextureDimension::Three, TextureFormat::R_FLOAT_32
-			);
-
-		ScalarTexture->Create
+	
+		ScalarTexture = Texture::Create
 		(
 			RawTexture.data(),
-			TextureDimension::Three,
-			ComputeContext->Context,
-			MemManager
+			ChunkWidth,
+			ChunkHeight,
+			ChunkWidth,
+			TextureFormat::R_FLOAT_32
 		);
 
 	}
 
-	void PerlinCompute::CreateReadBackBuffer()
-	{
 
-		const auto bufferWidth = (ScalarTexture->GetWidth() * ScalarTexture->GetHeight() * ScalarTexture->GetDepth() * sizeof(float));
-
-		const HRESULT readBackResult = ComputeContext->Context->Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&ReadBackBuffer)
-		);
-
-		THROW_ON_FAILURE(readBackResult);
-
-	}
 }
 

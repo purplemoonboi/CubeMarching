@@ -48,10 +48,22 @@ namespace Engine
 		const HRESULT allocResult = CommandAllocator->Reset();
 		THROW_ON_FAILURE(allocResult);
 
-		auto const d3d12PipelineState = dynamic_cast<D3D12PipelineStateObject*>(state);
-		const HRESULT closeResult = CommandList->Reset(CommandAllocator.Get(),
-			d3d12PipelineState->GetPipelineState());
-		THROW_ON_FAILURE(closeResult);
+		if(state != nullptr)
+		{
+			auto const d3d12PipelineState = dynamic_cast<D3D12PipelineStateObject*>(state);
+			const HRESULT closeResult = CommandList->Reset(CommandAllocator.Get(),
+				d3d12PipelineState->GetPipelineState());
+			THROW_ON_FAILURE(closeResult);
+
+		}
+		
+		else
+		{
+			const HRESULT closeResult = CommandList->Reset(CommandAllocator.Get(),
+				nullptr);
+			THROW_ON_FAILURE(closeResult);
+
+		}
 	}
 
 	void D3D12ComputeApi::ExecuteComputeCommandList()

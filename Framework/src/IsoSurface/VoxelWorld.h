@@ -58,6 +58,10 @@ namespace Engine
 		void BuildPso();
 
 		void CreateOutputBuffer();
+
+		void CreateCounterBuffer();
+
+
 		ComPtr<ID3D12Resource> OutputBuffer;
 		ComPtr<ID3D12Resource> CounterResource;
 		ComPtr<ID3D12Resource> CounterReadback;
@@ -66,12 +70,11 @@ namespace Engine
 		D3D12_CPU_DESCRIPTOR_HANDLE OutputVertexUavCpu;
 		D3D12_GPU_DESCRIPTOR_HANDLE OutputVertexUavGpu;
 
-		void CreateReadBackBuffer();
 		ComPtr<ID3D12Resource> ReadBackBuffer;
 
-		void CreateStructuredBuffer();
-		ComPtr<ID3D12Resource> TriangleBuffer;
-		ComPtr<ID3D12Resource> UploadTriBuffer;
+		void CreateTriangulationTableBuffer();
+		ComPtr<ID3D12Resource> TriangulationTable;
+		ComPtr<ID3D12Resource> UploadTriangulationTable;
 		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
 
 		void CreateVertexBuffers();

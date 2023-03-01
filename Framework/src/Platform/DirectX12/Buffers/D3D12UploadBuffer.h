@@ -1,6 +1,6 @@
 #pragma once
 #include "../DirectX12.h"
-#include "D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Engine
