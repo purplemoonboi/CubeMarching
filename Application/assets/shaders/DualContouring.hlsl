@@ -20,7 +20,7 @@ cbuffer cbSettings : register(b0)
 };
 
 Texture3D<float> DensityTexture : register(t0);
-StructuredBuffer<int> EdgeTable : register(t1);
+StructuredBuffer<int> TriangleTable : register(t1);
 RWStructuredBuffer<Vertex> vertices : register(u0);
 
 float3 coordToWorld(int3 coord)
@@ -59,14 +59,14 @@ float3 calculateNormal(int3 coord)
 Vertex createVertex(int3 coordA, int3 coordB)
 {
 	
-    //float3 posA = coordToWorld(coordA);
-    //float3 posB = coordToWorld(coordB);
+    float3 posA = coordToWorld(coordA);
+    float3 posB = coordToWorld(coordB);
     float densityA = sampleDensity(coordA);
     float densityB = sampleDensity(coordB);
 
 	// Interpolate between the two corner points based on the density
     float t = (isoLevel - densityA) / (densityB - densityA);
-    float3 position = coordA + t * (coordB - coordA);
+    float3 position = posA + t * (posA - posB);
 
 	// Normal:
     float3 normalA = calculateNormal(coordA);
@@ -108,16 +108,46 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     cornerCoords[6] = coord + int3(1, 1, 1);
     cornerCoords[7] = coord + int3(0, 1, 1);
 
-    int3 coord = id; // + int3(chunkCoord);
+    int cubeConfiguration = 0;
+    for (int i = 0; i < 8; i++)
+    {
+
+        if (DensityTexture[cornerCoords[i]] > 0)
+        {
+            cubeConfiguration |= (1 << i);
+        }
+    }
+    
+    /* voxel is outwith iso threshold */
+    if(cubeConfiguration == 0 || cubeConfiguration == 255)
+        return;
+    
+    int edgeIndices[16] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+    
+    
+    for (int j = 0; j < 16; j++)
+    {
+        edgeIndices[j] = TriangleTable[(cubeConfiguration * 16) + j];
+    }
+ 
+    
     const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
     const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
 
-
-    int edgeIndexA = edgeIndices[i];
-    int a0 = cornerIndexAFromEdge[edgeIndexA];
-    int a1 = cornerIndexBFromEdge[edgeIndexA];
+    Vertex edgeMidpoints[12];
+    int midPointCount = 0;
     
-    Vertex vertex = createVertex(cornerCoords[c0], cornerCoords[c1]);
+    for (int i = 0; i < 12; i++)
+    {
+        int edgeIndexA = edgeIndices[i];
+        int a0 = cornerIndexAFromEdge[edgeIndexA];
+        int a1 = cornerIndexBFromEdge[edgeIndexA];
+
+        Vertex edgeMidpoints[i] = createVertex(cornerCoords[a0], cornerCoords[a1]);
+        midPointCount++;
+    }
+   
+
     
 }
 
