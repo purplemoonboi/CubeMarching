@@ -18,6 +18,10 @@ namespace Engine
 		BuildComputeRootSignature();
 		BuildPipelineState();
 		BuildResource();
+
+		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
+
 	}
 
 	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)

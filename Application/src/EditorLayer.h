@@ -7,6 +7,7 @@
 
 #include "IsoSurface/PerlinCompute.h"
 #include "IsoSurface/VoxelWorld.h"
+#include "IsoSurface/DualContouring.h"
 
 
 namespace Engine
@@ -46,6 +47,7 @@ namespace Engine
 
 		ScopePointer<VoxelWorld> VoxelWorld;
 		ScopePointer<PerlinCompute> PerlinCompute;
+		ScopePointer<DualContouring> DualContourCompute;
 
 		ScopePointer<Texture> ViewportTexture;
 

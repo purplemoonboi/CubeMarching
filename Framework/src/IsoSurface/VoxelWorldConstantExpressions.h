@@ -20,6 +20,14 @@ namespace Engine
 		Vertex VertexC;
 	};
 
+	struct Quad
+	{
+		Vertex VertexA;
+		Vertex VertexB;
+		Vertex VertexC;
+		Vertex VertexD;
+	};
+
 	struct CustomStruct
 	{
 		float scalar = 0;

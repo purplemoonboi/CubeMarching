@@ -30,6 +30,9 @@ namespace Engine
 		CreateOutputBuffer();
 		CreateTriangulationTableBuffer();
 
+		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
+
 		return true;
 	}
 
@@ -236,18 +239,6 @@ namespace Engine
 			bufferWidth,
 			UploadTriangulationTable
 		);
-
-		///** create views for the vertex buffer */
-		//D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		//srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		//srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-		//srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-		//srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-		//srvDesc.Buffer.NumElements = 4096;
-		//srvDesc.Buffer.StructureByteStride = sizeof(INT32);
-		//srvDesc.Buffer.FirstElement = 0;
-
-		//TriBufferSrv = D3D12Utils::CreateShaderResourceView(srvDesc, TriangulationTable.Get());
 	}
 
 	void VoxelWorld::CreateVertexBuffers()
@@ -295,6 +286,10 @@ namespace Engine
 		THROW_ON_FAILURE(closeResult);
 		ComputeContext->Context->ExecuteGraphicsCommandList();
 		ComputeContext->Context->FlushCommandQueue();
+
+		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
+
 	}
 }
 

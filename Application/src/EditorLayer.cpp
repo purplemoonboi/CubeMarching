@@ -50,6 +50,14 @@ namespace Engine
         };
         VoxelWorld->Init(csApi, api->GetMemoryManager(), args);
 
+        ShaderArgs dualArgs =
+        {
+            L"assest\\shaders\\DualContouring.hlsl",
+            "GenerateQuad",
+            "cs_5_0"
+        };
+        DualContourCompute->Init(csApi, api->GetMemoryManager(), dualArgs);
+
         ShaderArgs perlinArgs = 
         {
             L"assets\\shaders\\Perlin.hlsl",
@@ -112,14 +120,23 @@ namespace Engine
         World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
 
 
-		PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-    	VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+		
 
         if(VoxelWorld->GetTerrainMesh() != nullptr)
         {
             Renderer3D::CreateCustomMesh(std::move(VoxelWorld->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
         }
-
+        else
+        {
+            static bool once = true;
+            if (once)
+            {
+                once = false;
+                PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
+                VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+            }
+    
+        }
     }
 
     void EditorLayer::OnRender(const DeltaTime& timer)
