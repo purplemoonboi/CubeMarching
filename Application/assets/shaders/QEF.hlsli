@@ -1,5 +1,5 @@
 #include "ShaderConstants.hlsli"
-
+#include "SVD.hlsli"
 
 void QEF_Add(float4 n, float4 p, inout mat3x3_tri ATA, inout float4 Atb, inout float4 pointaccum, inout float btb)
 {

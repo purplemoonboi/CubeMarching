@@ -1,4 +1,5 @@
-
+/* Simple QEF lib */
+#include "QEF.hlsli"
 
 struct Vertex
 {
@@ -23,27 +24,6 @@ Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
 RWStructuredBuffer<Vertex> vertices : register(u0);
 
-
-float QEFCalculateError(float A[6], float4 x, float4 b)
-{
-    float4 tmp = float4(0, 0, 0, 0);
-
-
-
-}
-
-void QEFSolve(float3x3 ATA, float4 Atb, float4 pointAccum, inout float x)
-{
-    float error = 0.f;
-
-    float4 massPoint = pointAccum / pointAccum.w;
-    float4 A_mp = float4(0, 0, 0, 0);
-
-    A_mp = Atb - A_mp;
-
-
-
-}
 
 float3 coordToWorld(int3 coord)
 {
@@ -75,9 +55,6 @@ float3 calculateNormal(int3 coord)
     return normalize(float3(dx, dy, dz));
 }
 
-// Calculate the position of the vertex
-// The position lies somewhere along the edge defined by the two corner points.
-// Where exactly along the edge is determined by the values of each corner point.
 Vertex createVertex(int3 coordA, int3 coordB)
 {
 	
