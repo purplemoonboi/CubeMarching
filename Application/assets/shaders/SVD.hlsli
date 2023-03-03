@@ -1,9 +1,4 @@
-#pragma once
-#define SVD_NUM_OF_SWEEPS 4
-#define PSUEDO_INVERSE_THRESHOLD 1e-6f
-
-typedef float mat3x3[3][3];
-typedef float mat3x3_tru[6]
+#include "ShaderConstants.hlsli"
 
 void Given_Coeffs_Sym(float a_pp, float a_pq, float a_qq, inout float c, inout float s)
 {
