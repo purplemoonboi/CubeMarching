@@ -33,16 +33,16 @@ float QEF_CalculateError(mat3x3_tri A, float4 x, float4 b)
 	return dot(tmp, tmp);
 }
 
-float QEF_Solve(mat3x3_tri ATA, float4 Atb, float4 pointaccum, inout float x)
+float QEF_Solve(mat3x3_tri ATA, float4 Atb, float4 pointaccum, inout float4 position)
 {
 
 	float4 massPoint = pointaccum / pointaccum.w;
 
 	float4 A_mp = float4(0, 0, 0, 0);
-	SVD_VMul_Sym(A_mp, ATA, masspoint);
+	SVD_VMul_Sym(A_mp, ATA, position);
 
-	float error = QEF_CalculateError(ATA, x, Atb);
-	x += masspoint;
+	float error = QEF_CalculateError(ATA, position, Atb);
+	position += massPoint;
 
 	return error;
 }

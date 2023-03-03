@@ -7,8 +7,14 @@ struct Vertex
     float3 normal;
     float3 tangent;
     float3 voxelId;
-    int arrayIndex;
     bool init = false;
+};
+
+struct Triangle
+{
+    Vertex vertexA;
+    Vertex vertexB;
+    Vertex vertexC;
 };
 
 cbuffer cbSettings : register(b0)
@@ -23,7 +29,7 @@ cbuffer cbSettings : register(b0)
 Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
 RWStructuredBuffer<Vertex> vertices : register(u0);
-
+RWStructuredBuffer<Triangle> Triangle;
 
 float3 coordToWorld(int3 coord)
 {
@@ -42,7 +48,7 @@ float sampleDensity(int3 coord)
     return DensityTexture.Load(float4(coord, 0));
 }
 
-float3 calculateNormal(int3 coord)
+float3 CalculateNormal(int3 coord)
 {
     int3 offsetX = int3(1, 0, 0);
     int3 offsetY = int3(0, 1, 0);
@@ -55,37 +61,34 @@ float3 calculateNormal(int3 coord)
     return normalize(float3(dx, dy, dz));
 }
 
-Vertex createVertex(int3 coordA, int3 coordB)
+/*
+*  Linear interpolates between the two corners provided.
+*  We want to approximate the position as a close to the zero surface.
+*/
+float3 ApproximateZeroCrossingPosition(float3 p0, float3 p1)
 {
-	
-    float3 posA = coordToWorld(coordA);
-    float3 posB = coordToWorld(coordB);
-    float densityA = sampleDensity(coordA);
-    float densityB = sampleDensity(coordB);
-
-	// Interpolate between the two corner points based on the density
-    float t = (isoLevel - densityA) / (densityB - densityA);
-    float3 position = posA + t * (posA - posB);
-
-	// Normal:
-    float3 normalA = calculateNormal(coordA);
-    float3 normalB = calculateNormal(coordB);
-    float3 normal = normalize(normalA + t * (normalB - normalA));
-
-	// ID
-    int indexA = indexFromCoord(coordA);
-    int indexB = indexFromCoord(coordB);
-
-	// Create vertex
-    Vertex vertex;
-    vertex.tangent = float3(1, 0, 0);
-    vertex.position = position;
-    vertex.normal = normal;
-    vertex.voxelId = int3(min(indexA, indexB), max(indexA, indexB), 0);
-    vertex.init = true;
+    float minValue = 100000.0f;
+    float t = 0.0f;
+    float currentT = 0.0f;
+    float steps = 8;
+    float incriment = 1.0f / steps;
     
-    return vertex;
+    while(currentT <= 1.0f)
+    {
+        float3 p = p0 + ((p1 - p0) * currentT);
+        float density = DensityTexture[p];
+        if(density < minValue)
+        {
+            minValue = density;
+            t = currentT;
+        }
+        
+        currentT += incriment;
+    }
+    
+    return p0 + ((p1 - p0) * t);
 }
+
 
 [numthreads(8, 8, 8)]
 void GenerateChunk(int3 id : SV_DispatchThreadID)
@@ -121,37 +124,78 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     if(cubeConfiguration == 0 || cubeConfiguration == 255)
         return;
     
-    int edgeIndices[16] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    
-    
-    for (int j = 0; j < 16; j++)
-    {
-        edgeIndices[j] = TriangleTable[(cubeConfiguration * 16) + j];
-    }
- 
-    
+  
     const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
     const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
 
-    Vertex edgeMidpoints[12];
-    int midPointCount = 0;
-    
-    for (int i = 0; i < 12; i++)
-    {
-        int edgeIndexA = edgeIndices[i];
-        int a0 = cornerIndexAFromEdge[edgeIndexA];
-        int a1 = cornerIndexBFromEdge[edgeIndexA];
-
-        Vertex edgeMidpoints[i] = createVertex(cornerCoords[a0], cornerCoords[a1]);
-        midPointCount++;
-    }
    
-
+    mat3x3_tri ATA = { 0, 0, 0, 0, 0, 0 };
+    float4 pointaccum = (float4) 0;
+    float4 Atb = (float4)0;
+    float3 averageNormal = (float3) 0;
+    float btb = (float) 0;
+    float edgeCount = 0;
     
+    for (i = 0; i < 12; i++)
+    {
+        /* fetch indices for the corners of the voxel */
+        int c1 = cornerIndexAFromEdge[i];
+        int c2 = cornerIndexBFromEdge[i];
+        
+        int m1 = (cubeConfiguration >> c1) & 1;
+        int m2 = (cubeConfiguration >> c2) & 1;
+        
+        if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
+        {
+            
+            float3 p1 = cornerCoords[c1];
+            float3 p2 = cornerCoords[c2];
+            
+            float3 p = ApproximateZeroCrossingPosition(p1, p2);
+            float3 n = CalculateNormal(p);
+            
+            QEF_Add(float4(n.x, n.y, n.z, 0), float4(p.x, p.y, p.z, 0), ATA, Atb, pointaccum, btb);
+            averageNormal += n;
+            
+            edgeCount++;
+        }
+    }
+    
+    averageNormal = normalize(averageNormal / edgeCount);
+    float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
+    float4 solvedPosition = (float4) 0;
+    
+    float error = QEF_Solve(ATA, Atb, pointaccum, solvedPosition);
+    float3 minimum = cornerCoords[0];
+    float3 maximum = cornerCoords[0] + float3(1, 1, 1);
+
+    /* sometimes the position generated spawns the vertex outside the voxel */
+    /* if this happens place the vertex at the centre of mass */
+    if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
+        solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
+    {
+        solvedPosition.xyz = com.xyz;
+    }
+        
+    Vertex vertex = (Vertex) 0;
+    vertex.position = solvedPosition;
+    vertex.normal = averageNormal;
+    vertex.voxelId = id;
+    vertex.tangent = float3(1, 0, 0);
+    vertex.init = true;
+    
+
+    //vertices[vertices.IncrementCounter()] = vertex;
+    vertices[(uint)id.xyz] = vertex;
 }
 
 
-[numthreads(4, 4, 4)]
-void GenerateQuad(int3 id : SV_DispatchThread)
+
+[numthreads(4,4,4)]
+void GenerateTriangle(uint3 did : SV_DispatchThreadID, uint3 gid : SV_GroupThreadID)
 {
+    
+    
+    
+    
 }
