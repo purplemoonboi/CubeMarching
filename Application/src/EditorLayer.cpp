@@ -50,13 +50,8 @@ namespace Engine
         };
         VoxelWorld->Init(csApi, api->GetMemoryManager(), args);
 
-        ShaderArgs dualArgs =
-        {
-            L"assest\\shaders\\DualContouring.hlsl",
-            "GenerateQuad",
-            "cs_5_0"
-        };
-        DualContourCompute->Init(csApi, api->GetMemoryManager(), dualArgs);
+        
+        DualContourCompute->Init(csApi, api->GetMemoryManager());
 
         ShaderArgs perlinArgs = 
         {

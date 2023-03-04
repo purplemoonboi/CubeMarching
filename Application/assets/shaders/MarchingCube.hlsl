@@ -1,4 +1,4 @@
-
+#include "MarchingCubeData.hlsli"
 
 struct Vertex
 {
@@ -129,9 +129,6 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     {
         edgeIndices[j] = TriangleTable[(cubeConfiguration * 16) + j];
     }
- 
-    const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
-    const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
 
     for (i = 0; i < 16; i += 3)
     {

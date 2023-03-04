@@ -1,13 +1,21 @@
 /* Simple QEF lib */
 #include "QEF.hlsli"
 
-struct Vertex
+struct DualVertex
 {
     float3 position;
     float3 normal;
     float3 tangent;
     float3 voxelId;
     bool init = false;
+};
+
+struct Vertex
+{
+    float3 position;
+    float3 normal;
+    float3 tangent;
+    float3 voxelId;
 };
 
 struct Triangle
@@ -28,8 +36,8 @@ cbuffer cbSettings : register(b0)
 
 Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
-RWStructuredBuffer<Vertex> vertices : register(u0);
-RWStructuredBuffer<Triangle> Triangle;
+RWStructuredBuffer<DualVertex> vertices : register(u0);
+RWStructuredBuffer<Triangle> TriangleBuffer : register(u1);
 
 float3 coordToWorld(int3 coord)
 {
@@ -177,7 +185,7 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
         solvedPosition.xyz = com.xyz;
     }
         
-    Vertex vertex = (Vertex) 0;
+    DualVertex vertex = (DualVertex) 0;
     vertex.position = solvedPosition;
     vertex.normal = averageNormal;
     vertex.voxelId = id;
@@ -190,10 +198,16 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
 }
 
 
-
 [numthreads(4,4,4)]
 void GenerateTriangle(uint3 did : SV_DispatchThreadID, uint3 gid : SV_GroupThreadID)
 {
+    
+    /*
+    *   In the second pass we're going to connect the vertices that were generated in 
+    *   the first pass
+    *   We need to check each edge for a sign change. This way we know for certain 
+    *   a vertex was generated somewhere in the cell.
+    */
     
     
     
