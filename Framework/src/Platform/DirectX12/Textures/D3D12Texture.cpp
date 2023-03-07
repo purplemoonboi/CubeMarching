@@ -94,6 +94,7 @@ namespace Engine
 		if (MipLevels != 1)
 			MipLevels = 1;
 
+
 		GpuResource = D3D12BufferUtils::CreateTexture2D(
 			Width,
 			Height,
@@ -102,6 +103,8 @@ namespace Engine
 			Format,
 			UploadBuffer
 		);
+
+
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 		desc.Format = Format;
@@ -137,6 +140,20 @@ namespace Engine
 	UINT16 D3D12Texture::GetDepth()
 	{
 		return Depth;
+	}
+
+	UINT64 D3D12Texture::GetTexture()
+	{
+		return GpuHandleSrv.ptr;
+	}
+
+	void D3D12Texture::Copy(void* src)
+	{
+
+		ID3D12Resource* _src = static_cast<ID3D12Resource*>(src);
+
+		D3D12BufferUtils::CopyTextureGPU(GpuResource.Get(), _src);
+
 	}
 
 	TextureDimension D3D12Texture::GetTextureDimension()

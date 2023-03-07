@@ -16,7 +16,7 @@ struct DensityPrimitive
     float3 size;
 };
 
-cbuffer VoxelWorldSettings : register(b0)
+cbuffer WorldSettings : register(b0)
 {
     float3 ChunkPosition;
     int Resolution;
@@ -25,19 +25,19 @@ cbuffer VoxelWorldSettings : register(b0)
 }
 
 RWStructuredBuffer<Voxel> voxels : register(u0);
-RWStructuredBuffer<uint> cornerMaterials : register(u1);
-RWStructuredBuffer<uint> voxelMaterials  : register(u2);
+RWStructuredBuffer<uint> CornerMaterials : register(u1);
+RWStructuredBuffer<uint> VoxelMaterials  : register(u2);
 RWStructuredBuffer<uint> CornerIndexes   : register(u3);
-RWStructuredBuffer<float3> voxMins : register(u4);
+RWStructuredBuffer<float3> VoxelMins : register(u4);
 
 RWStructuredBuffer<int> cornerCount : register(u5);
-RWStructuredBuffer<int> finalCount : register(u6);
+RWStructuredBuffer<int> FinalCount : register(u6);
 
 RWStructuredBuffer<DensityPrimitive> Primitives : register(u7);
 
 
 
-static float3 CHILD_MIN_OFFSETS[8] =
+static float3 VoxelCornerOffsets[8] =
 {
     float3(0, 0, 0),
 	float3(0, 0, 1),
@@ -271,16 +271,16 @@ static float FractalNoise(float frequency, float lacunarity, float persistence, 
 {
     float SCALE = 1.0f / 128.0f;
     float3 p = position * SCALE;
-    float nois = 0.0f;
+    float noise = 0.0f;
 
     float amplitude = 1.0f;
     p *= frequency;
 	
-    nois += snoise_grad(p) * amplitude;
+    noise += snoise_grad(p) * amplitude;
     p *= lacunarity;
     amplitude *= persistence;
 	
-    return nois;
+    return noise;
 }
 
 static float CalculateNoiseValue(float3 pos, float scale)
@@ -296,74 +296,79 @@ static float CLerp(float a, float b, float t)
 /*
  * The Density Function 
  */
-float Density_Func(float3 worldPosition)
+float SimplexDensityFunction(float3 worldPosition)
 {
-    float worldRadius = 200.0f;
-    float3 world = worldPosition - float3(0, -worldRadius, 0);
-    float worldDist = -worldRadius + length(world);
+ //   float worldRadius = 200.0f;
+ //   float3 world = worldPosition - float3(0, -worldRadius, 0);
+ //   float worldDist = -worldRadius + length(world);
 
-    float flatlandNoiseScale = 1.0f;
-    float flatlandLerpAmount = 0.07f;
-    float flatlandYPercent = 1.2f;
+ //   float flatlandNoiseScale = 1.0f;
+ //   float flatlandLerpAmount = 0.07f;
+ //   float flatlandYPercent = 1.2f;
 
-    float rockyNoiseScale = 1.5f;
-    float rockyLerpAmount = 0.05f;
-    float rockyYPercent = 0.7f;
+ //   float rockyNoiseScale = 1.5f;
+ //   float rockyLerpAmount = 0.05f;
+ //   float rockyYPercent = 0.7f;
 	
-    float maxMountainMixLerpAmount = 0.075f;
-    float minMountainMixLerpAmount = 1.0f;
+ //   float maxMountainMixLerpAmount = 0.075f;
+ //   float minMountainMixLerpAmount = 1.0f;
 	
-    float mountainBlend = 0.0f;
-    float rockyBlend = 1.0f;
+ //   float mountainBlend = 0.0f;
+ //   float rockyBlend = 1.0f;
 	
-    mountainBlend = saturate(abs(FractalNoise(0.5343f, 2.2324f, 0.68324f, world * 0.11f)) * 4.0f);
+ //   mountainBlend = saturate(abs(FractalNoise(0.5343f, 2.2324f, 0.68324f, world * 0.11f)) * 4.0f);
 	
-	//float rockiness = abs(FractalNoise(0.5343f, 2.2324f, 0.68324f, world * 0.05f) * 2.0f);
-	//rockyBlend = saturate(rockiness);
+	////float rockiness = abs(FractalNoise(0.5343f, 2.2324f, 0.68324f, world * 0.05f) * 2.0f);
+	////rockyBlend = saturate(rockiness);
 	
-	//if (worldPosition.y < -15.0f)
-		//mountainBlend = 0;
+	////if (worldPosition.y < -15.0f)
+	//	//mountainBlend = 0;
 	
 	
-    float mountain = CalculateNoiseValue(world, 0.07f);
+ //   float mountain = CalculateNoiseValue(world, 0.07f);
 
-    float blob = CalculateNoiseValue(world, flatlandNoiseScale + ((rockyNoiseScale - flatlandNoiseScale) * rockyBlend));
-    blob = CLerp(blob, (worldDist) * (flatlandYPercent + ((rockyYPercent - flatlandYPercent) * rockyBlend)),
-				flatlandLerpAmount + ((rockyLerpAmount - flatlandLerpAmount) * rockyBlend));
+ //   float blob = CalculateNoiseValue(world, flatlandNoiseScale + ((rockyNoiseScale - flatlandNoiseScale) * rockyBlend));
+ //   blob = CLerp(blob, (worldDist) * (flatlandYPercent + ((rockyYPercent - flatlandYPercent) * rockyBlend)),
+	//			flatlandLerpAmount + ((rockyLerpAmount - flatlandLerpAmount) * rockyBlend));
 
-    float result = ((worldDist) / worldRadius) + CLerp(mountain, blob, minMountainMixLerpAmount + ((maxMountainMixLerpAmount - minMountainMixLerpAmount) * mountainBlend));
+ //   float result = ((worldDist) / worldRadius) + CLerp(mountain, blob, minMountainMixLerpAmount + ((maxMountainMixLerpAmount - minMountainMixLerpAmount) * mountainBlend));
 	
 	
-    for (int i = 0; i < PrimitiveCount; i++)
-    {
-        float primitive = 0;
-        bool primChosen = Primitives[i].type == 0 || Primitives[i].type == 1 || Primitives[i].type == 2;
+    //for (int i = 0; i < PrimitiveCount; i++)
+    //{
+    //    float primitive = 0;
+    //    bool primChosen = Primitives[i].type == 0 || Primitives[i].type == 1 || Primitives[i].type == 2;
 		
-        if (primChosen)
-        {
-            if (Primitives[i].type == 0)
-            {
-                primitive = Box(worldPosition, Primitives[i].position, Primitives[i].size);
-            }
-            else if (Primitives[i].type == 1)
-            {
-                primitive = Sphere(worldPosition, Primitives[i].position, Primitives[i].size.x);
-            }
-            else if (Primitives[i].type == 2)
-            {
-                primitive = Cylinder(worldPosition, Primitives[i].position, Primitives[i].size);
-            }
+    //    if (primChosen)
+    //    {
+    //        if (Primitives[i].type == 0)
+    //        {
+    //            primitive = Box(worldPosition, Primitives[i].position, Primitives[i].size);
+    //        }
+    //        else if (Primitives[i].type == 1)
+    //        {
+    //            primitive = Sphere(worldPosition, Primitives[i].position, Primitives[i].size.x);
+    //        }
+    //        else if (Primitives[i].type == 2)
+    //        {
+    //            primitive = Cylinder(worldPosition, Primitives[i].position, Primitives[i].size);
+    //        }
 		
-            if (Primitives[i].csg == 0)
-            {
-                result = max(-primitive, result);
-            }
-            else
-            {
-                result = min(primitive, result);
-            }
-        }
-    }
+    //        if (Primitives[i].csg == 0)
+    //        {
+    //            result = max(-primitive, result);
+    //        }
+    //        else
+    //        {
+    //            result = min(primitive, result);
+    //        }
+    //    }
+    //}
+    
+   /*
+    *  for now we're just calculate the simplex noise
+    */
+    float result = snoise(worldPosition * 0.01f);
 	
     return result;
 }
@@ -378,7 +383,7 @@ static float3 ApproximateZeroCrossingPosition(float3 p0, float3 p1)
     while (currentT <= 1.0f)
     {
         float3 p = p0 + ((p1 - p0) * currentT);
-        float density = abs(Density_Func(p));
+        float density = abs(SimplexDensityFunction(p));
         if (density < minValue)
         {
             minValue = density;
@@ -394,86 +399,128 @@ static float3 ApproximateZeroCrossingPosition(float3 p0, float3 p1)
 static float3 CalculateSurfaceNormal(float3 p)
 {
     float H = 0.001f;
-    float dx = Density_Func(p + float3(H, 0.0f, 0.0f)) - Density_Func(p - float3(H, 0.0f, 0.0f));
-    float dy = Density_Func(p + float3(0.0f, H, 0.0f)) - Density_Func(p - float3(0.0f, H, 0.0f));
-    float dz = Density_Func(p + float3(0.0f, 0.0f, H)) - Density_Func(p - float3(0.0f, 0.0f, H));
+    float dx = SimplexDensityFunction(p + float3(H, 0.0f, 0.0f)) - SimplexDensityFunction(p - float3(H, 0.0f, 0.0f));
+    float dy = SimplexDensityFunction(p + float3(0.0f, H, 0.0f)) - SimplexDensityFunction(p - float3(0.0f, H, 0.0f));
+    float dz = SimplexDensityFunction(p + float3(0.0f, 0.0f, H)) - SimplexDensityFunction(p - float3(0.0f, 0.0f, H));
 
     return normalize(float3(dx, dy, dz));
 }
 
 [numthreads(9, 8, 8)]
-void ComputeMaterials(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint3 id : SV_DispatchThreadID)
+void ComputeMaterials(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
 {
+    /*
+    *   Offset the worker into our grid
+    */
     uint threadIndex = id.x + 9 * (id.y + 8 * id.z);
 	
-    float fR = (float) (Resolution + 1);
-    float sqRTRC = sqrt(fR * fR * fR);
-    int sqRTRes = (int) sqRTRC;
-    if (sqRTRC > (float) sqRTRes)
+    /*
+    *  Calculate the unit size of our bounding volume
+    */
+    float fResolution = (float) (Resolution + 1);
+    float sqFResolution = sqrt(fResolution * fResolution * fResolution);
+    
+    /*
+    *   Adjust the singed resolution value if after casting  
+    *   value is rounded down.
+    */
+    int sqIResolution = (int) sqFResolution;
+    if (sqFResolution > (float) sqIResolution)
     {
-        sqRTRes = sqRTRes + 1;
+        sqIResolution = sqIResolution + 1;
     }
 	
+    /*
+    *  Calculate the size of a voxel with respect to the permitted maximum declared size 
+    *  and the size of the octree
+    */
     int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
 	
-    if (threadIndex < (uint) sqRTRes)
+    /*
+    *   If our thread is within the bounds of the bounding volume...
+    */
+    if (threadIndex < (uint) sqIResolution)
     {
-        uint ures = (uint) (Resolution + 1);
+        uint uResolution = (uint) (Resolution + 1);
 		
-        for (int i = 0; i < sqRTRes; i++)
+        for (int i = 0; i < sqIResolution; i++)
         {
-            uint index = (threadIndex * (uint) sqRTRes) + i;
-            uint z = round(index / (ures * ures));
-            uint y = round((index - z * ures * ures) / ures);
-            uint x = index - ures * (y + ures * z);
+            /*
+            *   Calculate the density value at each corner in the voxels
+            *   using a blend between noise and density primitives.
+            */
+            uint index = (threadIndex * (uint) sqIResolution) + i;
+            uint z = round(index / (uResolution * uResolution));
+            uint y = round((index - z * uResolution * uResolution) / uResolution);
+            uint x = index - uResolution * (y + uResolution * z);
 			
             float3 cornerPos = float3((float) x * nodeSize, (float) y * nodeSize, (float) z * nodeSize);
-            float density = Density_Func(cornerPos + ChunkPosition);
+            float density = SimplexDensityFunction(cornerPos + ChunkPosition);
+
             uint material = density < 0.0f ? 1 : 0;
-            cornerMaterials[x + ures * (y + ures * z)] = material;
+            CornerMaterials[x + uResolution * (y + uResolution * z)] = material;
         }
     }
 }
 
 [numthreads(8, 8, 8)]
-void ComputeCorners(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint3 id : SV_DispatchThreadID)
+void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
 {
-    uint thIndex = id.x + 8 * (id.y + 8 * id.z);
-    float fR = (float) Resolution;
-    float sqRTRC = sqrt((fR * fR * fR));
-    int sqRTRes = (int) sqRTRC;
-    if (sqRTRC > (float) sqRTRes)
+    
+    /*
+    *  Offset into our octree with respect to the thread worker
+    */
+    uint threadIndex = id.x + 8 * (id.y + 8 * id.z);
+    
+    /*
+    *  Calculate the length of our octree
+    */
+    float fResolution = (float) Resolution;
+    float sqFResolution = sqrt((fResolution * fResolution * fResolution));
+    int sqIResolution = (int) sqFResolution;
+    
+    if (sqFResolution > (float) sqIResolution)
     {
-        sqRTRes = sqRTRes + 1;
+        sqIResolution = sqIResolution + 1;
     }
 	
+    /*
+    *  Calculate the size of a voxel with respect to the permitted maximum declared size 
+    *  and the size of the octree
+    */
     int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
 	
-    if (thIndex < (uint) sqRTRes)
+    if (threadIndex < (uint) sqIResolution)
     {
-        uint ures = (uint) Resolution;
+        uint uResolution = (uint) Resolution;
 		
-        for (int i = 0; i < sqRTRes; i++)
+        for (int i = 0; i < sqIResolution; i++)
         {
-            uint index = (thIndex * (uint) sqRTRes) + i;
-            uint z = round(index / (ures * ures));
-            uint y = round((index - z * ures * ures) / ures);
-            uint x = index - ures * (y + ures * z);
+            /*
+            *    Calculate the position of the node
+            */
+            uint index = (threadIndex * (uint) sqIResolution) + i;
+            uint z = round(index / (uResolution * uResolution));
+            uint y = round((index - z * uResolution * uResolution) / uResolution);
+            uint x = index - uResolution * (y + uResolution * z);
 			
             uint corners = 0;
+            /*
+            *   Sample the eight corners
+            */
             for (int j = 0; j < 8; j++)
             {
                 uint3 nodePos = uint3(x, y, z);
-                uint3 cornerPos = nodePos + uint3(CHILD_MIN_OFFSETS[j].x, CHILD_MIN_OFFSETS[j].y, CHILD_MIN_OFFSETS[j].z);
-                uint material = cornerMaterials[cornerPos.x + (ures + 1) * (cornerPos.y + (ures + 1) * cornerPos.z)];
+                uint3 cornerPos = nodePos + uint3(VoxelCornerOffsets[j].x, VoxelCornerOffsets[j].y, VoxelCornerOffsets[j].z);
+                uint material = CornerMaterials[cornerPos.x + (uResolution + 1) * (cornerPos.y + (uResolution + 1) * cornerPos.z)];
                 corners |= (material << j);
             }
 			
-            voxelMaterials[x + ures * (y + ures * z)] = corners;
+            VoxelMaterials[x + uResolution * (y + uResolution * z)] = corners;
 			
             if (corners != 0 && corners != 255)
             {
-                cornerCount[thIndex] = cornerCount[thIndex] + 1;
+                cornerCount[threadIndex] = cornerCount[threadIndex] + 1;
             }
         }
     }
@@ -492,15 +539,21 @@ void AddLength(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint
 	
     for (int i = 0; i < sqRTRes; i++)
     {
-        finalCount[0] += cornerCount[i];
+        FinalCount[0] += cornerCount[i];
     }
 }
 
 [numthreads(8, 8, 8)]
-void ComputePositions(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint3 id : SV_DispatchThreadID)
+void ComputePositions(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
 {
-    uint thIndex = (uint) id.x + 8 * ((uint) id.y + 8 * (uint) id.z);
+    /*
+    * offset to the true thread index
+    */
+    uint threadIndex = (uint) id.x + 8 * ((uint) id.y + 8 * (uint) id.z);
 	
+    /*
+    * calculate the unit resolution
+    */
     float fR = (float) Resolution;
     float sqRTRC = sqrt((fR * fR * fR));
     int sqRTRes = (int) sqRTRC;
@@ -509,29 +562,35 @@ void ComputePositions(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
         sqRTRes = sqRTRes + 1;
     }
 	
-    if (thIndex < (uint) sqRTRes)
+    /*
+    *   If our thread Id is within the octree bounds...
+    */
+    if (threadIndex < (uint) sqRTRes)
     {
+        /*
+        *   ...then calculate the 
+        */
         uint pre = 0;
-        for (uint c = 0; c < thIndex; c++)
+        for (uint c = 0; c < threadIndex; c++)
         {
             pre += cornerCount[c];
         }
 		
-        uint ures = (uint) Resolution;
+        uint uResolution = (uint) Resolution;
 		
         uint count = 0;
         for (int i = 0; i < sqRTRes; i++)
         {
-            uint index = (thIndex * (uint) sqRTRes) + i;
-            uint z = round(index / (ures * ures));
-            uint y = round((index - z * ures * ures) / ures);
-            uint x = index - ures * (y + ures * z);
+            uint index = (threadIndex * (uint) sqRTRes) + i;
+            uint z = round(index / (uResolution * uResolution));
+            uint y = round((index - z * uResolution * uResolution) / uResolution);
+            uint x = index - uResolution * (y + uResolution * z);
 			
-            uint corners = voxelMaterials[x + ures * (y + ures * z)];
+            uint corners = VoxelMaterials[x + uResolution * (y + uResolution * z)];
 			
             if (corners != 0 && corners != 255)
             {
-                CornerIndexes[pre + count] = x + ures * (y + ures * z);
+                CornerIndexes[pre + count] = x + uResolution * (y + uResolution * z);
                 count++;
             }
         }
@@ -539,26 +598,34 @@ void ComputePositions(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
 }
 
 [numthreads(128, 1, 1)]
-void ComputeVoxels(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint3 id : SV_DispatchThreadID)
+void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
 {
     int trueIndex = id.x;
-    int count = (int) finalCount[0];
+    int count = (int) FinalCount[0];
 	
     if (trueIndex < count)
     {
-        uint ures = (uint) Resolution;
-		
+        uint uResolution = (uint) Resolution;
+	
         int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
 	
+        
+        /*
+        *   Fetch the 
+        */
         uint voxelIndex = CornerIndexes[trueIndex];
-        uint z = round(voxelIndex / (ures * ures));
-        uint y = round((voxelIndex - z * ures * ures) / ures);
-        uint x = voxelIndex - ures * (y + ures * z);
+        
+        /*
+        *   Calculate the node's position
+        */
+        uint z = round(voxelIndex / (uResolution * uResolution));
+        uint y = round((voxelIndex - z * uResolution * uResolution) / uResolution);
+        uint x = voxelIndex - uResolution * (y + uResolution * z);
 
-        uint corners = voxelMaterials[(int) voxelIndex];
+        uint corners = VoxelMaterials[(int) voxelIndex];
 
         float3 nodePos = float3((float) x * nodeSize, (float) y * nodeSize, (float) z * nodeSize) + ChunkPosition;
-        voxMins[trueIndex] = nodePos;
+        VoxelMins[trueIndex] = nodePos;
 
         int MAX_CROSSINGS = 6;
         int edgeCount = 0;
@@ -579,8 +646,8 @@ void ComputeVoxels(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, 
 			
             if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
             {
-                float3 p1 = nodePos + (CHILD_MIN_OFFSETS[c1] * nodeSize);
-                float3 p2 = nodePos + (CHILD_MIN_OFFSETS[c2] * nodeSize);
+                float3 p1 = nodePos + (VoxelCornerOffsets[c1] * nodeSize);
+                float3 p2 = nodePos + (VoxelCornerOffsets[c2] * nodeSize);
                 float3 p = ApproximateZeroCrossingPosition(p1, p2);
                 float3 n = CalculateSurfaceNormal(p);
 				

@@ -237,6 +237,9 @@ namespace Engine
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
+		/**
+		 * make a wee circle if no data has been passed 
+		 */
 		std::vector<UINT32> rawData(0);
 		if (initData == nullptr)
 		{
@@ -245,11 +248,8 @@ namespace Engine
 			{
 				for (INT32 j = 0; j < height; ++j)
 				{
-					UINT8 r = 255U * ((float)i / (float)width);
-					UINT8 g = 255U * ((float)j / (float)height);
-					UINT8 b = 255U * ((float)i / (float)width);
-					UINT32 rgba = r << i | g << j | b << 8;
-					rawData.push_back(rgba);
+					//
+					rawData.push_back(255U << 24 | 255U << 16 | 0U << 8 | 255U);
 				}
 			}
 		}
@@ -297,7 +297,7 @@ namespace Engine
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = (initData != nullptr) ? initData : rawData.data();
 		subResourceData.RowPitch = width * sizeof(UINT32);
-		subResourceData.SlicePitch = subResourceData.RowPitch * height;
+		subResourceData.SlicePitch = height;// subResourceData.RowPitch* height;
 
 		const UINT32 numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
 

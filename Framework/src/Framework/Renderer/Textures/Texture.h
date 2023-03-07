@@ -27,6 +27,7 @@ namespace Engine
 		RG_UINT_8 = 50,
 		RGB_UINT_8 = 7,
 		RGBA_UINT_8 = 30,
+		RGBA_UINT_UNORM = 28
 	};
 
 	enum class TextureDimension
@@ -83,6 +84,8 @@ namespace Engine
 		virtual UINT16 GetDepth() = 0;
 		virtual TextureDimension GetTextureDimension() = 0;
 		virtual TextureFormat GetTextureFormat() = 0;
+		virtual UINT64 GetTexture() = 0;
 
+		virtual void Copy(void* src) = 0;
 	};
 }

@@ -31,7 +31,9 @@ namespace Engine
 		virtual void Bind() = 0;
 		virtual void UnBind() = 0;
 		virtual void RebuildFrameBuffer(INT32 width, INT32 height) = 0;
-		virtual void* GetColourAttachmentRendererID() const = 0;
+		virtual void* GetFrameBuffer() const = 0;
+		virtual INT32 GetWidth() const= 0;
+		virtual INT32 GetHeight() const = 0;
 		static ScopePointer<FrameBuffer> Create(const FrameBufferSpecifications& fBufferSpecs);
 	};
 

@@ -37,7 +37,7 @@ namespace Engine
 
 		[[nodiscard]] UINT GetResourceHeapSize() const { return SrvUavDescriptorSize; }
 
-		[[nodiscard]] ID3D12DescriptorHeap* GetDescriptorHeap() const { return SrvUavHeap.Get(); }
+		[[nodiscard]] ID3D12DescriptorHeap* GetShaderResourceDescHeap() const { return SrvUavHeap.Get(); }
 
 		[[nodiscard]] UINT64 GetCurrentHandleOffset() const { return HandleOffset; }
 

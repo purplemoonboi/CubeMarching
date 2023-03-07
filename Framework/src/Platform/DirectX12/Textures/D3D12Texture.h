@@ -40,6 +40,8 @@ namespace Engine
 		UINT64 GetWidth() override;
 		UINT32 GetHeight() override;
 		UINT16 GetDepth() override;
+		UINT64 GetTexture() override;
+		void Copy(void* src) override;
 		TextureDimension GetTextureDimension() override;
 		TextureFormat GetTextureFormat() override;
 

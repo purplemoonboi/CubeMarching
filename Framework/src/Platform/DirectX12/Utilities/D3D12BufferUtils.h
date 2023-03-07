@@ -63,6 +63,10 @@ namespace Engine
 			ComPtr<ID3D12Resource>& uploadBuffer
 		);
 
+		static void CopyTexture(ID3D12Resource* src, ID3D12Resource* dst);
+
+		static void CopyTextureGPU(ID3D12Resource* src, ID3D12Resource* dst);
+
 		static ComPtr<ID3D12Resource> CreateCounterResource(bool allowShaderAtomics, bool allowWrite = false);
 
 		static ComPtr<ID3D12Resource> CreateReadBackBuffer(UINT32 bufferWidth);

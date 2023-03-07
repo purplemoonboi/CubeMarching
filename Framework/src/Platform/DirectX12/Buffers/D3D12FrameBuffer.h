@@ -35,13 +35,14 @@ namespace Engine
 		[[nodiscard]] const D3D12_VIEWPORT& GetViewport() const { return ScreenViewport; }
 		[[nodiscard]] const D3D12_RECT& GetScissorsRect() const { return ScissorRect; }
 		[[nodiscard]] ID3D12Resource* CurrentBackBuffer() const;
-		[[nodiscard]] void* GetColourAttachmentRendererID() const override;
+		[[nodiscard]] void* GetFrameBuffer() const override;
 		[[nodiscard]] INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 		[[nodiscard]] UINT32 GetRtvDescSize() const { return RtvDescriptorSize; }
 		[[nodiscard]] UINT32 GetDsvDescSize() const { return DsvDescriptorSize; }
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferViewCpu() const;
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilViewCpu() const;
-
+		[[nodiscard]] INT32 GetWidth() const override;
+		[[nodiscard]] INT32 GetHeight() const override;
 		[[nodiscard]] DXGI_FORMAT GetBackBufferFormat() const { return BackBufferFormat; }
 		[[nodiscard]] DXGI_FORMAT GetDepthStencilFormat() const { return DepthStencilFormat; }
 

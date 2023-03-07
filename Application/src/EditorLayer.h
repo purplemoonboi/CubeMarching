@@ -43,7 +43,6 @@ namespace Engine
 		VoxelWorldSettings VoxelSettings;
 		PerlinNoiseSettings PerlinSettings;
 
-		RefPointer<FrameBuffer> FrameBuffer;
 
 		ScopePointer<VoxelWorld> VoxelWorld;
 		ScopePointer<PerlinCompute> PerlinCompute;

@@ -104,7 +104,7 @@ namespace Engine
 
 		if (errors != nullptr)
 		{
-			OutputDebugStringA((char*)(errors->GetBufferPointer()));
+			OutputDebugStringA(static_cast<char*>(errors->GetBufferPointer()));
 		}
 
 		THROW_ON_FAILURE(hr);

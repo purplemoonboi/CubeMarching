@@ -196,8 +196,6 @@ namespace Engine
 
 	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
 	{
-
-
 		if(!RenderData.FrameResources.empty())
 		{
 			RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUMBER_OF_FRAME_RESOURCES;
@@ -209,14 +207,10 @@ namespace Engine
 			RenderData.UploadBufferManager->UpdateMaterialBuffers(RenderData.Materials);
 			RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
 		}
-		
 
 		RenderInstruction::PreRender();
 
-		RenderInstruction::BindRenderPass(RenderData.PSOs["Opaque"].get());
-
-
-		RenderInstruction::DrawOpaqueItems(RenderData.OpaqueRenderItems, RenderData.CurrentFrameResourceIndex);
+		RenderInstruction::BindGeometryPass(RenderData.PSOs["Opaque"].get(), RenderData.OpaqueRenderItems);
 
 	}
 

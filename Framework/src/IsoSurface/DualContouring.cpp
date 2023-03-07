@@ -17,7 +17,7 @@ namespace Engine
 		 */
 		const ShaderArgs materialPass =
 		{
-			L"assest\\shaders\\DualContouring.hlsl",
+			L"assets\\shaders\\DualContouringOctree.hlsl",
 			"ComputeMaterials",
 			"cs_5_0"
 		};
@@ -25,7 +25,7 @@ namespace Engine
 
 		const ShaderArgs cornersPass =
 		{
-			L"assest\\shaders\\DualContouring.hlsl",
+			L"assets\\shaders\\DualContouringOctree.hlsl",
 			"ComputeCorners",
 			"cs_5_0"
 		};
@@ -33,7 +33,7 @@ namespace Engine
 
 		const ShaderArgs addLengthPass =
 		{
-			L"assest\\shaders\\DualContouring.hlsl",
+			L"assets\\shaders\\DualContouringOctree.hlsl",
 			"AddLength",
 			"cs_5_0"
 		};
@@ -41,7 +41,7 @@ namespace Engine
 
 		const ShaderArgs positionsPass =
 		{
-			L"assest\\shaders\\DualContouring.hlsl",
+			L"assets\\shaders\\DualContouringOctree.hlsl",
 			"ComputePositions",
 			"cs_5_0"
 		};
@@ -49,7 +49,7 @@ namespace Engine
 
 		const ShaderArgs voxelPass =
 		{
-			L"assest\\shaders\\DualContouring.hlsl",
+			L"assets\\shaders\\DualContouringOctree.hlsl",
 			"ComputeVoxels",
 			"cs_5_0"
 		};
@@ -68,7 +68,7 @@ namespace Engine
 	{
 		ComputeContext->ResetComputeCommandList(ComputeMaterialsPso.get());
 
-		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
+		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
 		auto const d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(ComputeMaterialsPso.get());
@@ -154,7 +154,6 @@ namespace Engine
 	{
 		ComputeMaterialsPso = PipelineStateObject::Create(ComputeContext, ComputeMaterials.get(), RootSignature);
 		ComputeCornersPso	= PipelineStateObject::Create(ComputeContext, ComputeCorners.get(),   RootSignature);
-		ComputeMaterialsPso = PipelineStateObject::Create(ComputeContext, ComputeMaterials.get(), RootSignature);
 		ComputeAddLengthPso = PipelineStateObject::Create(ComputeContext, ComputeAddLength.get(), RootSignature);
 		ComputePositionsPso = PipelineStateObject::Create(ComputeContext, ComputePositions.get(), RootSignature);
 		ComputeVoxelsPso	= PipelineStateObject::Create(ComputeContext, ComputeVoxels.get(),	  RootSignature);
@@ -169,7 +168,10 @@ namespace Engine
 
 	void DualContouring::CreateBuffers()
 	{
-		auto const bufferWidth = DualBufferCapacity * sizeof(DualVertex);
+		/**
+		 * create the voxel buffer
+		 */
+		auto const bufferWidth = DualBufferCapacity * sizeof(GPUVoxel);
 		VoxelBuffer = D3D12BufferUtils::CreateStructuredBuffer(bufferWidth, true, true);
 		VoxelReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(bufferWidth);
 
@@ -184,7 +186,15 @@ namespace Engine
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 		VoxelBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelBuffer.Get(), CounterResource.Get());
+
+		/**
+		 * Create the buffer to hold the densities
+		 */
+		
+		//VoxelMaterialsBuffer = D3D12BufferUtils::CreateStructuredBuffer();
+
 	}
+
 
 	
 }

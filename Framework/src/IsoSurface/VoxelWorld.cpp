@@ -40,7 +40,7 @@ namespace Engine
 	{
 		ComputeContext->ResetComputeCommandList(ComputeState.get());
 
-		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetDescriptorHeap() };
+		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
 		auto const d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(ComputeState.get());
@@ -164,7 +164,7 @@ namespace Engine
 		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
 		ComPtr<ID3DBlob> serializedRootSig = nullptr;
 		ComPtr<ID3DBlob> errorBlob = nullptr;
-		HRESULT hr = D3D12SerializeRootSignature
+		const HRESULT hr = D3D12SerializeRootSignature
 		(
 			&rootSigDesc,
 			D3D_ROOT_SIGNATURE_VERSION_1,

@@ -36,7 +36,13 @@ namespace Engine
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
-		virtual void BindRenderPass(PipelineStateObject* pso) = 0;
+		virtual void BindDepthPass() = 0;
+
+		virtual void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
+
+		virtual void BindLightingPass() = 0;
+
+		virtual void BindPostProcessingPass() = 0;
 
 		virtual void ResetCommandList() = 0;
 
@@ -52,13 +58,7 @@ namespace Engine
 
 		virtual void PostRender() = 0;
 
-		virtual void DrawGeometry
-		(
-			const std::vector<RenderItem*>& renderItems,
-			UINT currentFrameResourceIndex
-		) = 0;
-
-
+		
 
 		virtual void Flush() = 0;
 
@@ -70,6 +70,7 @@ namespace Engine
 
 		[[nodiscard]] virtual MemoryManager* GetMemoryManager() const = 0;
 
+		[[nodiscard]] virtual FrameResource* GetCurrentFrameResource() const = 0;
 
 	private:
 

@@ -22,9 +22,9 @@ namespace Engine
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
-		static void BindRenderPass(PipelineStateObject* pso)
+		static void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 		{
-			RendererApiPtr->BindRenderPass(pso);
+			RendererApiPtr->BindGeometryPass(pso, renderItems);
 		}
 
 		static void ResetGraphicsCommandList()
@@ -67,15 +67,6 @@ namespace Engine
 		static void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 count = 0)
 		{
 			RendererApiPtr->DrawIndexed(geometry, count);
-		}
-
-		static void DrawOpaqueItems
-		(
-			const std::vector<RenderItem*>& renderItems, 
-			UINT currentFrameResourceIndex
-		)
-		{
-			RendererApiPtr->DrawGeometry(renderItems, currentFrameResourceIndex);
 		}
 
 

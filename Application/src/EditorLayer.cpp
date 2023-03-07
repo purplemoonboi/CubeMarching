@@ -21,6 +21,7 @@ namespace Engine
 
         VoxelWorld = CreateScope<class VoxelWorld>();
         PerlinCompute = CreateScope<class PerlinCompute>();
+        DualContourCompute = CreateScope < class DualContouring >();
     }
 
     EditorLayer::~EditorLayer()
@@ -50,8 +51,7 @@ namespace Engine
         };
         VoxelWorld->Init(csApi, api->GetMemoryManager(), args);
 
-        
-        DualContourCompute->Init(csApi, api->GetMemoryManager());
+        //DualContourCompute->Init(csApi, api->GetMemoryManager());
 
         ShaderArgs perlinArgs = 
         {
@@ -61,7 +61,7 @@ namespace Engine
         };
         PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
-        ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_8);
+        ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
 
 
         RenderInstruction::ExecGraphicsCommandList();
@@ -123,14 +123,14 @@ namespace Engine
         }
         else
         {
-            static bool once = true;
+    /*        static bool once = true;
             if (once)
             {
                 once = false;
                 PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
                 VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
             }
-    
+    */
         }
     }
 
@@ -183,7 +183,7 @@ namespace Engine
             // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
             if (!opt_padding)
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-            ImGui::Begin("DockSpace Demo", &dockspace_open, window_flags);//BEGIN DOCKSPACE
+            ImGui::Begin("DockSpace", &dockspace_open, window_flags);//BEGIN DOCKSPACE
             if (!opt_padding)
                 ImGui::PopStyleVar();
 
@@ -267,8 +267,11 @@ namespace Engine
                     ViewportSize = { viewport_region.x, viewport_region.y };
                 }
 
-                auto const* api = RenderInstruction::GetApiPtr();
-                ImGui::Image((ImTextureID)api->GetFrameBuffer()->GetColourAttachmentRendererID(), ImVec2(ViewportSize.x, ViewportSize.y));
+                const auto api = RenderInstruction::GetApiPtr();
+
+                ViewportTexture->Copy(api->GetFrameBuffer()->GetFrameBuffer());
+
+                ImGui::Image((ImTextureID)ViewportTexture->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
 
 
                 ImGui::End();
@@ -278,6 +281,8 @@ namespace Engine
             //END DOCKSPACE
             ImGui::End();
         }
+
+        ImGui::Render();
     }
 
     void EditorLayer::OnEvent(Event& event)

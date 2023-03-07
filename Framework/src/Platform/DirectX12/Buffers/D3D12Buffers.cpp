@@ -386,4 +386,11 @@ namespace Engine
 
 	}
 
+	void D3D12ResourceBuffer::UpdateCurrentFrameResource(FrameResource* frameResource)
+	{
+		CurrentFrameResource = dynamic_cast<D3D12FrameResource*>(frameResource);
+
+
+
+	}
 }

@@ -131,7 +131,7 @@ namespace Engine
 
 
 		// @brief - Updates the current frame resource.
-		void UpdateCurrentFrameResource(FrameResource* frameResource) override { CurrentFrameResource = dynamic_cast<D3D12FrameResource*>(frameResource); }
+		void UpdateCurrentFrameResource(FrameResource* frameResource) override;
 
 		// @brief - Returns a raw pointer to the frame resource.
 		FrameResource* GetCurrentFrameResource() const override { return CurrentFrameResource; }

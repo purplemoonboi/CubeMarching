@@ -52,6 +52,10 @@ namespace Engine
 		}
 	}
 
+	void D3D12RenderingApi::BindDepthPass()
+	{
+	}
+
 	void D3D12RenderingApi::ResetCommandList()
 	{
 		// Reset the command allocator
@@ -97,10 +101,13 @@ namespace Engine
 		CORE_ASSERT(Context->CommandQueue, "Command queue lost");
 		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
 
+
+#ifndef ENGINE_IMGUI_SUPPORT
 		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
 		THROW_ON_FAILURE(cmdResetResult);
 		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
+#endif
 
 		Context->GraphicsCmdList->ClearRenderTargetView
 		(
@@ -116,12 +123,9 @@ namespace Engine
 
 	}
 
-	void D3D12RenderingApi::PostRender()
-	{
-		//TODO: not sure what this can be used for just now? Already have flush which handles cmd execution.
-	}
+	void D3D12RenderingApi::PostRender(){}
 
-	void D3D12RenderingApi::BindRenderPass(PipelineStateObject* pso)
+	void D3D12RenderingApi::BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 	{
 
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
@@ -144,16 +148,6 @@ namespace Engine
 		ID3D12DescriptorHeap* descriptorHeaps[] = { Context->CbvHeap.Get() };
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-	}
-
-
-
-	void D3D12RenderingApi::DrawGeometry
-	(
-		const std::vector<RenderItem*>& renderItems,
-		UINT currentFrameResourceIndex
-	)
-	{
 		/* Bind the shader root signature */
 		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
@@ -163,8 +157,8 @@ namespace Engine
 		for (auto& renderItem : renderItems)
 		{
 			const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(renderItem);
-			const auto d3d12VertexBuffer  = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
-			const auto d3d12IndexBuffer   = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
+			const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
+			const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
 			Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
 			Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
@@ -173,8 +167,8 @@ namespace Engine
 			const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 			const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
 
-			ID3D12Resource* objectConstantBuffer	= CurrentFrameResource->ConstantBuffer->Resource();
-			ID3D12Resource* materialConstantBuffer	= CurrentFrameResource->MaterialBuffer->Resource();
+			ID3D12Resource* objectConstantBuffer = CurrentFrameResource->ConstantBuffer->Resource();
+			ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
 			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetBufferIndex() * matConstBufferByteSize;
@@ -182,7 +176,7 @@ namespace Engine
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			if(renderItem->Geometry->GetName() == "Terrain")
+			if (renderItem->Geometry->GetName() == "Terrain")
 			{
 				Context->GraphicsCmdList->DrawInstanced
 				(
@@ -205,10 +199,21 @@ namespace Engine
 			}
 
 		}
+
+	}
+
+	void D3D12RenderingApi::BindLightingPass()
+	{
+	}
+
+	void D3D12RenderingApi::BindPostProcessingPass()
+	{
 	}
 
 	void D3D12RenderingApi::Flush()
 	{
+		
+		
 		Context->GraphicsCmdList->ResourceBarrier
 		(
 			1,
@@ -220,16 +225,22 @@ namespace Engine
 			)
 		);
 
+		/**
+		 * Deffer presenting until we have recorded the commands for ImGui
+		 * If ImGui is supported
+		 */
+
+
+#ifndef ENGINE_IMGUI_SUPPORT
+
 		const HRESULT closeResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-#ifdef ENGINE_IMGUI_SUPPORT
 		const HRESULT presentResult = Context->SwapChain->Present(0, 0);
 		THROW_ON_FAILURE(presentResult);
 		FrameBuffer->SetBackBufferIndex((FrameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
-#endif
 		CurrentFrameResource->Fence = ++Context->GPU_TO_CPU_SYNC_COUNT;
 
 		/**
@@ -239,6 +250,8 @@ namespace Engine
 		 */
 		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), Context->GPU_TO_CPU_SYNC_COUNT);
 		THROW_ON_FAILURE(signalResult);
+
+#endif
 	}
 
 }

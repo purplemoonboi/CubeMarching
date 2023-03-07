@@ -39,6 +39,7 @@ namespace Engine
 	constexpr UINT64 NumberOfBufferElements = ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 VoxelWorldVertexBufferSize = NumberOfBufferElements * 5 * sizeof(Triangle);
 
+
 	struct VoxelWorldSettings
 	{
 		float IsoValue = 0.0;
@@ -48,6 +49,17 @@ namespace Engine
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
 	};
 
+	struct OctreeSettings
+	{
+		DirectX::XMFLOAT3 OctreeOrigin = {0,0,0};
+		INT32 Resolution = 64;
+		INT32 OctreeSize = 64;
+		INT32 PrimitiveCount = 100; /* for density primitives */
+	};
+
+	/**
+	 * @brief Look up table 
+	 */
 	static INT32 TriangleTable[4096] =
 	{
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,

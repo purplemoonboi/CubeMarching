@@ -130,12 +130,12 @@ namespace Engine
 							layer->OnRender(AppTimer.DeltaTime());
 						}
 
-						//ImGuiLayer::Begin();
-						//for(Layer* overlay : LayerStack)
-						//{
-						////	overlay->OnImGuiRender();
-						//}
-						//ImGuiLayer::End();
+						ImGuiLayer::Begin();
+						for(Layer* overlay : LayerStack)
+						{
+							overlay->OnImGuiRender();
+						}
+						ImGuiLayer::End();
 
 					}
 				}

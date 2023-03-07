@@ -38,6 +38,7 @@ namespace Engine
 
 	void ImGuiLayer::OnDetach()
 	{
+		ImGuiImplD3D12::CleanUp();
 	}
 
 	void ImGuiLayer::OnEvent(Event& event)

@@ -225,7 +225,7 @@ namespace Engine
 		ScissorRect = { 0, 0, FrameBufferSpecs.Width, FrameBufferSpecs.Height };
 	}
 
-	void* D3D12FrameBuffer::GetColourAttachmentRendererID() const
+	void* D3D12FrameBuffer::GetFrameBuffer() const
 	{
 		return SwapChainBuffer[BackBufferIndex].Get();
 	}
@@ -256,5 +256,13 @@ namespace Engine
 		return DsvHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
+	INT32 D3D12FrameBuffer::GetWidth() const
+	{
+		return FrameBufferSpecs.Width;
+	}
 
+	INT32 D3D12FrameBuffer::GetHeight() const
+	{
+		return FrameBufferSpecs.Height;
+	}
 }

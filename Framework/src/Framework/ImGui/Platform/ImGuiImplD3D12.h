@@ -29,5 +29,6 @@ namespace Engine
 
 		static void EndRenderImpl();
 
+		static void CleanUp();
 	};
 }

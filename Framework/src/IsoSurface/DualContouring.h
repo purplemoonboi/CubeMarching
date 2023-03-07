@@ -13,7 +13,7 @@ namespace Engine
 
 	class DualContouring
 	{
-		struct DualVertex
+		struct GPUVoxel
 		{
 			DirectX::XMFLOAT3 position;
 			DirectX::XMFLOAT3 normal;
@@ -29,7 +29,7 @@ namespace Engine
 		D3D12ComputeApi* ComputeContext;
 		D3D12MemoryManager* MemManager = nullptr;
 
-		std::vector<DualVertex> RawVertexBuffer;
+		std::vector<GPUVoxel> RawVertexBuffer;
 
 		void BuildRootSignature();
 		ComPtr<ID3D12RootSignature> RootSignature;

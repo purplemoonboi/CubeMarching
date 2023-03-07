@@ -22,7 +22,13 @@ namespace Engine
 
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
 
-		void BindRenderPass(PipelineStateObject* pso) override;
+		void BindDepthPass() override;
+
+		void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
+
+		void BindLightingPass() override;
+
+		void BindPostProcessingPass() override;
 
 		void Flush() override;
 
@@ -40,23 +46,17 @@ namespace Engine
 		void PostRender() override;
 
 
-		// @brief 
-		void DrawGeometry
-		(
-			const std::vector<RenderItem*>& renderItems,
-			UINT currentFrameResourceIndex
-		) override;
-
 		[[nodiscard]] GraphicsContext* GetGraphicsContext() const override { return Context; }
 
 		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return FrameBuffer.get(); };
 
 		[[nodiscard]] MemoryManager* GetMemoryManager() const override { return D3D12MemoryManager.get(); }
 
+		[[nodiscard]] FrameResource* GetCurrentFrameResource() const override { return CurrentFrameResource; }
 	private:
 		
 
-		// A unique pointer to the graphics context
+		// A pointer to the graphics context
 		D3D12Context* Context = nullptr;
 
 		// A unique pointer to the frame buffer
