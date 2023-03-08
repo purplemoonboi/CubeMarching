@@ -12,6 +12,10 @@ namespace Engine
 
 		static void Init(D3D12Context* context);
 
+		static void ResetCopyList(ID3D12PipelineState* state);
+
+		static void ExecuteCopyList();
+
 		static void CopyTexture
 		(
 			ID3D12Resource* src, ID3D12Resource* dst,
@@ -20,8 +24,9 @@ namespace Engine
 
 		static void CopyBuffer
 		(
-			ID3D12Resource* src, ID3D12Resource* dst,
-			INT32 x, INT32 y, INT32 z
+			ID3D12Resource* src, UINT64 srcOffset,
+			ID3D12Resource* dst, UINT64 dstOffset,
+			UINT64 sizeInBytes
 		);
 
 	private:

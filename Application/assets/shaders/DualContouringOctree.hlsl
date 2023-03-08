@@ -24,30 +24,20 @@ cbuffer WorldSettings : register(b0)
 	int PrimitiveCount;
 }
 
-RWStructuredBuffer<Voxel> voxels : register(u0);
+RWStructuredBuffer<Voxel> Voxels : register(u0);
 RWStructuredBuffer<uint> CornerMaterials : register(u1);
 RWStructuredBuffer<uint> VoxelMaterials  : register(u2);
 RWStructuredBuffer<uint> CornerIndexes   : register(u3);
 RWStructuredBuffer<float3> VoxelMins : register(u4);
 
-RWStructuredBuffer<int> cornerCount : register(u5);
+RWStructuredBuffer<int> CornerCount : register(u5);
 RWStructuredBuffer<int> FinalCount : register(u6);
 
 RWStructuredBuffer<DensityPrimitive> Primitives : register(u7);
 
 
 
-static float3 VoxelCornerOffsets[8] =
-{
-    float3(0, 0, 0),
-	float3(0, 0, 1),
-	float3(0, 1, 0),
-	float3(0, 1, 1),
-	float3(1, 0, 0),
-	float3(1, 0, 1),
-	float3(1, 1, 0),
-	float3(1, 1, 1)
-};
+static float3 VoxelCornerOffsets[8] = { float3(0, 0, 0), float3(0, 0, 1), float3(0, 1, 0), float3(0, 1, 1), float3(1, 0, 0), float3(1, 0, 1), float3(1, 1, 0), float3(1, 1, 1) };
 
 static int2 edgevmap[12] =
 {
@@ -293,9 +283,6 @@ static float CLerp(float a, float b, float t)
     return (1 - t) * a + t * b;
 }
 
-/*
- * The Density Function 
- */
 float SimplexDensityFunction(float3 worldPosition)
 {
  //   float worldRadius = 200.0f;
@@ -446,7 +433,7 @@ void ComputeMaterials(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_Grou
         for (int i = 0; i < sqIResolution; i++)
         {
             /*
-            *   Calculate the density value at each corner in the voxels
+            *   Calculate the density value at each corner in the Voxels
             *   using a blend between noise and density primitives.
             */
             uint index = (threadIndex * (uint) sqIResolution) + i;
@@ -504,7 +491,13 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
             uint y = round((index - z * uResolution * uResolution) / uResolution);
             uint x = index - uResolution * (y + uResolution * z);
 			
+            float3 cornerPos = float3((float) x * nodeSize, (float) y * nodeSize, (float) z * nodeSize);
+            float density = SimplexDensityFunction(cornerPos + ChunkPosition);
+            uint material = density < 0.0f ? 1 : 0;
+            CornerMaterials[x + uResolution * (y + uResolution * z)] = material;
+            
             uint corners = 0;
+            
             /*
             *   Sample the eight corners
             */
@@ -520,7 +513,7 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
 			
             if (corners != 0 && corners != 255)
             {
-                cornerCount[threadIndex] = cornerCount[threadIndex] + 1;
+                CornerCount[threadIndex] = CornerCount[threadIndex] + 1;
             }
         }
     }
@@ -539,7 +532,7 @@ void AddLength(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint
 	
     for (int i = 0; i < sqRTRes; i++)
     {
-        FinalCount[0] += cornerCount[i];
+        FinalCount[0] += CornerCount[i];
     }
 }
 
@@ -573,7 +566,7 @@ void ComputePositions(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_Grou
         uint pre = 0;
         for (uint c = 0; c < threadIndex; c++)
         {
-            pre += cornerCount[c];
+            pre += CornerCount[c];
         }
 		
         uint uResolution = (uint) Resolution;
@@ -609,10 +602,6 @@ void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID
 	
         int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
 	
-        
-        /*
-        *   Fetch the 
-        */
         uint voxelIndex = CornerIndexes[trueIndex];
         
         /*
@@ -688,8 +677,8 @@ void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID
             solved_position.z = com.z;
         }
 		
-        voxels[trueIndex].position = float3(solved_position.x, solved_position.y, solved_position.z);
-        voxels[trueIndex].normal = averageNormal;
-        voxels[trueIndex].numPoints = edgeCount;
+        Voxels[trueIndex].position = float3(solved_position.x, solved_position.y, solved_position.z);
+        Voxels[trueIndex].normal = averageNormal;
+        Voxels[trueIndex].numPoints = edgeCount;
     }
 }

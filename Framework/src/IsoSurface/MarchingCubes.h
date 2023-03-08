@@ -22,10 +22,10 @@ namespace Engine
 
 	class D3D12Texture;
 
-	class VoxelWorld
+	class MarchingCubes
 	{
 	public:
-		VoxelWorld() = default;
+		MarchingCubes() = default;
 
 		bool Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args);
 

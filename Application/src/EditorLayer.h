@@ -6,7 +6,7 @@
 #include "Framework/Core/Events/KeyEvent.h"
 
 #include "IsoSurface/PerlinCompute.h"
-#include "IsoSurface/VoxelWorld.h"
+#include "IsoSurface/MarchingCubes.h"
 #include "IsoSurface/DualContouring.h"
 
 
@@ -44,7 +44,7 @@ namespace Engine
 		PerlinNoiseSettings PerlinSettings;
 
 
-		ScopePointer<VoxelWorld> VoxelWorld;
+		ScopePointer<MarchingCubes> VoxelWorld;
 		ScopePointer<PerlinCompute> PerlinCompute;
 		ScopePointer<DualContouring> DualContourCompute;
 

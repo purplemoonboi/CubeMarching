@@ -8,7 +8,7 @@
 #include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-
+#include "Platform/DirectX12/Copy/D3D12CopyContext.h"
 #include "Framework/Core/Log/Log.h"
 #include "Framework/ImGui/Platform/ImGuiImplD3D12.h"
 
@@ -33,6 +33,8 @@ namespace Engine
 
 		D3D12BufferUtils::Init(Context->Device.Get(), Context->GraphicsCmdList.Get());
 		D3D12Utils::Init(Context->Device.Get(), D3D12MemoryManager.get());
+
+		D3D12CopyContext::Init(Context);
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
@@ -108,6 +110,10 @@ namespace Engine
 		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
 #endif
+		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
+		THROW_ON_FAILURE(cmdResetResult);
+		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(cmdListResult);
 
 		Context->GraphicsCmdList->ClearRenderTargetView
 		(

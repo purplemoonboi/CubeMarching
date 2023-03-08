@@ -6,6 +6,8 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
+#include "Platform/DirectX12/Copy/D3D12CopyContext.h"
+
 namespace Engine
 {
 
@@ -152,7 +154,12 @@ namespace Engine
 
 		ID3D12Resource* _src = static_cast<ID3D12Resource*>(src);
 
-		D3D12BufferUtils::CopyTextureGPU(GpuResource.Get(), _src);
+		/**
+		 * Add a copy command to the copy context.
+		 * @note - copying does not happen immediately, ensure the copy
+		 *		   is in scope
+		 */
+		D3D12CopyContext::CopyTexture(_src, GpuResource.Get(), 0, 0, 0);
 
 	}
 

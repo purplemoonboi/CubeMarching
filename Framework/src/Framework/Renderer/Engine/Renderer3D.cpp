@@ -15,7 +15,7 @@
 #include "Framework/Renderer/Resources/Material.h"
 #include "IsoSurface/PerlinCompute.h"
 
-#include "IsoSurface/VoxelWorld.h"
+#include "IsoSurface/MarchingCubes.h"
 
 namespace Engine
 {

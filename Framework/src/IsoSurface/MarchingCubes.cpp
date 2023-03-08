@@ -1,4 +1,4 @@
-#include "VoxelWorld.h"
+#include "MarchingCubes.h"
 #include <../vendor/Microsoft/DDSTextureLoader.h>
 
 #include "Framework/Core/Log/Log.h"
@@ -16,7 +16,7 @@ namespace Engine
 {
 
 
-	bool VoxelWorld::Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args)
+	bool MarchingCubes::Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 
@@ -36,7 +36,7 @@ namespace Engine
 		return true;
 	}
 
-	void VoxelWorld::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture, INT32 X, INT32 Y, INT32 Z)
+	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture, INT32 X, INT32 Y, INT32 Z)
 	{
 		ComputeContext->ResetComputeCommandList(ComputeState.get());
 
@@ -136,7 +136,7 @@ namespace Engine
 	}
 
 
-	void VoxelWorld::BuildComputeRootSignature()
+	void MarchingCubes::BuildComputeRootSignature()
 	{
 		CD3DX12_DESCRIPTOR_RANGE table0;
 		table0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -189,7 +189,7 @@ namespace Engine
 		THROW_ON_FAILURE(rootSigResult);
 	}
 
-	void VoxelWorld::BuildPso()
+	void MarchingCubes::BuildPso()
 	{
 		ComputeState = PipelineStateObject::Create(ComputeContext, ComputeShader.get(), ComputeRootSignature);
 	}
@@ -197,11 +197,11 @@ namespace Engine
 	#include "Framework/Maths/Perlin.h"
 
 
-	void VoxelWorld::CreateOutputBuffer()
+	void MarchingCubes::CreateOutputBuffer()
 	{
 
-		OutputBuffer	= D3D12BufferUtils::CreateStructuredBuffer(sizeof(Triangle) * NumberOfBufferElements, true, true);
-		ReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(sizeof(Triangle) * NumberOfBufferElements);
+		OutputBuffer	= D3D12BufferUtils::CreateStructuredBuffer(sizeof(Triangle) * VoxelWorldElementCount, true, true);
+		ReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(sizeof(Triangle) * VoxelWorldElementCount);
 
 		/** create views for the vertex buffer */
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -210,13 +210,13 @@ namespace Engine
 		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 		uavDesc.Buffer.FirstElement = 0;
 		uavDesc.Buffer.CounterOffsetInBytes = 0;
-		uavDesc.Buffer.NumElements = NumberOfBufferElements;
+		uavDesc.Buffer.NumElements = VoxelWorldElementCount;
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 		OutputVertexUavGpu = D3D12Utils::CreateUnorderedAccessView(uavDesc, OutputBuffer.Get(), CounterResource.Get());
 	}
 
-	void VoxelWorld::CreateCounterBuffer()
+	void MarchingCubes::CreateCounterBuffer()
 	{
 		/* create the counter buffer */
 		CounterResource = D3D12BufferUtils::CreateCounterResource(true, true);
@@ -229,7 +229,7 @@ namespace Engine
 	}
 
 
-	void VoxelWorld::CreateTriangulationTableBuffer()
+	void MarchingCubes::CreateTriangulationTableBuffer()
 	{
 		constexpr auto bufferWidth = (4096 * sizeof(INT32));
 
@@ -241,7 +241,7 @@ namespace Engine
 		);
 	}
 
-	void VoxelWorld::CreateVertexBuffers()
+	void MarchingCubes::CreateVertexBuffers()
 	{
 		if (RawTriBuffer.empty())
 			return;

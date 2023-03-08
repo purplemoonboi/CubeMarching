@@ -21,6 +21,9 @@ namespace Engine
 		const std::wstring& GetName() { return DebugName; }
 
 	protected:
+		/*virtual void OnPreAttach() = 0;
+		virtual void OnPreDetach() = 0;*/
+
 		std::wstring DebugName;
 	};
 }

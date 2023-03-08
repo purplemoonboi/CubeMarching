@@ -19,7 +19,7 @@ namespace Engine
         World = new Scene("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
-        VoxelWorld = CreateScope<class VoxelWorld>();
+        VoxelWorld = CreateScope<class MarchingCubes>();
         PerlinCompute = CreateScope<class PerlinCompute>();
         DualContourCompute = CreateScope < class DualContouring >();
     }
@@ -51,7 +51,7 @@ namespace Engine
         };
         VoxelWorld->Init(csApi, api->GetMemoryManager(), args);
 
-        //DualContourCompute->Init(csApi, api->GetMemoryManager());
+        DualContourCompute->Init(csApi, api->GetMemoryManager());
 
         ShaderArgs perlinArgs = 
         {
@@ -62,7 +62,6 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
         ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
-
 
         RenderInstruction::ExecGraphicsCommandList();
     }
@@ -123,12 +122,13 @@ namespace Engine
         }
         else
         {
-    /*        static bool once = true;
+    /*
+            static bool once = true;
             if (once)
             {
                 once = false;
                 PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-                VoxelWorld->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+                MarchingCubes->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
             }
     */
         }
@@ -267,9 +267,7 @@ namespace Engine
                     ViewportSize = { viewport_region.x, viewport_region.y };
                 }
 
-                const auto api = RenderInstruction::GetApiPtr();
-
-                ViewportTexture->Copy(api->GetFrameBuffer()->GetFrameBuffer());
+              
 
                 ImGui::Image((ImTextureID)ViewportTexture->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
 

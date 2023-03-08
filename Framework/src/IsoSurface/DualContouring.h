@@ -68,6 +68,7 @@ namespace Engine
 		 */
 		ComPtr<ID3D12Resource> VoxelMaterialsBuffer;
 		ComPtr<ID3D12Resource> VoxelMaterialsReadBackBuffer;
+		ComPtr<ID3D12Resource> VoxelCounterBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE VoxelMaterialsUav;
 		/**
 		 * @brief A buffer for storing the index buffer
@@ -85,13 +86,15 @@ namespace Engine
 		 * @brief A buffer for storing the corner count
 		 */
 		ComPtr<ID3D12Resource> CornerCountBuffer;
+		ComPtr<ID3D12Resource> CornerCountCounterBuffer;
 		ComPtr<ID3D12Resource> CornerCountBackBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE CornerCountUav;
 		/**
 		 * @brief A buffer for storing the final count
 		 */
 		ComPtr<ID3D12Resource> FinalCount;
-		ComPtr<ID3D12Resource> FinalCountBackBuffer;
+		ComPtr<ID3D12Resource> FinalCountCounterBuffer;
+		ComPtr<ID3D12Resource> FinalCountReadBackBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE FinalCountUav;
 		/**
 		 * @brief A buffer for storing the density shapes
@@ -100,10 +103,7 @@ namespace Engine
 		ComPtr<ID3D12Resource> DensityPrimitivesBackBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE DensityPrimitivesUav;
 
-		void CreateBufferCounter();
-		ComPtr<ID3D12Resource> CounterResource;
-		ComPtr<ID3D12Resource> CounterReadback;
-		ComPtr<ID3D12Resource> CounterUpload;
+		
 
 		
 
