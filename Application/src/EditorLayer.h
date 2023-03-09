@@ -44,9 +44,9 @@ namespace Engine
 		PerlinNoiseSettings PerlinSettings;
 
 
-		ScopePointer<MarchingCubes> VoxelWorld;
+		ScopePointer<MarchingCubes> MarchingCubes;
 		ScopePointer<PerlinCompute> PerlinCompute;
-		ScopePointer<DualContouring> DualContourCompute;
+		ScopePointer<DualContouring> DualContour;
 
 		ScopePointer<Texture> ViewportTexture;
 

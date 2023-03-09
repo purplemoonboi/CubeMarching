@@ -8,6 +8,14 @@ struct Voxel
     int numPoints;
 };
 
+struct Quad
+{
+    Voxel VertexA;
+    Voxel VertexB;
+    Voxel VertexC;
+    Voxel VertexD;
+};
+
 struct DensityPrimitive
 {
     int type;
@@ -39,7 +47,7 @@ RWStructuredBuffer<DensityPrimitive> Primitives : register(u7);
 
 static float3 VoxelCornerOffsets[8] = { float3(0, 0, 0), float3(0, 0, 1), float3(0, 1, 0), float3(0, 1, 1), float3(1, 0, 0), float3(1, 0, 1), float3(1, 1, 0), float3(1, 1, 1) };
 
-static int2 edgevmap[12] =
+static int2 EdgeMap[12] =
 {
     int2(0, 4), int2(1, 5), int2(2, 6), int2(3, 7),
 	int2(0, 2), int2(1, 3), int2(4, 6), int2(5, 7),
@@ -462,7 +470,8 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
     /*
     *  Calculate the length of our octree
     */
-    float fResolution = (float) Resolution;
+//    float fResolution = (float) Resolution;
+    float fResolution = (float) 64U;
     float sqFResolution = sqrt((fResolution * fResolution * fResolution));
     int sqIResolution = (int) sqFResolution;
     
@@ -475,11 +484,12 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
     *  Calculate the size of a voxel with respect to the permitted maximum declared size 
     *  and the size of the octree
     */
-    int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
+ //   int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
+    int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) 8U);
 	
     if (threadIndex < (uint) sqIResolution)
     {
-        uint uResolution = (uint) Resolution;
+        uint uResolution = (uint) 64;
 		
         for (int i = 0; i < sqIResolution; i++)
         {
@@ -492,7 +502,8 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
             uint x = index - uResolution * (y + uResolution * z);
 			
             float3 cornerPos = float3((float) x * nodeSize, (float) y * nodeSize, (float) z * nodeSize);
-            float density = SimplexDensityFunction(cornerPos + ChunkPosition);
+            //float density = SimplexDensityFunction(cornerPos + ChunkPosition);
+            float density = SimplexDensityFunction(cornerPos + float3(0, 0, 0));
             uint material = density < 0.0f ? 1 : 0;
             CornerMaterials[x + uResolution * (y + uResolution * z)] = material;
             
@@ -561,7 +572,7 @@ void ComputePositions(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_Grou
     if (threadIndex < (uint) sqRTRes)
     {
         /*
-        *   ...then calculate the 
+        *   ...then sum the voxels which exhibit a sign change 
         */
         uint pre = 0;
         for (uint c = 0; c < threadIndex; c++)
@@ -627,8 +638,8 @@ void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID
 
         for (int j = 0; j < 12 && edgeCount <= MAX_CROSSINGS; j++)
         {
-            int c1 = edgevmap[j].x;
-            int c2 = edgevmap[j].y;
+            int c1 = EdgeMap[j].x;
+            int c2 = EdgeMap[j].y;
 
             int m1 = (corners >> c1) & 1;
             int m2 = (corners >> c2) & 1;
@@ -681,4 +692,14 @@ void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID
         Voxels[trueIndex].normal = averageNormal;
         Voxels[trueIndex].numPoints = edgeCount;
     }
+}
+
+[numthreads(4, 4, 4)]
+void GenerateQuad(int3 id : SV_DispatchThread)
+{
+
+
+
+
+
 }

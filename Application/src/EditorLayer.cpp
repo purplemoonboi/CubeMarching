@@ -19,16 +19,16 @@ namespace Engine
         World = new Scene("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
-        VoxelWorld = CreateScope<class MarchingCubes>();
+        MarchingCubes = CreateScope<class MarchingCubes>();
         PerlinCompute = CreateScope<class PerlinCompute>();
-        DualContourCompute = CreateScope < class DualContouring >();
+        DualContour   = CreateScope < class DualContouring >();
     }
 
     EditorLayer::~EditorLayer()
     {
 
-        VoxelWorld.reset();
-        VoxelWorld = nullptr;
+        MarchingCubes.reset();
+        MarchingCubes = nullptr;
 
         PerlinCompute.reset();
         PerlinCompute = nullptr;
@@ -49,9 +49,9 @@ namespace Engine
             "GenerateChunk",
             "cs_5_0"
         };
-        VoxelWorld->Init(csApi, api->GetMemoryManager(), args);
+        MarchingCubes->Init(csApi, api->GetMemoryManager(), args);
 
-        DualContourCompute->Init(csApi, api->GetMemoryManager());
+        DualContour->Init(csApi, api->GetMemoryManager());
 
         ShaderArgs perlinArgs = 
         {
@@ -116,21 +116,25 @@ namespace Engine
 
 		
 
-        if(VoxelWorld->GetTerrainMesh() != nullptr)
+        if(MarchingCubes->GetTerrainMesh() != nullptr)
         {
-            Renderer3D::CreateCustomMesh(std::move(VoxelWorld->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
+            Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
         }
         else
         {
-    /*
+    
             static bool once = true;
             if (once)
             {
                 once = false;
-                PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-                MarchingCubes->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+                //PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
+                //MarchingCubes->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+
+                // @note thread count varies per pass.
+                // TODO: Remove thread count from args
+                DualContour->Dispatch(VoxelSettings, nullptr, 0, 0, 0);
             }
-    */
+    
         }
     }
 

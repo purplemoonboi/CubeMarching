@@ -6,11 +6,18 @@
 
 namespace Engine
 {
-	struct MCVertex
+	struct VoxelVertex
 	{
 		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f }; //12
 		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };	//12
 		DirectX::XMFLOAT2 TexCoords = { 0.f, 0.f };		//8
+	};
+
+	struct GPUVoxel
+	{
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT3 normal;
+		int numPoints;
 	};
 
 	struct Triangle
@@ -46,8 +53,8 @@ namespace Engine
 	constexpr UINT64 ChunkHeight = 64;
 	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Triangle);
-	constexpr UINT64 DualContouringVoxelBufferSize = VoxelWorldElementCount * sizeof(Vertex);
-	constexpr UINT64 DensityPrimitiveCount = 100;
+	constexpr UINT64 DualBufferCapacity = (ChunkWidth - 1) * (ChunkHeight - 1) * (ChunkWidth - 1);
+	constexpr UINT64 DensityPrimitiveCount = 8;
 
 	struct VoxelWorldSettings
 	{
@@ -56,10 +63,9 @@ namespace Engine
 		float PlanetRadius = 10;
 		INT32 NumOfPointsPerAxis = ChunkWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
-		DirectX::XMFLOAT3 OctreeOrigin = { 0,0,0 };
 		INT32 Resolution = 64;
-		INT32 OctreeSize = 64;
-		INT32 PrimitiveCount = 100; /* for density primitives */
+		INT32 OctreeSize = 8;
+		INT32 PrimitiveCount = DensityPrimitiveCount; /* for density primitives */
 	};
 
 

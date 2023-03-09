@@ -13,12 +13,7 @@ namespace Engine
 
 	class DualContouring
 	{
-		struct GPUVoxel
-		{
-			DirectX::XMFLOAT3 position;
-			DirectX::XMFLOAT3 normal;
-			int numPoints;
-		};
+		
 	public:
 
 		void Init(ComputeApi* compute, MemoryManager* memManger);
@@ -58,20 +53,20 @@ namespace Engine
 		ComPtr<ID3D12Resource> VoxelReadBackBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE VoxelBufferUav;
 		/**
-		 * @brief A buffer for storing the corner materials
+		 * @brief A buffer for storing the density values 
 		 */
 		ComPtr<ID3D12Resource> CornerMaterials;
 		ComPtr<ID3D12Resource> CornerMaterialsReadBackBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE CornerMaterialsUav;
 		/**
-		 * @brief A buffer for storing the voxel materials
+		 * @brief A buffer for storing the voxel density values. 
 		 */
 		ComPtr<ID3D12Resource> VoxelMaterialsBuffer;
 		ComPtr<ID3D12Resource> VoxelMaterialsReadBackBuffer;
 		ComPtr<ID3D12Resource> VoxelCounterBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE VoxelMaterialsUav;
 		/**
-		 * @brief A buffer for storing the index buffer
+		 * @brief A buffer for storing the nodes configuration.
 		 */
 		ComPtr<ID3D12Resource> CornerIndexesBuffer;
 		ComPtr<ID3D12Resource> CornerIndexesReadBackBuffer;
@@ -83,7 +78,8 @@ namespace Engine
 		ComPtr<ID3D12Resource> VoxelMinsReadBackBuffer;
 		D3D12_GPU_DESCRIPTOR_HANDLE VoxelMinsUav;
 		/**
-		 * @brief A buffer for storing the corner count
+		 * @brief A buffer for storing the sum of the corner count from the bottom left
+		 *		  node to the current thread. 
 		 */
 		ComPtr<ID3D12Resource> CornerCountBuffer;
 		ComPtr<ID3D12Resource> CornerCountCounterBuffer;
@@ -107,7 +103,6 @@ namespace Engine
 
 		
 
-		const UINT64 DualBufferCapacity = (ChunkWidth - 1) * (ChunkHeight - 1) * (ChunkWidth - 1);
 
 	};
 }
