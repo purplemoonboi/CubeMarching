@@ -10,7 +10,15 @@ namespace Engine
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
 
-		FenceValue = Context->GPU_TO_CPU_SYNC_COUNT;
+		FenceValue = 0;
+
+		const HRESULT fenceResult = Context->Device->CreateFence
+		(
+			0,
+			D3D12_FENCE_FLAG_NONE,
+			IID_PPV_ARGS(&Fence)
+		);
+		THROW_ON_FAILURE(fenceResult);
 
 		D3D12_COMMAND_QUEUE_DESC desc = {};
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -54,15 +62,12 @@ namespace Engine
 			const HRESULT resetResult = CommandList->Reset(CommandAllocator.Get(),
 				d3d12PipelineState->GetPipelineState());
 			THROW_ON_FAILURE(resetResult);
-
 		}
-		
 		else
 		{
 			const HRESULT resetResult = CommandList->Reset(CommandAllocator.Get(),
 				nullptr);
 			THROW_ON_FAILURE(resetResult);
-
 		}
 	}
 
@@ -75,8 +80,8 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		FenceValue = ++Context->GPU_TO_CPU_SYNC_COUNT;
-		const HRESULT signalResult = Queue->Signal(Context->Fence.Get(), FenceValue);
+		FenceValue = ++FenceValue;
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), FenceValue);
 		THROW_ON_FAILURE(signalResult);
 	}
 
@@ -88,15 +93,15 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		FenceValue = ++Context->GPU_TO_CPU_SYNC_COUNT;
-		const HRESULT signalResult = Queue->Signal(Context->Fence.Get(), FenceValue);
+		//FenceValue = ++Context->GPU_TO_CPU_SYNC_COUNT;
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), FenceValue);
 		THROW_ON_FAILURE(signalResult);
 
-		auto const completedValue = Context->Fence->GetCompletedValue();
+		auto const completedValue = Fence->GetCompletedValue();
 		if (completedValue < FenceValue)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			THROW_ON_FAILURE(Context->Fence->SetEventOnCompletion(FenceValue, eventHandle));
+			THROW_ON_FAILURE(Fence->SetEventOnCompletion(FenceValue, eventHandle));
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}

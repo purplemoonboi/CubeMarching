@@ -95,7 +95,8 @@ namespace Engine
 		// Flush before changing any resources.
 		Context->FlushCommandQueue();
 
-		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), nullptr));
+		const HRESULT resetResult = Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(resetResult);
 
 		// Release the previous resources we will be recreating.
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
@@ -107,13 +108,14 @@ namespace Engine
 
 
 		// Resize the swap chain.
-		THROW_ON_FAILURE(Context->SwapChain->ResizeBuffers
+		const HRESULT resizeResult = Context->SwapChain->ResizeBuffers
 		(
 			SWAP_CHAIN_BUFFER_COUNT,
 			FrameBufferSpecs.Width, FrameBufferSpecs.Height,
 			BackBufferFormat,
 			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
-		));
+		);
+		THROW_ON_FAILURE(resizeResult);
 
 
 		BackBufferIndex = 0;
@@ -163,8 +165,7 @@ namespace Engine
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
 
-
-		THROW_ON_FAILURE(Context->Device->CreateCommittedResource
+		const HRESULT resourceResult = Context->Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -172,7 +173,8 @@ namespace Engine
 			D3D12_RESOURCE_STATE_COMMON,
 			&optClear,
 			IID_PPV_ARGS(Context->DepthStencilBuffer.GetAddressOf())
-		));
+		);
+		THROW_ON_FAILURE(resourceResult);
 
 		THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
 
@@ -204,7 +206,8 @@ namespace Engine
 		);
 
 		// Execute the resize commands.
-		THROW_ON_FAILURE(Context->GraphicsCmdList->Close());
+		const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		THROW_ON_FAILURE(closeResult);
 
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 

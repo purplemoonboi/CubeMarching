@@ -75,10 +75,10 @@ namespace Engine
 
 		/* first pass - compute the density values at the corners of each voxel */
 
-		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
 
 		auto ps = dynamic_cast<D3D12PipelineStateObject*>(ComputeCornersPso.get());
 		ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
+		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
 
 		const float ccoord[] = { settings.ChunkCoord.x, settings.ChunkCoord.y, settings.ChunkCoord.z };
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
@@ -86,62 +86,70 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
 
-		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(1, CornerMaterialsUav);
-		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(2, VoxelMaterialsUav);
-		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(6, CornerCountUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, CornerMaterialsUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, CornerCountUav);
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
-	
 
+		/* second pass - append the number of corners that were processed per node */
+
+		ps = dynamic_cast<D3D12PipelineStateObject*>(ComputeAddLengthPso.get());
+		ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
+
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
+
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, CornerCountUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, FinalCountUav);
+
+		ComputeContext->CommandList->Dispatch(1, 1, 1);
+
+		/* third pass - compute the node positions */
+		ps = dynamic_cast<D3D12PipelineStateObject*>(ComputePositionsPso.get());
+		ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
+
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
+
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CornerIndexesUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, CornerCountUav);
+
+		//TODO: Update this
+		ComputeContext->CommandList->Dispatch(1, 1, 1);
+
+		/* fourth pass - compute the vertex locations using a QEF */
+		ps = dynamic_cast<D3D12PipelineStateObject*>(ComputeVoxelsPso.get());
+		ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
+
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, CornerMaterialsUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CornerIndexesUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelMinsUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, VoxelBufferUav);
+
+
+		ComputeContext->CommandList->Dispatch(1,1,1);
+
+		/* flush the instructions */
 		ComputeContext->FlushComputeQueue();
 
-		///* second pass - append the number of corners that were processed per node */
-
-		//ps = dynamic_cast<D3D12PipelineStateObject*>(ComputeAddLengthPso.get());
-		//ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
-
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
-
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(5, CornerCountUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(6, FinalCountUav);
-
-		//ComputeContext->CommandList->Dispatch(1, 1, 1);
-
-		///* third pass - compute the node positions */
-		//ps = dynamic_cast<D3D12PipelineStateObject*>(ComputePositionsPso.get());
-		//ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
-
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
-		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
-
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CornerIndexesUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(5, CornerCountUav);
-
-		////TODO: Update this
-		//ComputeContext->CommandList->Dispatch(1, 1, 1);
-
-		///* fourth pass - compute the vertex locations using a QEF */
-		//ps = dynamic_cast<D3D12PipelineStateObject*>(ComputeVoxelsPso.get());
-		//ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
-
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(0, VoxelBufferUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(1, CornerMaterialsUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CornerIndexesUav);
-		//ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelMinsUav);
-
-		//ComputeContext->CommandList->Dispatch(1,1,1);
-
-		///* flush the instructions */
-		//ComputeContext->FlushComputeQueue();
-
 	}
+
+	//CD3DX12_ROOT_PARAMETER slotRootParameter[8];
+	//slotRootParameter[0].InitAsConstants(6, 0);								// world settings view
+	//slotRootParameter[1].InitAsDescriptorTable(1, &cornerMaterials);		// cornerMaterials 
+	//slotRootParameter[2].InitAsDescriptorTable(1, &voxelMaterials);			// voxelMaterials 
+	//slotRootParameter[3].InitAsDescriptorTable(1, &cornerIndexes);			// corner indexes
+	//slotRootParameter[4].InitAsDescriptorTable(1, &voxelMins);				// voxel mins
+	//slotRootParameter[5].InitAsDescriptorTable(1, &voxels);					// voxels
+	//slotRootParameter[6].InitAsDescriptorTable(1, &cornerCount);			// cornerCount
+	//slotRootParameter[7].InitAsDescriptorTable(1, &finalCount);				// finalCount
 
 	void DualContouring::BuildRootSignature()
 	{
@@ -169,7 +177,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[8];
-		slotRootParameter[0].InitAsConstants(4, 0);								// world settings view
+		slotRootParameter[0].InitAsConstants(6, 0);								// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &cornerMaterials);		// cornerMaterials 
 		slotRootParameter[2].InitAsDescriptorTable(1, &voxelMaterials);			// voxelMaterials 
 		slotRootParameter[3].InitAsDescriptorTable(1, &cornerIndexes);			// corner indexes

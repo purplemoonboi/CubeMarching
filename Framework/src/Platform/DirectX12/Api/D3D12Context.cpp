@@ -112,13 +112,14 @@ namespace Engine
 	{
 		GPU_TO_CPU_SYNC_COUNT++;
 
-		THROW_ON_FAILURE(CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT));
+		const HRESULT signalResult = CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT);
+		THROW_ON_FAILURE(signalResult);
 
 		if (Fence->GetCompletedValue() < GPU_TO_CPU_SYNC_COUNT)
 		{
-			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-
-			THROW_ON_FAILURE(Fence->SetEventOnCompletion(GPU_TO_CPU_SYNC_COUNT, eventHandle));
+			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT eventCompletion = Fence->SetEventOnCompletion(GPU_TO_CPU_SYNC_COUNT, eventHandle);
+			THROW_ON_FAILURE(eventCompletion);
 
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);

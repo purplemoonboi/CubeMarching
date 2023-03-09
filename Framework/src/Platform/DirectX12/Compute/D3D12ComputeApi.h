@@ -22,7 +22,7 @@ namespace Engine
 
 		ComPtr<ID3D12GraphicsCommandList> CommandList;
 		D3D12Context* Context = nullptr;
-
+		ComPtr<ID3D12Fence> Fence;
 
 		ComPtr<ID3D12CommandAllocator> CommandAllocator;
 		ComPtr<ID3D12CommandQueue> Queue;
