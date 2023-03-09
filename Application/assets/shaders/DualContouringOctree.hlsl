@@ -503,7 +503,8 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
 			
             float3 cornerPos = float3((float) x * nodeSize, (float) y * nodeSize, (float) z * nodeSize);
             //float density = SimplexDensityFunction(cornerPos + ChunkPosition);
-            float density = SimplexDensityFunction(cornerPos + float3(0, 0, 0));
+            //float density = SimplexDensityFunction(cornerPos + float3(0, 0, 0));
+            float density = snoise(cornerPos);
             uint material = density < 0.0f ? 1 : 0;
             CornerMaterials[x + uResolution * (y + uResolution * z)] = material;
             

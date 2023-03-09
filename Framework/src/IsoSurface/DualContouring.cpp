@@ -63,6 +63,8 @@ namespace Engine
 
 	void DualContouring::Dispatch(VoxelWorldSettings& settings, Texture* texture, INT32 X, INT32 Y, INT32 Z)
 	{
+	
+
 		ComputeContext->ResetComputeCommandList(ComputeCornersPso.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
@@ -86,9 +88,11 @@ namespace Engine
 
 		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(1, CornerMaterialsUav);
 		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(2, VoxelMaterialsUav);
-		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(5, CornerCountUav);
+		ComputeContext->CommandList->SetGraphicsRootDescriptorTable(6, CornerCountUav);
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
+	
+
 		ComputeContext->FlushComputeQueue();
 
 		///* second pass - append the number of corners that were processed per node */

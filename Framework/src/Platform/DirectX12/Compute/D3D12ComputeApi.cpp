@@ -51,17 +51,17 @@ namespace Engine
 		if(state != nullptr)
 		{
 			auto const d3d12PipelineState = dynamic_cast<D3D12PipelineStateObject*>(state);
-			const HRESULT closeResult = CommandList->Reset(CommandAllocator.Get(),
+			const HRESULT resetResult = CommandList->Reset(CommandAllocator.Get(),
 				d3d12PipelineState->GetPipelineState());
-			THROW_ON_FAILURE(closeResult);
+			THROW_ON_FAILURE(resetResult);
 
 		}
 		
 		else
 		{
-			const HRESULT closeResult = CommandList->Reset(CommandAllocator.Get(),
+			const HRESULT resetResult = CommandList->Reset(CommandAllocator.Get(),
 				nullptr);
-			THROW_ON_FAILURE(closeResult);
+			THROW_ON_FAILURE(resetResult);
 
 		}
 	}

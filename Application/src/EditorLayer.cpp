@@ -49,7 +49,7 @@ namespace Engine
             "GenerateChunk",
             "cs_5_0"
         };
-        MarchingCubes->Init(csApi, api->GetMemoryManager(), args);
+        //MarchingCubes->Init(csApi, api->GetMemoryManager(), args);
 
         DualContour->Init(csApi, api->GetMemoryManager());
 
@@ -59,7 +59,7 @@ namespace Engine
             "ComputeNoise3D",
             "cs_5_0"
         };
-        PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
+       // PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
         ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
 
