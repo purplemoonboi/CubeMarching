@@ -21,7 +21,7 @@ cbuffer cbSettings : register(b0)
     int textureSize;
 	float planetSize;
 	int pointsPerAxis;
-	float3 chunkCoord;
+	float3 ChunkCoord;
 };
 
 Texture3D<float> DensityTexture : register(t0);
@@ -35,7 +35,7 @@ float3 coordToWorld(int3 coord)
 
 int indexFromCoord(int3 coord)
 {
-    //coord = coord - int3(chunkCoord);
+    //coord = coord - int3(ChunkCoord);
     return coord.z * pointsPerAxis * pointsPerAxis + coord.y * pointsPerAxis + coord.x;
 }
 
@@ -101,7 +101,7 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     }
 
     
-    int3 coord = id; // + int3(chunkCoord);
+    int3 coord = id + int3(ChunkCoord);
 
     int3 cornerCoords[8];
     cornerCoords[0] = coord + int3(0, 0, 0);

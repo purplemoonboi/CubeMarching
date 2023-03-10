@@ -63,6 +63,9 @@ namespace Engine
 			ComPtr<ID3D12Resource>& uploadBuffer
 		);
 
+		static ComPtr<ID3D12Resource> CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth);
+
+		ComPtr<ID3D12Resource> CreateReadBackTex2D(DXGI_FORMAT format, INT32 width, INT32 height);
 
 		static ComPtr<ID3D12Resource> CreateCounterResource(bool allowShaderAtomics, bool allowWrite = false);
 

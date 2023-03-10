@@ -8,6 +8,8 @@
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Textures/Texture.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
+
+#include "Isosurface/VoxelWorldConstantExpressions.h"
 //change
 namespace Engine
 {
@@ -49,9 +51,9 @@ namespace Engine
             "GenerateChunk",
             "cs_5_0"
         };
-        //MarchingCubes->Init(csApi, api->GetMemoryManager(), args);
+        MarchingCubes->Init(csApi, api->GetMemoryManager(), args);
 
-        DualContour->Init(csApi, api->GetMemoryManager());
+        //DualContour->Init(csApi, api->GetMemoryManager());
 
         ShaderArgs perlinArgs = 
         {
@@ -59,7 +61,7 @@ namespace Engine
             "ComputeNoise3D",
             "cs_5_0"
         };
-       // PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
+        PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
 
         ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
 
@@ -115,24 +117,29 @@ namespace Engine
 
 
 		
-
+        static bool once = true;
+        static INT32 offsetx = 0;
+        static INT32 offsetz = 0;
+        static UINT32 count = 0;
         if(MarchingCubes->GetTerrainMesh() != nullptr)
         {
-            Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()), "Terrain", Transform(0, 0, 0));
+            float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
+            Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()), "Terrain"+std::to_string(offsetx), Transform(-halfxz, 0, -halfxz));
+        
         }
         else
         {
     
-            static bool once = true;
             if (once)
             {
+                PerlinSettings.ChunkCoord = { (float)offsetx, 0, (float)offsetz }; 
                 once = false;
-                //PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-                //MarchingCubes->Dispatch(VoxelSettings, { 0,0,0 }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+                PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
+                MarchingCubes->Dispatch(VoxelSettings, { (float)offsetx, 0, (float)offsetz }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
 
                 // @note thread count varies per pass.
                 // TODO: Remove thread count from args
-                DualContour->Dispatch(VoxelSettings, nullptr, 0, 0, 0);
+                //DualContour->Dispatch(VoxelSettings, nullptr, 0, 0, 0);
             }
     
         }

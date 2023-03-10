@@ -36,14 +36,18 @@ namespace Engine
 
 		ComputeContext->CommandList->SetComputeRootSignature(ComputeRootSignature.Get());
 
-		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Octaves, 0);
-		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Gain, 1);
-		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Loss, 2);
-		ComputeContext->CommandList->SetComputeRoot32BitConstant(0, args.Ground, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.Octaves, 0);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.Gain, 1);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.Loss, 2);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.GroundHeight, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.ChunkCoord.x, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.ChunkCoord.y, 5);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.ChunkCoord.z, 6);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.Frequency, 7);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &args.Amplitude, 8);
 
 		auto const resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, resource->GpuHandleUav);
-
 
 		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
@@ -66,7 +70,7 @@ namespace Engine
 		uavTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
 
 		CD3DX12_ROOT_PARAMETER slotRootParameter[2];
-		slotRootParameter[0].InitAsConstants(4, 0); // perlin settings
+		slotRootParameter[0].InitAsConstants(10, 0); // perlin settings
 		slotRootParameter[1].InitAsDescriptorTable(1, &uavTable);// texture
 
 		// A root signature is an array of root parameters.
@@ -125,6 +129,10 @@ namespace Engine
 			ChunkWidth,
 			TextureFormat::R_FLOAT_32
 		);
+
+		/*ReadBackBuffer = D3D12BufferUtils::CreateReadBackTex3D((DXGI_FORMAT)ScalarTexture->GetTextureFormat(),
+			ChunkWidth, ChunkHeight, ChunkWidth);*/
+
 
 	}
 

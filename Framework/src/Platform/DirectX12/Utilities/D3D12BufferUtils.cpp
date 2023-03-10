@@ -403,6 +403,44 @@ namespace Engine
 		return readBackResource;
 	}
 
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth)
+	{
+		ComPtr<ID3D12Resource> readBackResource = nullptr;
+
+		const HRESULT readBackResult = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex3D(format, width, height, depth),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&readBackResource)
+		);
+
+		THROW_ON_FAILURE(readBackResult);
+
+		return readBackResource;
+	}
+
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackTex2D(DXGI_FORMAT format, INT32 width, INT32 height)
+	{
+		ComPtr<ID3D12Resource> readBackResource = nullptr;
+
+		const HRESULT readBackResult = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex2D(format, width, height),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&readBackResource)
+		);
+
+		THROW_ON_FAILURE(readBackResult);
+
+		return readBackResource;
+	}
+
 
 	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
 	{

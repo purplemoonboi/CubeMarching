@@ -17,10 +17,16 @@ namespace Engine
 
 	struct PerlinNoiseSettings
 	{
-		float Octaves = 8;
-		float Gain = 2.0f;
-		float Loss = 0.5f;
-		float Ground = ChunkWidth / 2;
+		float Octaves = 3.0f;
+		float Gain = 2.2f;
+		float Loss = 0.48f;
+		float GroundHeight = (float)ChunkHeight / 2.0f;
+		DirectX::XMFLOAT3 ChunkCoord;
+		float Frequency = 0.01f;
+		float Amplitude = 20.0f;//for heightmaps
+		float BoundingMaxX;
+		float BoundingMaxY;
+		float BoundingMaxZ;
 	};
 
 	class PerlinCompute

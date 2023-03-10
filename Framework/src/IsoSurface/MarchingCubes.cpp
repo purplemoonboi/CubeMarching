@@ -54,8 +54,9 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
 
-		const float coord[3] = {worldSettings.ChunkCoord.x, worldSettings.ChunkCoord.y, worldSettings.ChunkCoord.z};
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, coord, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.x, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.y, 5);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.z, 6);
 
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
 
@@ -149,7 +150,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-		slotRootParameter[0].InitAsConstants(5, 0);					// world settings view
+		slotRootParameter[0].InitAsConstants(7, 0);					// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &table0);		// density texture buffer 
 		slotRootParameter[2].InitAsShaderResourceView(1);			// tri table texture 
 		slotRootParameter[3].InitAsDescriptorTable(1, &table2);		// output buffer 

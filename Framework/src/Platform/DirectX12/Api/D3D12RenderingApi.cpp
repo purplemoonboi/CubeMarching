@@ -183,7 +183,7 @@ namespace Engine
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-			if (renderItem->Geometry->GetName() == "Terrain")
+			if (renderItem->Geometry->GetName()[0] == 'T')
 			{
 				Context->GraphicsCmdList->DrawInstanced
 				(

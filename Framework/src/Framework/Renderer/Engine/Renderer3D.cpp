@@ -142,7 +142,7 @@ namespace Engine
 			RenderData.MaterialLibrary.Get("Default"),
 			"EditorArgs",
 			0,
-			Transform(0, 0, 0)
+			Transform(0,0,0)
 		);
 
 		RenderData.OpaqueRenderItems.push_back(renderItem.get());
@@ -255,27 +255,34 @@ namespace Engine
 		Transform transform
 	)
 	{
-		if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
+		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
 		{
-		
-			RenderData.Geometries.emplace(meshTag, std::move(meshGeometry));
-
-			ScopePointer<RenderItem> customGeometry = RenderItem::Create
-			(
-				RenderData.Geometries[meshTag].get(),
-				RenderData.MaterialLibrary.Get("Default"),
-				meshTag,
-				2,
-				transform
-			);
-
-			customGeometry->IndexCount = RenderData.Geometries["Terrain"]->IndexBuffer->GetCount();
-			customGeometry->BaseVertexLocation = RenderData.BaseVertexLocation;
-			RenderData.BaseVertexLocation += customGeometry->Geometry->VertexBuffer->GetCount();
-
-			RenderData.OpaqueRenderItems.push_back(customGeometry.get());
-			RenderData.RenderItems.push_back(std::move(customGeometry));
+			/* release buffer */
+			RenderData.Geometries[meshTag]->VertexBuffer->Release();
+			RenderData.Geometries[meshTag].reset();
+			
 		}
+	
+
+		RenderData.Geometries.emplace(meshTag, std::move(meshGeometry));
+
+		ScopePointer<RenderItem> customGeometry = RenderItem::Create
+		(
+			RenderData.Geometries[meshTag].get(),
+			RenderData.MaterialLibrary.Get("Default"),
+			meshTag,
+			2,
+			transform
+		);
+
+		customGeometry->IndexCount = RenderData.Geometries[meshTag]->IndexBuffer->GetCount();
+		customGeometry->BaseVertexLocation = RenderData.BaseVertexLocation;
+		RenderData.BaseVertexLocation += customGeometry->Geometry->VertexBuffer->GetCount();
+
+		RenderData.OpaqueRenderItems.push_back(customGeometry.get());
+		RenderData.RenderItems.push_back(std::move(customGeometry));
+
+		
 	}
 
 	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
