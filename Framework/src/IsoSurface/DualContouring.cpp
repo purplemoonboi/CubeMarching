@@ -133,23 +133,31 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelMinsUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, VoxelBufferUav);
 
-
 		ComputeContext->CommandList->Dispatch(1,1,1);
+
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VoxelBuffer.Get(), 
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		ComputeContext->CommandList->CopyResource(VoxelReadBackBuffer.Get(), VoxelBuffer.Get());
+
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VoxelBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		/* flush the instructions */
 		ComputeContext->FlushComputeQueue();
 
-	}
+		GPUVoxel* voxels = nullptr;
 
-	//CD3DX12_ROOT_PARAMETER slotRootParameter[8];
-	//slotRootParameter[0].InitAsConstants(6, 0);								// world settings view
-	//slotRootParameter[1].InitAsDescriptorTable(1, &cornerMaterials);		// cornerMaterials 
-	//slotRootParameter[2].InitAsDescriptorTable(1, &voxelMaterials);			// voxelMaterials 
-	//slotRootParameter[3].InitAsDescriptorTable(1, &cornerIndexes);			// corner indexes
-	//slotRootParameter[4].InitAsDescriptorTable(1, &voxelMins);				// voxel mins
-	//slotRootParameter[5].InitAsDescriptorTable(1, &voxels);					// voxels
-	//slotRootParameter[6].InitAsDescriptorTable(1, &cornerCount);			// cornerCount
-	//slotRootParameter[7].InitAsDescriptorTable(1, &finalCount);				// finalCount
+		const HRESULT mappingResult = VoxelReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&voxels));
+		THROW_ON_FAILURE(mappingResult);
+		std::vector<GPUVoxel> vvoxels;
+		for(INT32 i = 0; i < 128; ++i)
+		{
+			vvoxels.push_back(voxels[i]);
+		}
+		VoxelReadBackBuffer->Unmap(0, nullptr);
+
+	}
 
 	void DualContouring::BuildRootSignature()
 	{
