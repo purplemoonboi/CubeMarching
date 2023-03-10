@@ -336,7 +336,8 @@ namespace Engine
                     ViewportSize = { viewport_region.x, viewport_region.y };
                 }
 
-              
+           /*     const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
+                ViewportTexture->Copy(frameBuffer->GetFrameBuffer());*/
 
                 ImGui::Image((ImTextureID)ViewportTexture->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
 

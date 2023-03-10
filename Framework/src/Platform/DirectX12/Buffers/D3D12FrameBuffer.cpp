@@ -90,12 +90,12 @@ namespace Engine
 	{
 		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(Context->GraphicsCmdList, "The 'graphics command list' has failed...");
+		CORE_ASSERT(Context->CmdList, "The 'graphics command list' has failed...");
 
 		// Flush before changing any resources.
 		Context->FlushCommandQueue();
 
-		const HRESULT resetResult = Context->GraphicsCmdList->Reset(Context->CmdListAlloc.Get(), nullptr);
+		const HRESULT resetResult = Context->CmdList->Reset(Context->Allocator.Get(), nullptr);
 		THROW_ON_FAILURE(resetResult);
 
 		// Release the previous resources we will be recreating.
@@ -132,6 +132,7 @@ namespace Engine
 				nullptr,
 				rtvHeapHandle
 			);
+			SwapChainBuffer->Get()->SetName(L"Frame Buffer");
 
 			THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
 
@@ -194,7 +195,7 @@ namespace Engine
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		Context->GraphicsCmdList->ResourceBarrier
+		Context->CmdList->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -206,10 +207,10 @@ namespace Engine
 		);
 
 		// Execute the resize commands.
-		const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		const HRESULT closeResult = Context->CmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 
-		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdsLists[] = { Context->CmdList.Get() };
 
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 

@@ -106,6 +106,10 @@ namespace Engine
 		CreateCbvSrvUavHeap(1, 0, 1, 1);
 		BuildRootSignature();
 
+		Device->SetName(L"GPU Device");
+		CommandQueue->SetName(L"Graphics Queue");
+		CmdList->SetName(L"Graphics List");
+		
 	}
 
 	void D3D12Context::FlushCommandQueue()
@@ -129,7 +133,7 @@ namespace Engine
 
 	void D3D12Context::ExecuteGraphicsCommandList() const
 	{
-		ID3D12CommandList* cmdsLists[] = { GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdsLists[] = { CmdList.Get() };
 		CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
@@ -208,7 +212,7 @@ namespace Engine
 		HRESULT cmdQueueAllocResult = Device->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(CmdListAlloc.GetAddressOf())
+			IID_PPV_ARGS(Allocator.GetAddressOf())
 		);
 
 		//Create the direct command queue
@@ -216,15 +220,15 @@ namespace Engine
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			CmdListAlloc.Get(),
+			Allocator.Get(),
 			nullptr,
-			IID_PPV_ARGS(GraphicsCmdList.GetAddressOf())
+			IID_PPV_ARGS(CmdList.GetAddressOf())
 		);
 
 		//Now close the list. When we first use the command list
 		//we'll need to reset it, for this to happen, the list must
 		//be in a closed state.
-		GraphicsCmdList->Close();
+		CmdList->Close();
 
 		return true;
 	}

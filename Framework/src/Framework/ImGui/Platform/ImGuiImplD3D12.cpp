@@ -74,20 +74,21 @@ namespace Engine
 
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
-		context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		context->CmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->GraphicsCmdList.Get());
+	
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->CmdList.Get());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault(nullptr, context->GraphicsCmdList.Get());
+			ImGui::RenderPlatformWindowsDefault(nullptr, context->CmdList.Get());
 		}
 
-		const HRESULT closeResult = context->GraphicsCmdList->Close();
+		const HRESULT closeResult = context->CmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 
-		ID3D12CommandList* cmdList[] = { context->GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdList[] = { context->CmdList.Get() };
 		context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
 		const HRESULT presentResult = context->SwapChain->Present(0, 0);

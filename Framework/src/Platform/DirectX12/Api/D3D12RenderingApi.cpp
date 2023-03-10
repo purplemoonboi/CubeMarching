@@ -31,7 +31,7 @@ namespace Engine
 		D3D12MemoryManager = std::make_unique<class D3D12MemoryManager>();
 		D3D12MemoryManager->InitialiseSrvUavHeap(Context, 32);
 
-		D3D12BufferUtils::Init(Context->Device.Get(), Context->GraphicsCmdList.Get());
+		D3D12BufferUtils::Init(Context->Device.Get(), Context->CmdList.Get());
 		D3D12Utils::Init(Context->Device.Get(), D3D12MemoryManager.get());
 
 		D3D12CopyContext::Init(Context);
@@ -62,9 +62,9 @@ namespace Engine
 	{
 		// Reset the command allocator
 		// Reset the command list
-		THROW_ON_FAILURE(Context->GraphicsCmdList->Reset
+		THROW_ON_FAILURE(Context->CmdList->Reset
 		(
-			Context->CmdListAlloc.Get(),
+			Context->Allocator.Get(),
 			nullptr
 		));
 	}
@@ -73,9 +73,9 @@ namespace Engine
 	void D3D12RenderingApi::ExecCommandList()
 	{
 		// Execute the initialization commands.
-		HRESULT closureResult = Context->GraphicsCmdList->Close();
+		HRESULT closureResult = Context->CmdList->Close();
 		THROW_ON_FAILURE(closureResult);
-		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdsLists[] = { Context->CmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 		Context->FlushCommandQueue();
 	}
@@ -100,23 +100,18 @@ namespace Engine
 	void D3D12RenderingApi::PreRender()
 	{
 		CORE_ASSERT(Context->Device, "Device lost");
-		CORE_ASSERT(Context->GraphicsCmdList, "Graphics CmdL lost");
+		CORE_ASSERT(Context->CmdList, "Graphics CmdL lost");
 		CORE_ASSERT(Context->CommandQueue, "Command queue lost");
 		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
 
 
-#ifndef ENGINE_IMGUI_SUPPORT
+
 		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
 		THROW_ON_FAILURE(cmdResetResult);
-		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
-		THROW_ON_FAILURE(cmdListResult);
-#endif
-		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
-		THROW_ON_FAILURE(cmdResetResult);
-		const HRESULT cmdListResult = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
+		const HRESULT cmdListResult = Context->CmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
 
-		Context->GraphicsCmdList->ClearRenderTargetView
+		Context->CmdList->ClearRenderTargetView
 		(
 			FrameBuffer->GetCurrentBackBufferViewCpu(),
 			DirectX::Colors::Aquamarine,
@@ -124,7 +119,7 @@ namespace Engine
 			nullptr
 		);
 
-		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(),
+		Context->CmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr
 		);
 
@@ -136,29 +131,29 @@ namespace Engine
 	{
 
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
-		Context->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
-		Context->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
+		Context->CmdList->SetPipelineState(dx12Pso->GetPipelineState());
+		Context->CmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
+		Context->CmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
 
 		// Indicate there will be a transition made to the resource.
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		Context->CmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 				FrameBuffer->CurrentBackBuffer(),
 				D3D12_RESOURCE_STATE_PRESENT,
 				D3D12_RESOURCE_STATE_RENDER_TARGET
 			)
 		);
 
-		Context->GraphicsCmdList->OMSetRenderTargets(1, &FrameBuffer->GetCurrentBackBufferViewCpu(),
+		Context->CmdList->OMSetRenderTargets(1, &FrameBuffer->GetCurrentBackBufferViewCpu(),
 			true,
 			&FrameBuffer->GetDepthStencilViewCpu()
 		);
 		ID3D12DescriptorHeap* descriptorHeaps[] = { Context->CbvHeap.Get() };
-		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		Context->CmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		/* Bind the shader root signature */
-		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
+		Context->CmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
-		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
+		Context->CmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
 
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -167,9 +162,9 @@ namespace Engine
 			const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
 			const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
-			Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
-			Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
-			Context->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
+			Context->CmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
+			Context->CmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
+			Context->CmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
 			const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
 			const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
@@ -180,12 +175,12 @@ namespace Engine
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
 			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetBufferIndex() * matConstBufferByteSize;
 
-			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
-			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
+			Context->CmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+			Context->CmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
 			if (renderItem->Geometry->GetName()[0] == 'T')
 			{
-				Context->GraphicsCmdList->DrawInstanced
+				Context->CmdList->DrawInstanced
 				(
 					renderItem->Geometry->VertexBuffer->GetCount(),
 					1,
@@ -195,7 +190,7 @@ namespace Engine
 			}
 			else
 			{
-				Context->GraphicsCmdList->DrawIndexedInstanced
+				Context->CmdList->DrawIndexedInstanced
 				(
 					renderItem->Geometry->IndexBuffer->GetCount(),
 					1,
@@ -221,6 +216,24 @@ namespace Engine
 	{
 		
 		
+		Context->CmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				FrameBuffer->CurrentBackBuffer(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_COMMON
+			)
+		);
+
+		/**
+		 * Deffer presenting until we have recorded the commands for ImGui
+		 * If ImGui is supported
+		 */
+
+
+#ifndef ENGINE_IMGUI_SUPPORT
 		Context->GraphicsCmdList->ResourceBarrier
 		(
 			1,
@@ -232,13 +245,6 @@ namespace Engine
 			)
 		);
 
-		/**
-		 * Deffer presenting until we have recorded the commands for ImGui
-		 * If ImGui is supported
-		 */
-
-
-#ifndef ENGINE_IMGUI_SUPPORT
 
 		const HRESULT closeResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);

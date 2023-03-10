@@ -29,6 +29,8 @@ namespace Engine
 			UINT64 sizeInBytes
 		);
 
+
+
 	private:
 		static UINT64 FenceValue;
 		static D3D12Context* Context;

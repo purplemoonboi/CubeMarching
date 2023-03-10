@@ -54,7 +54,7 @@ namespace Engine
 			Format,
 			UploadBuffer
 		);
-
+		GpuResource.Get()->SetName(L"Texture 2D");
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 		desc.Format = Format;

@@ -255,9 +255,9 @@ namespace Engine
 		if (RawTriBuffer.empty())
 			return;
 
-		const HRESULT allocResult = ComputeContext->Context->CmdListAlloc->Reset();
+		const HRESULT allocResult = ComputeContext->Context->Allocator->Reset();
 		THROW_ON_FAILURE(allocResult);
-		const HRESULT listResult = ComputeContext->Context->GraphicsCmdList->Reset(ComputeContext->Context->CmdListAlloc.Get(), nullptr);
+		const HRESULT listResult = ComputeContext->Context->CmdList->Reset(ComputeContext->Context->Allocator.Get(), nullptr);
 		THROW_ON_FAILURE(listResult);
 
 		std::vector<Vertex> vertices;
@@ -291,7 +291,7 @@ namespace Engine
 		TerrainMeshGeometry->IndexBuffer = IndexBuffer::Create(ComputeContext->Context, indices.data(),
 			ibSizeInBytes, indices.size());
 
-		const HRESULT closeResult = ComputeContext->Context->GraphicsCmdList->Close();
+		const HRESULT closeResult = ComputeContext->Context->CmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 		ComputeContext->Context->ExecuteGraphicsCommandList();
 		ComputeContext->Context->FlushCommandQueue();

@@ -51,9 +51,9 @@ namespace Engine
 		ComPtr<ID3D12Device>				Device;
 		ComPtr<IDXGISwapChain>				SwapChain;
 		ComPtr<IDXGIFactory4>				DXGIFactory;
-		ComPtr<ID3D12GraphicsCommandList>	GraphicsCmdList;
+		ComPtr<ID3D12GraphicsCommandList>	CmdList;
 		ComPtr<ID3D12CommandQueue>			CommandQueue;
-		ComPtr<ID3D12CommandAllocator>		CmdListAlloc;
+		ComPtr<ID3D12CommandAllocator>		Allocator;
 		ComPtr<ID3D12Fence>					Fence;
 		ComPtr<ID3D12RootSignature>			RootSignature;
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;

@@ -49,8 +49,8 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 64;
-	constexpr UINT64 ChunkHeight = 64;
+	constexpr UINT64 ChunkWidth = 32;
+	constexpr UINT64 ChunkHeight = 32;
 	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Triangle);
 	constexpr UINT64 DualBufferCapacity = (ChunkWidth - 1) * (ChunkHeight - 1) * (ChunkWidth - 1);

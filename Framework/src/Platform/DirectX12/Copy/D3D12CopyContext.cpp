@@ -47,6 +47,11 @@ namespace Engine
 		const HRESULT closeResult = CmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 
+		CmdList->SetName(L"Copy List");
+		Queue->SetName(L"Copy Queue");
+		Allocator->SetName(L"Copy Allocator");
+		CmdList->Reset(Allocator.Get(), nullptr);
+
 	}
 
 	void D3D12CopyContext::ResetCopyList(ID3D12PipelineState* state)
@@ -68,9 +73,9 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CmdList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		FenceValue = ++Context->GPU_TO_CPU_SYNC_COUNT;
+		FenceValue = ++FenceValue;
 
-		const HRESULT signal = Queue->Signal(Context->Fence.Get(), Context->GPU_TO_CPU_SYNC_COUNT);
+		const HRESULT signal = Queue->Signal(Context->Fence.Get(), FenceValue);
 		THROW_ON_FAILURE(signal);
 	}
 
@@ -97,13 +102,14 @@ namespace Engine
 		CmdList->CopyTextureRegion(&copyDst, 0, 0, 0, &copySrc, nullptr);
 
 		CmdList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(src, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON)
+			&CD3DX12_RESOURCE_BARRIER::Transition(src, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_PRESENT)
 		);
 
 		CmdList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON)
 		);
 
+		ExecuteCopyList();
 	}
 
 	void D3D12CopyContext::CopyBuffer(ID3D12Resource* src, UINT64 srcOffset, ID3D12Resource* dst, UINT64 dstOffset, UINT64 sizeInBytes)
@@ -127,5 +133,7 @@ namespace Engine
 			&CD3DX12_RESOURCE_BARRIER::Transition(dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON)
 		);
 
+		ExecuteCopyList();
 	}
+	
 }
