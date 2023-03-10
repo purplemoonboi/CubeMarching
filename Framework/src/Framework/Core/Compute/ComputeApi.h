@@ -15,7 +15,8 @@ namespace Engine
 		virtual ~ComputeApi(){}
 		virtual void Init(GraphicsContext* context) = 0;
 		virtual void ResetComputeCommandList(PipelineStateObject* state = nullptr) = 0;
-		virtual void ExecuteComputeCommandList() = 0;
-		virtual void FlushComputeQueue() = 0;
+		virtual void ExecuteComputeCommandList(UINT64* gpuSync) = 0;
+		virtual void FlushComputeQueue(UINT64* gpuSync) = 0;
+		virtual void Wait(UINT64* gpuSync) = 0;
 	};
 }

@@ -71,7 +71,7 @@ namespace Engine
 		}
 	}
 
-	void D3D12ComputeApi::ExecuteComputeCommandList()
+	void D3D12ComputeApi::ExecuteComputeCommandList(UINT64* voxelWorldSyncValue)
 	{
 		
 		const HRESULT closeResult = CommandList->Close();
@@ -80,13 +80,13 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		FenceValue = ++FenceValue;
+		*voxelWorldSyncValue = ++FenceValue;
 
-		const HRESULT signalResult = Queue->Signal(Fence.Get(), FenceValue);
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), *voxelWorldSyncValue);
 		THROW_ON_FAILURE(signalResult);
 	}
 
-	void D3D12ComputeApi::FlushComputeQueue()
+	void D3D12ComputeApi::FlushComputeQueue(UINT64* voxelWorldSyncValue)
 	{
 		const HRESULT closeResult = CommandList->Close();
 		THROW_ON_FAILURE(closeResult);
@@ -94,18 +94,36 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		FenceValue = ++FenceValue;
-		const HRESULT signalResult = Queue->Signal(Fence.Get(), FenceValue);
+		//FenceValue = ++FenceValue;
+	
+		*voxelWorldSyncValue = ++FenceValue;
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), *voxelWorldSyncValue);
 		THROW_ON_FAILURE(signalResult);
 
 		auto const completedValue = Fence->GetCompletedValue();
-		if (completedValue < FenceValue)
+
+		if (completedValue < *voxelWorldSyncValue)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			THROW_ON_FAILURE(Fence->SetEventOnCompletion(FenceValue, eventHandle));
+			THROW_ON_FAILURE(Fence->SetEventOnCompletion(*voxelWorldSyncValue, eventHandle));
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
 
+	}
+	void D3D12ComputeApi::Wait(UINT64* voxelWorldSyncValue)
+	{
+		// Has the GPU finished processing the commands of the current frame resource?
+		// If not, wait until the GPU has completed commands up to this fence point.
+		const UINT64 a = *voxelWorldSyncValue;
+		const UINT64 b = Context->Fence->GetCompletedValue();
+		if (a != 0 && b < a)
+		{
+			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(*voxelWorldSyncValue, eventHandle);
+			THROW_ON_FAILURE(eventCompletion);
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
 	}
 }

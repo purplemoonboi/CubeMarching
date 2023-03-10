@@ -18,7 +18,7 @@ namespace Engine
 	struct PerlinNoiseSettings
 	{
 		float Octaves = 3.0f;
-		float Gain = 2.2f;
+		float Gain = 3;
 		float Loss = 0.48f;
 		float GroundHeight = (float)ChunkHeight / 2.0f;
 		DirectX::XMFLOAT3 ChunkCoord;
@@ -50,6 +50,7 @@ namespace Engine
 		ScopePointer<PipelineStateObject> Pso;
 		//ComPtr<ID3D12PipelineState> Pso;
 
+		UINT64 FenceValue = 0;
 
 		ScopePointer<Shader> PerlinShader;
 		ScopePointer<Texture> ScalarTexture;

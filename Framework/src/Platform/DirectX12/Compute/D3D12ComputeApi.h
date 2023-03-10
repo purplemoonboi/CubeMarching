@@ -17,9 +17,9 @@ namespace Engine
 
 		void ResetComputeCommandList(PipelineStateObject* state) override;
 
-		void ExecuteComputeCommandList() override;
-		void FlushComputeQueue() override;
-
+		void ExecuteComputeCommandList(UINT64* voxelWorldSyncValue) override;
+		void FlushComputeQueue(UINT64* voxelWorldSyncValue) override;
+		void Wait(UINT64* voxelWorldSyncValue) override;
 		ComPtr<ID3D12GraphicsCommandList> CommandList;
 		D3D12Context* Context = nullptr;
 

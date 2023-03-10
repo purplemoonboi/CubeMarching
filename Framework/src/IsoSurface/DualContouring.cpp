@@ -64,6 +64,7 @@ namespace Engine
 	void DualContouring::Dispatch(VoxelWorldSettings& settings, Texture* texture, INT32 X, INT32 Y, INT32 Z)
 	{
 	
+		ComputeContext->Wait(&FenceValue);
 
 		ComputeContext->ResetComputeCommandList(ComputeCornersPso.get());
 
@@ -144,7 +145,7 @@ namespace Engine
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		/* flush the instructions */
-		ComputeContext->FlushComputeQueue();
+		ComputeContext->FlushComputeQueue(&FenceValue);
 
 		GPUVoxel* voxels = nullptr;
 

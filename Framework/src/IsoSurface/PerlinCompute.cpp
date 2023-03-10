@@ -26,6 +26,7 @@ namespace Engine
 
 	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)
 	{
+
 		ComputeContext->ResetComputeCommandList(Pso.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
@@ -60,7 +61,7 @@ namespace Engine
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
 
 
-		ComputeContext->FlushComputeQueue();
+		//ComputeContext->FlushComputeQueue(&FenceValue);
 	}
 
 	void PerlinCompute::BuildComputeRootSignature()

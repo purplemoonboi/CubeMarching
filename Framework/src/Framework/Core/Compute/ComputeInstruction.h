@@ -19,9 +19,9 @@ namespace Engine
 			Compute->ResetComputeCommandList();
 		}
 
-		static void ExecuteComputeCommandList()
+		static void ExecuteComputeCommandList(UINT64* gpuSync)
 		{
-			Compute->ExecuteComputeCommandList();
+			Compute->ExecuteComputeCommandList(gpuSync);
 		}
 
 		static ComputeApi* GetComputeApi()

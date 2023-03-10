@@ -117,31 +117,26 @@ namespace Engine
 
 
 		
-        static bool once = true;
         static INT32 offsetx = 0;
         static INT32 offsetz = 0;
         static UINT32 count = 0;
-        if(MarchingCubes->GetTerrainMesh() != nullptr)
-        {
-            float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
-            Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()), "Terrain"+std::to_string(offsetx), Transform(-halfxz, 0, -halfxz));
-        
-        }
-        else
-        {
     
-            if (once)
-            {
-                PerlinSettings.ChunkCoord = { (float)offsetx, 0, (float)offsetz }; 
-                once = false;
-                PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-                MarchingCubes->Dispatch(VoxelSettings, { (float)offsetx, 0, (float)offsetz }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+        if (Regen)
+        {
+            Regen = false;
+            PerlinSettings.ChunkCoord = { (float)offsetx, 0, (float)offsetz }; 
+            PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
+            MarchingCubes->Dispatch(VoxelSettings, { (float)offsetx, 0, (float)offsetz }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
 
-                // @note thread count varies per pass.
-                // TODO: Remove thread count from args
-                //DualContour->Dispatch(VoxelSettings, nullptr, 0, 0, 0);
+            // @note thread count varies per pass.
+            // TODO: Remove thread count from args
+            //DualContour->Dispatch(VoxelSettings, nullptr, 0, 0, 0);
+
+            if (MarchingCubes->GetTerrainMesh() != nullptr)
+            {
+                float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
+                Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()), "Terrain", Transform(-halfxz, 0, -halfxz));
             }
-    
         }
     }
 
@@ -250,14 +245,77 @@ namespace Engine
                 ImGui::EndMenuBar();
             }
 
+            //VOXEL SETTINGS 
+            {
+                ImGui::Begin("Noise Settings");
+                ImGui::Separator();
+                ImGui::Spacing();
+                float freq = PerlinSettings.Frequency;
+                float gain = PerlinSettings.Gain;
+                float groundHeight = PerlinSettings.GroundHeight;
+                INT32 octaves = PerlinSettings.Octaves;
+                if (ImGui::DragInt("Octaves", &octaves, 1, 1, 8))
+                    Regen = true;
+
+                if (ImGui::DragFloat("Frequency", &freq, 0.1f, 0.001f, 0.999f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Gain", &gain, 0.1f, 0.1f, 4.0f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Ground Height", &groundHeight, 0.1f, 2.0f, (float)ChunkHeight))
+                    Regen = true;
+
+                ImGui::Separator();
+                ImGui::End();
+                PerlinSettings.Frequency = freq;
+                PerlinSettings.Gain = gain;
+                PerlinSettings.GroundHeight = groundHeight;
+                PerlinSettings.Octaves = octaves;
+
+                float isoVal        = VoxelSettings.IsoValue;
+                float planetRadius  = VoxelSettings.PlanetRadius;
+                float resolution    = VoxelSettings.Resolution;
+                float octreeSize    = VoxelSettings.OctreeSize;
+                
+
+                ImGui::Begin("Voxel Settings");
+                ImGui::Spacing();
+                if (ImGui::DragFloat("IsoValue", &isoVal, 0.1f, -0.001f, 0.999f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Planet Radius", &planetRadius, 0.1f, 2.0f, 10.0f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Resolution", &resolution, 0.1f, 2.0f, 64.0f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Octree Size", &octreeSize, 0.1f, 4.0f, 64.0f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                ImGui::Separator();
+
+                VoxelSettings.IsoValue = isoVal;
+                VoxelSettings.PlanetRadius = planetRadius;
+                VoxelSettings.Resolution = resolution;
+                VoxelSettings.OctreeSize = octreeSize;
+                ImGui::End();
+            }
+
             //PROFILING - The profile window
             {
                 ImGui::Begin("Profiling");
                 ImGui::Text("Settings:");
-               // auto stats = Renderer3D::GetProfileData();
+                auto stats = Renderer3D::GetProfileData();
                // ImGui::Text("Draw Calls : %d", stats.DrawCalls);
-               // ImGui::Text("Vert Count : %d", stats.PolyCount);
-               // ImGui::Text("Tri  Count : %d", stats.TriCount);
+                ImGui::Text("Vert Count : %d", stats.PolyCount);
+                ImGui::Text("Tri  Count : %d", stats.TriCount);
                 ImGui::End();
             }
 

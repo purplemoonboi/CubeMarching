@@ -38,7 +38,10 @@ namespace Engine
 
 	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture, INT32 X, INT32 Y, INT32 Z)
 	{
-		ComputeContext->ResetComputeCommandList(ComputeState.get());
+
+		//ComputeContext->Wait(&FenceValue);
+
+		//ComputeContext->ResetComputeCommandList(ComputeState.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
@@ -107,33 +110,38 @@ namespace Engine
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 			));
 
-		ComputeContext->FlushComputeQueue();
 
-		INT32* count = nullptr;
+		ComputeContext->FlushComputeQueue(&FenceValue);
 
-		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&count));
+		INT32* atomicCount = nullptr;
+
+		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&atomicCount));
 		THROW_ON_FAILURE(countMapResult);
 
-		INT32 debug = *count;
+		INT32 triCount = *atomicCount;
 		CounterReadback->Unmap(0, nullptr);
+
 
 		Triangle* data;
 		const HRESULT mappingResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
 		THROW_ON_FAILURE(mappingResult);
 
 		RawTriBuffer.clear();
-		RawTriBuffer.reserve(*count);
-		for(INT32 i = 0; i < *count; ++i)
+		RawTriBuffer.reserve(triCount);
+
+
+		for(INT32 i = 0; i < triCount; ++i)
 		{
-			RawTriBuffer.push_back(data[i]);
+			if (&data[i] != nullptr)
+			{
+				RawTriBuffer.push_back(data[i]);
+			}
 		}
 		ReadBackBuffer->Unmap(0, nullptr);
 
-		if(!IsTerrainMeshGenerated)
-		{
-			CreateVertexBuffers();
-			IsTerrainMeshGenerated = true;
-		}
+		
+		CreateVertexBuffers();
+		
 	}
 
 

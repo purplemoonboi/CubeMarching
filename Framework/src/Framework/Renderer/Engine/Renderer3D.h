@@ -63,7 +63,7 @@ namespace Engine
 
 		static void CreateCustomMesh(ScopePointer<MeshGeometry> mesh, const std::string& meshTag, Transform transform);
 
-		struct RenderingStats
+		struct VoxelWorldRenderingStats
 		{
 			UINT32 DrawCalls = 0;
 			UINT32 TriCount = 0;
@@ -75,9 +75,9 @@ namespace Engine
 			UINT32 GetTotalIndexCount() { return 0; }
 		};
 
-		//static const RenderingStats& GetProfileData() { return ProfileStats; }
+		static const VoxelWorldRenderingStats& GetProfileData() { return VoxelStats; }
 
-		//static RenderingStats ProfileStats;
+		static VoxelWorldRenderingStats VoxelStats;
 
 
 	};

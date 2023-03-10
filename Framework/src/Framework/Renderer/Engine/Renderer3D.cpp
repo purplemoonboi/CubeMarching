@@ -21,7 +21,7 @@
 namespace Engine
 {
 
-	//Renderer3D::RenderingStats Renderer3D::ProfileStats;
+	Renderer3D::VoxelWorldRenderingStats Renderer3D::VoxelStats;
     GeometryGenerator Geo;
 
 	struct RendererData
@@ -255,14 +255,11 @@ namespace Engine
 		Transform transform
 	)
 	{
+	
 		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
 		{
-			/* release buffer */
-			RenderData.Geometries[meshTag]->VertexBuffer->Release();
-			RenderData.Geometries[meshTag].reset();
-			
+			RenderData.Geometries.erase(meshTag);
 		}
-	
 
 		RenderData.Geometries.emplace(meshTag, std::move(meshGeometry));
 
@@ -277,10 +274,22 @@ namespace Engine
 
 		customGeometry->IndexCount = RenderData.Geometries[meshTag]->IndexBuffer->GetCount();
 		customGeometry->BaseVertexLocation = RenderData.BaseVertexLocation;
-		RenderData.BaseVertexLocation += customGeometry->Geometry->VertexBuffer->GetCount();
+		//RenderData.BaseVertexLocation = customGeometry->Geometry->VertexBuffer->GetCount();
 
-		RenderData.OpaqueRenderItems.push_back(customGeometry.get());
-		RenderData.RenderItems.push_back(std::move(customGeometry));
+		UINT32 vertexOffset = 0;
+		for (auto itr = RenderData.Geometries.begin(); itr != RenderData.Geometries.end(); itr++)
+		{
+			vertexOffset = itr->second->VertexBuffer->GetCount();
+		}
+
+		RenderData.BaseVertexLocation = vertexOffset;
+
+		VoxelStats.PolyCount = customGeometry->Geometry->VertexBuffer->GetCount();
+		VoxelStats.TriCount = VoxelStats.PolyCount / 3;
+
+		const auto geoCount = RenderData.OpaqueRenderItems.size() - 1;
+		RenderData.OpaqueRenderItems.at(geoCount)	= customGeometry.get();
+		RenderData.RenderItems.at(geoCount)			= std::move(customGeometry);
 
 		
 	}

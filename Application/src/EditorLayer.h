@@ -42,6 +42,7 @@ namespace Engine
 	private:
 		VoxelWorldSettings VoxelSettings;
 		PerlinNoiseSettings PerlinSettings;
+		bool Regen = true;
 
 
 		ScopePointer<MarchingCubes> MarchingCubes;

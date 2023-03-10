@@ -17,10 +17,10 @@ struct Triangle
 
 cbuffer cbSettings : register(b0)
 {
-	float isoLevel;
-    int textureSize;
-	float planetSize;
-	int pointsPerAxis;
+	float IsoLevel;
+    int TextureSize;
+	float PlanetSize;
+	int PointsPerAxis;
 	float3 ChunkCoord;
 };
 
@@ -30,18 +30,18 @@ RWStructuredBuffer<Triangle> triangles : register(u0);
 
 float3 coordToWorld(int3 coord)
 {
-    return (coord / (textureSize - 1.0) - 0.5f) * planetSize;
+    return (coord / (TextureSize - 1.0) - 0.5f) * PlanetSize;
 }
 
 int indexFromCoord(int3 coord)
 {
     //coord = coord - int3(ChunkCoord);
-    return coord.z * pointsPerAxis * pointsPerAxis + coord.y * pointsPerAxis + coord.x;
+    return coord.z * PointsPerAxis * PointsPerAxis + coord.y * PointsPerAxis + coord.x;
 }
 
 float sampleDensity(int3 coord)
 {
-    coord = max(0, min(coord, textureSize));
+    coord = max(0, min(coord, TextureSize));
     return DensityTexture.Load(float4(coord, 0));
 }
 
@@ -70,7 +70,7 @@ Vertex createVertex(int3 coordA, int3 coordB)
     float densityB = sampleDensity(coordB);
 
 	// Interpolate between the two corner points based on the density
-    float t = (isoLevel - densityA) / (densityB - densityA);
+    float t = (IsoLevel - densityA) / (densityB - densityA);
     float3 position = coordA + t * (coordB - coordA);
 
 	// Normal:
@@ -95,7 +95,7 @@ Vertex createVertex(int3 coordA, int3 coordB)
 [numthreads(8, 8, 8)]
 void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
-    if (id.x >= pointsPerAxis - 1 || id.y >= pointsPerAxis - 1 || id.z >= pointsPerAxis - 1)
+    if (id.x >= PointsPerAxis - 1 || id.y >= PointsPerAxis - 1 || id.z >= PointsPerAxis - 1)
     {
         return;
     }
@@ -117,7 +117,7 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     for (int i = 0; i < 8; i++)
     {
 
-        if (DensityTexture[cornerCoords[i]] > 0)
+        if (DensityTexture[cornerCoords[i]] > IsoLevel)
         {
             cubeConfiguration |= (1 << i);
         }

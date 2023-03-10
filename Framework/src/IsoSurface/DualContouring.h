@@ -23,6 +23,7 @@ namespace Engine
 	private:
 		D3D12ComputeApi* ComputeContext;
 		D3D12MemoryManager* MemManager = nullptr;
+		UINT64 FenceValue = 0;
 
 		std::vector<GPUVoxel> RawVertexBuffer;
 

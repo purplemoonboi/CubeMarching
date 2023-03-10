@@ -61,6 +61,7 @@ namespace Engine
 
 		void CreateCounterBuffer();
 
+		UINT64 FenceValue = 0;
 
 		ComPtr<ID3D12Resource> OutputBuffer;
 		ComPtr<ID3D12Resource> CounterResource;
