@@ -94,9 +94,10 @@ namespace Engine
 		THROW_ON_FAILURE(presentResult);
 		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
 
-		const UINT64 fenceValue = ++context->GPU_TO_CPU_SYNC_COUNT;
+		auto* d3d12FrameInFlight = dynamic_cast<D3D12FrameResource*>(api->GetCurrentFrameResource());
+		d3d12FrameInFlight->SignalCount = ++context->GPU_TO_CPU_SYNC_COUNT;
 
-		const HRESULT signalResult = context->CommandQueue->Signal(context->Fence.Get(), fenceValue);
+		const HRESULT signalResult = context->CommandQueue->Signal(context->Fence.Get(), d3d12FrameInFlight->SignalCount);
 		THROW_ON_FAILURE(signalResult);
 
 	}

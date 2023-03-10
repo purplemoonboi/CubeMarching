@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	struct FrameResource;
 	class GraphicsContext;
 	class PipelineStateObject;
 
@@ -15,7 +16,6 @@ namespace Engine
 		virtual void Init(GraphicsContext* context) = 0;
 		virtual void ResetComputeCommandList(PipelineStateObject* state = nullptr) = 0;
 		virtual void ExecuteComputeCommandList() = 0;
-
 		virtual void FlushComputeQueue() = 0;
 	};
 }

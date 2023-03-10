@@ -29,6 +29,7 @@ namespace Engine
 			return Compute;
 		}
 
+
 	private:
 
 		static ComputeApi* Compute;

@@ -85,12 +85,13 @@ namespace Engine
 		CurrentFrameResource = dynamic_cast<D3D12FrameResource*>(frameResource);
 		// Has the GPU finished processing the commands of the current frame resource?
 		// If not, wait until the GPU has completed commands up to this fence point.
-		const UINT64 a = CurrentFrameResource->Fence;
+		const UINT64 a = CurrentFrameResource->SignalCount;
 		const UINT64 b = Context->Fence->GetCompletedValue();
-		if (a != 0 && b < a)
+		if (/*a != 0 &&*/ b < a)
 		{
-			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			THROW_ON_FAILURE(Context->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle));
+			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
+			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}

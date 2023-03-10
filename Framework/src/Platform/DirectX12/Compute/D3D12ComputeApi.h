@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	struct D3D12FrameResource;
 	using Microsoft::WRL::ComPtr;
 	class D3D12Context;
 
@@ -17,15 +18,16 @@ namespace Engine
 		void ResetComputeCommandList(PipelineStateObject* state) override;
 
 		void ExecuteComputeCommandList() override;
-
 		void FlushComputeQueue() override;
 
 		ComPtr<ID3D12GraphicsCommandList> CommandList;
 		D3D12Context* Context = nullptr;
-		ComPtr<ID3D12Fence> Fence;
 
 		ComPtr<ID3D12CommandAllocator> CommandAllocator;
 		ComPtr<ID3D12CommandQueue> Queue;
+
+
+		ComPtr<ID3D12Fence> Fence;
 
 		UINT64 FenceValue = 0;
 

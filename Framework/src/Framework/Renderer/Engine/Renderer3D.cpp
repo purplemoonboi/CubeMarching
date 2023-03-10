@@ -7,6 +7,7 @@
 
 #include <DirectXColors.h>
 
+#include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Api/FrameResource.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
 #include "Framework/Renderer/Pipeline/PipelineStateObject.h"

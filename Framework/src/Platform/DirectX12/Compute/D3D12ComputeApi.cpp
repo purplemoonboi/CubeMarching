@@ -81,6 +81,7 @@ namespace Engine
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
 		FenceValue = ++FenceValue;
+
 		const HRESULT signalResult = Queue->Signal(Fence.Get(), FenceValue);
 		THROW_ON_FAILURE(signalResult);
 	}
@@ -93,7 +94,7 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		//FenceValue = ++Context->GPU_TO_CPU_SYNC_COUNT;
+		FenceValue = ++FenceValue;
 		const HRESULT signalResult = Queue->Signal(Fence.Get(), FenceValue);
 		THROW_ON_FAILURE(signalResult);
 
