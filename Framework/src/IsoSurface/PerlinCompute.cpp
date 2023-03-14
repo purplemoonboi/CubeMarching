@@ -8,11 +8,17 @@
 namespace Engine
 {
 
-	void PerlinCompute::Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args)
+	void PerlinCompute::Init(ComputeApi* context, MemoryManager* memManager)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
 
+		ShaderArgs args =
+		{
+			L"assets\\shaders\\Perlin.hlsl",
+			"ComputeNoise3D",
+			"cs_5_0"
+		};
 		PerlinShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
 
 		BuildComputeRootSignature();
@@ -24,7 +30,7 @@ namespace Engine
 
 	}
 
-	void PerlinCompute::Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z)
+	void PerlinCompute::Dispatch(const PerlinNoiseSettings& args)
 	{
 
 		ComputeContext->ResetComputeCommandList(Pso.get());
@@ -54,14 +60,14 @@ namespace Engine
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		ComputeContext->CommandList->Dispatch(X, Y, Z);
+		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
 
 		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
 
 
-		//ComputeContext->FlushComputeQueue(&FenceValue);
+		ComputeContext->FlushComputeQueue(&FenceValue);
 	}
 
 	void PerlinCompute::BuildComputeRootSignature()
@@ -130,10 +136,6 @@ namespace Engine
 			ChunkWidth,
 			TextureFormat::R_FLOAT_32
 		);
-
-		/*ReadBackBuffer = D3D12BufferUtils::CreateReadBackTex3D((DXGI_FORMAT)ScalarTexture->GetTextureFormat(),
-			ChunkWidth, ChunkHeight, ChunkWidth);*/
-
 
 	}
 

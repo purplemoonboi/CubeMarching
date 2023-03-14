@@ -33,8 +33,11 @@ cbuffer WorldSettings : register(b0)
 }
 
 RWStructuredBuffer<Voxel> Voxels : register(u0);
+
 RWStructuredBuffer<uint> CornerMaterials : register(u1);
 RWStructuredBuffer<uint> VoxelMaterials  : register(u2);
+
+
 RWStructuredBuffer<uint> CornerIndexes   : register(u3);
 RWStructuredBuffer<float3> VoxelMins : register(u4);
 
@@ -402,48 +405,29 @@ static float3 CalculateSurfaceNormal(float3 p)
 }
 
 [numthreads(9, 8, 8)]
-void ComputeMaterials(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
+void ComputeMaterials(uint3 id : SV_DispatchThreadID)
 {
-    /*
-    *   Offset the worker into our grid
-    */
+
     uint threadIndex = id.x + 9 * (id.y + 8 * id.z);
-	
-    /*
-    *  Calculate the unit size of our bounding volume
-    */
+
     float fResolution = (float) (Resolution + 1);
     float sqFResolution = sqrt(fResolution * fResolution * fResolution);
-    
-    /*
-    *   Adjust the singed resolution value if after casting  
-    *   value is rounded down.
-    */
+
     int sqIResolution = (int) sqFResolution;
     if (sqFResolution > (float) sqIResolution)
     {
         sqIResolution = sqIResolution + 1;
     }
-	
-    /*
-    *  Calculate the size of a voxel with respect to the permitted maximum declared size 
-    *  and the size of the octree
-    */
-    int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
-	
-    /*
-    *   If our thread is within the bounds of the bounding volume...
-    */
+
+    int nodeSize = (int) HIGHEST_RESOLUTION / OctreeSize;
+
     if (threadIndex < (uint) sqIResolution)
     {
         uint uResolution = (uint) (Resolution + 1);
 		
         for (int i = 0; i < sqIResolution; i++)
         {
-            /*
-            *   Calculate the density value at each corner in the Voxels
-            *   using a blend between noise and density primitives.
-            */
+           
             uint index = (threadIndex * (uint) sqIResolution) + i;
             uint z = round(index / (uResolution * uResolution));
             uint y = round((index - z * uResolution * uResolution) / uResolution);
@@ -459,19 +443,12 @@ void ComputeMaterials(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_Grou
 }
 
 [numthreads(8, 8, 8)]
-void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
+void ComputeCorners(uint3 id : SV_DispatchThreadID)
 {
-    
-    /*
-    *  Offset into our octree with respect to the thread worker
-    */
+
     uint threadIndex = id.x + 8 * (id.y + 8 * id.z);
-    
-    /*
-    *  Calculate the length of our octree
-    */
-//    float fResolution = (float) Resolution;
-    float fResolution = (float) 64U;
+  
+    float fResolution = Resolution;
     float sqFResolution = sqrt((fResolution * fResolution * fResolution));
     int sqIResolution = (int) sqFResolution;
     
@@ -479,49 +456,42 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
     {
         sqIResolution = sqIResolution + 1;
     }
-	
-    /*
-    *  Calculate the size of a voxel with respect to the permitted maximum declared size 
-    *  and the size of the octree
-    */
- //   int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
-    int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) 8U);
+
+    int nodeSize = HIGHEST_RESOLUTION / Resolution;
 	
     if (threadIndex < (uint) sqIResolution)
     {
-        uint uResolution = (uint) 64;
+        uint uResolution = (uint)Resolution;
 		
         for (int i = 0; i < sqIResolution; i++)
         {
-            /*
-            *    Calculate the position of the node
-            */
+          
             uint index = (threadIndex * (uint) sqIResolution) + i;
             uint z = round(index / (uResolution * uResolution));
             uint y = round((index - z * uResolution * uResolution) / uResolution);
             uint x = index - uResolution * (y + uResolution * z);
 			
             float3 cornerPos = float3((float) x * nodeSize, (float) y * nodeSize, (float) z * nodeSize);
-            //float density = SimplexDensityFunction(cornerPos + ChunkPosition);
-            //float density = SimplexDensityFunction(cornerPos + float3(0, 0, 0));
+     
             float density = snoise(cornerPos);
             uint material = density < 0.0f ? 1 : 0;
-            CornerMaterials[x + uResolution * (y + uResolution * z)] = material;
+
+            uint worldIndex = x + uResolution * (y + uResolution * z);
+
+            CornerMaterials[worldIndex] = material;
             
             uint corners = 0;
-            
-            /*
-            *   Sample the eight corners
-            */
             for (int j = 0; j < 8; j++)
             {
                 uint3 nodePos = uint3(x, y, z);
+
                 uint3 cornerPos = nodePos + uint3(VoxelCornerOffsets[j].x, VoxelCornerOffsets[j].y, VoxelCornerOffsets[j].z);
                 uint material = CornerMaterials[cornerPos.x + (uResolution + 1) * (cornerPos.y + (uResolution + 1) * cornerPos.z)];
+
                 corners |= (material << j);
             }
 			
-            VoxelMaterials[x + uResolution * (y + uResolution * z)] = corners;
+            VoxelMaterials[worldIndex] = corners;
 			
             if (corners != 0 && corners != 255)
             {
@@ -532,7 +502,7 @@ void ComputeCorners(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupI
 }
 
 [numthreads(1, 1, 1)]
-void AddLength(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint3 id : SV_DispatchThreadID)
+void AddLength(uint3 id : SV_DispatchThreadID)
 {
     float fR = (float) Resolution;
     float sqRTRC = sqrt((fR * fR * fR));
@@ -549,16 +519,11 @@ void AddLength(int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID, uint
 }
 
 [numthreads(8, 8, 8)]
-void ComputePositions(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
+void ComputePositions(uint3 id : SV_DispatchThreadID)
 {
-    /*
-    * offset to the true thread index
-    */
-    uint threadIndex = (uint) id.x + 8 * ((uint) id.y + 8 * (uint) id.z);
-	
-    /*
-    * calculate the unit resolution
-    */
+   
+    uint threadIndex = id.x + 8 * (id.y + 8 * id.z);
+
     float fR = (float) Resolution;
     float sqRTRC = sqrt((fR * fR * fR));
     int sqRTRes = (int) sqRTRC;
@@ -566,15 +531,9 @@ void ComputePositions(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_Grou
     {
         sqRTRes = sqRTRes + 1;
     }
-	
-    /*
-    *   If our thread Id is within the octree bounds...
-    */
+
     if (threadIndex < (uint) sqRTRes)
     {
-        /*
-        *   ...then sum the voxels which exhibit a sign change 
-        */
         uint pre = 0;
         for (uint c = 0; c < threadIndex; c++)
         {
@@ -603,7 +562,7 @@ void ComputePositions(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_Grou
 }
 
 [numthreads(128, 1, 1)]
-void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID,*/ uint3 id : SV_DispatchThreadID)
+void ComputeVoxels(uint3 id : SV_DispatchThreadID)
 {
     int trueIndex = id.x;
     int count = (int) FinalCount[0];
@@ -612,7 +571,7 @@ void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID
     {
         uint uResolution = (uint) Resolution;
 	
-        int nodeSize = (int) ((uint) HIGHEST_RESOLUTION) / ((uint) OctreeSize);
+        int nodeSize = HIGHEST_RESOLUTION / OctreeSize;
 	
         uint voxelIndex = CornerIndexes[trueIndex];
         
@@ -677,16 +636,14 @@ void ComputeVoxels(/*int3 threadID : SV_GroupThreadID, int3 groupID : SV_GroupID
 			    solved_position.y < Min.y || solved_position.y > Max.y ||
 			    solved_position.z < Min.z || solved_position.z > Max.z)
             {
+                /*
+                 * If the vertex generated is out with the voxel bounds...
+                 * ...use the centre of mass calculation (COM).
+                 */
                 solved_position.x = com.x;
                 solved_position.y = com.y;
                 solved_position.z = com.z;
             }
-        }
-        else
-        {
-            solved_position.x = com.x;
-            solved_position.y = com.y;
-            solved_position.z = com.z;
         }
 		
         Voxels[trueIndex].position = float3(solved_position.x, solved_position.y, solved_position.z);

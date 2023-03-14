@@ -45,7 +45,7 @@ float sampleDensity(int3 coord)
     return DensityTexture.Load(float4(coord, 0));
 }
 
-float3 calculateNormal(int3 coord)
+float3 CalculateNormal(int3 coord)
 {
     int3 offsetX = int3(1, 0, 0);
     int3 offsetY = int3(0, 1, 0);
@@ -74,8 +74,8 @@ Vertex createVertex(int3 coordA, int3 coordB)
     float3 position = coordA + t * (coordB - coordA);
 
 	// Normal:
-    float3 normalA = calculateNormal(coordA);
-    float3 normalB = calculateNormal(coordB);
+    float3 normalA = CalculateNormal(coordA);
+    float3 normalB = CalculateNormal(coordB);
     float3 normal = normalize(normalA + t * (normalB - normalA));
 
 	// ID

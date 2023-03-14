@@ -119,7 +119,7 @@ void SVD_Solve_Sym(inout mat3x3_tri a, inout float4 sigma, mat3x3 v)
     vtav[2][1] = 0.0f;
     vtav[2][2] = a[5];
 
-    for (int i = 0; i < NUM_OF_SWEEPS; i++)
+    for (int i = 0; i < SVD_NUM_OF_SWEEPS; i++)
     {
         SVD_Rotate(vtav, v, 0, 1);
         SVD_Rotate(vtav, v, 0, 2);

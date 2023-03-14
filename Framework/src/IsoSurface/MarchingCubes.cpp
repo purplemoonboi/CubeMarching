@@ -16,12 +16,18 @@ namespace Engine
 {
 
 
-	bool MarchingCubes::Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args)
+	void MarchingCubes::Init(ComputeApi* context, MemoryManager* memManager)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
 
+		ShaderArgs args =
+		{
+			L"assets\\shaders\\MarchingCube.hlsl",
+			"GenerateChunk",
+			"cs_5_0"
+		};
 		ComputeShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
 
 		BuildComputeRootSignature();
@@ -33,15 +39,14 @@ namespace Engine
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
-		return true;
 	}
 
-	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, DirectX::XMFLOAT3 chunkID, Texture* texture, INT32 X, INT32 Y, INT32 Z)
+	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, Texture* texture)
 	{
 
-		//ComputeContext->Wait(&FenceValue);
+		ComputeContext->Wait(&FenceValue);
 
-		//ComputeContext->ResetComputeCommandList(ComputeState.get());
+		ComputeContext->ResetComputeCommandList(ComputeState.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
@@ -67,8 +72,10 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootShaderResourceView(2, TriangulationTable->GetGPUVirtualAddress());
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
+		UINT groupXZ = ChunkWidth / 8;
+		UINT groupY = ChunkHeight / 8;
 
-		ComputeContext->CommandList->Dispatch(X, Y, Z);
+		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutputBuffer.Get(),

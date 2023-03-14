@@ -1,3 +1,5 @@
+#include "DensityPrimitives.hlsli"
+
 // Noise Shader Library for Unity - https://github.com/keijiro/NoiseShader
 //
 // Original work (webgl-noise) Copyright (C) 2011 Ashima Arts.
@@ -207,23 +209,25 @@ cbuffer cbSettings : register(b0)
 RWTexture3D<float> Noise3D : register(u0);
 
 [numthreads(1,1,1)]
-void ComputeNoise3D(int3 threadId : SV_DispatchThreadID)
+void ComputeNoise3D(int3 id : SV_DispatchThreadID)
 {
-    const float3 thisId = (float3) threadId + ChunkCoord;
+    const float3 fId = (float3) id + ChunkCoord;
     
-    float noise = 0.0f;
+    float noise = 1.0f;
     float freq = Frequency;
     float gain = Gain;
    
-    if(threadId.y + ChunkCoord.y < Ground)
-    {
-        for (int i = 0; i < Octaves; i++)
-        {
-            noise += snoise(thisId * freq);
-            freq *= gain;
-        }
-    }
+    noise = Sphere(fId, float3(4, 4, 4), 4);
+    
+    //if (id.y + ChunkCoord.y < Ground)
+    //{
+        //for (int i = 0; i < Octaves; i++)
+        //{
+        //    noise += snoise(thisId * freq);
+        //    freq *= gain;
+        //}
+    //}
    
 
-    Noise3D[threadId] = noise;
+    Noise3D[id] = noise;
 }

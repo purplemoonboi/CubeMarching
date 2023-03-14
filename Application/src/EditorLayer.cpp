@@ -21,9 +21,14 @@ namespace Engine
         World = new Scene("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
-        MarchingCubes = CreateScope<class MarchingCubes>();
         PerlinCompute = CreateScope<class PerlinCompute>();
-        DualContour   = CreateScope < class DualContouring >();
+
+        MarchingCubes = CreateScope<class MarchingCubes>();
+        //MarchingCubesHP = CreateScope<class MarchingCubesHP>
+
+        DualContouring = CreateScope<class DualContouring>();
+    	//DualContourSPO   = CreateScope < class DualContouringSPO >();
+
     }
 
     EditorLayer::~EditorLayer()
@@ -46,22 +51,13 @@ namespace Engine
 
         RenderInstruction::ResetGraphicsCommandList();
 
-        ShaderArgs args =
-        { L"assets\\shaders\\MarchingCube.hlsl" ,
-            "GenerateChunk",
-            "cs_5_0"
-        };
-        MarchingCubes->Init(csApi, api->GetMemoryManager(), args);
+        PerlinCompute->Init(csApi, api->GetMemoryManager());
 
-        //DualContour->Init(csApi, api->GetMemoryManager());
+        MarchingCubes->Init(csApi, api->GetMemoryManager());
+        DualContouring->Init(csApi, api->GetMemoryManager());
 
-        ShaderArgs perlinArgs = 
-        {
-            L"assets\\shaders\\Perlin.hlsl",
-            "ComputeNoise3D",
-            "cs_5_0"
-        };
-        PerlinCompute->Init(csApi, api->GetMemoryManager(), perlinArgs);
+        //DualContourSPO->Init(csApi, api->GetMemoryManager());
+        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
 
         ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
 
@@ -125,17 +121,26 @@ namespace Engine
         {
             Regen = false;
             PerlinSettings.ChunkCoord = { (float)offsetx, 0, (float)offsetz }; 
-            PerlinCompute->Dispatch(PerlinSettings, ChunkWidth, ChunkHeight, ChunkWidth);
-            MarchingCubes->Dispatch(VoxelSettings, { (float)offsetx, 0, (float)offsetz }, PerlinCompute->GetTexture(), ChunkWidth, ChunkHeight, ChunkWidth);
+            PerlinCompute->Dispatch(PerlinSettings);
+           /* MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());*/
 
-            // @note thread count varies per pass.
-            // TODO: Remove thread count from args
-            //DualContour->Dispatch(VoxelSettings, nullptr, 0, 0, 0);
+            DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-            if (MarchingCubes->GetTerrainMesh() != nullptr)
+            //MarchingCubesHP->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            //DualContourSPO->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+
+            /*if (MarchingCubes->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
-                Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()), "Terrain", Transform(-halfxz, 0, -halfxz));
+                Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()),
+                "Terrain", Transform(-halfxz, 0, -halfxz));
+            }*/
+
+            if (DualContouring->GetTerrainMesh() != nullptr)
+            {
+                float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
+                Renderer3D::CreateCustomMesh(std::move(DualContouring->GetTerrainMesh()),
+                    "Terrain", Transform(-halfxz, 0, -halfxz));
             }
         }
     }
@@ -283,7 +288,7 @@ namespace Engine
 
                 ImGui::Begin("Voxel Settings");
                 ImGui::Spacing();
-                if (ImGui::DragFloat("IsoValue", &isoVal, 0.1f, -0.001f, 0.999f))
+                if (ImGui::DragFloat("IsoValue", &isoVal, 0.1f, -1.0f, 1.0f))
                     Regen = true;
 
                 ImGui::Spacing();

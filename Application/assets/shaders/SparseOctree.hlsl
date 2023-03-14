@@ -1,9 +1,10 @@
 #define MAX_LEVELS 10
 
-struct Node {
-  uint childPtr : 30;
-  uint leaf : 1;
-  uint count : 1;
+struct Node 
+{
+  uint childPtr;
+  uint leaf;
+  uint count;
 };
 
 StructuredBuffer<Node> tree : register(t0);
@@ -136,8 +137,10 @@ void IncrementNodeCount(uint nodeIndex) {
   }
 }
 
-void DecrementNodeCount(uint nodeIndex) {
-  InterlockedDecrement(tree[nodeIndex].count);
+void DecrementNodeCount(uint nodeIndex)
+{
+    int decriment = tree[nodeIndex].count - 1;
+  InterlockedAdd(&tree[nodeIndex], decriment);
 }
 
 void MergeNode(uint nodeIndex) 
@@ -189,13 +192,15 @@ void UpdateTree(uint3 position, bool value)
   if (value) {
     IncrementNodeCount(nodeIndex);
 
-    if (IsNodeFull(tree[nodeIndex])) {
+    if (IsNodeFull(tree[nodeIndex])) 
+    {
       SubdivideNode(nodeIndex, position / 2u);
     }
   } else {
     DecrementNodeCount(nodeIndex);
 
-    if (IsNodeNonEmpty(tree[nodeIndex])) {
+    if (IsNodeNonEmpty(tree[nodeIndex]))
+    {
       MergeNode(nodeIndex);
     }
   }

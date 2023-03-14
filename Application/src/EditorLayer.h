@@ -8,7 +8,8 @@
 #include "IsoSurface/PerlinCompute.h"
 #include "IsoSurface/MarchingCubes.h"
 #include "IsoSurface/DualContouring.h"
-
+//#include "IsoSurface/MarchingCubesHP.h"
+#include "IsoSurface/DualContouringSPO.h"
 
 namespace Engine
 {
@@ -34,7 +35,6 @@ namespace Engine
 
 		bool OnWindowResize(WindowResizeEvent& wndResize);
 
-
 		bool OnMouseDown(MouseButtonPressedEvent& mEvent);
 		bool OnMouseUp(MouseButtonReleasedEvent& mEvent);
 		bool OnMouseMove(MouseMovedEvent& mEvent);
@@ -47,7 +47,8 @@ namespace Engine
 
 		ScopePointer<MarchingCubes> MarchingCubes;
 		ScopePointer<PerlinCompute> PerlinCompute;
-		ScopePointer<DualContouring> DualContour;
+		ScopePointer<DualContouring> DualContouring;
+		ScopePointer<DualContouringSPO> DualContourSPO;
 
 		ScopePointer<Texture> ViewportTexture;
 

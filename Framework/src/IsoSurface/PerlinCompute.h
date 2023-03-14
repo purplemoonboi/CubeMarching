@@ -24,19 +24,18 @@ namespace Engine
 		DirectX::XMFLOAT3 ChunkCoord;
 		float Frequency = 0.01f;
 		float Amplitude = 20.0f;//for heightmaps
-		float BoundingMaxX;
-		float BoundingMaxY;
-		float BoundingMaxZ;
+		float BoundingMaxX = 128;
+		float BoundingMaxY = 128;
+		float BoundingMaxZ = 128;
 	};
 
 	class PerlinCompute
 	{
 	public:
 
-		void Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args);
+		void Init(ComputeApi* context, MemoryManager* memManager);
 
-
-		void Dispatch(PerlinNoiseSettings args, UINT X, UINT Y, UINT Z);
+		void Dispatch(const PerlinNoiseSettings& args);
 
 		[[nodiscard]] Texture* GetTexture() const { return ScalarTexture.get(); }
 

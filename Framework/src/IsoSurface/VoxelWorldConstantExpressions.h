@@ -6,11 +6,18 @@
 
 namespace Engine
 {
-	struct VoxelVertex
+	struct MarchingCubesVertex
 	{
 		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f }; //12
 		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };	//12
 		DirectX::XMFLOAT2 TexCoords = { 0.f, 0.f };		//8
+	};
+
+	struct DualContourVertex
+	{
+		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f }; //12
+		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };	//12
+		INT32 configuration;
 	};
 
 	struct GPUVoxel
@@ -27,12 +34,11 @@ namespace Engine
 		Vertex VertexC;
 	};
 
-	struct Quad
+	struct DualContourTriangle
 	{
-		Vertex VertexA;
-		Vertex VertexB;
-		Vertex VertexC;
-		Vertex VertexD;
+		DualContourVertex VertexA;
+		DualContourVertex VertexB;
+		DualContourVertex VertexC;
 	};
 
 	struct DensityPrimitive
@@ -49,11 +55,26 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 32;
-	constexpr UINT64 ChunkHeight = 32;
+	constexpr UINT64 ChunkWidth = 8;
+	constexpr UINT64 ChunkHeight = 8;
 	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
+
+	/**
+	 * @brief Max size of a dense marching cubes voxel buffer.
+	 * @note  Size-of-voxel-world * { max-num-of-tris(5) * size-of-triangle-struct }
+	 */
 	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Triangle);
-	constexpr UINT64 DualBufferCapacity = (ChunkWidth - 1) * (ChunkHeight - 1) * (ChunkWidth - 1);
+
+	/**
+	 * @brief Max size of a dense dual contour voxel buffer.
+	 * @note  size-of-world-dimensions { minus '1' because the vertex is generated within the cell } 
+	 */
+	constexpr UINT64 DualContourNumberOfElements = (ChunkWidth - 1) * (ChunkHeight - 1) * (ChunkWidth - 1);
+	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(DualContourVertex);
+
+	constexpr UINT64 DualContourTriangleNumberOfElements = (VoxelWorldElementCount / 4) * 12;
+	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(DualContourTriangle);
+
 	constexpr UINT64 DensityPrimitiveCount = 8;
 
 	struct VoxelWorldSettings
@@ -63,7 +84,8 @@ namespace Engine
 		float PlanetRadius = 10;
 		INT32 NumOfPointsPerAxis = ChunkWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
-		INT32 Resolution = 64;
+	
+		INT32 Resolution = ChunkWidth;
 		INT32 OctreeSize = 8;
 		INT32 PrimitiveCount = DensityPrimitiveCount; /* for density primitives */
 	};

@@ -27,14 +27,12 @@ namespace Engine
 	public:
 		MarchingCubes() = default;
 
-		bool Init(ComputeApi* context, MemoryManager* memManager, ShaderArgs args);
+		void Init(ComputeApi* context, MemoryManager* memManager);
 
 		void Dispatch
 		(
 			VoxelWorldSettings const& worldSettings,
-			DirectX::XMFLOAT3 chunkID, 
-			Texture* texture,
-			INT32 X, INT32 Y, INT32 Z
+			Texture* texture
 		);
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const { return RawTriBuffer; }
