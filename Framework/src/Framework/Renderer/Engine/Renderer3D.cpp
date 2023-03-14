@@ -268,7 +268,7 @@ namespace Engine
 			RenderData.Geometries[meshTag].get(),
 			RenderData.MaterialLibrary.Get("Default"),
 			meshTag,
-			2,
+			(meshTag=="Marching_Terrain" ? 0 : 1),
 			transform
 		);
 
@@ -287,9 +287,17 @@ namespace Engine
 		VoxelStats.PolyCount = customGeometry->Geometry->VertexBuffer->GetCount();
 		VoxelStats.TriCount = VoxelStats.PolyCount / 3;
 
-		const auto geoCount = RenderData.OpaqueRenderItems.size() - 1;
-		RenderData.OpaqueRenderItems.at(geoCount)	= customGeometry.get();
-		RenderData.RenderItems.at(geoCount)			= std::move(customGeometry);
+		if(meshTag=="Dual_Terrain")
+		{
+			RenderData.OpaqueRenderItems.at(0) = customGeometry.get();
+			RenderData.RenderItems.at(0) = std::move(customGeometry);
+		}
+		if(meshTag=="Marching_Terrain")
+		{
+			const auto geoCount = RenderData.OpaqueRenderItems.size() - 1;
+			RenderData.OpaqueRenderItems.at(geoCount) = customGeometry.get();
+			RenderData.RenderItems.at(geoCount) = std::move(customGeometry);
+		}
 
 		
 	}

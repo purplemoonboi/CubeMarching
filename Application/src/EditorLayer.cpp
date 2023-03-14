@@ -120,27 +120,26 @@ namespace Engine
         if (Regen)
         {
             Regen = false;
-            PerlinSettings.ChunkCoord = { (float)offsetx, 0, (float)offsetz }; 
+
+            PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->Dispatch(PerlinSettings);
-           /* MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());*/
+
+            MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
             DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-            //MarchingCubesHP->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            //DualContourSPO->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-
-            /*if (MarchingCubes->GetTerrainMesh() != nullptr)
+            if (MarchingCubes->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()),
-                "Terrain", Transform(-halfxz, 0, -halfxz));
-            }*/
+                    "Marching_Terrain", Transform(-halfxz + ((float)ChunkWidth / 2), -((float)ChunkWidth / 2), -halfxz));
+            }
 
             if (DualContouring->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(DualContouring->GetTerrainMesh()),
-                    "Terrain", Transform(-halfxz, 0, -halfxz));
+                    "Dual_Terrain", Transform(-halfxz-((float)ChunkWidth/2), -((float)ChunkWidth / 2), -halfxz));
             }
         }
     }

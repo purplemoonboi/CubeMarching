@@ -20,7 +20,7 @@ cbuffer cbSettings : register(b0)
 	float IsoLevel;
     int TextureSize;
 	float PlanetSize;
-	int PointsPerAxis;
+	int Resolution;
 	float3 ChunkCoord;
 };
 
@@ -36,7 +36,7 @@ float3 coordToWorld(int3 coord)
 int indexFromCoord(int3 coord)
 {
     //coord = coord - int3(ChunkCoord);
-    return coord.z * PointsPerAxis * PointsPerAxis + coord.y * PointsPerAxis + coord.x;
+    return coord.z * Resolution * Resolution + coord.y * Resolution + coord.x;
 }
 
 float sampleDensity(int3 coord)
@@ -95,7 +95,7 @@ Vertex createVertex(int3 coordA, int3 coordB)
 [numthreads(8, 8, 8)]
 void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
-    if (id.x >= PointsPerAxis - 1 || id.y >= PointsPerAxis - 1 || id.z >= PointsPerAxis - 1)
+    if (id.x >= Resolution || id.y >= Resolution  || id.z >= Resolution)
     {
         return;
     }
@@ -122,6 +122,9 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
             cubeConfiguration |= (1 << i);
         }
     }
+    
+    if(cubeConfiguration == 0 || cubeConfiguration == 255)
+        return;
 	
     int edgeIndices[16] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 

@@ -60,7 +60,7 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 3);
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.x, 4);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.y, 5);
@@ -216,8 +216,8 @@ namespace Engine
 	void MarchingCubes::CreateOutputBuffer()
 	{
 
-		OutputBuffer	= D3D12BufferUtils::CreateStructuredBuffer(sizeof(Triangle) * VoxelWorldElementCount, true, true);
-		ReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(sizeof(Triangle) * VoxelWorldElementCount);
+		OutputBuffer	= D3D12BufferUtils::CreateStructuredBuffer(MarchingCubesVoxelBufferSize, true, true);
+		ReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(MarchingCubesVoxelBufferSize);
 
 		/** create views for the vertex buffer */
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
