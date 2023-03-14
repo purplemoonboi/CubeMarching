@@ -132,7 +132,8 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         
         return;
     }
-      
+     
+    int MAX_EDGE = 6;
     mat3x3_tri ATA = { 0, 0, 0, 0, 0, 0 };
     float4 pointaccum = (float4) 0;
     float4 Atb = (float4) 0;
@@ -143,7 +144,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     /* for surface nets algo */
     float3 avgPosition = (float3) 0;
     
-    for (i = 0; i < 12; i++)
+    for (i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
     {
         /* fetch indices for the corners of the voxel */
         int c1 = cornerIndexAFromEdge[i];
@@ -170,9 +171,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             float3 p = p1 + 0.5f * (p2 - p1);
             
             float3 n = CalculateNormal(p);
-            //float3 normalA = CalculateNormal(p1);
-            //float3 normalB = CalculateNormal(p2);
-            //float3 n = normalize(normalA + t * (normalB - normalA));
+    
             
             qef_add(float4(n.x, n.y, n.z, 0), float4(p.x, p.y, p.z, 0), ATA, Atb, pointaccum, btb);
             averageNormal += n;
@@ -194,23 +193,17 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
 
     /* sometimes the position generated spawns the vertex outside the voxel */
     /* if this happens place the vertex at the centre of mass */
+    
     if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
         solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
     {
-        solvedPosition.xyz = avgPosition;
+        solvedPosition.xyz = com.xyz;
     }
     
-    if (avgPosition.x < minimum.x || avgPosition.y < minimum.y || avgPosition.z < minimum.z ||
-        avgPosition.x > maximum.x || avgPosition.y > maximum.y || avgPosition.z > maximum.z)
-    {
-        avgPosition = id.xyz + float3(0.5f, 0.5f, 0.5f);
-    }
-   
     Vertex vertex = (Vertex) 0;
+
     
-    //TODO: REMOVE THIS AN USE THE POS GENERATED FROM THE QEF
-    
-    vertex.position = avgPosition;
+    vertex.position = solvedPosition;
     vertex.normal = averageNormal;
     vertex.configuration = 1;
     

@@ -124,22 +124,22 @@ namespace Engine
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->Dispatch(PerlinSettings);
 
-            MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
             DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-            if (MarchingCubes->GetTerrainMesh() != nullptr)
+         /*   if (MarchingCubes->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()),
                     "Marching_Terrain", Transform(-halfxz + ((float)ChunkWidth / 2), -((float)ChunkWidth / 2), -halfxz));
-            }
+            }*/
 
             if (DualContouring->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(DualContouring->GetTerrainMesh()),
-                    "Dual_Terrain", Transform(-halfxz-((float)ChunkWidth/2), -((float)ChunkWidth / 2), -halfxz));
+                    "Dual_Terrain", Transform(-halfxz, 0, -halfxz));
             }
         }
     }
