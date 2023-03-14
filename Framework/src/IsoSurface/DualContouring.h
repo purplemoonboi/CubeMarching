@@ -53,6 +53,15 @@ namespace Engine
 		ComPtr<ID3D12Resource> VertexCounterReadBack;
 		D3D12_GPU_DESCRIPTOR_HANDLE VertexBufferUav;
 
+		/**
+		 * @brief A buffer for holding the materials
+		 */
+		ComPtr<ID3D12Resource> VoxelMaterialBuffer;
+		ComPtr<ID3D12Resource> VoxelMatReadBackBuffer;
+		ComPtr<ID3D12Resource> VoxelMatCounterBuffer;
+		ComPtr<ID3D12Resource> VoxelMatCounterUpload;
+		ComPtr<ID3D12Resource> VoxelMatCounterReadBack;
+		D3D12_GPU_DESCRIPTOR_HANDLE VoxelMatBufferUav;
 
 		/**
 		 * @brief A buffer for storing the density values

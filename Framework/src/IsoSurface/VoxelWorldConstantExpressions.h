@@ -55,8 +55,8 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 2;
-	constexpr UINT64 ChunkHeight = 2;
+	constexpr UINT64 ChunkWidth = 16;
+	constexpr UINT64 ChunkHeight = 16;
 
 	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
 	constexpr UINT64 VoxelTextureHeight = ChunkWidth + 1;
@@ -76,7 +76,7 @@ namespace Engine
 	constexpr UINT64 DualContourNumberOfElements = (VoxelTextureWidth - 1) * (VoxelTextureHeight - 1) * (VoxelTextureWidth - 1);
 	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(DualContourVertex);
 
-	constexpr UINT64 DualContourTriangleNumberOfElements = (ChunkWidth - 1) * 12;
+	constexpr UINT64 DualContourTriangleNumberOfElements = ((VoxelTextureWidth - 1) * (VoxelTextureWidth - 1) * (VoxelTextureHeight - 1) / 8) * 12;
 	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(DualContourTriangle);
 
 	constexpr UINT64 DensityPrimitiveCount = 8;

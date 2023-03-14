@@ -28,6 +28,8 @@ Texture3D<float> DensityTexture : register(t0);
 RWStructuredBuffer<Vertex> Vertices : register(u0);
 RWStructuredBuffer<Triangle> TriangleBuffer : register(u1);
 
+RWStructuredBuffer<int> VoxelMaterialBuffer : register(u2);
+
 // Expands a 10-bit integer into 30 bits
 // by inserting 2 zeros after each bit.
 unsigned int ExpandBits(unsigned int v)
@@ -86,13 +88,13 @@ static const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 
 
 
 
-[numthreads(1, 1, 1)]
+[numthreads(8, 8, 8)]
 void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
 {
-    //if (id.x >= Resolution - 1 || id.y >= Resolution - 1 || id.z >= Resolution - 1)
-    //{
-    //    return;
-    //}
+    if (id.x >= Resolution - 1 || id.y >= Resolution - 1 || id.z >= Resolution - 1)
+    {
+        return;
+    }
 
     uint index = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + id.x;
     
@@ -117,15 +119,16 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         }
     }
     
+    VoxelMaterialBuffer[index] = cubeConfiguration;
+    
     /* voxel is outwith iso threshold */
     if (cubeConfiguration == 0 || cubeConfiguration == 255)
     {
         Vertex vertex = (Vertex) 0;
         vertex.position = float3(0,0,0);
         vertex.normal = id;
-        vertex.configuration = 0;
+        vertex.configuration = -1;
         Vertices[index] = vertex;
-        Vertices.IncrementCounter();
         
         return;
     }
@@ -175,6 +178,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             averageNormal += n;
             avgPosition += p;
             edgeCount++;
+            
         }
     }
 
@@ -195,13 +199,18 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     {
         solvedPosition.xyz = avgPosition;
     }
-  
+    
+    if (avgPosition.x < minimum.x || avgPosition.y < minimum.y || avgPosition.z < minimum.z ||
+        avgPosition.x > maximum.x || avgPosition.y > maximum.y || avgPosition.z > maximum.z)
+    {
+        avgPosition = id.xyz + float3(0.5f, 0.5f, 0.5f);
+    }
    
     Vertex vertex = (Vertex) 0;
     
     //TODO: REMOVE THIS AN USE THE POS GENERATED FROM THE QEF
     
-    vertex.position = solvedPosition;
+    vertex.position = avgPosition;
     vertex.normal = averageNormal;
     vertex.configuration = 1;
     
@@ -218,6 +227,8 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
 {
   
 
+    
+    
    /*   @brief
     *
     *   Each thread will work on an edge in parallel.
@@ -239,9 +250,6 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     int3 up         = id + int3(0, 1, 0);
     int3 forward    = id + int3(0, 0, 1);
     
-    //int3 left = int3(-1, 0, 0);
-    //int3 down = int3(0, -1, 0);
-    //int3 back = int3(0, 0, -1);
    
     /* we only want to check three times per voxel starting from the corner */
     int3 coord = id ;//+ int3(ChunkCoord);
@@ -252,6 +260,10 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     /* 'this' voxel */
     uint pxyz = ((id.z * Resolution) *Resolution) + (id.y * Resolution) + id.x;
 
+    if(VoxelMaterialBuffer[pxyz] == 0 || VoxelMaterialBuffer[pxyz] == 255)
+    {
+        return;
+    }
     
     uint left_and_below_z = ((id.z * Resolution) * Resolution) + ((id.y - 1) * Resolution) + (id.x - 1);
     

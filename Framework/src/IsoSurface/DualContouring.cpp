@@ -1,5 +1,6 @@
 #include "DualContouring.h"
 
+#include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Renderer/Resources/Shader.h"
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
@@ -51,8 +52,8 @@ namespace Engine
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
-		UINT groupXZ = ChunkWidth;
-		UINT groupY =  ChunkHeight;
+		UINT groupXZ = ChunkWidth/8;
+		UINT groupY =  ChunkHeight/8;
 
 		/* first pass - compute the vertex positions of each voxel*/
 		const auto tex = dynamic_cast<D3D12Texture*>(texture);
@@ -72,6 +73,7 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, tex->GpuHandleSrv);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VertexBufferUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, TriangleBufferUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelMatBufferUav);
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
@@ -97,7 +99,7 @@ namespace Engine
 		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		ComputeContext->CommandList->Dispatch(VoxelTextureWidth, groupY, VoxelTextureWidth);
+		ComputeContext->CommandList->Dispatch(VoxelTextureWidth, VoxelTextureHeight, VoxelTextureWidth);
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(TriangleBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
@@ -182,16 +184,20 @@ namespace Engine
 		CD3DX12_DESCRIPTOR_RANGE triangleSlot;
 		triangleSlot.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1);
 
+		CD3DX12_DESCRIPTOR_RANGE materialSlot;
+		materialSlot.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2);
+
 		// Root parameter can be a table, root descriptor or root constants.
-		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
 		slotRootParameter[0].InitAsConstants(7, 0);					// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &textureSlot);		// texture 
 		slotRootParameter[2].InitAsDescriptorTable(1, &vertexSlot);			// vertex buffer
 		slotRootParameter[3].InitAsDescriptorTable(1, &triangleSlot);		// triangle buffer
+		slotRootParameter[4].InitAsDescriptorTable(1, &materialSlot);		// triangle buffer
 
 
 		// A root signature is an array of root parameters.
-		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
+		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(5, slotRootParameter,
 			0,
 			nullptr,
 			D3D12_ROOT_SIGNATURE_FLAG_NONE
@@ -254,7 +260,23 @@ namespace Engine
 		VertexCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(4);
 		D3D12BufferUtils::CreateUploadBuffer(VertexCounterUpload, 4);
 
-		VertexBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VertexBuffer.Get(), VertexCounterBuffer.Get());
+		VertexBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VertexBuffer.Get(), 
+			VertexCounterBuffer.Get());
+
+		/* create the material buffer */
+		uavDesc.Buffer.StructureByteStride = sizeof(INT32);
+		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
+		const UINT64 matBufferWidth = DualContourNumberOfElements * sizeof(INT32);
+
+		VoxelMaterialBuffer = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
+		VoxelMatReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
+
+		VoxelMatCounterBuffer = D3D12BufferUtils::CreateCounterResource(true, true);
+		VoxelMatCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(4);
+		D3D12BufferUtils::CreateUploadBuffer(VoxelMatCounterUpload, 4);
+
+		VoxelMatBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelMaterialBuffer.Get(),
+			VoxelMatCounterBuffer.Get());
 
 		/* create the buffer to hold the triangles */
 
