@@ -171,7 +171,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             //float3 normalB = CalculateNormal(p2);
             //float3 n = normalize(normalA + t * (normalB - normalA));
             
-            QEF_Add(float4(n.x, n.y, n.z, 0), float4(p.x, p.y, p.z, 0), ATA, Atb, pointaccum, btb);
+            qef_add(float4(n.x, n.y, n.z, 0), float4(p.x, p.y, p.z, 0), ATA, Atb, pointaccum, btb);
             averageNormal += n;
             avgPosition += p;
             edgeCount++;
@@ -184,7 +184,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
     float4 solvedPosition = (float4) 0;
     
-    float error = QEF_Solve(ATA, Atb, pointaccum, solvedPosition);
+    float error = qef_solve(ATA, Atb, pointaccum, solvedPosition);
     float3 minimum = cornerCoords[0];
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
 
@@ -193,7 +193,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
         solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
     {
-        solvedPosition.xyz = com.xyz;
+        solvedPosition.xyz = avgPosition;
     }
   
    
@@ -201,7 +201,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     
     //TODO: REMOVE THIS AN USE THE POS GENERATED FROM THE QEF
     
-    vertex.position = avgPosition;
+    vertex.position = solvedPosition;
     vertex.normal = averageNormal;
     vertex.configuration = 1;
     
@@ -290,24 +290,23 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         if (Vertices[pxyz].configuration == 1 && Vertices[left_z].configuration == 1 &&
             Vertices[left_and_below_z].configuration == 1)
         {
+            tri.vertexA = Vertices[pxyz];
+            tri.vertexB = Vertices[left_z];
+            tri.vertexC = Vertices[left_and_below_z];
+            
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        tri.vertexA = Vertices[pxyz];
-        tri.vertexB = Vertices[left_z];
-        tri.vertexC = Vertices[left_and_below_z];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
         
         if (Vertices[left_and_below_z].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
             Vertices[pxyz].configuration == 1)
         {
+        
+            tri.vertexA = Vertices[pxyz];
+            tri.vertexB = Vertices[left_and_below_z];
+            tri.vertexC = Vertices[below_pxyz];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        tri.vertexA = Vertices[pxyz];
-        tri.vertexB = Vertices[left_and_below_z];
-        tri.vertexC = Vertices[below_pxyz];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
     }
     
       
@@ -317,23 +316,24 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         if (Vertices[pxyz].configuration == 1 && Vertices[left_z].configuration == 1 &&
             Vertices[left_and_below_z].configuration == 1)
         {
+        
+            tri.vertexA = Vertices[left_and_below_z];
+            tri.vertexB = Vertices[left_z];
+            tri.vertexC = Vertices[pxyz];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        tri.vertexA = Vertices[left_and_below_z];
-        tri.vertexB = Vertices[left_z];
-        tri.vertexC = Vertices[pxyz];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
         
         if (Vertices[left_and_below_z].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
             Vertices[pxyz].configuration == 1)
         {
-        }
-        tri.vertexA = Vertices[left_and_below_z];
-        tri.vertexB = Vertices[pxyz];
-        tri.vertexC = Vertices[below_pxyz];
         
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
+            tri.vertexA = Vertices[left_and_below_z];
+            tri.vertexB = Vertices[pxyz];
+            tri.vertexC = Vertices[below_pxyz];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
+        }
     }
     
     
@@ -344,25 +344,25 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         if (Vertices[pxyz].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
             Vertices[right_of_x].configuration == 1)
         {
+        
+            tri.vertexA = Vertices[right_of_x];
+            tri.vertexB = Vertices[pxyz];
+            tri.vertexC = Vertices[below_pxyz];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        tri.vertexA = Vertices[right_of_x];
-        tri.vertexB = Vertices[pxyz];
-        tri.vertexC = Vertices[below_pxyz];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
         
         
         if (Vertices[right_of_and_below_x].configuration == 1 && Vertices[right_of_and_below_x].configuration == 1 &&
             Vertices[pxyz].configuration == 1)
         {
-        }
-        tri.vertexA = Vertices[right_of_x];
-        tri.vertexB = Vertices[below_pxyz];
-        tri.vertexC = Vertices[right_of_and_below_x];
         
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-       
+            tri.vertexA = Vertices[right_of_x];
+            tri.vertexB = Vertices[below_pxyz];
+            tri.vertexC = Vertices[right_of_and_below_x];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
+        }
     }
     
     if (DensityTexture[coord] > 0 && DensityTexture[right] < 0)
@@ -371,24 +371,24 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         if (Vertices[pxyz].configuration == 1 && Vertices[right_of_x].configuration == 1 &&
             Vertices[right_of_and_below_x].configuration == 1)
         {
+        
+            tri.vertexA = Vertices[below_pxyz];
+            tri.vertexB = Vertices[pxyz];
+            tri.vertexC = Vertices[right_of_x];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        tri.vertexA = Vertices[below_pxyz];
-        tri.vertexB = Vertices[pxyz];
-        tri.vertexC = Vertices[right_of_x];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
         
         if (Vertices[right_of_and_below_x].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
             Vertices[pxyz].configuration == 1)
         {
+        
+            tri.vertexA = Vertices[below_pxyz];
+            tri.vertexB = Vertices[right_of_x];
+            tri.vertexC = Vertices[right_of_and_below_x];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        tri.vertexA = Vertices[below_pxyz];
-        tri.vertexB = Vertices[right_of_x];
-        tri.vertexC = Vertices[right_of_and_below_x];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
     }
 
     /* check the y-axis */
@@ -399,26 +399,25 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         if (Vertices[pxyz].configuration == 1 && Vertices[left_of_y].configuration == 1 &&
             Vertices[left_and_behind_Y].configuration == 1)
         {
+        
+        
+            tri.vertexA = Vertices[pxyz];
+            tri.vertexB = Vertices[right_of_x];
+            tri.vertexC = Vertices[left_and_behind_Y];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        
-        tri.vertexA = Vertices[pxyz];
-        tri.vertexB = Vertices[right_of_x];
-        tri.vertexC = Vertices[left_and_behind_Y];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
        
         if (Vertices[left_and_behind_Y].configuration == 1 && Vertices[behind_y].configuration == 1 &&
             Vertices[pxyz].configuration == 1)
         {
+       
+            tri.vertexA = Vertices[pxyz];
+            tri.vertexB = Vertices[left_and_behind_Y];
+            tri.vertexC = Vertices[left_z];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        
-        tri.vertexA = Vertices[pxyz];
-        tri.vertexB = Vertices[left_and_behind_Y];
-        tri.vertexC = Vertices[left_z];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
     }
     
     
@@ -429,25 +428,23 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         if (Vertices[pxyz].configuration == 1 && Vertices[left_of_y].configuration == 1 &&
             Vertices[left_and_behind_Y].configuration == 1)
         {
+            tri.vertexA = Vertices[pxyz];
+            tri.vertexB = Vertices[left_of_y];
+            tri.vertexC = Vertices[left_and_behind_Y];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        
-        tri.vertexA = Vertices[pxyz];
-        tri.vertexB = Vertices[left_of_y];
-        tri.vertexC = Vertices[left_and_behind_Y];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
-        
        
         if (Vertices[left_and_behind_Y].configuration == 1 && Vertices[behind_y].configuration == 1 &&
             Vertices[pxyz].configuration == 1)
         {
+
+            tri.vertexA = Vertices[pxyz];
+            tri.vertexB = Vertices[left_and_behind_Y];
+            tri.vertexC = Vertices[behind_y];
+        
+            TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
-        
-        tri.vertexA = Vertices[pxyz];
-        tri.vertexB = Vertices[left_and_behind_Y];
-        tri.vertexC = Vertices[behind_y];
-        
-        TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
     }
     
 
