@@ -175,13 +175,12 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             
             qef_add(float4(n.x, n.y, n.z, 0), float4(p.x, p.y, p.z, 0), ATA, Atb, pointaccum, btb);
             averageNormal += n;
-            avgPosition += p;
             edgeCount++;
             
         }
     }
 
-    avgPosition /= edgeCount;
+    //avgPosition /= edgeCount;
     
     averageNormal = normalize(averageNormal / edgeCount);
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
@@ -201,15 +200,11 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     }
     
     Vertex vertex = (Vertex) 0;
-
     
-    vertex.position = solvedPosition;
+    vertex.position = com;
     vertex.normal = averageNormal;
     vertex.configuration = 1;
     
-   
-    
-    //Vertices.IncrementCounter();
     Vertices[index] = vertex;
     
 }
