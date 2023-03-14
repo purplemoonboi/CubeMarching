@@ -51,8 +51,8 @@ namespace Engine
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
-		UINT groupXZ = ChunkWidth / 8;
-		UINT groupY =  ChunkHeight / 8;
+		UINT groupXZ = ChunkWidth;
+		UINT groupY =  ChunkHeight;
 
 		/* first pass - compute the vertex positions of each voxel*/
 		const auto tex = dynamic_cast<D3D12Texture*>(texture);
@@ -72,7 +72,6 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, tex->GpuHandleSrv);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VertexBufferUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, TriangleBufferUav);
-
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
@@ -98,7 +97,7 @@ namespace Engine
 		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
+		ComputeContext->CommandList->Dispatch(VoxelTextureWidth, groupY, VoxelTextureWidth);
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(TriangleBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));

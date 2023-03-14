@@ -344,7 +344,7 @@ namespace Engine
            /*     const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
                 ViewportTexture->Copy(frameBuffer->GetFrameBuffer());*/
 
-                ImGui::Image((ImTextureID)ViewportTexture->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
+                ImGui::Image((ImTextureID)PerlinCompute->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
 
 
                 ImGui::End();

@@ -151,7 +151,7 @@ namespace Engine
 
 		UINT32 numOfResources = 1;
 
-		if (texDesc.DepthOrArraySize > 6)
+		if (texDesc.DepthOrArraySize > 6 || texDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
 		{
 			numOfResources = 1;
 		}

@@ -60,7 +60,8 @@ namespace Engine
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
 				D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkHeight, ChunkWidth);
+		ComputeContext->CommandList->Dispatch(VoxelTextureWidth, 
+			VoxelTextureHeight, VoxelTextureWidth);
 
 		ComputeContext->CommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(resource->GpuResource.Get(),
@@ -122,18 +123,18 @@ namespace Engine
 	void PerlinCompute::BuildResource()
 	{
 
-		for (INT32 i = 0; i < ChunkWidth; ++i)
-			for (INT32 j = 0; j < ChunkHeight; ++j)
-				for (INT32 k = 0; k < ChunkWidth; ++k)
+		for (INT32 i = 0; i < VoxelTextureWidth; ++i)
+			for (INT32 j = 0; j < VoxelTextureHeight; ++j)
+				for (INT32 k = 0; k < VoxelTextureWidth; ++k)
 					RawTexture.push_back(0);
 
 	
 		ScalarTexture = Texture::Create
 		(
 			RawTexture.data(),
-			ChunkWidth,
-			ChunkHeight,
-			ChunkWidth,
+			VoxelTextureWidth,
+			VoxelTextureHeight,
+			VoxelTextureWidth,
 			TextureFormat::R_FLOAT_32
 		);
 

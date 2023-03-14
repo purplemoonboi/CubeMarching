@@ -211,7 +211,7 @@ namespace Engine
 
 		RenderInstruction::PreRender();
 
-		RenderInstruction::BindGeometryPass(RenderData.PSOs["Opaque"].get(), RenderData.OpaqueRenderItems);
+		RenderInstruction::BindGeometryPass(RenderData.PSOs["Wire"].get(), RenderData.OpaqueRenderItems);
 
 	}
 

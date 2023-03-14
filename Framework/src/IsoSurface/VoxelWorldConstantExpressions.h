@@ -55,10 +55,14 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 8;
-	constexpr UINT64 ChunkHeight = 8;
-	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
+	constexpr UINT64 ChunkWidth = 2;
+	constexpr UINT64 ChunkHeight = 2;
 
+	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
+	constexpr UINT64 VoxelTextureHeight = ChunkWidth + 1;
+
+	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
+	constexpr UINT64 VoxelMaterialCount = VoxelWorldElementCount * 8;
 	/**
 	 * @brief Max size of a dense marching cubes voxel buffer.
 	 * @note  Size-of-voxel-world * { max-num-of-tris(5) * size-of-triangle-struct }
@@ -69,10 +73,10 @@ namespace Engine
 	 * @brief Max size of a dense dual contour voxel buffer.
 	 * @note  size-of-world-dimensions { minus '1' because the vertex is generated within the cell } 
 	 */
-	constexpr UINT64 DualContourNumberOfElements = (ChunkWidth - 1) * (ChunkHeight - 1) * (ChunkWidth - 1);
+	constexpr UINT64 DualContourNumberOfElements = (VoxelTextureWidth - 1) * (VoxelTextureHeight - 1) * (VoxelTextureWidth - 1);
 	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(DualContourVertex);
 
-	constexpr UINT64 DualContourTriangleNumberOfElements = (VoxelWorldElementCount / 4) * 12;
+	constexpr UINT64 DualContourTriangleNumberOfElements = (ChunkWidth - 1) * 12;
 	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(DualContourTriangle);
 
 	constexpr UINT64 DensityPrimitiveCount = 8;
@@ -80,12 +84,12 @@ namespace Engine
 	struct VoxelWorldSettings
 	{
 		float IsoValue = 0.0;
-		INT32 TextureSize = ChunkWidth;
+		INT32 TextureSize = VoxelTextureWidth;
 		float PlanetRadius = 10;
-		INT32 NumOfPointsPerAxis = ChunkWidth;
+		INT32 NumOfPointsPerAxis = VoxelTextureWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
 	
-		INT32 Resolution = ChunkWidth;
+		INT32 Resolution = (VoxelTextureWidth - 1);
 		INT32 OctreeSize = 8;
 		INT32 PrimitiveCount = DensityPrimitiveCount; /* for density primitives */
 	};
