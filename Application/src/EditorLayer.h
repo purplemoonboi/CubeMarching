@@ -9,7 +9,7 @@
 #include "IsoSurface/MarchingCubes.h"
 #include "IsoSurface/DualContouring.h"
 //#include "IsoSurface/MarchingCubesHP.h"
-#include "IsoSurface/DualContouringSPO.h"
+//#include "IsoSurface/DualContouringSPO.h"
 
 namespace Engine
 {
@@ -49,7 +49,7 @@ namespace Engine
 		ScopePointer<MarchingCubes> MarchingCubes;
 		ScopePointer<PerlinCompute> PerlinCompute;
 		ScopePointer<DualContouring> DualContouring;
-		ScopePointer<DualContouringSPO> DualContourSPO;
+		//ScopePointer<DualContouringSPO> DualContourSPO;
 
 		ScopePointer<Texture> ViewportTexture;
 
