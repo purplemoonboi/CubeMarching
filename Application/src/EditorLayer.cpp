@@ -1,6 +1,7 @@
 #include "EditorLayer.h"
 
 #include "Framework/Scene/Scene.h"
+#include "Framework/Core/Input/Input.h"
 
 #include <../ImGui/imgui.h>
 #include <../ImGui/imgui_internal.h>
@@ -78,19 +79,22 @@ namespace Engine
             Remap(CurrentMouseX, 0, 1920, -1, 1);
             Remap(CurrentMouseY, 0, 1080, -1, 1);
         }
-       
+
+
 
         //User input
         if (MouseMoved && LeftMButton)
         {
+
             // Make each pixel correspond to a quarter of a degree.
-            float dx = DirectX::XMConvertToRadians(90.f * CurrentMouseX);
-            float dy = DirectX::XMConvertToRadians(90.f * CurrentMouseY);
+            float dx = 90.0f * CurrentMouseX;
+            float dy = 90.0f * CurrentMouseY;
 
 
             // Update angles based on input to orbit camera around box.
-            mc->UpdateCamerasAzimuth(dx, deltaTime);
             mc->UpdateCameraZenith(dy, deltaTime);
+
+            mc->UpdateCamerasAzimuth(-dx, deltaTime);
         }
         if(RightMButton)
         {
@@ -101,6 +105,81 @@ namespace Engine
 
             // Update the camera radius based on input.
            mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
+        }
+        if(Input::IsKeyPressed(KEY_E))
+	    {
+            auto camera = World->GetSceneCamera();
+
+            XMFLOAT3 pos = camera->GetPosition();
+            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+        	pos.y += 12.0f * deltaTime;
+            
+
+            camera->SetPosition(pos);
+	    }
+        if (Input::IsKeyPressed(KEY_Q))
+        {
+            auto camera = World->GetSceneCamera();
+
+            XMFLOAT3 pos = camera->GetPosition();
+            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+            pos.y -= 12.0f * deltaTime;
+
+
+            camera->SetPosition(pos);
+        }
+        if (Input::IsKeyPressed(KEY_W))
+        {
+            auto camera = World->GetSceneCamera();
+
+            XMFLOAT3 pos = camera->GetPosition();
+            XMFLOAT3 forw = camera->GetForward();
+            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+            //pos.x -= forw.x * 5 * deltaTime;
+            //pos.y -= forw.y * 5 * deltaTime;
+            //pos.z -= forw.x * 5 * deltaTime;
+            pos.z += 12.0f * deltaTime;
+
+            camera->SetPosition(pos);
+        }
+        if (Input::IsKeyPressed(KEY_A))
+        {
+            auto camera = World->GetSceneCamera();
+
+            XMFLOAT3 pos = camera->GetPosition();
+            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+            pos.x -= 12.0f * deltaTime;
+
+
+            camera->SetPosition(pos);
+        }
+        if (Input::IsKeyPressed(KEY_D))
+        {
+            auto camera = World->GetSceneCamera();
+
+            XMFLOAT3 pos = camera->GetPosition();
+            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+            pos.x += 12.0f * deltaTime;
+
+
+            camera->SetPosition(pos);
+        }
+        if (Input::IsKeyPressed(KEY_S))
+        {
+            auto camera = World->GetSceneCamera();
+
+            XMFLOAT3 pos = camera->GetPosition();
+            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+            pos.z -= 12.0f * deltaTime;
+
+
+            camera->SetPosition(pos);
         }
 
         CORE_TRACE("Delta Mouse {0}, {1}", CurrentMouseX, CurrentMouseY);
@@ -128,12 +207,14 @@ namespace Engine
 
             DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-         /*   if (MarchingCubes->GetTerrainMesh() != nullptr)
+         
+           /* if (MarchingCubes->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()),
                     "Marching_Terrain", Transform(-halfxz + ((float)ChunkWidth / 2), -((float)ChunkWidth / 2), -halfxz));
             }*/
+        
 
             if (DualContouring->GetTerrainMesh() != nullptr)
             {
@@ -343,7 +424,7 @@ namespace Engine
            /*     const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
                 ViewportTexture->Copy(frameBuffer->GetFrameBuffer());*/
 
-                ImGui::Image((ImTextureID)PerlinCompute->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
+                //ImGui::Image((ImTextureID)PerlinCompute->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
 
 
                 ImGui::End();
@@ -365,15 +446,9 @@ namespace Engine
         EventDispatcher dispatcher(event);
 
         dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(EditorLayer::OnWindowResize));
-
-        //TODO: This will need to become a native script but will do for now.
-
         dispatcher.Dispatch<MouseMovedEvent>(BIND_DELEGATE(EditorLayer::OnMouseMove));
-
         dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_DELEGATE(EditorLayer::OnMouseDown));
         dispatcher.Dispatch<MouseButtonReleasedEvent>(BIND_DELEGATE(EditorLayer::OnMouseUp));
-
-        //TODO: End ToDo.
 
     }
 
@@ -426,6 +501,7 @@ namespace Engine
 
         return false;
     }
+
 
     void EditorLayer::Remap(float& x, float clx, float cmx, float nlx, float nmx)
     {

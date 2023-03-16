@@ -39,6 +39,7 @@ namespace Engine
 		bool OnMouseUp(MouseButtonReleasedEvent& mEvent);
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
+
 	private:
 		VoxelWorldSettings VoxelSettings;
 		PerlinNoiseSettings PerlinSettings;
@@ -66,6 +67,7 @@ namespace Engine
 		float MouseDownY = 0;
 		float MouseLastX = 0;
 		float MouseLastY = 0;
+
 
 		bool LeftMButton = false;
 		bool RightMButton = false;

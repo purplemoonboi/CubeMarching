@@ -258,6 +258,7 @@ namespace Engine
 	
 		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
 		{
+			RenderData.Geometries.at(meshTag)->VertexBuffer->Release();
 			RenderData.Geometries.erase(meshTag);
 		}
 

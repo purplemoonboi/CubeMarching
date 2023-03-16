@@ -13,13 +13,13 @@ namespace Engine
 
 	D3D12Texture::~D3D12Texture()
 	{
-		if (GpuResource != nullptr)
+		/*if (GpuResource != nullptr)
 		{
 			GpuResource->Release();
 			GpuResource = nullptr;
 			UploadBuffer->Release();
 			UploadBuffer = nullptr;
-		}
+		}*/
 	}
 
 	D3D12Texture::D3D12Texture

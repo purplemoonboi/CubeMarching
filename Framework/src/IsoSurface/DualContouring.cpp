@@ -45,7 +45,7 @@ namespace Engine
 	void DualContouring::Dispatch(const VoxelWorldSettings& settings, Texture* texture)
 	{
 
-		//ComputeContext->Wait(&FenceValue);
+		ComputeContext->Wait(&FenceValue);
 
 		ComputeContext->ResetComputeCommandList(GenerateVerticesPso.get());
 

@@ -5,6 +5,8 @@
 namespace Engine
 {
 
+	using namespace DirectX;
+
 	class MainCamera
 	{
 	public:
@@ -26,12 +28,14 @@ namespace Engine
 		// @brief - Update the camera's distance to the target object.
 		void UpdateCamerasDistanceToTarget(float delta, float deltaTime);
 
-		void PassNextPosition(float x, float y, float z);
+		void SetPosition(DirectX::XMFLOAT3 position);
 		// @brief Returns the position of the camera
 		const DirectX::XMFLOAT3 GetPosition() const { return Position; }
 
 		// @brief - Recalculates the cameras aspect ratio
 		void RecalculateAspectRatio(float width, float height, float nearPlane = 1.0f, float farPlane = 1000.0f, float fov = 0.25f * MathHelper::Pi);
+
+		const DirectX::XMFLOAT3& GetForward() const { return ForwardF3; };
 
 		/**
 		 *
@@ -82,6 +86,9 @@ namespace Engine
 
 		DirectX::XMVECTOR Target;
 		DirectX::XMVECTOR Up;
+
+		DirectX::XMFLOAT3 ForwardF3;
+		DirectX::XMFLOAT3 UpF3;
 
 		DirectX::XMMATRIX WorldViewProj;
 

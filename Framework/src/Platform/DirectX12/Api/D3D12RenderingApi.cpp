@@ -223,7 +223,7 @@ namespace Engine
 			(
 				FrameBuffer->CurrentBackBuffer(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_COMMON
+				D3D12_RESOURCE_STATE_PRESENT
 			)
 		);
 

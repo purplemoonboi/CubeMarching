@@ -21,8 +21,8 @@ namespace Engine
 		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		// Reserve memory and copy the vertices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &SystemBuffer));
-		CopyMemory(SystemBuffer->GetBufferPointer(), 0, size);
+		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
+		CopyMemory(CpuLocalCopy->GetBufferPointer(), 0, size);
 		
 		// Create the GPU vertex buffer
 		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
@@ -43,9 +43,9 @@ namespace Engine
 		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		// Reserve memory and copy the vertices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &SystemBuffer));
+		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
 		// Copy data into buffer
-		CopyMemory(SystemBuffer->GetBufferPointer(), vertices, size);
+		CopyMemory(CpuLocalCopy->GetBufferPointer(), vertices, size);
 
 		// Create the GPU vertex buffer
 		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
@@ -70,10 +70,10 @@ namespace Engine
 	void D3D12VertexBuffer::Release()
 	{
 
-		if(SystemBuffer != nullptr)
+		if(CpuLocalCopy != nullptr)
 		{
-			SystemBuffer->Release();
-			SystemBuffer = nullptr;
+			CpuLocalCopy->Release();
+			CpuLocalCopy = nullptr;
 		}
 		if(GpuBuffer != nullptr)
 		{
@@ -85,6 +85,7 @@ namespace Engine
 			Gpu_UploadBuffer->Release();
 			Gpu_UploadBuffer = nullptr;
 		}
+		
 	}
 
 
@@ -95,9 +96,9 @@ namespace Engine
 		if(GpuBuffer == nullptr)
 		{
 			// Reserve memory and copy the vertices into our CPU buffer
-			THROW_ON_FAILURE(D3DCreateBlob(size, &SystemBuffer));
+			THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
 			// Copy data into buffer
-			CopyMemory(SystemBuffer->GetBufferPointer(), data, size);
+			CopyMemory(CpuLocalCopy->GetBufferPointer(), data, size);
 		}
 
 		// Create the GPU vertex buffer
@@ -117,7 +118,7 @@ namespace Engine
 
 	const void* D3D12VertexBuffer::GetSystemData() const
 	{
-		return SystemBuffer.Get();
+		return CpuLocalCopy.Get();
 	}
 
 	const void* D3D12VertexBuffer::GetResourceData() const

@@ -6,6 +6,7 @@
 
 namespace Engine
 {
+	
 	bool Input::IsKeyPressed(INT32 keycode)
 	{
 		return (GetAsyncKeyState(keycode) & 0x8000) != 0;
@@ -14,7 +15,7 @@ namespace Engine
 	bool Input::IsMouseButtonPressed(UINT64 button)
 	{
 		
-		if ((button & GetKeyState(MK_LBUTTON)) != 0)
+		if ((button & GetAsyncKeyState(MK_LBUTTON)) != 0)
 		{
 			return true;
 		}
@@ -26,11 +27,11 @@ namespace Engine
 		return false;
 	}
 
-	std::pair<float, float> Input::GetMousePosition()
+	Vector2 Input::GetMousePosition()
 	{
 		LPPOINT mousePos = {};
 		const BOOL valid = GetCursorPos(mousePos);
-		float x, y;
+		float x = 0.f, y = 0.f;
 		if(valid)
 		{
 			x = static_cast<float>(mousePos[0].x);

@@ -9,6 +9,7 @@
 #include "Framework/ImGui/Layer/ImGuiLayer.h"
 
 
+
 namespace Engine
 {
 
@@ -57,6 +58,7 @@ namespace Engine
 		// @brief Captures a window resize event, if true dispatch a
 		//		  invalidate buffer command. (Rebuilds buffer)
 		bool OnWindowResize(WindowResizeEvent& windowResize);
+
 
 		// @brief Event callback bound to the system, processes and handles
 		//		  received events from the user.
@@ -109,11 +111,11 @@ namespace Engine
 			UINT8 MouseClicked = 0;
 			UINT8 MouseReleased = 0;
 			UINT8 MouseMoved = 0;
-			std::function<void(Event&)> CallBack;
+			std::function<void(Event&)> Invoke;
 		};
 
+		
 		MouseInputEventData MouseData;
-
 	};
 
 	// This must be defined on client.

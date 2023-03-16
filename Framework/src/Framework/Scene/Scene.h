@@ -17,7 +17,7 @@ namespace Engine
 		void OnUpdate(const float deltaTime, const float elapsedTime);
 		void OnRender(const float deltaTime, const float elapsedTime) const;
 
-		MainCamera* GetSceneCamera() const { return SceneCamera; }
+		MainCamera* GetSceneCamera() { return SceneCamera; }
 
 	private:
 		MainCamera* SceneCamera;

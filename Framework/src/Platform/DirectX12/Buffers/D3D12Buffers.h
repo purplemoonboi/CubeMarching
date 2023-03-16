@@ -51,7 +51,7 @@ namespace Engine
 		BufferLayout Layout;
 
 		// @brief A CPU copy of the buffer. 
-		ComPtr<ID3DBlob> SystemBuffer = nullptr;
+		ComPtr<ID3DBlob> CpuLocalCopy = nullptr;
 
 		// @brief Buffer to be sent to the GPU
 		ComPtr<ID3D12Resource> GpuBuffer = nullptr;

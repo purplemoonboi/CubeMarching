@@ -5,6 +5,7 @@
 #include "Framework/Renderer/Engine/Renderer.h"
 
 
+
 #include <imgui.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -34,7 +35,7 @@ namespace Engine
 		// Bind the applications on event function to capture application specific events.
 		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
 
-		MouseData.CallBack = BIND_DELEGATE(Application::OnApplicationEvent);
+		MouseData.Invoke = BIND_DELEGATE(Application::OnApplicationEvent);
 
 		auto handle = static_cast<HWND>(Window.GetNativeWindow());
 		Renderer::Init(handle, 1920, 1080);
@@ -53,6 +54,8 @@ namespace Engine
 		EventDispatcher dispatcher(event);
 
 		dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(Application::OnWindowResize));
+
+
 
 		for(auto itr = LayerStack.end(); itr != LayerStack.begin();)
 		{
@@ -94,23 +97,23 @@ namespace Engine
 						auto hwnd = static_cast<HWND>(Window.GetNativeWindow());
 						SetCapture(hwnd);
 						MouseData.MouseClicked = 0;
-						CORE_TRACE("Mouse Clicked Event");
+						//CORE_TRACE("Mouse Clicked Event");
 						MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-						MouseData.CallBack(me);
+						MouseData.Invoke(me);
 					}
 					if (MouseData.MouseReleased > 0)
 					{
 						ReleaseCapture();
 						MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-						MouseData.CallBack(me);
+						MouseData.Invoke(me);
 					}
 					if (MouseData.MouseMoved == 1)
 					{
 						MouseData.MouseMoved = 0;
 						MouseMovedEvent mm(MouseData.X, MouseData.Y, MouseData.Button);
-						MouseData.CallBack(mm);
+						MouseData.Invoke(mm);
 					}
-
+					
 
 					if (!Window.IsWndMinimised() && IsRunning)
 					{
@@ -169,6 +172,7 @@ namespace Engine
 
 		return false;
 	}
+
 
 	LRESULT Application::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -272,15 +276,11 @@ namespace Engine
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 
-			
-
 			MouseData.MouseClicked = 1;
 			MouseData.MouseReleased = 0;
 			MouseData.X = GET_X_LPARAM(lParam);
 			MouseData.Y = GET_Y_LPARAM(lParam);
 			MouseData.Button = wParam;
-			CORE_TRACE("Mouse button {0} clicked at {1}, {2}", wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))
-
 
 				return 0;
 		case WM_LBUTTONUP:
@@ -293,8 +293,6 @@ namespace Engine
 			MouseData.Y = GET_Y_LPARAM(lParam);
 			MouseData.Button = wParam;
 
-			CORE_TRACE("Mouse button up")
-
 				return 0;
 		case WM_MOUSEMOVE:
 
@@ -304,13 +302,20 @@ namespace Engine
 			MouseData.MouseMoved = 1;
 
 				return 0;
+		case WM_KEYDOWN:
+
+		
+
+			return 0;
 		case WM_KEYUP:
+
+		
+
 			if (wParam == VK_ESCAPE)
 			{
 				PostQuitMessage(0);
 			}
-			else if ((int)wParam == VK_F2)
-				//Set4xMsaaState(!m4xMsaaState);
+		
 
 				return 0;
 		}
