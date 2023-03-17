@@ -94,6 +94,7 @@ namespace Engine
 		{
 			// Copy data into buffer
 			CopyMemory(CpuLocalCopy->GetBufferPointer(), data, size);
+			VertexCount = size;
 			Flag = 1;
 		}
 	}

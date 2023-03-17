@@ -1,6 +1,8 @@
 #include "D3D12CopyContext.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Framework/Core/Log/Log.h"
+
+#include "Platform/DirectX12/Buffers/D3D12Buffers.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Engine
 {
@@ -134,6 +136,54 @@ namespace Engine
 		);
 
 		ExecuteCopyList();
+	}
+
+	void D3D12CopyContext::UpdateVertexBuffer(D3D12VertexBuffer* vertexBuffer)
+	{
+		// Give a desc of the data we want to copy
+		D3D12_SUBRESOURCE_DATA subResourceData = {};
+		subResourceData.pData = vertexBuffer->CpuLocalCopy.Get();
+		subResourceData.RowPitch = vertexBuffer->GetCount() * sizeof(Vertex);
+		subResourceData.SlicePitch = subResourceData.RowPitch;
+
+		// Schedule to copy the data to the default buffer resource.
+		// Make instruction to copy CPU buffer into intermediate upload heap
+		// buffer.
+		CmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				vertexBuffer->GpuBuffer.Get(),
+				D3D12_RESOURCE_STATE_COMMON,
+				D3D12_RESOURCE_STATE_GENERIC_READ
+			)
+		);
+
+		// Copy the data into the upload heap
+		UpdateSubresources<1>
+			(
+				CmdList.Get(),
+				vertexBuffer->GpuBuffer.Get(),
+				vertexBuffer->Gpu_UploadBuffer.Get(),
+				0,
+				0,
+				1,
+				&subResourceData
+				);
+
+		// Add the instruction to transition back to read 
+		CmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				vertexBuffer->GpuBuffer.Get(),
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				D3D12_RESOURCE_STATE_GENERIC_READ
+			)
+		);
+
 	}
 	
 }

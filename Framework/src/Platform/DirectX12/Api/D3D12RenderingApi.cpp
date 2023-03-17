@@ -156,6 +156,18 @@ namespace Engine
 		const HRESULT cmdListResult = Context->CmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
 
+		D3D12CopyContext::ResetCopyList(nullptr);
+
+		for (const auto& buffer : items)
+		{
+			auto* d3dBuffer = dynamic_cast<D3D12VertexBuffer*>(buffer->Geometry->VertexBuffer.get());
+			if (d3dBuffer->Flag == 1)
+			{
+				D3D12CopyContext::UpdateVertexBuffer(d3dBuffer);
+			}
+		}
+
+		D3D12CopyContext::ExecuteCopyList();
 		
 		// Indicate there will be a transition made to the resource.
 		Context->CmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(

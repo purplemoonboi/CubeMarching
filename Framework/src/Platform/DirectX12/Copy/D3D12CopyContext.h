@@ -4,6 +4,7 @@
 namespace Engine
 {
 	class D3D12Context;
+	class D3D12VertexBuffer;
 	using Microsoft::WRL::ComPtr;
 
 	class D3D12CopyContext
@@ -29,6 +30,7 @@ namespace Engine
 			UINT64 sizeInBytes
 		);
 
+		static void UpdateVertexBuffer(D3D12VertexBuffer* vertexBuffer);
 
 
 	private:
