@@ -103,7 +103,6 @@ namespace Engine
 
 		CreateCommandObjects();
 		CreateSwapChain();
-		CreateCbvSrvUavHeap(1, 0, 1, 1);
 		BuildRootSignature();
 
 		Device->SetName(L"GPU Device");
@@ -188,7 +187,6 @@ namespace Engine
 			IID_PPV_ARGS(&Fence)
 		));
 
-		CbvSrvUavDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		return true;
 	}
@@ -250,41 +248,6 @@ namespace Engine
 
 		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
 		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
-
-		return true;
-	}
-
-
-	bool D3D12Context::CreateCbvSrvUavHeap
-	(
-		UINT opaqueRenderItemCount,
-		UINT transparentRenderItemCount,
-		UINT voxelWorldResources,
-		UINT frameResourceCount
-	)
-	{
-		const UINT objCount = opaqueRenderItemCount;
-		// Need a CBV descriptor for each object for each frame resource,
-		// +1 for the perPass CBV for each frame resource.
-		const UINT numDescriptors = (objCount + 1) * frameResourceCount;
-
-		// Save an offset to the start of the pass CBVs.  These are the last N descriptors.
-		PassConstantBufferViewOffset = objCount * frameResourceCount;
-
-		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-		cbvHeapDesc.NumDescriptors = numDescriptors;
-		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		cbvHeapDesc.NodeMask = 0;
-
-		THROW_ON_FAILURE
-		(
-			Device->CreateDescriptorHeap
-			(
-				&cbvHeapDesc,
-				IID_PPV_ARGS(&CbvHeap)
-			)
-		);
 
 		return true;
 	}
@@ -373,15 +336,7 @@ namespace Engine
 
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE D3D12Context::GetConstantBufferViewCpu() const
-	{
-		return CbvHeap->GetCPUDescriptorHandleForHeapStart();
-	}
-
-	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Context::GetConstantBufferViewGpu() const
-	{
-		return CbvHeap->GetGPUDescriptorHandleForHeapStart();
-	}
+	
 
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }

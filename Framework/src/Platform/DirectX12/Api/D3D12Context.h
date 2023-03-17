@@ -37,17 +37,7 @@ namespace Engine
 		void ExecuteGraphicsCommandList() const;
 		void SignalGPU() const;
 
-		// @brief InitialiseResource the descriptors for the constant buffer view and resource view.
-		bool CreateCbvSrvUavHeap
-		(
-			UINT opaqueRenderItemCount,
-			UINT transparentRenderItemCount,
-			UINT voxelWorldResources,
-			UINT frameResourceCount
-		);
-
-
-
+		
 		ComPtr<ID3D12Device>				Device;
 		ComPtr<IDXGISwapChain>				SwapChain;
 		ComPtr<IDXGIFactory4>				DXGIFactory;
@@ -58,18 +48,8 @@ namespace Engine
 		ComPtr<ID3D12RootSignature>			RootSignature;
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
-		[[nodiscard]] UINT GetPassConstBufferViewOffset() const { return PassConstantBufferViewOffset; }
 		[[nodiscard]] UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
 		[[nodiscard]] bool GetMsaaState() const { return MsaaState; }
-
-		ComPtr<ID3D12DescriptorHeap> CbvHeap;
-
-		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetConstantBufferViewCpu() const;
-		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetConstantBufferViewGpu() const;
-
-		
-		UINT32 CbvSrvUavDescriptorSize;
-		UINT PassConstantBufferViewOffset;
 
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 GPU_TO_CPU_SYNC_COUNT;
@@ -89,9 +69,7 @@ namespace Engine
 		// @brief Checks the MSAA qaulity support and caches level.
 		bool CheckMSAAQualityAndCache();
 
-	
 
-	
 		bool BuildRootSignature();
 
 

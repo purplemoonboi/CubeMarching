@@ -32,8 +32,12 @@ namespace Engine
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
 
-		D3D12MemoryManager = std::make_unique<class D3D12MemoryManager>();
-		D3D12MemoryManager->InitialiseSrvUavHeap(Context, 32);
+		D3D12MemoryManager = CreateScope<class D3D12MemoryManager>(Context->Device.Get());
+		const HRESULT cbvResult = D3D12MemoryManager->InitialiseCbvHeap(Context->Device.Get(), NUMBER_OF_FRAME_RESOURCES, 12);
+		THROW_ON_FAILURE(cbvResult);
+		
+		const HRESULT srvUavResult = D3D12MemoryManager->InitialiseSrvUavHeap(Context->Device.Get(), 12);
+		THROW_ON_FAILURE(srvUavResult);
 
 		D3D12BufferUtils::Init(Context->Device.Get(), Context->CmdList.Get());
 		D3D12Utils::Init(Context->Device.Get(), D3D12MemoryManager.get());
@@ -65,7 +69,8 @@ namespace Engine
 
 		UploadBuffer = CreateScope<D3D12ResourceBuffer>
 		(
-			Context,
+			Context->Device.Get(),
+			D3D12MemoryManager.get(),
 			FrameResources,
 			2
 		);
@@ -151,6 +156,14 @@ namespace Engine
 		const HRESULT cmdListResult = Context->CmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
 
+		
+		// Indicate there will be a transition made to the resource.
+		Context->CmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			FrameBuffer->CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+		)
+		);
 
 		Context->CmdList->ClearRenderTargetView
 		(
@@ -176,19 +189,13 @@ namespace Engine
 		Context->CmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
 		Context->CmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
 
-		// Indicate there will be a transition made to the resource.
-		Context->CmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				FrameBuffer->CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_PRESENT,
-				D3D12_RESOURCE_STATE_RENDER_TARGET
-			)
-		);
+		
 
 		Context->CmdList->OMSetRenderTargets(1, &FrameBuffer->GetCurrentBackBufferViewCpu(),
 			true,
 			&FrameBuffer->GetDepthStencilViewCpu()
 		);
-		ID3D12DescriptorHeap* descriptorHeaps[] = { Context->CbvHeap.Get() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetConstantBufferDescHeap() };
 		Context->CmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		/* Bind the shader root signature */

@@ -20,7 +20,7 @@ namespace Engine
 	public:
 
 
-		virtual ~D3D12RenderingApi();
+		virtual ~D3D12RenderingApi() ;
 
 		void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) override;
 
@@ -59,7 +59,7 @@ namespace Engine
 
 		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return FrameBuffer.get(); };
 
-		[[nodiscard]] MemoryManager* GetMemoryManager() const override { return D3D12MemoryManager.get(); }
+		[[nodiscard]] MemoryManager* GetMemoryManager() const override{ return D3D12MemoryManager.get(); }
 
 		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
 

@@ -25,17 +25,23 @@ namespace Engine
 
 	public:
 
-		D3D12MemoryManager() = default;
-		~D3D12MemoryManager() override;
+		D3D12MemoryManager(ID3D12Device* device);
+		~D3D12MemoryManager();
 
-		void Allocate(UINT64 ptr, UINT64 memSize) override;
+		void Allocate(UINT64 ptr, UINT64 memSize)	override;
+
 		void Deallocate(UINT64 ptr, UINT64 memSize) override;
 
-		HRESULT InitialiseSrvUavHeap(D3D12Context* context, UINT64 size);
+		HRESULT InitialiseCbvHeap(ID3D12Device* device, UINT64 frameResourcesCount, UINT64 maxObjectCount);
+
+		HRESULT InitialiseSrvUavHeap(ID3D12Device* device, UINT64 size);
 
 		Handles GetResourceHandle(INT32 offset = 1);
 
-		[[nodiscard]] UINT GetResourceHeapSize() const { return SrvUavDescriptorSize; }
+
+		[[nodiscard]] UINT GetDescriptorIncrimentSize() const { return CbvDescriptorSize; }
+
+		[[nodiscard]] ID3D12DescriptorHeap* GetConstantBufferDescHeap() const { return CbvHeap.Get(); }
 
 		[[nodiscard]] ID3D12DescriptorHeap* GetShaderResourceDescHeap() const { return SrvUavHeap.Get(); }
 
@@ -43,12 +49,22 @@ namespace Engine
 
 		[[nodiscard]] const ImGuiHandles* GetImGuiHandles() const { return &ImGuiHandles; }
 
+		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetConstantBufferViewCpu() const;
+		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetConstantBufferViewGpu() const;
+
+		[[nodiscard]] UINT GetPassBufferOffset() const { return PassBufferOffsetSize; }
+
 	private:
 		bool IsInitialised = false;
+		ComPtr<ID3D12DescriptorHeap> CbvHeap = nullptr;
 		ComPtr<ID3D12DescriptorHeap> SrvUavHeap = nullptr;
+
 
 		Handles ResourceHandles;
 		ImGuiHandles ImGuiHandles;
+
+		UINT CbvDescriptorSize;
+		UINT PassBufferOffsetSize;
 
 		UINT SrvUavDescriptorSize;
 		UINT64 SizeAllocated;

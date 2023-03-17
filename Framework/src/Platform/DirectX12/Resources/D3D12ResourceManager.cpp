@@ -9,6 +9,40 @@ namespace Engine
 		Device(device)
 	{}
 
+	bool D3D12Context::CreateCbvSrvUavHeap
+	(
+		UINT opaqueRenderItemCount,
+		UINT transparentRenderItemCount,
+		UINT voxelWorldResources,
+		UINT frameResourceCount
+	)
+	{
+		const UINT objCount = opaqueRenderItemCount;
+		// Need a CBV descriptor for each object for each frame resource,
+		// +1 for the perPass CBV for each frame resource.
+		const UINT numDescriptors = (objCount + 1) * frameResourceCount;
+
+		// Save an offset to the start of the pass CBVs.  These are the last N descriptors.
+		PassConstantBufferViewOffset = objCount * frameResourceCount;
+
+		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
+		cbvHeapDesc.NumDescriptors = numDescriptors;
+		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		cbvHeapDesc.NodeMask = 0;
+
+		THROW_ON_FAILURE
+		(
+			Device->CreateDescriptorHeap
+			(
+				&cbvHeapDesc,
+				IID_PPV_ARGS(&CbvHeap)
+			)
+		);
+
+		return true;
+	}
+
 	bool D3D12ResourceManager::CreateSRVDescriptorHeap
 	(
 		UINT count, 

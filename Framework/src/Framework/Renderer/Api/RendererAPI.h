@@ -63,8 +63,6 @@ namespace Engine
 
 		virtual void PostRender() = 0;
 
-		
-
 		virtual void Flush() = 0;
 
 		static Api GetAPI() { return RenderingApi; }

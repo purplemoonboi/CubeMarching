@@ -2,8 +2,9 @@
 
 #include "Framework/Core/Log/Log.h"
 #include "Framework/Core/Time/DeltaTime.h"
-#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 #include "Platform/DirectX12/Buffers/D3D12UploadBuffer.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
@@ -166,7 +167,8 @@ namespace Engine
 
 	D3D12ResourceBuffer::D3D12ResourceBuffer
 	(
-		D3D12Context* context,
+		ID3D12Device* device,
+		D3D12MemoryManager* memoryManager,
 		const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
 		UINT renderItemsCount
 	)
@@ -192,13 +194,13 @@ namespace Engine
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(context->CbvHeap->GetCPUDescriptorHandleForHeapStart());
-				handle.Offset(heapIndex, context->CbvSrvUavDescriptorSize);
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+				handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 				cbvDesc.BufferLocation = constantBufferAddress;
 				cbvDesc.SizeInBytes = constantBufferSizeInBytes;
-				context->Device->CreateConstantBufferView(&cbvDesc, handle);
+				device->CreateConstantBufferView(&cbvDesc, handle);
 			}
 
 			const UINT64 materialBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
@@ -213,14 +215,14 @@ namespace Engine
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(context->CbvHeap->GetCPUDescriptorHandleForHeapStart());
-				handle.Offset(heapIndex, context->CbvSrvUavDescriptorSize);
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+				handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
 				mbvDesc.BufferLocation = materialBufferAddress;
 				mbvDesc.SizeInBytes = materialBufferSizeInBytes;
 
-				context->Device->CreateConstantBufferView(&mbvDesc, handle);
+				device->CreateConstantBufferView(&mbvDesc, handle);
 			}
 
 			const UINT64 passConstantBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
@@ -228,16 +230,16 @@ namespace Engine
 
 			const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
 
-			const UINT32 heapIndex = context->GetPassConstBufferViewOffset() + frameIndex;
+			const UINT32 heapIndex = memoryManager->GetPassBufferOffset() + frameIndex;
 
-			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(context->CbvHeap->GetCPUDescriptorHandleForHeapStart());
-			handle.Offset(heapIndex, context->CbvSrvUavDescriptorSize);
+			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+			handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
 
 			D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
 			passCbDesc.BufferLocation = passConstantBufferAddress;
 			passCbDesc.SizeInBytes = passConstantBufferSizeInBytes;
 
-			context->Device->CreateConstantBufferView(&passCbDesc, handle);
+			device->CreateConstantBufferView(&passCbDesc, handle);
 
 		}
 	}

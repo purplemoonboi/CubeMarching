@@ -15,6 +15,7 @@ namespace Engine
 	using Microsoft::WRL::ComPtr;
 
 	class D3D12Context;
+	class D3D12MemoryManager;
 
 	class D3D12VertexBuffer : public VertexBuffer
 	{
@@ -110,13 +111,16 @@ namespace Engine
 
 		D3D12ResourceBuffer
 		(
-			D3D12Context* context,
+			ID3D12Device* device,
+			D3D12MemoryManager* memoryManager,
 			const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
 			UINT renderItemsCount
 		);
 
 		~D3D12ResourceBuffer()  = default;
 
+
+		//void RegisterRenderItem();
 
 		void UpdatePassBuffer(D3D12FrameResource* resource, const MainCamera& camera, const float deltaTime, const float elapsedTime, bool wireframe) ;
 
@@ -133,6 +137,8 @@ namespace Engine
 
 		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.
 		PassConstants MainPassConstantBuffer;
+
+		INT32 ObjectCount = 0;
 
 
 	};
