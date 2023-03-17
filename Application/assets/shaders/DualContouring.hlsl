@@ -135,8 +135,8 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         float3 p1 = cornerCoords[c1];
         float3 p2 = cornerCoords[c2];
         
-        int m1 = (DensityTexture[p1] < 0) ? 1 : 0;
-        int m2 = (DensityTexture[p2] < 0) ? 1 : 0;
+        int m1 = (DensityTexture[p1] > 0) ? 1 : 0;
+        int m2 = (DensityTexture[p2] > 0) ? 1 : 0;
         
         /* if there is a sign change */
         if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
@@ -146,7 +146,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             p2 = cornerCoords[c2];
             
             float t = (IsoLevel - DensityTexture[p1]) / (DensityTexture[p2] - DensityTexture[p1]);
-            float3 p = p1 + 0.5f * (p2 - p1);
+            float3 p = p1 + t * (p2 - p1);
             
             float3 n = CalculateNormal(p);
     
@@ -179,7 +179,10 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     
     Vertex vertex = (Vertex) 0;
     
-    vertex.position = com;
+    solvedPosition = solvedPosition / (TextureSize - 1);
+    solvedPosition *= 32;
+    
+    vertex.position = solvedPosition;
     vertex.normal = averageNormal;
     vertex.configuration = 1;
     

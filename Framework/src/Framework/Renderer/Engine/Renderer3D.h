@@ -42,16 +42,12 @@ namespace Engine
 
 		// @brief - Marks the start of rendering commands.
 		//		
-		static void BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime = 0.0f);
+		static void BeginScene(const MainCamera& cam, const float deltaTime, bool wireframe = false, const float elapsedTime = 0.0f);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
 		//			calculated for rendering.
 		static void EndScene();
-
-		//TODO: THINK ABOUT MOVING THIS, DOESN'T SEEM RIGHT TO HAVE IT HERE
-		// @brief - Build the frame resources for the scene
-		static void BuildFrameResources(GraphicsContext* graphicsContext);
 
 		static void BuildMaterials();
 
@@ -62,6 +58,8 @@ namespace Engine
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
 		static void CreateCustomMesh(ScopePointer<MeshGeometry> mesh, const std::string& meshTag, Transform transform);
+
+		static void UpdateRenderItem(const std::string& meshTag, const void* rawData);
 
 		struct VoxelWorldRenderingStats
 		{

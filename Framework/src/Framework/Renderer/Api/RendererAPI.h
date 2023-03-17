@@ -44,17 +44,22 @@ namespace Engine
 
 		virtual void BindPostProcessingPass() = 0;
 
-		virtual void ResetCommandList() = 0;
+		virtual void PreInit() = 0;
 
-		virtual void ExecCommandList() = 0;
-
-		virtual void UpdateFrameResource(FrameResource* frameResource) = 0;
+		virtual void PostInit() = 0;
 
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
-		virtual void PreRender() = 0;
+		virtual void PreRender
+		(
+			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials, 
+			const MainCamera& camera,
+			float deltaTime,
+			float elapsedTime,
+			bool wireframe
+		) = 0;
 
 		virtual void PostRender() = 0;
 
@@ -70,7 +75,6 @@ namespace Engine
 
 		[[nodiscard]] virtual MemoryManager* GetMemoryManager() const = 0;
 
-		[[nodiscard]] virtual FrameResource* GetCurrentFrameResource() const = 0;
 
 	private:
 

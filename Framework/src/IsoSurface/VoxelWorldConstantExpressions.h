@@ -55,11 +55,11 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 16;
-	constexpr UINT64 ChunkHeight = 16;
+	constexpr UINT64 ChunkWidth = 64;
+	constexpr UINT64 ChunkHeight = 64;
 
 	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
-	constexpr UINT64 VoxelTextureHeight = ChunkWidth + 1;
+	constexpr UINT64 VoxelTextureHeight = ChunkHeight + 1;
 
 	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 VoxelMaterialCount = VoxelWorldElementCount * 8;
@@ -73,10 +73,10 @@ namespace Engine
 	 * @brief Max size of a dense dual contour voxel buffer.
 	 * @note  size-of-world-dimensions { minus '1' because the vertex is generated within the cell } 
 	 */
-	constexpr UINT64 DualContourNumberOfElements = (VoxelTextureWidth - 1) * (VoxelTextureHeight - 1) * (VoxelTextureWidth - 1);
+	constexpr UINT64 DualContourNumberOfElements = (ChunkWidth) * (ChunkHeight) * (ChunkWidth);
 	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(DualContourVertex);
 
-	constexpr UINT64 DualContourTriangleNumberOfElements = ((VoxelTextureWidth - 1) * (VoxelTextureWidth - 1) * (VoxelTextureHeight - 1) / 8) * 12;
+	constexpr UINT64 DualContourTriangleNumberOfElements = ((ChunkWidth) * (ChunkWidth) * (ChunkWidth) / 8) * 12;
 	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(DualContourTriangle);
 
 	constexpr UINT64 DensityPrimitiveCount = 8;

@@ -15,7 +15,7 @@ namespace Engine
 		Scene(const std::string& name);
 
 		void OnUpdate(const float deltaTime, const float elapsedTime);
-		void OnRender(const float deltaTime, const float elapsedTime) const;
+		void OnRender(const float deltaTime, const float elapsedTime, bool wireframe = false) const;
 
 		MainCamera* GetSceneCamera() { return SceneCamera; }
 

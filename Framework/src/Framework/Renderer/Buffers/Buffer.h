@@ -9,7 +9,7 @@ namespace Engine
 
 	class GraphicsContext;
 	class RenderItem;
-	class FrameResource;
+	//class FrameResource;
 	class Material;
 
 	enum class ShaderDataType
@@ -161,15 +161,15 @@ namespace Engine
 
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
-		virtual void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) = 0;
+		virtual void SetData(const void* data, INT32 size) = 0;
 		virtual void Release() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
 		virtual UINT32 GetCount() = 0;
 		[[nodiscard]] virtual const BufferLayout& GetLayout() const = 0;
 		[[nodiscard]] virtual const void* GetSystemData() const = 0;
 		[[nodiscard]] virtual const void* GetResourceData() const = 0;
-		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, UINT size, UINT vertexCount);
-		static RefPointer<VertexBuffer> Create(GraphicsContext* const graphicsContext, const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
+		static RefPointer<VertexBuffer> Create(UINT size, UINT vertexCount);
+		static RefPointer<VertexBuffer> Create(const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
 
 	};
 
@@ -184,7 +184,7 @@ namespace Engine
 
 		virtual INT32 GetCount() const = 0;
 
-		static RefPointer<IndexBuffer> Create(GraphicsContext* const graphicsContext, UINT16* indices, UINT size, UINT indexCount);
+		static RefPointer<IndexBuffer> Create(UINT16* indices, UINT size, UINT indexCount);
 	};
 
 
@@ -198,25 +198,19 @@ namespace Engine
 
 		virtual void UnBind() const = 0;
 
-		virtual void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime) = 0;
+		virtual void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime, bool wireframe) = 0;
 
 		virtual void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) = 0;
 
 		virtual void UpdateMaterialBuffers(std::vector<Material*>& materials) = 0;
-
-		virtual void UpdateCurrentFrameResource(FrameResource* frameResource) = 0;
-
-
-		virtual FrameResource* GetCurrentFrameResource() const = 0;
 
 		virtual const INT32 GetCount() const = 0;
 
 		static ScopePointer<ResourceBuffer> Create
 		(
 			GraphicsContext* graphicsContext, 
-			const std::vector<ScopePointer<FrameResource>>& frameResources, 
 			UINT renderItemsCount
-		);
+		){}
 
 	};
 

@@ -59,6 +59,7 @@ cbuffer cbPass : register(b2)
     // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
     // are spot lights for a maximum of MaxLights per object.
     Light gLights[MaxLights];
+    int wire;
 };
  
 struct VertexIn
@@ -100,28 +101,33 @@ VertexOut VS(VertexIn vin)
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    // Interpolating normal can unnormalize it, so renormalize it.
-    pin.NormalW = normalize(pin.NormalW);
+    float4 litColor = float4(0, 0, 0, 1);
+   
+    if (wire == 0)
+    {
+      // Interpolating normal can unnormalize it, so renormalize it.
+        pin.NormalW = normalize(pin.NormalW);
 
-    // Vector from point being lit to eye. 
-    float3 toEyeW = normalize(gEyePosW - pin.PosW);
+        // Vector from point being lit to eye. 
+        float3 toEyeW = normalize(gEyePosW - pin.PosW);
 
-	// Indirect lighting.
-    float4 ambient = gAmbientLight*gDiffuseAlbedo;
+	    // Indirect lighting.
+        float4 ambient = gAmbientLight * gDiffuseAlbedo;
 
-    const float shininess = 1.0f - gRoughness;
-    //Material mat = { gDiffuseAlbedo, gFresnelR0, shininess };
-    Material mat = { float4(pin.NormalW, 1), gFresnelR0, shininess };
-    float3 shadowFactor = 1.0f;
+        const float shininess = 1.0f - gRoughness;
+        Material mat = { gDiffuseAlbedo, gFresnelR0, shininess };
+        //Material mat = { float4(pin.NormalW, 1), gFresnelR0, shininess };
+        float3 shadowFactor = 1.0f;
     
-    float4 directLight = ComputeLighting(gLights, mat, pin.PosW, 
+        float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
         pin.NormalW, toEyeW, shadowFactor);
 
-    float4 litColor = ambient + directLight;
+        litColor = ambient + directLight;
 
-    // Common convention to take alpha from diffuse material.
-    litColor.a = gDiffuseAlbedo.a;
-
+        // Common convention to take alpha from diffuse material.
+        litColor.a = gDiffuseAlbedo.a;
+    } 
+    
     return litColor;
 }
 

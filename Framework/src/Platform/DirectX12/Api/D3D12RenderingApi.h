@@ -1,13 +1,17 @@
 #pragma once
 #include "Framework/Renderer/Api/RendererAPI.h"
+
 #include "D3D12Context.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Buffers/D3D12Buffers.h"
+#include "Platform/DirectX12/Resources/D3D12ResourceManager.h"
 
 
 namespace Engine
 {
+
 	struct ObjectConstant;
 
 
@@ -32,16 +36,21 @@ namespace Engine
 
 		void Flush() override;
 
-		void ResetCommandList() override;
+		void PreInit() override;
 
-		void ExecCommandList() override;
-
-		void UpdateFrameResource(FrameResource* const frameResource) override;
+		void PostInit() override;
 
 		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override {}
 		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override {}
 
-		void PreRender() override;
+		void PreRender
+		(
+			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			const MainCamera& camera,
+			float deltaTime,
+			float elapsedTime,
+			bool wireframe
+		) override;
 
 		void PostRender() override;
 
@@ -52,9 +61,14 @@ namespace Engine
 
 		[[nodiscard]] MemoryManager* GetMemoryManager() const override { return D3D12MemoryManager.get(); }
 
-		[[nodiscard]] FrameResource* GetCurrentFrameResource() const override { return CurrentFrameResource; }
+		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
+
 	private:
 		
+		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
+		std::vector<ScopePointer<D3D12FrameResource>> FrameResources;
+		UINT32 CurrentFrameResourceIndex = 0;
+
 
 		// A pointer to the graphics context
 		D3D12Context* Context = nullptr;

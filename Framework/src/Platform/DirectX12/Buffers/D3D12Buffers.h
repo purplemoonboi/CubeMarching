@@ -20,8 +20,8 @@ namespace Engine
 	{
 	public:
 
-		D3D12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size, UINT vertexCount);
-		D3D12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT64 size, UINT vertexCount, bool isDynamic = false);
+		D3D12VertexBuffer(UINT64 size, UINT vertexCount);
+		D3D12VertexBuffer(const void* vertices, UINT64 size, UINT vertexCount, bool isDynamic = false);
 		~D3D12VertexBuffer() override = default;
 
 		// @brief Binds this buffer for modifications.
@@ -33,7 +33,7 @@ namespace Engine
 		void Release() override;
 
 		// @brief Sets the vertex data for this buffer.
-		void SetData(GraphicsContext* graphicsContext, const void* data, INT32 size) override;
+		void SetData(const void* data, INT32 size) override;
 
 		void SetLayout(const BufferLayout& layout) override;
 
@@ -62,6 +62,8 @@ namespace Engine
 		UINT VertexBufferByteSize;
 
 		UINT VertexCount;
+
+		INT8 Flag = 0;
 	};
 
 
@@ -70,7 +72,7 @@ namespace Engine
 	{
 	public:
 
-		D3D12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT64 size, UINT count);
+		D3D12IndexBuffer(UINT16* indices, UINT64 size, UINT count);
 
 		~D3D12IndexBuffer() override = default;
 
@@ -102,44 +104,31 @@ namespace Engine
 	};
 
 
-	class D3D12ResourceBuffer : public ResourceBuffer
+	class D3D12ResourceBuffer //: public ResourceBuffer
 	{
 	public:
 
 		D3D12ResourceBuffer
 		(
-			GraphicsContext* graphicsContext,
-			const std::vector<ScopePointer<FrameResource>>& frameResources,
+			D3D12Context* context,
+			const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
 			UINT renderItemsCount
 		);
 
-		~D3D12ResourceBuffer() override = default;
+		~D3D12ResourceBuffer()  = default;
 
 
-		void Bind() const override;
+		void UpdatePassBuffer(D3D12FrameResource* resource, const MainCamera& camera, const float deltaTime, const float elapsedTime, bool wireframe) ;
 
-		void UnBind() const override;
+		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems) ;
 
-		void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime) override;
-
-		void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) override;
-
-		void UpdateMaterialBuffers(std::vector<Material*>& materials) override;
+		void UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials) ;
 
 
-		const INT32 GetCount() const override;
+		const INT32 GetCount() const ;
 
-
-		// @brief - Updates the current frame resource.
-		void UpdateCurrentFrameResource(FrameResource* frameResource) override;
-
-		// @brief - Returns a raw pointer to the frame resource.
-		FrameResource* GetCurrentFrameResource() const override { return CurrentFrameResource; }
 
 	private:
-
-		// @brief - Keeps track of the current frame resource being updated.
-		D3D12FrameResource* CurrentFrameResource = nullptr;
 
 
 		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.

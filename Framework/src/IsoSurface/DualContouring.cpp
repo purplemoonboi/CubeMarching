@@ -330,20 +330,29 @@ namespace Engine
 		const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
 		const UINT vbSizeInBytes = sizeof(Vertex) * vertices.size();
 
-		TerrainMesh = CreateScope<MeshGeometry>("Terrain");
-		TerrainMesh->VertexBuffer = VertexBuffer::Create(ComputeContext->Context, vertices.data(),
-			vbSizeInBytes, vertices.size(), true);
 
-		const BufferLayout layout =
+		if(TerrainMesh == nullptr)
 		{
-			{"POSITION",	ShaderDataType::Float3, 0, 0, false },
-			{"NORMAL",		ShaderDataType::Float3, 12,1, false },
-			{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
-		};
-		TerrainMesh->VertexBuffer->SetLayout(layout);
+			TerrainMesh = CreateScope<MeshGeometry>("Terrain");
+			TerrainMesh->VertexBuffer = VertexBuffer::Create(vertices.data(),
+				vbSizeInBytes, vertices.size(), true);
 
-		TerrainMesh->IndexBuffer = IndexBuffer::Create(ComputeContext->Context, indices.data(),
-			ibSizeInBytes, indices.size());
+			const BufferLayout layout =
+			{
+				{"POSITION",	ShaderDataType::Float3, 0, 0, false },
+				{"NORMAL",		ShaderDataType::Float3, 12,1, false },
+				{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
+			};
+			TerrainMesh->VertexBuffer->SetLayout(layout);
+
+			TerrainMesh->IndexBuffer = IndexBuffer::Create(indices.data(),
+				ibSizeInBytes, indices.size());
+		}
+		else
+		{
+			/* schedule a copy */
+
+		}
 
 		const HRESULT closeResult = ComputeContext->Context->CmdList->Close();
 		THROW_ON_FAILURE(closeResult);

@@ -43,16 +43,12 @@ namespace Engine
 
 		std::unordered_map<std::string, ScopePointer<MeshGeometry>> Geometries;
 
-		std::vector<ScopePointer<FrameResource>> FrameResources;
-		FrameResource* ActiveFrameResource;
-		UINT32 CurrentFrameResourceIndex = 0;
 
 		std::vector<ScopePointer<RenderItem>> RenderItems;
 		std::vector<RenderItem*> OpaqueRenderItems;
 		std::vector<RenderItem*> WireFrameRenderItems;
 
 
-		ScopePointer<ResourceBuffer> UploadBufferManager;
 
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
@@ -68,14 +64,12 @@ namespace Engine
 
 	void Renderer3D::PreInit()
 	{
-		const auto api = RenderInstruction::GetApiPtr();
-		api->ResetCommandList();
+		RenderInstruction::PreInitRenderer();
 	}
 
 	void Renderer3D::PostInit()
 	{
-		const auto api = RenderInstruction::GetApiPtr();
-		api->ExecCommandList();
+		RenderInstruction::PostInitRenderer();
 	}
 
 	void Renderer3D::Init()
@@ -120,13 +114,13 @@ namespace Engine
 
 		auto gridData = Geo.CreateGrid(100, 100, 12, 12);
 		auto gridMesh = MeshGeometry::Create("EditorGrid");
-		gridMesh->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+		gridMesh->VertexBuffer = VertexBuffer::Create(
 			gridData.Vertices.data(),
 			sizeof(Vertex) * gridData.Vertices.size(),
 			gridData.Vertices.size(),
 			false);
 
-		gridMesh->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+		gridMesh->IndexBuffer = IndexBuffer::Create(
 			gridData.GetIndices16().data(),
 			sizeof(UINT16) * gridData.GetIndices16().size(),
 			gridData.GetIndices16().size());
@@ -152,13 +146,13 @@ namespace Engine
 
 		auto boxData = Geo.CreateBox(1, 1, 1, 1);
 		auto boxMesh = MeshGeometry::Create("Box");
-		boxMesh->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+		boxMesh->VertexBuffer = VertexBuffer::Create(
 			boxData.Vertices.data(),
 			sizeof(Vertex) * boxData.Vertices.size(),
 			boxData.Vertices.size(),
 			false);
 
-		boxMesh->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+		boxMesh->IndexBuffer = IndexBuffer::Create(
 			boxData.GetIndices16().data(),
 			sizeof(UINT16) * boxData.GetIndices16().size(),
 			boxData.GetIndices16().size());
@@ -181,38 +175,31 @@ namespace Engine
 		RenderData.RenderItems.push_back(std::move(boxItem));
 
 
-		RenderData.UploadBufferManager = ResourceBuffer::Create
-		(
-			api->GetGraphicsContext(),
-			RenderData.FrameResources,
-			RenderData.RenderItems.size()
-		);
-
-
-		BuildFrameResources(api->GetGraphicsContext());
 	}
 
 	void Renderer3D::Shutdown()
 	{}
 
-	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, const float elapsedTime)
+	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, bool wireframe, const float elapsedTime)
 	{
-		if(!RenderData.FrameResources.empty())
-		{
-			RenderData.CurrentFrameResourceIndex = (RenderData.CurrentFrameResourceIndex + 1) % NUMBER_OF_FRAME_RESOURCES;
-			RenderData.ActiveFrameResource = RenderData.FrameResources[RenderData.CurrentFrameResourceIndex].get();
+		
+		/*
+		 * stage data for rendering
+		 * here we execute any copies for apis which rely on manual control of syncing data
+		 */
+		RenderInstruction::PreRender
+		(
+			RenderData.OpaqueRenderItems,
+			RenderData.Materials,
+			cam,
+			deltaTime,
+			elapsedTime,
+			wireframe
+		);
 
-			RenderInstruction::UpdateFrameResource(RenderData.ActiveFrameResource);
-			RenderData.UploadBufferManager->UpdateCurrentFrameResource(RenderData.ActiveFrameResource);
-			RenderData.UploadBufferManager->UpdateObjectBuffers(RenderData.OpaqueRenderItems);
-			RenderData.UploadBufferManager->UpdateMaterialBuffers(RenderData.Materials);
-			RenderData.UploadBufferManager->UpdatePassBuffer(cam, deltaTime, elapsedTime);
-		}
 
-		RenderInstruction::PreRender();
-
-		RenderInstruction::BindGeometryPass(RenderData.PSOs["Wire"].get(), RenderData.OpaqueRenderItems);
-
+		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
+		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}
 
 	void Renderer3D::EndScene()
@@ -220,12 +207,11 @@ namespace Engine
 		/**
 		 *	Render the scene geometry to the scene
 		 */
-		if(!RenderData.FrameResources.empty())
-		{
-			//ProfileStats.DrawCalls = 1;
-			RenderInstruction::Flush();
-			RenderInstruction::PostRender();
-		}
+		
+		//ProfileStats.DrawCalls = 1;
+		RenderInstruction::Flush();
+		RenderInstruction::PostRender();
+		
 	}
 
 	void Renderer3D::BuildMaterials()
@@ -255,65 +241,15 @@ namespace Engine
 		Transform transform
 	)
 	{
-	
-		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
-		{
-			RenderData.Geometries.at(meshTag)->VertexBuffer->Release();
-			RenderData.Geometries.erase(meshTag);
-		}
 
-		RenderData.Geometries.emplace(meshTag, std::move(meshGeometry));
-
-		ScopePointer<RenderItem> customGeometry = RenderItem::Create
-		(
-			RenderData.Geometries[meshTag].get(),
-			RenderData.MaterialLibrary.Get("Default"),
-			meshTag,
-			1,
-			transform
-		);
-
-		customGeometry->IndexCount = RenderData.Geometries[meshTag]->IndexBuffer->GetCount();
-		customGeometry->BaseVertexLocation = RenderData.BaseVertexLocation;
-		//RenderData.BaseVertexLocation = customGeometry->Geometry->VertexBuffer->GetCount();
-
-		UINT32 vertexOffset = 0;
-		for (auto itr = RenderData.Geometries.begin(); itr != RenderData.Geometries.end(); itr++)
-		{
-			vertexOffset = itr->second->VertexBuffer->GetCount();
-		}
-
-		RenderData.BaseVertexLocation = vertexOffset;
-
-		VoxelStats.PolyCount = customGeometry->Geometry->VertexBuffer->GetCount();
-		VoxelStats.TriCount = VoxelStats.PolyCount / 3;
-
-		
-		const auto geoCount = RenderData.OpaqueRenderItems.size() - 1;
-		RenderData.OpaqueRenderItems.at(geoCount) = customGeometry.get();
-		RenderData.RenderItems.at(geoCount) = std::move(customGeometry);
-		
-
-		
 	}
 
-	void Renderer3D::BuildFrameResources(GraphicsContext* graphicsContext)
+	void Renderer3D::UpdateRenderItem(const std::string& meshTag, const void* rawData)
 	{
-		constexpr UINT32 maxObjCount = 16;
-		constexpr UINT32 maxMatCount = 16;
-
-		for (int i = 0; i < NUMBER_OF_FRAME_RESOURCES; ++i)
-		{
-			RenderData.FrameResources.push_back(FrameResource::Create
-			(
-				graphicsContext,
-				1,
-				maxMatCount,
-				maxObjCount
-			)
-			);
-		}
+		auto* geometry = RenderData.Geometries[meshTag].get();
+		geometry->VertexBuffer->SetData(rawData, 0);
 	}
+
 
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{
@@ -324,7 +260,7 @@ namespace Engine
 		const UINT vbSizeInBytes = sizeof(Vertex) * cubeData.Vertices.size();
 		const UINT ibSizeInBytes = sizeof(UINT16) * cubeData.GetIndices16().size();
 
-		cubeGeometry->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(), 
+		cubeGeometry->VertexBuffer = VertexBuffer::Create(
 			cubeData.Vertices.data(), vbSizeInBytes, cubeData.Vertices.size(), false);
 
 		BufferLayout layout = BufferLayout
@@ -336,7 +272,7 @@ namespace Engine
 		
 		cubeGeometry->VertexBuffer->SetLayout(layout);
 
-		cubeGeometry->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+		cubeGeometry->IndexBuffer = IndexBuffer::Create(
 			cubeData.GetIndices16().data(), ibSizeInBytes, cubeData.GetIndices16().size());
 
 		if (RenderData.Geometries.find(name) == RenderData.Geometries.end())
@@ -359,10 +295,10 @@ namespace Engine
 		const UINT vbSizeInBytes = sizeof(Vertex) * planeData.Vertices.size();
 		const UINT ibSizeInBytes = sizeof(UINT16) * planeData.GetIndices16().size();
 
-		planeGeometry->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+		planeGeometry->VertexBuffer = VertexBuffer::Create(
 			planeData.Vertices.data(), vbSizeInBytes, planeData.Vertices.size(), false);
 
-		planeGeometry->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+		planeGeometry->IndexBuffer = IndexBuffer::Create(
 			planeData.GetIndices16().data(), ibSizeInBytes, planeData.GetIndices16().size());
 
 		BufferLayout layout = BufferLayout
@@ -394,10 +330,10 @@ namespace Engine
 		const UINT vbSizeInBytes = sizeof(Vertex) * sphereData.Vertices.size();
 		const UINT ibSizeInBytes = sizeof(UINT16) * sphereData.GetIndices16().size();
 
-		sphereGeometry->VertexBuffer = VertexBuffer::Create(api->GetGraphicsContext(),
+		sphereGeometry->VertexBuffer = VertexBuffer::Create(
 			sphereData.Vertices.data(), vbSizeInBytes, sphereData.Vertices.size(), false);
 
-		sphereGeometry->IndexBuffer = IndexBuffer::Create(api->GetGraphicsContext(),
+		sphereGeometry->IndexBuffer = IndexBuffer::Create(
 			sphereData.GetIndices16().data(), ibSizeInBytes, sphereData.GetIndices16().size());
 
 		BufferLayout layout = BufferLayout

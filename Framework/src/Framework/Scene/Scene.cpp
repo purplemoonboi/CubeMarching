@@ -18,11 +18,11 @@ namespace Engine
 
 	}
 
-	void Scene::OnRender(const float deltaTime, const float elapsedTime) const
+	void Scene::OnRender(const float deltaTime, const float elapsedTime, bool wireframe) const
 	{
 		/** process drawing instructions */
 
-		Renderer3D::BeginScene(*SceneCamera, deltaTime, elapsedTime);
+		Renderer3D::BeginScene(*SceneCamera, deltaTime, wireframe, elapsedTime);
 
 		
 

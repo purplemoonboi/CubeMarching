@@ -1,16 +1,20 @@
 #include "D3D12RenderingApi.h"
+#include "Framework/Core/Log/Log.h"
+#include "Framework/ImGui/Platform/ImGuiImplD3D12.h"
+
+
 
 #include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/Directx12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
-#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+
 #include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 #include "Platform/DirectX12/Copy/D3D12CopyContext.h"
-#include "Framework/Core/Log/Log.h"
-#include "Framework/ImGui/Platform/ImGuiImplD3D12.h"
+#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+
 
 #include <imgui.h>
 #include <backends/imgui_impl_dx12.h>
@@ -43,7 +47,32 @@ namespace Engine
 		FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
 		FrameBuffer->Init(Context);
 		FrameBuffer->RebuildFrameBuffer(fbs.Width, fbs.Height);
+
+		constexpr UINT32 maxObjCount = 16;
+		constexpr UINT32 maxMatCount = 16;
+
+		for (int i = 0; i < NUMBER_OF_FRAME_RESOURCES; ++i)
+		{
+			FrameResources.push_back(CreateScope<D3D12FrameResource>
+			(
+				Context,
+				1,
+				maxMatCount,
+				maxObjCount
+			)
+			);
+		}
+
+		UploadBuffer = CreateScope<D3D12ResourceBuffer>
+		(
+			Context,
+			FrameResources,
+			2
+		);
+
 	}
+
+
 
 	void D3D12RenderingApi::SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 	{
@@ -58,7 +87,7 @@ namespace Engine
 	{
 	}
 
-	void D3D12RenderingApi::ResetCommandList()
+	void D3D12RenderingApi::PreInit()
 	{
 		// Reset the command allocator
 		// Reset the command list
@@ -70,7 +99,7 @@ namespace Engine
 	}
 
 
-	void D3D12RenderingApi::ExecCommandList()
+	void D3D12RenderingApi::PostInit()
 	{
 		// Execute the initialization commands.
 		HRESULT closureResult = Context->CmdList->Close();
@@ -80,14 +109,22 @@ namespace Engine
 		Context->FlushCommandQueue();
 	}
 
-	void D3D12RenderingApi::UpdateFrameResource(FrameResource* const frameResource)
+	void D3D12RenderingApi::PreRender(
+		const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+		const MainCamera& camera,
+		float deltaTime,
+		float elapsedTime,
+		bool wireframe
+	)
 	{
-		CurrentFrameResource = dynamic_cast<D3D12FrameResource*>(frameResource);
+
+		CurrentFrameResourceIndex = (CurrentFrameResourceIndex + 1) % NUMBER_OF_FRAME_RESOURCES;
+		CurrentFrameResource = FrameResources[CurrentFrameResourceIndex].get();
+		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
+
 		// Has the GPU finished processing the commands of the current frame resource?
 		// If not, wait until the GPU has completed commands up to this fence point.
-		const UINT64 a = CurrentFrameResource->SignalCount;
-		const UINT64 b = Context->Fence->GetCompletedValue();
-		if (/*a != 0 &&*/ b < a)
+		if (Context->Fence->GetCompletedValue() < CurrentFrameResource->SignalCount)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
@@ -95,15 +132,18 @@ namespace Engine
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
-	}
 
-	void D3D12RenderingApi::PreRender()
-	{
+		// Update constant buffers for each render item and material
+		UploadBuffer->UpdateObjectBuffers(CurrentFrameResource, items);
+		UploadBuffer->UpdateMaterialBuffers(CurrentFrameResource, materials);
+		UploadBuffer->UpdatePassBuffer(CurrentFrameResource, camera, deltaTime, elapsedTime, wireframe);
+
+
+		// If everything checks out prepare recording instructions under the
+		// current frame resource.
 		CORE_ASSERT(Context->Device, "Device lost");
 		CORE_ASSERT(Context->CmdList, "Graphics CmdL lost");
 		CORE_ASSERT(Context->CommandQueue, "Command queue lost");
-		CORE_ASSERT(CurrentFrameResource, "No valid frame resource!");
-
 
 
 		const HRESULT cmdResetResult = CurrentFrameResource->CmdListAlloc->Reset();
@@ -111,10 +151,11 @@ namespace Engine
 		const HRESULT cmdListResult = Context->CmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListResult);
 
+
 		Context->CmdList->ClearRenderTargetView
 		(
 			FrameBuffer->GetCurrentBackBufferViewCpu(),
-			DirectX::Colors::Aquamarine,
+			Colors::SandyBrown,
 			0,
 			nullptr
 		);

@@ -45,7 +45,7 @@ namespace Engine
 		// Because we have an object cbuffer for each FrameResource, we have to apply the
 		// update to each FrameResource.  Thus, when we modify obect data we should set 
 		// NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
-		int NumFramesDirty = NUMBER_OF_FRAME_RESOURCES;
+		INT32 NumFramesDirty = NUMBER_OF_FRAME_RESOURCES;
 
 		// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
 		UINT ObjectConstantBufferIndex = -1;

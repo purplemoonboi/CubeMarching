@@ -8,7 +8,7 @@
 
 namespace Engine
 {
-	ScopePointer<FrameResource> FrameResource::Create(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount)
+	/*ScopePointer<FrameResource> FrameResource::Create(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount)
 	{
 		switch(RendererAPI::GetAPI())
 		{
@@ -20,5 +20,5 @@ namespace Engine
 			default:
 				return nullptr;
 		}
-	}
+	}*/
 }

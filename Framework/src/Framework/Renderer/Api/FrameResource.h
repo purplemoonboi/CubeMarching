@@ -37,6 +37,7 @@ namespace Engine
 		// indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
 		// are spot lights for a maximum of MaxLights per object.
 		Light Lights[MaxLights];
+		INT32 Wire = 0;
 	};
 
 	// Simple constant buffer
@@ -49,7 +50,7 @@ namespace Engine
 
 	class GraphicsContext;
 
-	struct FrameResource
+	/*struct FrameResource
 	{
 		virtual ~FrameResource() = default;
 
@@ -62,5 +63,5 @@ namespace Engine
 		);
 
 		bool IsInitialised = false;
-	};
+	};*/
 }

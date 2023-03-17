@@ -12,13 +12,12 @@ namespace Engine
 {
 	using namespace DirectX;
 
-	D3D12VertexBuffer::D3D12VertexBuffer(GraphicsContext* const graphicsContext, UINT64 size, UINT vertexCount)
+	D3D12VertexBuffer::D3D12VertexBuffer(UINT64 size, UINT vertexCount)
 		:
 		Layout(),
 		VertexBufferByteSize(size),
 		VertexCount(vertexCount)
 	{
-		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		// Reserve memory and copy the vertices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
@@ -33,14 +32,13 @@ namespace Engine
 		);
 	}
 
-	D3D12VertexBuffer::D3D12VertexBuffer(GraphicsContext* const graphicsContext, const void* vertices, UINT64 size, UINT vertexCount, bool isDynamic)
+	D3D12VertexBuffer::D3D12VertexBuffer(const void* vertices, UINT64 size, UINT vertexCount, bool isDynamic)
 		:
 		Layout(),
 		VertexBufferByteSize(size),
 		VertexCount(vertexCount)
 	{
 
-		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		// Reserve memory and copy the vertices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
@@ -89,26 +87,14 @@ namespace Engine
 	}
 
 
-	void D3D12VertexBuffer::SetData(GraphicsContext* const graphicsContext, const void* data, INT32 size)
+	void D3D12VertexBuffer::SetData(const void* data, INT32 size)
 	{
-		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
-
-		if(GpuBuffer == nullptr)
+		if(GpuBuffer != nullptr)
 		{
-			// Reserve memory and copy the vertices into our CPU buffer
-			THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
 			// Copy data into buffer
 			CopyMemory(CpuLocalCopy->GetBufferPointer(), data, size);
+			Flag = 1;
 		}
-
-		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
-		(
-			data,
-			size,
-			Gpu_UploadBuffer
-		);
-
 	}
 
 	void D3D12VertexBuffer::SetLayout(const BufferLayout& layout)
@@ -136,13 +122,12 @@ namespace Engine
 		return vbv;
 	}
 
-	D3D12IndexBuffer::D3D12IndexBuffer(GraphicsContext* const graphicsContext, UINT16* indices, UINT64 size, UINT indexCount)
+	D3D12IndexBuffer::D3D12IndexBuffer(UINT16* indices, UINT64 size, UINT indexCount)
 		:
 		Format(DXGI_FORMAT_R16_UINT),
 		IndexBufferByteSize(size),
 		Count(indexCount)
 	{
-		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		// Reserve memory and copy the indices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &SystemBuffer));
@@ -181,13 +166,12 @@ namespace Engine
 
 	D3D12ResourceBuffer::D3D12ResourceBuffer
 	(
-		GraphicsContext* graphicsContext,
-		const std::vector<ScopePointer<FrameResource>>& frameResources,
+		D3D12Context* context,
+		const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
 		UINT renderItemsCount
 	)
 	{
 		/**	cast to appropriate api implementation */
-		const auto dx12GraphicsContext = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
@@ -197,9 +181,9 @@ namespace Engine
 
 		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
 		{
-			const auto dx12FrameResource = dynamic_cast<D3D12FrameResource*>(frameResources[frameIndex].get());
+			const auto currentResource = frameResources[frameIndex].get();
 
-			const auto constantBuffer = dx12FrameResource->ConstantBuffer.get();
+			const auto constantBuffer = currentResource->ConstantBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
 
 			for (UINT32 i = 0; i < objectCount; ++i)
@@ -208,18 +192,18 @@ namespace Engine
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
-				handle.Offset(heapIndex, dx12GraphicsContext->CbvSrvUavDescriptorSize);
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(context->CbvHeap->GetCPUDescriptorHandleForHeapStart());
+				handle.Offset(heapIndex, context->CbvSrvUavDescriptorSize);
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 				cbvDesc.BufferLocation = constantBufferAddress;
 				cbvDesc.SizeInBytes = constantBufferSizeInBytes;
-				dx12GraphicsContext->Device->CreateConstantBufferView(&cbvDesc, handle);
+				context->Device->CreateConstantBufferView(&cbvDesc, handle);
 			}
 
 			const UINT64 materialBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
 
-			const auto materialBuffer = dx12FrameResource->MaterialBuffer.get();
+			const auto materialBuffer = currentResource->MaterialBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
 
 			for (UINT32 i = 0; i < objectCount; ++i)
@@ -229,46 +213,44 @@ namespace Engine
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
-				handle.Offset(heapIndex, dx12GraphicsContext->CbvSrvUavDescriptorSize);
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(context->CbvHeap->GetCPUDescriptorHandleForHeapStart());
+				handle.Offset(heapIndex, context->CbvSrvUavDescriptorSize);
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
 				mbvDesc.BufferLocation = materialBufferAddress;
 				mbvDesc.SizeInBytes = materialBufferSizeInBytes;
 
-				dx12GraphicsContext->Device->CreateConstantBufferView(&mbvDesc, handle);
+				context->Device->CreateConstantBufferView(&mbvDesc, handle);
 			}
 
 			const UINT64 passConstantBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
-			const auto passConstantBuffer = dx12FrameResource->PassBuffer->Resource();
+			const auto passConstantBuffer = currentResource->PassBuffer->Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
 
-			const UINT32 heapIndex = dx12GraphicsContext->GetPassConstBufferViewOffset() + frameIndex;
+			const UINT32 heapIndex = context->GetPassConstBufferViewOffset() + frameIndex;
 
-			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12GraphicsContext->CbvHeap->GetCPUDescriptorHandleForHeapStart());
-			handle.Offset(heapIndex, dx12GraphicsContext->CbvSrvUavDescriptorSize);
+			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(context->CbvHeap->GetCPUDescriptorHandleForHeapStart());
+			handle.Offset(heapIndex, context->CbvSrvUavDescriptorSize);
 
 			D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
 			passCbDesc.BufferLocation = passConstantBufferAddress;
 			passCbDesc.SizeInBytes = passConstantBufferSizeInBytes;
 
-			dx12GraphicsContext->Device->CreateConstantBufferView(&passCbDesc, handle);
+			context->Device->CreateConstantBufferView(&passCbDesc, handle);
 
-			dx12FrameResource->IsInitialised = true;
 		}
 	}
 
 
-	void D3D12ResourceBuffer::Bind() const
-	{
-	}
-
-	void D3D12ResourceBuffer::UnBind() const
-	{
-	}
-
-	void D3D12ResourceBuffer::UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime)
+	void D3D12ResourceBuffer::UpdatePassBuffer
+	(
+		D3D12FrameResource* resource,
+		const MainCamera& camera, 
+		const float deltaTime, 
+		const float elapsedTime, 
+		bool wireframe
+	)
 	{
 		/**
 		 * Get the camera's view and projection matrix
@@ -313,16 +295,16 @@ namespace Engine
 		MainPassConstantBuffer.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
 		MainPassConstantBuffer.TotalTime = elapsedTime;
 		MainPassConstantBuffer.DeltaTime = deltaTime;
+		MainPassConstantBuffer.Wire = wireframe;
 
-
-		const auto currentPassCB = CurrentFrameResource->PassBuffer.get();
+		const auto currentPassCB = resource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
 
-	void D3D12ResourceBuffer::UpdateObjectBuffers(std::vector<RenderItem*>& renderItems)
+	void D3D12ResourceBuffer::UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems)
 	{
 
-		const auto constantBuffer = CurrentFrameResource->ConstantBuffer.get();
+		const auto constantBuffer = resource->ConstantBuffer.get();
 
 		for(const auto& renderItem : renderItems)
 		{
@@ -333,9 +315,9 @@ namespace Engine
 
 			if(renderItem->NumFramesDirty > 0)
 			{
-				const auto dx12RenderItem = dynamic_cast<D3D12RenderItem*>(renderItem);
+				const auto d3d12RenderItem = dynamic_cast<D3D12RenderItem*>(renderItem);
 
-				const XMMATRIX world = XMLoadFloat4x4(&dx12RenderItem->World);
+				const XMMATRIX world = XMLoadFloat4x4(&d3d12RenderItem->World);
 
 				ObjectConstant objConst;
 				XMStoreFloat4x4(&objConst.World, XMMatrixTranspose(world));
@@ -343,20 +325,20 @@ namespace Engine
 				/**
 				 * Update the object's constant buffer
 				 */
-				constantBuffer->CopyData(dx12RenderItem->ObjectConstantBufferIndex, objConst);
+				constantBuffer->CopyData(d3d12RenderItem->ObjectConstantBufferIndex, objConst);
 
 				/**
 				 * Decriment the flag, the current object has been updated
 				 */
-				dx12RenderItem->NumFramesDirty--;
-				dx12RenderItem->HasBeenUpdated = true;
+				d3d12RenderItem->NumFramesDirty--;
+				d3d12RenderItem->HasBeenUpdated = true;
 			}
 		}
 	}
 
-	void D3D12ResourceBuffer::UpdateMaterialBuffers(std::vector<Material*>& materials)
+	void D3D12ResourceBuffer::UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials)
 	{
-		const auto materialBuffer = CurrentFrameResource->MaterialBuffer.get();
+		const auto materialBuffer = resource->MaterialBuffer.get();
 
 		for (const auto& material : materials)
 		{
@@ -387,11 +369,4 @@ namespace Engine
 
 	}
 
-	void D3D12ResourceBuffer::UpdateCurrentFrameResource(FrameResource* frameResource)
-	{
-		CurrentFrameResource = dynamic_cast<D3D12FrameResource*>(frameResource);
-
-
-
-	}
 }

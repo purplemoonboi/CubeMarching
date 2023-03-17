@@ -213,20 +213,29 @@ void ComputeNoise3D(int3 id : SV_DispatchThreadID)
 {
     const float3 fId = (float3) id + ChunkCoord;
     
-    float noise = 0;
+    float noise = 1;
     float freq = Frequency;
     float gain = Gain;
    
-    
-    
-    
-    //if (id.y + ChunkCoord.y < Ground)
-    //{
-        for (int i = 0; i < 4; i++)
+    float dist = length(fId - float3(32, 32, 32) - 4.0f);
+    if (dist > Ground)
+    {
+        noise = -0.1;
+    }
+    else
+    {
+        
+        for (int i = 0; i < Octaves; i++)
         {
             noise += snoise(fId * freq);
             freq *= gain;
         }
+    }
+    
+    
+    //if (id.y + ChunkCoord.y < Ground)
+    //{
+    
     //}
    
 

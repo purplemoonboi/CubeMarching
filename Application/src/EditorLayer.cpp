@@ -63,6 +63,9 @@ namespace Engine
         ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
 
         RenderInstruction::ExecGraphicsCommandList();
+
+        MainCamera* mc = World->GetSceneCamera();
+        mc->SetPosition({0, 0, 0});
     }
 
     void EditorLayer::OnDetach()
@@ -205,29 +208,31 @@ namespace Engine
 
             //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-            DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
          
-           /* if (MarchingCubes->GetTerrainMesh() != nullptr)
+            /*if (MarchingCubes->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()),
-                    "Marching_Terrain", Transform(-halfxz + ((float)ChunkWidth / 2), -((float)ChunkWidth / 2), -halfxz));
+                    "Marching_Terrain", Transform(0, 0, 0));
             }*/
         
 
-            if (DualContouring->GetTerrainMesh() != nullptr)
+            /*if (DualContouring->GetTerrainMesh() != nullptr)
             {
                 float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
                 Renderer3D::CreateCustomMesh(std::move(DualContouring->GetTerrainMesh()),
-                    "Dual_Terrain", Transform(-halfxz, 0, -halfxz));
-            }
+                    "Dual_Terrain", Transform(-halfxz - ((float)ChunkWidth / 8), 0, -halfxz));
+            }*/
         }
     }
 
+    static bool wireframe = false;
+
     void EditorLayer::OnRender(const DeltaTime& timer)
     {
-        World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed());
+        World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), wireframe);
     }
 
     void EditorLayer::OnImGuiRender()
@@ -364,15 +369,11 @@ namespace Engine
                 float planetRadius  = VoxelSettings.PlanetRadius;
                 float resolution    = VoxelSettings.Resolution;
                 float octreeSize    = VoxelSettings.OctreeSize;
-                
+
 
                 ImGui::Begin("Voxel Settings");
                 ImGui::Spacing();
-                if (ImGui::DragFloat("IsoValue", &isoVal, 0.1f, -1.0f, 1.0f))
-                    Regen = true;
-
-                ImGui::Spacing();
-                if (ImGui::DragFloat("Planet Radius", &planetRadius, 0.1f, 2.0f, 10.0f))
+                if (ImGui::DragFloat("IsoValue", &isoVal, 0.02f, -1.0f, 1.0f))
                     Regen = true;
 
                 ImGui::Spacing();
@@ -382,6 +383,10 @@ namespace Engine
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Octree Size", &octreeSize, 0.1f, 4.0f, 64.0f))
                     Regen = true;
+
+                ImGui::Spacing();
+                ImGui::Checkbox("Wireframe", &wireframe);
+
 
                 ImGui::Spacing();
                 ImGui::Separator();

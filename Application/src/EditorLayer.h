@@ -45,9 +45,9 @@ namespace Engine
 		PerlinNoiseSettings PerlinSettings;
 		bool Regen = true;
 
+		ScopePointer<PerlinCompute> PerlinCompute;
 
 		ScopePointer<MarchingCubes> MarchingCubes;
-		ScopePointer<PerlinCompute> PerlinCompute;
 		ScopePointer<DualContouring> DualContouring;
 		//ScopePointer<DualContouringSPO> DualContourSPO;
 

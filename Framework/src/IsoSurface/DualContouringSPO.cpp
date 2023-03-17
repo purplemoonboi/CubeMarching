@@ -350,7 +350,7 @@ namespace Engine
 		const UINT vbSizeInBytes = sizeof(Vertex) * vertices.size();
 
 		TerrainMesh = CreateScope<MeshGeometry>("Terrain");
-		TerrainMesh->VertexBuffer = VertexBuffer::Create(ComputeContext->Context, vertices.data(),
+		TerrainMesh->VertexBuffer = VertexBuffer::Create(vertices.data(),
 			vbSizeInBytes, vertices.size(), true);
 
 		const BufferLayout layout =
@@ -361,7 +361,7 @@ namespace Engine
 		};
 		TerrainMesh->VertexBuffer->SetLayout(layout);
 
-		TerrainMesh->IndexBuffer = IndexBuffer::Create(ComputeContext->Context, indices.data(),
+		TerrainMesh->IndexBuffer = IndexBuffer::Create(indices.data(),
 			ibSizeInBytes, indices.size());
 
 		const HRESULT closeResult = ComputeContext->Context->CmdList->Close();

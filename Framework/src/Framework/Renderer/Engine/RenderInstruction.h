@@ -17,6 +17,16 @@ namespace Engine
 			RendererApiPtr->Init(context, viewportWidth, viewportHeight);
 		}
 
+		static void PreInitRenderer()
+		{
+			RendererApiPtr->PreInit();
+		}
+
+		static void PostInitRenderer()
+		{
+			RendererApiPtr->PostInit();
+		}
+
 		static void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 		{
 			RendererApiPtr->SetViewport(x, y, width, height);
@@ -29,12 +39,12 @@ namespace Engine
 
 		static void ResetGraphicsCommandList()
 		{
-			RendererApiPtr->ResetCommandList();
+			RendererApiPtr->PreInit();
 		}
 
 		static void ExecGraphicsCommandList()
 		{
-			RendererApiPtr->ExecCommandList();
+			RendererApiPtr->PostInit();
 		}
 
 		static void Flush()
@@ -42,14 +52,16 @@ namespace Engine
 			RendererApiPtr->Flush();
 		}
 
-		static void UpdateFrameResource(FrameResource* frameResource)
+		static void PreRender
+		(
+			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			const MainCamera& camera,
+			float deltaTime,
+			float elapsedTime,
+			bool wireframe
+		)
 		{
-			RendererApiPtr->UpdateFrameResource(frameResource);
-		}
-
-		static void PreRender()
-		{
-			RendererApiPtr->PreRender();
+			RendererApiPtr->PreRender(items, materials, camera, deltaTime, elapsedTime, wireframe);
 		}
 
 		static void PostRender()
