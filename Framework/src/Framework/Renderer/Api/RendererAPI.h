@@ -38,6 +38,8 @@ namespace Engine
 
 		virtual void BindDepthPass() = 0;
 
+		virtual void BindTerrainPass(PipelineStateObject* pso, const MeshGeometry* terrainMesh, UINT constantBufferOffset = 0, UINT materialBufferOffset = 0) = 0;
+
 		virtual void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
 
 		virtual void BindLightingPass() = 0;
@@ -51,6 +53,7 @@ namespace Engine
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
 
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
+
 
 		virtual void PreRender
 		(

@@ -25,8 +25,6 @@ namespace Engine
 	struct MeshGeometry
 	{
 
-
-
 		MeshGeometry(const std::string& name)
 			:
 			Name(name)
@@ -48,16 +46,17 @@ namespace Engine
 		const std::string& GetName() const { return Name; }
 
 		// @brief Contains the vertex data for drawing the mesh
-		RefPointer<VertexBuffer> VertexBuffer;
+		ScopePointer<VertexBuffer> VertexBuffer;
 
 		// @brief Contains the indices for drawing the mesh
-		RefPointer<IndexBuffer> IndexBuffer;
+		ScopePointer<IndexBuffer> IndexBuffer;
 
 		// A MeshGeometry may store multiple geometries in one vertex/index buffer.
 		// Use this container to define the Submesh geometries so we can draw
 		// the Submeshes individually.
 		std::unordered_map<std::string, SubGeometry> DrawArgs;
 
+		INT8 DirtFlag = -1;
 	private:
 		// Give it a name so we can look it up by name.
 		std::string Name;

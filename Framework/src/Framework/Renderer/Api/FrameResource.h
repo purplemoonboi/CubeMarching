@@ -8,10 +8,10 @@ namespace Engine
 	// Simple vertex buffer
 	struct Vertex
 	{
-		DirectX::XMFLOAT3 Position;
-		DirectX::XMFLOAT3 Normal;
-		DirectX::XMFLOAT3 Tangent;
-		DirectX::XMFLOAT2 TexCoords;
+		DirectX::XMFLOAT3 Position = {0,0,0};
+		DirectX::XMFLOAT3 Normal = {0,0,0};
+		DirectX::XMFLOAT3 Tangent = {0,0,0};
+		DirectX::XMFLOAT2 TexCoords = {0,0};
 	};
 
 	struct PassConstants

@@ -41,7 +41,7 @@ namespace Engine
 		ComPtr<ID3D12Device>				Device;
 		ComPtr<IDXGISwapChain>				SwapChain;
 		ComPtr<IDXGIFactory4>				DXGIFactory;
-		ComPtr<ID3D12GraphicsCommandList>	CmdList;
+		ComPtr<ID3D12GraphicsCommandList>	GraphicsCmdList;
 		ComPtr<ID3D12CommandQueue>			CommandQueue;
 		ComPtr<ID3D12CommandAllocator>		Allocator;
 		ComPtr<ID3D12Fence>					Fence;
@@ -52,7 +52,7 @@ namespace Engine
 		[[nodiscard]] bool GetMsaaState() const { return MsaaState; }
 
 		// @brief Tracks the number of syncs between CPU and GPU.
-		UINT64 GPU_TO_CPU_SYNC_COUNT;
+		UINT64 SyncCounter;
 
 	private:
 

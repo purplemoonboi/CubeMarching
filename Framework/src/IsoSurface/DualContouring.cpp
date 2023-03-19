@@ -40,6 +40,12 @@ namespace Engine
 		BuildDualContourPipelineStates();
 		CreateBuffers();
 
+		Vertices.reserve(100);
+		Vertex vert = {};
+		Vertices.insert(Vertices.begin(), 100, vert);
+		Indices.reserve(100);
+		Indices.insert(Indices.begin(), 100, 0);
+
 	}
 
 	void DualContouring::Dispatch(const VoxelWorldSettings& settings, Texture* texture)
@@ -96,10 +102,13 @@ namespace Engine
 
 
 		/* second pass - generating triangles */
+
 		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		ComputeContext->CommandList->Dispatch(VoxelTextureWidth, VoxelTextureHeight, VoxelTextureWidth);
+
+
+		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkWidth, ChunkWidth);
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(TriangleBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
@@ -163,13 +172,43 @@ namespace Engine
 		const HRESULT triHR = TriangleReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&rawTris));
 		THROW_ON_FAILURE(triHR);
 
+		RawVoxelBuffer.clear();
+		RawVoxelBuffer.resize(0);
+
 		for (INT32 i = 0; i < counter; ++i)
 		{
 			RawVoxelBuffer.push_back(rawTris[i]);
 		}
 		TriangleReadBackBuffer->Unmap(0, nullptr);
 
-		CreateVertexBuffers();
+		if (!RawVoxelBuffer.empty())
+		{
+			Vertices.clear();
+			Vertices.resize(0);
+			Indices.clear();
+			Indices.resize(0);
+
+			UINT16 index = 0;
+			for (auto& tri : RawVoxelBuffer)
+			{
+				Vertex vertex;
+				vertex.Position = tri.VertexC.Position;
+				vertex.Normal = tri.VertexC.Normal;
+				Vertices.push_back(vertex);
+				Indices.push_back(++index);
+
+				vertex.Position = tri.VertexB.Position;
+				vertex.Normal = tri.VertexB.Normal;
+				Vertices.push_back(vertex);
+				Indices.push_back(++index);
+
+				vertex.Position = tri.VertexA.Position;
+				vertex.Normal = tri.VertexA.Normal;
+				Vertices.push_back(vertex);
+				Indices.push_back(++index);
+			}
+		}
+
 
 	}
 
@@ -295,73 +334,7 @@ namespace Engine
 
 	}
 
-	void DualContouring::CreateVertexBuffers()
-	{
-		if (RawVoxelBuffer.empty())
-			return;
-
-		const HRESULT allocResult = ComputeContext->Context->Allocator->Reset();
-		THROW_ON_FAILURE(allocResult);
-		const HRESULT listResult = ComputeContext->Context->CmdList->Reset(ComputeContext->Context->Allocator.Get(), nullptr);
-		THROW_ON_FAILURE(listResult);
-
-		std::vector<Vertex> vertices;
-		std::vector<UINT16> indices;
-		UINT16 index = 0;
-		for (auto& tri : RawVoxelBuffer)
-		{
-			Vertex vertex;
-			vertex.Position = tri.VertexC.Position;
-			vertex.Normal = tri.VertexC.Normal;
-			vertices.push_back(vertex);
-			indices.push_back(++index);
-
-			vertex.Position = tri.VertexB.Position;
-			vertex.Normal = tri.VertexB.Normal;
-			vertices.push_back(vertex);
-			indices.push_back(++index);
-
-			vertex.Position = tri.VertexA.Position;
-			vertex.Normal = tri.VertexA.Normal;
-			vertices.push_back(vertex);
-			indices.push_back(++index);
-		}
-
-		const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
-		const UINT vbSizeInBytes = sizeof(Vertex) * vertices.size();
-
-
-		if(TerrainMesh == nullptr)
-		{
-			TerrainMesh = CreateScope<MeshGeometry>("Terrain");
-			TerrainMesh->VertexBuffer = VertexBuffer::Create(vertices.data(),
-				vbSizeInBytes, vertices.size(), true);
-
-			const BufferLayout layout =
-			{
-				{"POSITION",	ShaderDataType::Float3, 0, 0, false },
-				{"NORMAL",		ShaderDataType::Float3, 12,1, false },
-				{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
-			};
-			TerrainMesh->VertexBuffer->SetLayout(layout);
-
-			TerrainMesh->IndexBuffer = IndexBuffer::Create(indices.data(),
-				ibSizeInBytes, indices.size());
-		}
-		else
-		{
-			/* schedule a copy */
-
-		}
-
-		const HRESULT closeResult = ComputeContext->Context->CmdList->Close();
-		THROW_ON_FAILURE(closeResult);
-		ComputeContext->Context->ExecuteGraphicsCommandList();
-		ComputeContext->Context->FlushCommandQueue();
-
-		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReason);
-	}
+	
 
 	void DualContouring::ResetCounters()
 	{

@@ -19,7 +19,7 @@ namespace Engine
 
 		Context = dynamic_cast<D3D12Context*>(context);
 
-		FenceValue = Context->GPU_TO_CPU_SYNC_COUNT;
+		FenceValue = Context->SyncCounter;
 
 		D3D12_COMMAND_QUEUE_DESC desc = {};
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
@@ -52,7 +52,7 @@ namespace Engine
 		CmdList->SetName(L"Copy List");
 		Queue->SetName(L"Copy Queue");
 		Allocator->SetName(L"Copy Allocator");
-		CmdList->Reset(Allocator.Get(), nullptr);
+		
 
 	}
 

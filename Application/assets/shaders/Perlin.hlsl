@@ -220,7 +220,7 @@ void ComputeNoise3D(int3 id : SV_DispatchThreadID)
     float dist = length(fId - float3(32, 32, 32) - 4.0f);
     if (dist > Ground)
     {
-        noise = -0.1;
+        noise = -0.01;
     }
     else
     {

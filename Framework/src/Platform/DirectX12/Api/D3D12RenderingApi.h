@@ -28,6 +28,8 @@ namespace Engine
 
 		void BindDepthPass() override;
 
+		void BindTerrainPass(PipelineStateObject* pso, const MeshGeometry* terrainMesh, UINT constantBufferOffset = 0, UINT materialBufferOffset = 0) override;
+
 		void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
 
 		void BindLightingPass() override;

@@ -4,8 +4,7 @@
 #include "GeometryGenerator.h"
 #include "Framework/Camera/MainCamera.h";
 #include "Framework/Core/core.h"
-
-
+#include "Framework/Renderer/Api/FrameResource.h"
 
 
 namespace Engine
@@ -51,21 +50,26 @@ namespace Engine
 
 		static void BuildMaterials();
 
+		static void RegenerateBuffers(const std::string& meshTag, std::vector<Vertex> vertices, std::vector<UINT16> indices);
+
 		static void CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions = 1);
 
 		static void CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name, UINT32 subSivisions = 1);
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
-		static void CreateCustomMesh(ScopePointer<MeshGeometry> mesh, const std::string& meshTag, Transform transform);
+		static void CreateCustomMesh(std::vector<Vertex> vertices, std::vector<UINT16> indices, const std::string& meshTag, Transform transform, const std::string& materialTag = "Default");
 
-		static void UpdateRenderItem(const std::string& meshTag, const void* rawData);
 
 		struct VoxelWorldRenderingStats
 		{
-			UINT32 DrawCalls = 0;
-			UINT32 TriCount = 0;
-			UINT32 PolyCount = 0;
+			UINT32 MCDrawCalls = 0;
+			UINT32 MCTriCount = 0;
+			UINT32 MCPolyCount = 0;
+
+			UINT32 DCDrawCalls = 0;
+			UINT32 DCTriCount = 0;
+			UINT32 DCPolyCount = 0;
 
 			//TODO: Implement this properly!
 			UINT32 GetTotalVertexCount() { return 0; }

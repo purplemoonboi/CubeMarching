@@ -69,12 +69,19 @@ static const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 
 [numthreads(8, 8, 8)]
 void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
 {
-    if (id.x >= Resolution - 1 || id.y >= Resolution - 1 || id.z >= Resolution - 1)
+    uint index = ((id.z * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
+    
+    
+    if (id.x >= Resolution -1  || id.y >= Resolution  - 1 || id.z >= Resolution -1 )
     {
+        Vertex vertex = (Vertex) 0;
+        vertex.position = float3(100, 0, 0);
+        vertex.normal = id;
+        vertex.configuration = -1;
+        Vertices[index] = vertex;
         return;
     }
 
-    uint index = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + id.x;
     
     int3 coord = id;// + int3(ChunkCoord);
 
@@ -91,7 +98,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     int cubeConfiguration = 0;
     for (int i = 0; i < 8; i++)
     {
-        if (DensityTexture[cornerCoords[i]] > 0)
+        if (DensityTexture[cornerCoords[i]] < IsoLevel)
         {
             cubeConfiguration |= (1 << i);
         }
@@ -224,34 +231,29 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     Triangle tri = (Triangle) 0;
     
     /* 'this' voxel */
-    uint pxyz = ((id.z * Resolution) *Resolution) + (id.y * Resolution) + id.x;
-
-    if(VoxelMaterialBuffer[pxyz] == 0 || VoxelMaterialBuffer[pxyz] == 255)
-    {
-        return;
-    }
+    uint pxyz = ((id.z * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
     
-    uint left_and_below_z = ((id.z * Resolution) * Resolution) + ((id.y - 1) * Resolution) + (id.x - 1);
+    uint left_and_below_z = ((id.z * Resolution ) * Resolution ) + ((id.y - 1) *Resolution ) + (id.x - 1);
     
-    uint left_z = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + (id.x - 1);
+    uint left_z = ((id.z * Resolution ) * Resolution ) + (id.y *Resolution ) + (id.x - 1);
     
     /* along the y-axis */
-    uint left_of_y = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + (id.x - 1);
+    uint left_of_y = ((id.z * Resolution ) * Resolution ) + (id.y * Resolution ) + (id.x - 1);
     
-    uint left_and_behind_Y = (((id.z - 1) * Resolution) * Resolution) + (id.y * Resolution) + (id.x - 1);
+    uint left_and_behind_Y = (((id.z - 1) * Resolution ) * Resolution ) + (id.y * Resolution ) + (id.x - 1);
     
-    uint behind_y = (((id.z - 1) * Resolution) * Resolution) + (id.y * Resolution) + id.x;
+    uint behind_y = (((id.z - 1) * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
     
     /* along the x-axis */
-    uint below_pxyz = ((id.z * Resolution) * Resolution)  + ((id.y - 1) * Resolution) + id.x;
+    uint below_pxyz = ((id.z * Resolution ) * Resolution ) + ((id.y - 1) * Resolution ) + id.x;
 
-    uint right_of_and_below_x = (((id.z - 1)  * Resolution) * Resolution) + ((id.y - 1) * Resolution) + id.x;
+    uint right_of_and_below_x = (((id.z - 1) * Resolution ) * Resolution ) + ((id.y - 1) * Resolution ) + id.x;
     
-    uint right_of_x = (((id.z - 1) * Resolution) * Resolution) + (id.y * Resolution) + id.x;
+    uint right_of_x = (((id.z - 1) * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
    
     
     
-    uint right_of_and_behind_y = (((id.z - 1) * Resolution) * Resolution) + (id.y * Resolution) + id.x;
+    uint right_of_and_behind_y = (((id.z - 1) * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
     
     
     /*
@@ -265,7 +267,8 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] < 0 && DensityTexture[forward] > 0)
     {
         /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[pxyz].configuration == 1 && Vertices[left_z].configuration == 1 &&
+        if (Vertices[pxyz].configuration == 1 &&
+            Vertices[left_z].configuration == 1 &&
             Vertices[left_and_below_z].configuration == 1)
         {
             tri.vertexA = Vertices[pxyz];
@@ -275,8 +278,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
         
-        if (Vertices[left_and_below_z].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[pxyz].configuration == 1 &&
+            Vertices[left_and_below_z].configuration == 1 &&
+            Vertices[below_pxyz].configuration == 1)
         {
         
             tri.vertexA = Vertices[pxyz];
@@ -291,8 +295,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] > 0 && DensityTexture[forward] < 0)
     {
         /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[pxyz].configuration == 1 && Vertices[left_z].configuration == 1 &&
-            Vertices[left_and_below_z].configuration == 1)
+        if (Vertices[left_and_below_z].configuration == 1 &&
+            Vertices[left_z].configuration == 1 &&
+            Vertices[pxyz].configuration == 1)
         {
         
             tri.vertexA = Vertices[left_and_below_z];
@@ -302,8 +307,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
         
-        if (Vertices[left_and_below_z].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[left_and_below_z].configuration == 1 &&
+            Vertices[pxyz].configuration == 1 &&
+            Vertices[below_pxyz].configuration == 1)
         {
         
             tri.vertexA = Vertices[left_and_below_z];
@@ -319,8 +325,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] < 0 && DensityTexture[right] > 0)
     {
         /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[pxyz].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
-            Vertices[right_of_x].configuration == 1)
+        if (Vertices[right_of_x].configuration == 1 &&
+            Vertices[pxyz].configuration == 1 &&
+            Vertices[below_pxyz].configuration == 1)
         {
         
             tri.vertexA = Vertices[right_of_x];
@@ -331,8 +338,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         }
         
         
-        if (Vertices[right_of_and_below_x].configuration == 1 && Vertices[right_of_and_below_x].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[right_of_x].configuration == 1 &&
+            Vertices[below_pxyz].configuration == 1 &&
+            Vertices[right_of_and_below_x].configuration == 1)
         {
         
             tri.vertexA = Vertices[right_of_x];
@@ -346,8 +354,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] > 0 && DensityTexture[right] < 0)
     {
          /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[pxyz].configuration == 1 && Vertices[right_of_x].configuration == 1 &&
-            Vertices[right_of_and_below_x].configuration == 1)
+        if (Vertices[below_pxyz].configuration == 1 &&
+            Vertices[pxyz].configuration == 1 &&
+            Vertices[right_of_x].configuration == 1)
         {
         
             tri.vertexA = Vertices[below_pxyz];
@@ -357,8 +366,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
         
-        if (Vertices[right_of_and_below_x].configuration == 1 && Vertices[below_pxyz].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[below_pxyz].configuration == 1 &&
+            Vertices[right_of_x].configuration == 1 &&
+            Vertices[right_of_and_below_x].configuration == 1)
         {
         
             tri.vertexA = Vertices[below_pxyz];
@@ -374,7 +384,8 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] < 0 && DensityTexture[up] > 0)
     {
         
-        if (Vertices[pxyz].configuration == 1 && Vertices[left_of_y].configuration == 1 &&
+        if (Vertices[pxyz].configuration == 1 &&
+            Vertices[right_of_x].configuration == 1 &&
             Vertices[left_and_behind_Y].configuration == 1)
         {
         
@@ -386,8 +397,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
        
-        if (Vertices[left_and_behind_Y].configuration == 1 && Vertices[behind_y].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[pxyz].configuration == 1 &&
+            Vertices[left_and_behind_Y].configuration == 1 &&
+            Vertices[left_z].configuration == 1)
         {
        
             tri.vertexA = Vertices[pxyz];
@@ -403,7 +415,8 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     {
         /* ...sweep around the pxyz axes and append the vertices */
         
-        if (Vertices[pxyz].configuration == 1 && Vertices[left_of_y].configuration == 1 &&
+        if (Vertices[pxyz].configuration == 1 &&
+            Vertices[left_of_y].configuration == 1 &&
             Vertices[left_and_behind_Y].configuration == 1)
         {
             tri.vertexA = Vertices[pxyz];
@@ -413,8 +426,9 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
         }
        
-        if (Vertices[left_and_behind_Y].configuration == 1 && Vertices[behind_y].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[pxyz].configuration == 1 &&
+            Vertices[left_and_behind_Y].configuration == 1 &&
+            Vertices[behind_y].configuration == 1)
         {
 
             tri.vertexA = Vertices[pxyz];
@@ -425,7 +439,6 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         }
     }
     
-
  
     
 }

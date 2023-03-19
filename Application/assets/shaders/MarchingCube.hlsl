@@ -98,7 +98,7 @@ Vertex createVertex(int3 coordA, int3 coordB)
 [numthreads(8, 8, 8)]
 void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
-    if (id.x >= Resolution || id.y >= Resolution  || id.z >= Resolution)
+    if (id.x >= Resolution - 1 || id.y >= Resolution - 1 || id.z >= Resolution - 1)
     {
         return;
     }

@@ -30,6 +30,7 @@ namespace Engine
         DualContouring = CreateScope<class DualContouring>();
     	//DualContourSPO   = CreateScope < class DualContouringSPO >();
 
+        Regen = true;
     }
 
     EditorLayer::~EditorLayer()
@@ -55,7 +56,10 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager());
 
         MarchingCubes->Init(csApi, api->GetMemoryManager());
-        DualContouring->Init(csApi, api->GetMemoryManager());
+        Renderer3D::CreateCustomMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+
+    	DualContouring->Init(csApi, api->GetMemoryManager());
+        Renderer3D::CreateCustomMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
 
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
         //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
@@ -192,12 +196,6 @@ namespace Engine
 
 
         World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
-
-
-		
-        static INT32 offsetx = 0;
-        static INT32 offsetz = 0;
-        static UINT32 count = 0;
     
         if (Regen)
         {
@@ -206,25 +204,17 @@ namespace Engine
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->Dispatch(PerlinSettings);
 
-            //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            /* polygonise the texture with marching cubes*/
+            MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            Renderer3D::RegenerateBuffers("MarchingTerrain", MarchingCubes->GetVertices(),
+                MarchingCubes->GetIndices());
 
-            //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-         
-            /*if (MarchingCubes->GetTerrainMesh() != nullptr)
-            {
-                float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
-                Renderer3D::CreateCustomMesh(std::move(MarchingCubes->GetTerrainMesh()),
-                    "Marching_Terrain", Transform(0, 0, 0));
-            }*/
-        
-
-            /*if (DualContouring->GetTerrainMesh() != nullptr)
-            {
-                float halfxz = static_cast<float>(ChunkWidth) * 0.5f;
-                Renderer3D::CreateCustomMesh(std::move(DualContouring->GetTerrainMesh()),
-                    "Dual_Terrain", Transform(-halfxz - ((float)ChunkWidth / 8), 0, -halfxz));
-            }*/
+            /* polygonise the texture with dual contouring */
+            /*DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
+                DualContouring->GetIndices());*/
+            
         }
     }
 
@@ -400,12 +390,19 @@ namespace Engine
 
             //PROFILING - The profile window
             {
-                ImGui::Begin("Profiling");
+                ImGui::Begin("Marching Cubes");
                 ImGui::Text("Settings:");
                 auto stats = Renderer3D::GetProfileData();
-               // ImGui::Text("Draw Calls : %d", stats.DrawCalls);
-                ImGui::Text("Vert Count : %d", stats.PolyCount);
-                ImGui::Text("Tri  Count : %d", stats.TriCount);
+                ImGui::Text("Vert Count : %d", stats.MCPolyCount);
+                ImGui::Text("Tri  Count : %d", stats.MCTriCount);
+                ImGui::End();
+            }
+            {
+                ImGui::Begin("Dual Contouring");
+                ImGui::Text("Settings:");
+                auto stats = Renderer3D::GetProfileData();
+                ImGui::Text("Vert Count : %d", stats.DCPolyCount);
+                ImGui::Text("Tri  Count : %d", stats.DCTriCount);
                 ImGui::End();
             }
 

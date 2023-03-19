@@ -161,15 +161,15 @@ namespace Engine
 
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
-		virtual void SetData(const void* data, INT32 size) = 0;
+		virtual void SetData(const void* data, INT32 size, INT32 count) = 0;
 		virtual void Release() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
 		virtual UINT32 GetCount() = 0;
 		[[nodiscard]] virtual const BufferLayout& GetLayout() const = 0;
-		[[nodiscard]] virtual const void* GetSystemData() const = 0;
-		[[nodiscard]] virtual const void* GetResourceData() const = 0;
-		static RefPointer<VertexBuffer> Create(UINT size, UINT vertexCount);
-		static RefPointer<VertexBuffer> Create(const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
+		[[nodiscard]] virtual const void* GetData() const = 0;
+		[[nodiscard]] virtual const void* GetGPUResource() const = 0;
+		static ScopePointer<VertexBuffer> Create(UINT size, UINT vertexCount);
+		static ScopePointer<VertexBuffer> Create(const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
 
 	};
 
@@ -179,12 +179,16 @@ namespace Engine
 		virtual ~IndexBuffer() = default;
 
 		virtual void Bind() const = 0;
-
 		virtual void UnBind() const = 0;
+		virtual void Release() = 0;
+		
+		virtual void SetData(const UINT16* data, UINT count) = 0;
+
 
 		virtual INT32 GetCount() const = 0;
+		virtual UINT16* GetData() const = 0;
 
-		static RefPointer<IndexBuffer> Create(UINT16* indices, UINT size, UINT indexCount);
+		static ScopePointer<IndexBuffer> Create(UINT16* indices, UINT64 size, UINT indexCount);
 	};
 
 

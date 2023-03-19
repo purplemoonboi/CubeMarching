@@ -88,15 +88,19 @@ namespace Engine
 	}
 
 
-	void D3D12VertexBuffer::SetData(const void* data, INT32 size)
+	void D3D12VertexBuffer::SetData(const void* data, INT32 size, INT32 count)
 	{
-		if(GpuBuffer != nullptr)
-		{
-			// Copy data into buffer
-			CopyMemory(CpuLocalCopy->GetBufferPointer(), data, size);
-			VertexCount = size;
-			Flag = 1;
-		}
+		Data.clear();
+
+		VertexBufferByteSize = size;
+		VertexCount = count;
+
+		Data.reserve(count);
+
+		const auto* vertices = static_cast<Vertex*>(const_cast<void*>(data));
+		for (INT32 i = 0; i < count; ++i)
+			Data.push_back(vertices[i]);
+
 	}
 
 	void D3D12VertexBuffer::SetLayout(const BufferLayout& layout)
@@ -104,12 +108,12 @@ namespace Engine
 		Layout = layout;
 	}
 
-	const void* D3D12VertexBuffer::GetSystemData() const
+	const void* D3D12VertexBuffer::GetData() const
 	{
 		return CpuLocalCopy.Get();
 	}
 
-	const void* D3D12VertexBuffer::GetResourceData() const
+	const void* D3D12VertexBuffer::GetGPUResource() const
 	{
 		return GpuBuffer.Get();
 	}
@@ -124,6 +128,28 @@ namespace Engine
 		return vbv;
 	}
 
+	bool D3D12VertexBuffer::Regenerate()
+	{
+		// Create the GPU vertex buffer
+		if(GpuBuffer != nullptr)
+		{
+			GpuBuffer->Release();
+			Gpu_UploadBuffer->Release();
+		}
+
+		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		(
+			Data.data(),
+			VertexBufferByteSize,
+			Gpu_UploadBuffer
+		);
+
+		if (GpuBuffer == nullptr)
+			return false;
+
+		return true;
+	}
+
 	D3D12IndexBuffer::D3D12IndexBuffer(UINT16* indices, UINT64 size, UINT indexCount)
 		:
 		Format(DXGI_FORMAT_R16_UINT),
@@ -132,15 +158,15 @@ namespace Engine
 	{
 
 		// Reserve memory and copy the indices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &SystemBuffer));
-		CopyMemory(SystemBuffer->GetBufferPointer(), indices, size);
+		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuData));
+		CopyMemory(CpuData->GetBufferPointer(), indices, size);
 
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
 			indices, 
 			IndexBufferByteSize, 
-			Gpu_UploadBuffer
+			UploadBuffer
 		);
 
 	}
@@ -156,10 +182,61 @@ namespace Engine
 
 	}
 
+	void D3D12IndexBuffer::SetData(const UINT16* data, UINT count)
+	{
+		Data.clear();
+
+		Count = count;
+		IndexBufferByteSize = sizeof(UINT16) * count;
+
+		Data.reserve(count);
+		for (INT32 i = 0; i < count; ++i)
+			Data.push_back(data[i]);
+	}
+
+	void D3D12IndexBuffer::Release()
+	{
+		if(DefaultBuffer != nullptr)
+		{
+			DefaultBuffer->Release();
+			DefaultBuffer = nullptr;
+		}
+		if(UploadBuffer != nullptr)
+		{
+			UploadBuffer->Release();
+			UploadBuffer = nullptr;
+		}
+	}
+
+	bool D3D12IndexBuffer::Regenerate()
+	{
+		// Reserve memory and copy the indices into our CPU buffer
+		THROW_ON_FAILURE(D3DCreateBlob(IndexBufferByteSize, &CpuData));
+		CopyMemory(CpuData->GetBufferPointer(), Data.data(), IndexBufferByteSize);
+
+		// Create the GPU vertex buffer
+		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		(
+			Data.data(),
+			IndexBufferByteSize,
+			UploadBuffer
+		);
+
+		if (DefaultBuffer == nullptr)
+			return false;
+
+		return true;
+	}
+
+	UINT16* D3D12IndexBuffer::GetData() const
+	{
+		return reinterpret_cast<UINT16*>(CpuData.Get());
+	}
+
 	D3D12_INDEX_BUFFER_VIEW D3D12IndexBuffer::GetIndexBufferView() const
 	{
 		D3D12_INDEX_BUFFER_VIEW ibv;
-		ibv.BufferLocation	= GpuBuffer->GetGPUVirtualAddress();
+		ibv.BufferLocation	= DefaultBuffer->GetGPUVirtualAddress();
 		ibv.Format			= Format;
 		ibv.SizeInBytes		= Count * sizeof(UINT16);
 

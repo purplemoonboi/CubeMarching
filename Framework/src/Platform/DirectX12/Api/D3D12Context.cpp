@@ -107,21 +107,21 @@ namespace Engine
 
 		Device->SetName(L"GPU Device");
 		CommandQueue->SetName(L"Graphics Queue");
-		CmdList->SetName(L"Graphics List");
+		GraphicsCmdList->SetName(L"Graphics List");
 		
 	}
 
 	void D3D12Context::FlushCommandQueue()
 	{
-		GPU_TO_CPU_SYNC_COUNT++;
+		SyncCounter++;
 
-		const HRESULT signalResult = CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT);
+		const HRESULT signalResult = CommandQueue->Signal(Fence.Get(), SyncCounter);
 		THROW_ON_FAILURE(signalResult);
 
-		if (Fence->GetCompletedValue() < GPU_TO_CPU_SYNC_COUNT)
+		if (Fence->GetCompletedValue() < SyncCounter)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Fence->SetEventOnCompletion(GPU_TO_CPU_SYNC_COUNT, eventHandle);
+			const HRESULT eventCompletion = Fence->SetEventOnCompletion(SyncCounter, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 
 			WaitForSingleObject(eventHandle, INFINITE);
@@ -132,13 +132,13 @@ namespace Engine
 
 	void D3D12Context::ExecuteGraphicsCommandList() const
 	{
-		ID3D12CommandList* cmdsLists[] = { CmdList.Get() };
+		ID3D12CommandList* cmdsLists[] = { GraphicsCmdList.Get() };
 		CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
 	void D3D12Context::SignalGPU() const
 	{
-		CommandQueue->Signal(Fence.Get(), GPU_TO_CPU_SYNC_COUNT);
+		CommandQueue->Signal(Fence.Get(), SyncCounter);
 	}
 
 	bool D3D12Context::CreateDevice()
@@ -220,13 +220,13 @@ namespace Engine
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			Allocator.Get(),
 			nullptr,
-			IID_PPV_ARGS(CmdList.GetAddressOf())
+			IID_PPV_ARGS(GraphicsCmdList.GetAddressOf())
 		);
 
 		//Now close the list. When we first use the command list
 		//we'll need to reset it, for this to happen, the list must
 		//be in a closed state.
-		CmdList->Close();
+		GraphicsCmdList->Close();
 
 		return true;
 	}

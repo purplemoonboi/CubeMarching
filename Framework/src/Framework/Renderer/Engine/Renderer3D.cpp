@@ -114,6 +114,7 @@ namespace Engine
 
 		auto gridData = Geo.CreateGrid(100, 100, 12, 12);
 		auto gridMesh = MeshGeometry::Create("EditorGrid");
+		
 		gridMesh->VertexBuffer = VertexBuffer::Create(
 			gridData.Vertices.data(),
 			sizeof(Vertex) * gridData.Vertices.size(),
@@ -199,6 +200,8 @@ namespace Engine
 
 
 		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
+
+
 		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}
 
@@ -208,7 +211,7 @@ namespace Engine
 		 *	Render the scene geometry to the scene
 		 */
 		
-		//ProfileStats.DrawCalls = 1;
+		//ProfileStats.MCDrawCalls = 1;
 		RenderInstruction::Flush();
 		RenderInstruction::PostRender();
 		
@@ -233,22 +236,98 @@ namespace Engine
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
 	}
 
-
-	void Renderer3D::CreateCustomMesh
+	void Renderer3D::RegenerateBuffers
 	(
-		ScopePointer<MeshGeometry> meshGeometry, 
 		const std::string& meshTag,
-		Transform transform
+		std::vector<Vertex> vertices,
+		std::vector<UINT16> indices
 	)
 	{
 
+		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
+		{
+			auto vertexBuffer = RenderData.Geometries[meshTag]->VertexBuffer.get();
+			auto indexBuffer = RenderData.Geometries[meshTag]->IndexBuffer.get();
+
+			vertexBuffer->Release();
+			indexBuffer->Release();
+
+			const INT32 size = vertices.size() * sizeof(Vertex);
+			vertexBuffer->SetData(vertices.data(), size, vertices.size());
+			indexBuffer->SetData(indices.data(), indices.size());
+
+			if(meshTag=="MarchingTerrain")
+			{
+				VoxelStats.MCPolyCount = vertices.size();
+				VoxelStats.MCTriCount = vertices.size()/3;
+			}
+			if(meshTag=="DualTerrain")
+			{
+				VoxelStats.DCPolyCount = vertices.size();
+				VoxelStats.DCTriCount = vertices.size() / 3;
+			}
+
+			// We need to schedule the creation of the buffers
+			// as this does not happen immediately for some
+			// apis. 
+			RenderData.Geometries[meshTag]->DirtFlag = 1;
+		}
+
 	}
 
-	void Renderer3D::UpdateRenderItem(const std::string& meshTag, const void* rawData)
+	void Renderer3D::CreateCustomMesh
+	(
+		std::vector<Vertex> vertices,
+		std::vector<UINT16> indices,
+		const std::string& meshTag,
+		Transform transform,
+		const std::string& materialTag
+	)
 	{
-		auto* geometry = RenderData.Geometries[meshTag].get();
-		geometry->VertexBuffer->SetData(rawData, 0);
+		if (RenderData.OpaqueRenderItems.size() < 20)
+		{
+
+
+			if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
+			{
+
+				ScopePointer<MeshGeometry> mesh = CreateScope<MeshGeometry>(meshTag);
+
+				mesh->VertexBuffer = VertexBuffer::Create(
+					vertices.data(),
+					sizeof(Vertex) * vertices.size(),
+					vertices.size(),
+					false);
+
+				mesh->IndexBuffer = IndexBuffer::Create(
+					indices.data(),
+					sizeof(UINT16) * indices.size(),
+					indices.size());
+
+				SubGeometry drawArgs = { (UINT)mesh->IndexBuffer->GetCount(), 0, 0 };
+				mesh->DrawArgs.emplace(meshTag + "_Args", drawArgs);
+
+				RenderData.Geometries.emplace(meshTag, std::move(mesh));
+
+				const INT32 constCbvOffset = RenderData.OpaqueRenderItems.size();
+
+				ScopePointer<RenderItem> renderItem = RenderItem::Create
+				(
+					RenderData.Geometries[meshTag].get(),
+					RenderData.MaterialLibrary.Get(materialTag),
+					meshTag+"_Args",
+					constCbvOffset,
+					transform
+				);
+
+				RenderData.OpaqueRenderItems.push_back(renderItem.get());
+				RenderData.RenderItems.push_back(std::move(renderItem));
+			}
+		}
+			
+		
 	}
+
 
 
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)

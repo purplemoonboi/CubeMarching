@@ -25,6 +25,9 @@ namespace Engine
 
 		[[nodiscard]] ScopePointer<MeshGeometry>& GetTerrainMesh() { return TerrainMesh; }
 
+		[[nodiscard]] const std::vector<Vertex>& GetVertices() const { return Vertices; }
+
+		[[nodiscard]] const std::vector<UINT16>& GetIndices() const { return Indices; }
 
 	private:
 		D3D12ComputeApi* ComputeContext = nullptr;
@@ -80,7 +83,9 @@ namespace Engine
 
 		std::vector<DualContourTriangle> RawVoxelBuffer;
 		void CreateVertexBuffers();
-		ScopePointer<MeshGeometry> TerrainMesh = nullptr;
+		ScopePointer<MeshGeometry> TerrainMesh;
+		std::vector<Vertex> Vertices;
+		std::vector<UINT16> Indices;
 
 
 		void ResetCounters();

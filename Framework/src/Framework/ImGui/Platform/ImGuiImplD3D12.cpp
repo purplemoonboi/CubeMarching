@@ -74,21 +74,21 @@ namespace Engine
 
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
-		context->CmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->CmdList.Get());
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->GraphicsCmdList.Get());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault(nullptr, context->CmdList.Get());
+			ImGui::RenderPlatformWindowsDefault(nullptr, context->GraphicsCmdList.Get());
 		}
 
-		const HRESULT closeResult = context->CmdList->Close();
+		const HRESULT closeResult = context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 
-		ID3D12CommandList* cmdList[] = { context->CmdList.Get() };
+		ID3D12CommandList* cmdList[] = { context->GraphicsCmdList.Get() };
 		context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
 		const HRESULT presentResult = context->SwapChain->Present(0, 0);
@@ -96,7 +96,7 @@ namespace Engine
 		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
 
 		auto* currentResourceInFlight = api->GetCurrentFrameResource();
-		currentResourceInFlight->SignalCount = ++context->GPU_TO_CPU_SYNC_COUNT;
+		currentResourceInFlight->SignalCount = ++context->SyncCounter;
 
 		const HRESULT signalResult = context->CommandQueue->Signal(context->Fence.Get(), currentResourceInFlight->SignalCount);
 		THROW_ON_FAILURE(signalResult);

@@ -39,6 +39,11 @@ namespace Engine
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
+		Vertices.reserve(100);
+		Vertex vert = {};
+		Vertices.insert(Vertices.begin(), 100, vert);
+		Indices.reserve(100);
+		Indices.insert(Indices.begin(), 100, 0);
 	}
 
 	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, Texture* texture)
@@ -146,9 +151,25 @@ namespace Engine
 		}
 		ReadBackBuffer->Unmap(0, nullptr);
 
-		
-		CreateVertexBuffers();
-		
+		/* store the vertices and indices */
+		if(!RawTriBuffer.empty())
+		{
+			Vertices.clear();
+			Vertices.resize(0);
+			Indices.clear();
+			Indices.resize(0);
+
+			UINT16 index = 0;
+			for (auto& tri : RawTriBuffer)
+			{
+				Vertices.push_back(tri.VertexC);
+				Indices.push_back(++index);
+				Vertices.push_back(tri.VertexB);
+				Indices.push_back(++index);
+				Vertices.push_back(tri.VertexA);
+				Indices.push_back(++index);
+			}
+		}
 	}
 
 
@@ -257,55 +278,5 @@ namespace Engine
 		);
 	}
 
-	void MarchingCubes::CreateVertexBuffers()
-	{
-		if (RawTriBuffer.empty())
-			return;
-
-		const HRESULT allocResult = ComputeContext->Context->Allocator->Reset();
-		THROW_ON_FAILURE(allocResult);
-		const HRESULT listResult = ComputeContext->Context->CmdList->Reset(ComputeContext->Context->Allocator.Get(), nullptr);
-		THROW_ON_FAILURE(listResult);
-
-		std::vector<Vertex> vertices;
-		std::vector<UINT16> indices;
-		UINT16 index = 0;
-		for (auto& tri : RawTriBuffer)
-		{
-			vertices.push_back(tri.VertexC);
-			indices.push_back(++index);
-			vertices.push_back(tri.VertexB);
-			indices.push_back(++index);
-			vertices.push_back(tri.VertexA);
-			indices.push_back(++index);
-		}
-
-		const UINT ibSizeInBytes = sizeof(UINT16) * indices.size();
-		const UINT vbSizeInBytes = sizeof(Vertex) * vertices.size();
-
-		TerrainMeshGeometry = CreateScope<MeshGeometry>("Terrain");
-		TerrainMeshGeometry->VertexBuffer = VertexBuffer::Create(vertices.data(),
-			vbSizeInBytes, vertices.size(), true);
-
-		const BufferLayout layout =
-		{
-			{"POSITION",	ShaderDataType::Float3, 0, 0, false },
-			{"NORMAL",		ShaderDataType::Float3, 12,1, false },
-			{"TEXCOORD",	ShaderDataType::Float2, 24,2, false },
-		};
-		TerrainMeshGeometry->VertexBuffer->SetLayout(layout);
-
-		TerrainMeshGeometry->IndexBuffer = IndexBuffer::Create(indices.data(),
-			ibSizeInBytes, indices.size());
-
-		const HRESULT closeResult = ComputeContext->Context->CmdList->Close();
-		THROW_ON_FAILURE(closeResult);
-		ComputeContext->Context->ExecuteGraphicsCommandList();
-		ComputeContext->Context->FlushCommandQueue();
-
-		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReason);
-
-	}
 }
 

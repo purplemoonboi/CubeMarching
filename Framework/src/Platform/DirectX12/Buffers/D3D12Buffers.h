@@ -34,19 +34,21 @@ namespace Engine
 		void Release() override;
 
 		// @brief Sets the vertex data for this buffer.
-		void SetData(const void* data, INT32 size) override;
+		void SetData(const void* data, INT32 size, INT32 count) override;
 
 		void SetLayout(const BufferLayout& layout) override;
 
 		const BufferLayout& GetLayout() const override { return Layout; }
 
-		[[nodiscard]] const void* GetSystemData() const override;
-		[[nodiscard]] const void* GetResourceData() const override;
+		[[nodiscard]] const void* GetData() const override;
+		[[nodiscard]] const void* GetGPUResource() const override;
 
 		[[nodiscard]] UINT32 GetCount() override { return VertexCount; }
 
 		// @brief Returns the view into the vertex buffer;
 		[[nodiscard]] D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const;
+
+		bool Regenerate();
 
 		// @brief Describes how the buffer is arranged.
 		BufferLayout Layout;
@@ -61,10 +63,12 @@ namespace Engine
 		ComPtr<ID3D12Resource> Gpu_UploadBuffer = nullptr;
 
 		UINT VertexBufferByteSize;
+		INT8 Flag = 0;
+
+	private:
 
 		UINT VertexCount;
-
-		INT8 Flag = 0;
+		std::vector<Vertex> Data;
 	};
 
 
@@ -80,27 +84,33 @@ namespace Engine
 		void Bind() const override;
 
 		void UnBind() const override;
+		void SetData(const UINT16* data, UINT count) override;
+		void Release() override;
+
+		bool Regenerate();
 
 		[[nodiscard]] INT32 GetCount() const override { return Count; }
-
+		[[nodiscard]] UINT16* GetData() const override;
 		[[nodiscard]] D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const;
 
 	private:
 		INT32 Count;
 
 		// @brief CPU copy of the index buffer
-		ComPtr<ID3DBlob> SystemBuffer = nullptr;
+		ComPtr<ID3DBlob> CpuData = nullptr;
 
 		// @brief GPU index buffer
-		ComPtr<ID3D12Resource> GpuBuffer = nullptr;
+		ComPtr<ID3D12Resource> DefaultBuffer = nullptr;
 
 		// @brief Intermediate index buffer
-		ComPtr<ID3D12Resource> Gpu_UploadBuffer = nullptr;
+		ComPtr<ID3D12Resource> UploadBuffer = nullptr;
 
 		// @brief Index format
 		DXGI_FORMAT Format;
 
 		UINT64 IndexBufferByteSize;
+
+		std::vector<UINT16> Data;
 
 	};
 

@@ -37,8 +37,10 @@ namespace Engine
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const { return RawTriBuffer; }
 
-		[[nodiscard]] ScopePointer<MeshGeometry>& GetTerrainMesh() { return TerrainMeshGeometry; }
-		
+		[[nodiscard]] const std::vector<Vertex>& GetVertices() const { return Vertices; }
+
+		[[nodiscard]] const std::vector<UINT16>& GetIndices() const { return Indices; }
+
 	private:
 		ID3D12Device* Device;
 		D3D12ComputeApi* ComputeContext = nullptr;
@@ -50,6 +52,7 @@ namespace Engine
 		ScopePointer<Shader> ComputeShader;
 
 		std::vector<Triangle> RawTriBuffer;
+
 
 		void BuildComputeRootSignature();
 
@@ -76,9 +79,8 @@ namespace Engine
 		ComPtr<ID3D12Resource> UploadTriangulationTable;
 		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
 
-		void CreateVertexBuffers();
-		ScopePointer<MeshGeometry> TerrainMeshGeometry = nullptr;
-		bool IsTerrainMeshGenerated = false;
+		std::vector<Vertex> Vertices;
+		std::vector<UINT16> Indices;
 
 	};
 
