@@ -286,21 +286,42 @@ namespace Engine
 
 	bool D3D12Context::BuildRootSignature()
 	{
+		CD3DX12_DESCRIPTOR_RANGE albedoTex;
+		albedoTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // register t0
+
+		//CD3DX12_DESCRIPTOR_RANGE normalTex;
+		//normalTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV,1,1); // register t1
+
+		//CD3DX12_DESCRIPTOR_RANGE roughnessTex;
+		//roughnessTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // register t2
+
+		//CD3DX12_DESCRIPTOR_RANGE aoTex;
+		//aoTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); // register t3
+
+		//CD3DX12_DESCRIPTOR_RANGE irrTex;
+		//irrTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); // register t4
+
+		//CD3DX12_DESCRIPTOR_RANGE specTex;
+		//specTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5); // register t5
+
+		//CD3DX12_DESCRIPTOR_RANGE specBRDFTex;
+		//specBRDFTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6); // register t6
 
 		// Root parameter can be a table, root descriptor or root constants.
-		CD3DX12_ROOT_PARAMETER slotRootParameter[3];
+		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
 
-		slotRootParameter[0].InitAsConstantBufferView(0);
-		slotRootParameter[1].InitAsConstantBufferView(1);
-		slotRootParameter[2].InitAsConstantBufferView(2);
+		slotRootParameter[0].InitAsDescriptorTable(1, &albedoTex, D3D12_SHADER_VISIBILITY_PIXEL);
+		slotRootParameter[1].InitAsConstantBufferView(0);// register b0
+		slotRootParameter[2].InitAsConstantBufferView(1);// register b1
+		slotRootParameter[3].InitAsConstantBufferView(2);// register b2
+
+		const auto samplers = GetStaticSamplers();
 
 		// A root signature is an array of root parameters.
 		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
 		(
-			3, 
-			slotRootParameter, 
-			0,
-			nullptr,
+			4, slotRootParameter, 
+			samplers.size(),samplers.data(),
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		);
 
@@ -336,7 +357,63 @@ namespace Engine
 
 	}
 
-	
+
+	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> D3D12Context::GetStaticSamplers()
+	{
+		// Applications usually only need a handful of samplers.  So just define them all up front
+	// and keep them available as part of the root signature.  
+
+		const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
+			0, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC pointClamp(
+			1, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC linearWrap(
+			2, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC linearClamp(
+			3, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC anisotropicWrap(
+			4, // shaderRegister
+			D3D12_FILTER_ANISOTROPIC, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressW
+			0.0f,                             // mipLODBias
+			8);                               // maxAnisotropy
+
+		const CD3DX12_STATIC_SAMPLER_DESC anisotropicClamp(
+			5, // shaderRegister
+			D3D12_FILTER_ANISOTROPIC, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressW
+			0.0f,                              // mipLODBias
+			8);                                // maxAnisotropy
+
+		return {
+			pointWrap, pointClamp,
+			linearWrap, linearClamp,
+			anisotropicWrap, anisotropicClamp };
+	}
 
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }

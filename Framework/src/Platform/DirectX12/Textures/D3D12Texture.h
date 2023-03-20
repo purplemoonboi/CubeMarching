@@ -30,12 +30,19 @@ namespace Engine
 			const void* initData,
 			UINT32 width,
 			UINT32 height,
-			TextureFormat format
+			TextureFormat format = TextureFormat::RGBA_UINT_UNORM
 		);
+
+		D3D12Texture
+		(
+			const std::wstring& fileName,
+			const std::string& name
+		);
+
 		~D3D12Texture() override;
 
 
-		void LoadFromFile(const std::wstring& fileName) override;
+		void LoadFromFile(const std::wstring& fileName, const std::string& name) override;
 
 		UINT64 GetWidth() override;
 		UINT32 GetHeight() override;
@@ -57,6 +64,7 @@ namespace Engine
 		ComPtr<ID3D12Resource> GpuResource;
 		ComPtr<ID3D12Resource> UploadBuffer;
 		BYTE* RawData = nullptr;
+
 
 
 		D3D12_SRV_DIMENSION Dimension;

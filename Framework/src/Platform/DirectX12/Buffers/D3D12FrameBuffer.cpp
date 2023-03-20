@@ -1,7 +1,8 @@
 #include "Framework/cmpch.h"
 #include "D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
-
+#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Core/Log/Log.h"
 
 namespace Engine
@@ -74,16 +75,107 @@ namespace Engine
 			IID_PPV_ARGS(DsvHeap.GetAddressOf())
 		));
 
+
+		//Create the committed resource
+		const HRESULT resourceResult = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex2D(BackBufferFormat, 1920, 1080),
+			D3D12_RESOURCE_STATE_COMMON,
+			nullptr,
+			IID_PPV_ARGS(&Resource)
+		);
+		THROW_ON_FAILURE(resourceResult);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = BackBufferFormat;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		FrameBufferSrv = D3D12Utils::CreateShaderResourceView(srvDesc, Resource.Get(), FrameBufferSrvCpu);
+
 	}
 
 	void D3D12FrameBuffer::Bind()
 	{
+		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
+		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
+		CORE_ASSERT(Context->GraphicsCmdList, "The 'graphics command list' has failed...");
+
+		// Indicate there will be a transition made to the resource.
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET
+		));
+
+		Context->GraphicsCmdList->ClearRenderTargetView(CD3DX12_CPU_DESCRIPTOR_HANDLE(RtvHeap->GetCPUDescriptorHandleForHeapStart(),
+				BackBufferIndex,
+				RtvDescriptorSize
+			),
+			DirectX::Colors::SandyBrown,
+			0,
+			nullptr);
+
+		Context->GraphicsCmdList->ClearDepthStencilView(DsvHeap->GetCPUDescriptorHandleForHeapStart(),
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			1.0f, 0, 0, nullptr
+		);
+
+		Context->GraphicsCmdList->RSSetViewports(1, &ScreenViewport);
+		Context->GraphicsCmdList->RSSetScissorRects(1, &ScissorRect);
+
+		Context->GraphicsCmdList->OMSetRenderTargets(1, 
+			&CD3DX12_CPU_DESCRIPTOR_HANDLE(RtvHeap->GetCPUDescriptorHandleForHeapStart(), BackBufferIndex, RtvDescriptorSize),
+			true,
+			&DsvHeap->GetCPUDescriptorHandleForHeapStart()
+		);
 
 	}
 
 	void D3D12FrameBuffer::UnBind()
 	{
+		D3D12_TEXTURE_COPY_LOCATION copySrc = {};
+		copySrc.pResource = SwapChainBuffer[BackBufferIndex].Get();
+		copySrc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		copySrc.SubresourceIndex = 0;
 
+		D3D12_TEXTURE_COPY_LOCATION copyDst = {};
+		copyDst.pResource = Resource.Get();
+		copyDst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		copyDst.SubresourceIndex = 0;
+
+		Context->GraphicsCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(SwapChainBuffer[BackBufferIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE)
+		);
+
+		Context->GraphicsCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(Resource.Get(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST)
+		);
+
+		Context->GraphicsCmdList->CopyTextureRegion(&copyDst, 0, 0, 0, &copySrc, nullptr);
+
+		Context->GraphicsCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(SwapChainBuffer[BackBufferIndex].Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET)
+		);
+
+		Context->GraphicsCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ)
+		);
+
+
+		Context->GraphicsCmdList->ResourceBarrier
+		(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition
+			(
+				SwapChainBuffer[BackBufferIndex].Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PRESENT
+			)
+		);
 	}
 
 	void D3D12FrameBuffer::RebuildFrameBuffer(INT32 width, INT32 height)
@@ -132,12 +224,13 @@ namespace Engine
 				nullptr,
 				rtvHeapHandle
 			);
-			SwapChainBuffer->Get()->SetName(L"Frame Buffer");
+			SwapChainBuffer->Get()->SetName(L"Swap Chain");
 
 			THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
 
 			rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
+
 
 
 		// Create the depth/stencil buffer and view.
@@ -206,6 +299,31 @@ namespace Engine
 			)
 		);
 
+		//Create the committed resource
+		const HRESULT hr = Context->Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Tex2D(BackBufferFormat, width, 
+				height),
+			D3D12_RESOURCE_STATE_COMMON,
+			nullptr,
+			IID_PPV_ARGS(&Resource)
+		);
+		THROW_ON_FAILURE(hr);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = BackBufferFormat;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+
+		Context->Device->CreateShaderResourceView(Resource.Get(), &srvDesc, FrameBufferSrvCpu);
+		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceRemovedReason);
+		
+
 		// Execute the resize commands.
 		const HRESULT closeResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);
@@ -221,17 +339,17 @@ namespace Engine
 		// Update the viewport transform to cover the client area.
 		ScreenViewport.TopLeftX = 0;
 		ScreenViewport.TopLeftY = 0;
-		ScreenViewport.Width = static_cast<float>(FrameBufferSpecs.Width);
-		ScreenViewport.Height = static_cast<float>(FrameBufferSpecs.Height);
+		ScreenViewport.Width = static_cast<float>(width);
+		ScreenViewport.Height = static_cast<float>(height);
 		ScreenViewport.MinDepth = 0.0f;
 		ScreenViewport.MaxDepth = 1.0f;
 
-		ScissorRect = { 0, 0, FrameBufferSpecs.Width, FrameBufferSpecs.Height };
+		ScissorRect = { 0, 0, width, height };
 	}
 
-	void* D3D12FrameBuffer::GetFrameBuffer() const
+	UINT64 D3D12FrameBuffer::GetFrameBuffer() const
 	{
-		return SwapChainBuffer[BackBufferIndex].Get();
+		return FrameBufferSrv.ptr;
 	}
 
 	void D3D12FrameBuffer::SetViewportDimensions(INT32 width, INT32 height)

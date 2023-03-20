@@ -9,6 +9,7 @@
 
 namespace Engine
 {
+	struct WorldSettings;
 	struct Transform;
 	struct MeshGeometry;
 	struct MCTriangle;
@@ -41,7 +42,7 @@ namespace Engine
 
 		// @brief - Marks the start of rendering commands.
 		//		
-		static void BeginScene(const MainCamera& cam, const float deltaTime, bool wireframe = false, const float elapsedTime = 0.0f);
+		static void BeginScene(const MainCamera& cam, const WorldSettings& settings, const float deltaTime, bool wireframe = false, const float elapsedTime = 0.0f);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
@@ -49,6 +50,8 @@ namespace Engine
 		static void EndScene();
 
 		static void BuildMaterials();
+
+		static void BuildTextures();
 
 		static void RegenerateBuffers(const std::string& meshTag, std::vector<Vertex> vertices, std::vector<UINT16> indices);
 

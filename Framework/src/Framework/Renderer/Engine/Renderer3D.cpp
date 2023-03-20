@@ -14,7 +14,8 @@
 #include "Framework/Renderer/Resources/RenderItems.h"
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Framework/Renderer/Resources/Material.h"
-#include "IsoSurface/PerlinCompute.h"
+#include "Framework/Renderer/Textures/Texture.h"
+#include "IsoSurface/DensityTextureGenerator.h"
 
 #include "IsoSurface/MarchingCubes.h"
 
@@ -39,7 +40,10 @@ namespace Engine
 
 		ShaderLibrary ShaderLibrary;
 		MaterialLibrary MaterialLibrary;
+		TextureLibrary TextureLibrary;
+
 		std::vector<Material*> Materials;
+		std::vector<Texture*> Textures;
 
 		std::unordered_map<std::string, ScopePointer<MeshGeometry>> Geometries;
 
@@ -47,8 +51,6 @@ namespace Engine
 		std::vector<ScopePointer<RenderItem>> RenderItems;
 		std::vector<RenderItem*> OpaqueRenderItems;
 		std::vector<RenderItem*> WireFrameRenderItems;
-
-
 
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
@@ -91,14 +93,14 @@ namespace Engine
 		};
 
 		BuildMaterials();
-
+		BuildTextures();
 
 		/** build the pipeline state objects */
 		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
 		(
 			api->GetGraphicsContext(),
-			RenderData.ShaderLibrary.Get("vs"),
-			RenderData.ShaderLibrary.Get("ps"),
+			RenderData.ShaderLibrary.GetShader("vs"),
+			RenderData.ShaderLibrary.GetShader("ps"),
 			layout,
 			FillMode::Opaque
 		));
@@ -106,8 +108,8 @@ namespace Engine
 		RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
 		(
 			api->GetGraphicsContext(),
-			RenderData.ShaderLibrary.Get("vs"),
-			RenderData.ShaderLibrary.Get("ps"),
+			RenderData.ShaderLibrary.GetShader("vs"),
+			RenderData.ShaderLibrary.GetShader("ps"),
 			layout,
 			FillMode::WireFrame
 		));
@@ -172,16 +174,19 @@ namespace Engine
 			Transform(-5, 5, 5, 0, 45, 0, 10, 10, 10)
 		);
 
+		boxItem->Texture = RenderData.TextureLibrary.GetTexture("Crate");
+		//boxItem->Material->SetUseTexture(true);
 		RenderData.OpaqueRenderItems.push_back(boxItem.get());
 		RenderData.RenderItems.push_back(std::move(boxItem));
 
+		
 
 	}
 
 	void Renderer3D::Shutdown()
 	{}
 
-	void Renderer3D::BeginScene(const MainCamera& cam, const float deltaTime, bool wireframe, const float elapsedTime)
+	void Renderer3D::BeginScene(const MainCamera& cam, const WorldSettings& settings, const float deltaTime, bool wireframe, const float elapsedTime)
 	{
 		
 		/*
@@ -193,6 +198,7 @@ namespace Engine
 			RenderData.OpaqueRenderItems,
 			RenderData.Materials,
 			cam,
+			settings,
 			deltaTime,
 			elapsedTime,
 			wireframe
@@ -234,6 +240,13 @@ namespace Engine
 		matB->SetBufferIndex(1);
 		RenderData.MaterialLibrary.Add("Default", std::move(matB));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
+	}
+
+	void Renderer3D::BuildTextures()
+	{
+		auto texture = Texture::Create(L"assets\\textures\\WoodCrate02.dds", "Crate");
+		RenderData.Textures.push_back(texture.get());
+		RenderData.TextureLibrary.Add("Crate", std::move(texture));
 	}
 
 	void Renderer3D::RegenerateBuffers

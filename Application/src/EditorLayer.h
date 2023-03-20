@@ -1,11 +1,13 @@
 #pragma once
+#include <Framework/Scene/WorldSettings.h>
 #include <Framework/Engine.h>
-#include "Framework/Core/Time/DeltaTime.h"
-#include "Framework/Core/Events/MouseEvent.h"
-#include "Framework/Core/Events/AppEvents.h"
-#include "Framework/Core/Events/KeyEvent.h"
 
-#include "IsoSurface/PerlinCompute.h"
+#include <Framework/Core/Time/DeltaTime.h>
+#include <Framework/Core/Events/MouseEvent.h>
+#include <Framework/Core/Events/AppEvents.h>
+#include <Framework/Core/Events/KeyEvent.h>
+
+#include "IsoSurface/DensityTextureGenerator.h"
 #include "IsoSurface/MarchingCubes.h"
 #include "IsoSurface/DualContouring.h"
 //#include "IsoSurface/MarchingCubesHP.h"
@@ -41,11 +43,14 @@ namespace Engine
 
 
 	private:
+		WorldSettings Settings;
 		VoxelWorldSettings VoxelSettings;
 		PerlinNoiseSettings PerlinSettings;
+		CSGOperationSettings CsgOperationSettings;
 		bool Regen = true;
+		bool Smooth = false;
 
-		ScopePointer<PerlinCompute> PerlinCompute;
+		ScopePointer<DensityTextureGenerator> PerlinCompute;
 
 		ScopePointer<MarchingCubes> MarchingCubes;
 		ScopePointer<DualContouring> DualContouring;

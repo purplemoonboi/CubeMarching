@@ -8,6 +8,7 @@
 
 namespace Engine
 {
+	class Texture;
 
 	struct Transform
 	{
@@ -52,8 +53,8 @@ namespace Engine
 
 		// A raw pointer to geometry
 		MeshGeometry* Geometry;
-
-		Material* Material;
+		Texture* Texture = nullptr;
+		Material* Material = nullptr;
 
 		DirectX::BoundingBox Bounds;
 

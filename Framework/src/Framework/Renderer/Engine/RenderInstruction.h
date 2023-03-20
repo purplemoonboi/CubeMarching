@@ -56,12 +56,13 @@ namespace Engine
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
 			const MainCamera& camera,
+			const WorldSettings& settings,
 			float deltaTime,
 			float elapsedTime,
 			bool wireframe
 		)
 		{
-			RendererApiPtr->PreRender(items, materials, camera, deltaTime, elapsedTime, wireframe);
+			RendererApiPtr->PreRender(items, materials, settings, camera, deltaTime, elapsedTime, wireframe);
 		}
 
 		static void PostRender()

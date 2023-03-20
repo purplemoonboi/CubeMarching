@@ -23,14 +23,19 @@ namespace Engine
 		float FalloffEnd = 10.0f;                           // point/spot light only
 		DirectX::XMFLOAT3 Position = { 0.0f, 0.0f, 0.0f };  // point/spot light only
 		float SpotPower = 64.0f;
+		DirectX::XMFLOAT3 Radiance = { 0.01, 0.01, 0.01 };
+
 	};
 
 	struct MaterialConstants
 	{
 		DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-		DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
+		DirectX::XMFLOAT3 FresnelR0 = { 1.f, 1.f, 1.f };
 		float Roughness = 0.25f;
-
+		float Metalness = 0.00f;
+		float UseTexture = 0;
+		float UsePBR = 0;
+		float Pad = 0.f;
 		// Used in texture mapping.
 		DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 	};

@@ -61,6 +61,8 @@ namespace Engine
 
 		[[nodiscard]] ComPtr<ID3D12PipelineState> GetComPtr() const { return Pso; }
 
+		
+
 	private:
 		ComPtr<ID3D12PipelineState> Pso;
 

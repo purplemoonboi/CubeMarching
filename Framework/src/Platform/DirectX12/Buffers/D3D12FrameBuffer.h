@@ -5,10 +5,12 @@
 #include "Framework/Renderer/Buffers/FrameBuffer.h"
 
 #include "../DirectX12.h"
+#include "Platform/DirectX12/Textures/D3D12Texture.h"
 
 
 namespace Engine
 {
+	class D3D12Texture;
 	using Microsoft::WRL::ComPtr;
 
 
@@ -35,7 +37,7 @@ namespace Engine
 		[[nodiscard]] const D3D12_VIEWPORT& GetViewport() const { return ScreenViewport; }
 		[[nodiscard]] const D3D12_RECT& GetScissorsRect() const { return ScissorRect; }
 		[[nodiscard]] ID3D12Resource* CurrentBackBuffer() const;
-		[[nodiscard]] void* GetFrameBuffer() const override;
+		[[nodiscard]] UINT64 GetFrameBuffer() const override;
 		[[nodiscard]] INT32 GetBackBufferIndex() const { return BackBufferIndex; }
 		[[nodiscard]] UINT32 GetRtvDescSize() const { return RtvDescriptorSize; }
 		[[nodiscard]] UINT32 GetDsvDescSize() const { return DsvDescriptorSize; }
@@ -51,7 +53,12 @@ namespace Engine
 		// @brief - Represents the size of the DSV descriptor heap.
 		UINT32 DsvDescriptorSize;
 
+
 	private:
+		ComPtr<ID3D12Resource> Resource = nullptr;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE FrameBufferSrvCpu;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE FrameBufferSrv;
+
 		/**
 		 * @brief Main render target buffer.
 		 */
@@ -61,6 +68,7 @@ namespace Engine
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;
 		// @brief Heap descriptor for depth-stencil resource
 		ComPtr<ID3D12DescriptorHeap> DsvHeap;
+
 		// @brief - A structure describing the buffer which we render to.
 		D3D12_VIEWPORT ScreenViewport;
 		// @brief - Used to specify an area of the buffer we would like to render to.

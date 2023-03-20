@@ -8,18 +8,20 @@
 
 #include "Platform/DirectX12/Copy/D3D12CopyContext.h"
 
+#include "Loader/D3D12TextureLoader.h"
+
 namespace Engine
 {
 
 	D3D12Texture::~D3D12Texture()
 	{
-		/*if (GpuResource != nullptr)
+		if (GpuResource != nullptr)
 		{
 			GpuResource->Release();
 			GpuResource = nullptr;
 			UploadBuffer->Release();
 			UploadBuffer = nullptr;
-		}*/
+		}
 	}
 
 	D3D12Texture::D3D12Texture
@@ -106,8 +108,6 @@ namespace Engine
 			UploadBuffer
 		);
 
-
-
 		D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 		desc.Format = Format;
 		desc.ViewDimension = Dimension;
@@ -125,8 +125,78 @@ namespace Engine
 		GpuHandleUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
 	}
 
-	void D3D12Texture::LoadFromFile(const std::wstring& fileName)
+	D3D12Texture::D3D12Texture(const std::wstring& fileName, const std::string& name)
 	{
+		FileName = fileName;
+		Name = name;
+
+		const HRESULT hr = D3D12TextureLoader::LoadTexture2DFromFile(fileName,
+			GpuResource, UploadBuffer);
+		THROW_ON_FAILURE(hr);
+
+		auto dimension = GpuResource->GetDesc().Dimension;
+
+		Width	= GpuResource->GetDesc().Width;
+		Height	= GpuResource->GetDesc().Height;
+		Depth	= GpuResource->GetDesc().DepthOrArraySize;
+
+		Dimension = (dimension == D3D12_RESOURCE_DIMENSION_TEXTURE1D) ?
+			D3D12_SRV_DIMENSION_TEXTURE1D : (dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) ?
+			D3D12_SRV_DIMENSION_TEXTURE2D : D3D12_SRV_DIMENSION_TEXTURE3D;
+
+		Format = GpuResource->GetDesc().Format;
+
+		DimensionUav = D3D12_UAV_DIMENSION_UNKNOWN;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = Format;
+		srvDesc.ViewDimension = Dimension;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.MipLevels = GpuResource->GetDesc().MipLevels;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+		D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
+	}
+
+	void D3D12Texture::LoadFromFile(const std::wstring& fileName, const std::string& name)
+	{
+		FileName = fileName;
+		Name = name;
+
+		if(GpuResource != nullptr)
+		{
+			GpuResource->Release();
+			UploadBuffer->Release();
+		}
+
+		const HRESULT hr = D3D12TextureLoader::LoadTexture2DFromFile(fileName,
+			GpuResource, UploadBuffer);
+		THROW_ON_FAILURE(hr);
+
+		auto dimension = GpuResource->GetDesc().Dimension;
+
+		Width  = GpuResource->GetDesc().Width;
+		Height = GpuResource->GetDesc().Height;
+		Depth  = GpuResource->GetDesc().DepthOrArraySize;
+
+		Dimension = (dimension == D3D12_RESOURCE_DIMENSION_TEXTURE1D) ?
+			D3D12_SRV_DIMENSION_TEXTURE1D : (dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D) ?
+			D3D12_SRV_DIMENSION_TEXTURE2D : D3D12_SRV_DIMENSION_TEXTURE3D;
+
+		Format = GpuResource->GetDesc().Format;
+
+		DimensionUav = D3D12_UAV_DIMENSION_UNKNOWN;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = Format;
+		srvDesc.ViewDimension = Dimension;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.MipLevels = GpuResource->GetDesc().MipLevels;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+		D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
 	UINT64 D3D12Texture::GetWidth()

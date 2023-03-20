@@ -71,12 +71,19 @@ namespace Engine
 			const void* initData,
 			UINT32 width,
 			UINT32 height,
-			TextureFormat format
+			TextureFormat format = TextureFormat::RGBA_UINT_UNORM
+		);
+
+		static ScopePointer<Texture> Create
+		(
+			const std::wstring& fileName,
+			const std::string& name
 		);
 
 		virtual void LoadFromFile
 		(
-			const std::wstring& fileName
+			const std::wstring& fileName,
+			const std::string& name
 		) = 0;
 
 		virtual UINT64 GetWidth() = 0;
@@ -88,4 +95,24 @@ namespace Engine
 
 		virtual void Copy(void* src) = 0;
 	};
+
+	class TextureLibrary
+	{
+	public:
+
+		static void Add(const std::string& name, ScopePointer<Texture> texture);
+
+		static void Remove(const std::string& name);
+
+		static Texture* GetTexture(const std::string& name);
+
+		static bool Exists(const std::string& name);
+
+
+	private:
+
+		static inline std::unordered_map<std::string, ScopePointer<Texture>> Textures;
+
+	};
+
 }

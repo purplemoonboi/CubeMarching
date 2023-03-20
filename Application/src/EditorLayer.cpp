@@ -8,6 +8,7 @@
 
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Textures/Texture.h"
+#include "Framework/Scene/WorldSettings.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 
 #include "Isosurface/VoxelWorldConstantExpressions.h"
@@ -22,7 +23,7 @@ namespace Engine
         World = new Scene("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
-        PerlinCompute = CreateScope<class PerlinCompute>();
+        PerlinCompute = CreateScope<class DensityTextureGenerator>();
 
         MarchingCubes = CreateScope<class MarchingCubes>();
         //MarchingCubesHP = CreateScope<class MarchingCubesHP>
@@ -90,106 +91,109 @@ namespace Engine
 
 
         //User input
-        if (MouseMoved && LeftMButton)
+        if(!IsViewportFocused)
         {
+            if (MouseMoved && LeftMButton)
+            {
 
-            // Make each pixel correspond to a quarter of a degree.
-            float dx = 90.0f * CurrentMouseX;
-            float dy = 90.0f * CurrentMouseY;
+                // Make each pixel correspond to a quarter of a degree.
+                float dx = 90.0f * CurrentMouseX;
+                float dy = 90.0f * CurrentMouseY;
 
 
-            // Update angles based on input to orbit camera around box.
-            mc->UpdateCameraZenith(dy, deltaTime);
+                // Update angles based on input to orbit camera around box.
+                mc->UpdateCameraZenith(dy, deltaTime);
 
-            mc->UpdateCamerasAzimuth(-dx, deltaTime);
+                mc->UpdateCamerasAzimuth(-dx, deltaTime);
+            }
+            if (RightMButton)
+            {
+                // Make each pixel correspond to 0.2 unit in the scene.
+                float dx = 50.f * CurrentMouseX;
+                float dy = 50.f * CurrentMouseY;
+
+
+                // Update the camera radius based on input.
+                mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
+            }
+            if (Input::IsKeyPressed(KEY_E))
+            {
+                auto camera = World->GetSceneCamera();
+
+                XMFLOAT3 pos = camera->GetPosition();
+                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+                pos.y += 12.0f * deltaTime;
+
+
+                camera->SetPosition(pos);
+            }
+            if (Input::IsKeyPressed(KEY_Q))
+            {
+                auto camera = World->GetSceneCamera();
+
+                XMFLOAT3 pos = camera->GetPosition();
+                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+                pos.y -= 12.0f * deltaTime;
+
+
+                camera->SetPosition(pos);
+            }
+            if (Input::IsKeyPressed(KEY_W))
+            {
+                auto camera = World->GetSceneCamera();
+
+                XMFLOAT3 pos = camera->GetPosition();
+                XMFLOAT3 forw = camera->GetForward();
+                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+                //pos.x -= forw.x * 5 * deltaTime;
+                //pos.y -= forw.y * 5 * deltaTime;
+                //pos.z -= forw.x * 5 * deltaTime;
+                pos.z += 12.0f * deltaTime;
+
+                camera->SetPosition(pos);
+            }
+            if (Input::IsKeyPressed(KEY_A))
+            {
+                auto camera = World->GetSceneCamera();
+
+                XMFLOAT3 pos = camera->GetPosition();
+                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+                pos.x -= 12.0f * deltaTime;
+
+
+                camera->SetPosition(pos);
+            }
+            if (Input::IsKeyPressed(KEY_D))
+            {
+                auto camera = World->GetSceneCamera();
+
+                XMFLOAT3 pos = camera->GetPosition();
+                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+                pos.x += 12.0f * deltaTime;
+
+
+                camera->SetPosition(pos);
+            }
+            if (Input::IsKeyPressed(KEY_S))
+            {
+                auto camera = World->GetSceneCamera();
+
+                XMFLOAT3 pos = camera->GetPosition();
+                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
+
+                pos.z -= 12.0f * deltaTime;
+
+
+                camera->SetPosition(pos);
+            }
         }
-        if(RightMButton)
-        {
-            // Make each pixel correspond to 0.2 unit in the scene.
-            float dx = 50.f * CurrentMouseX;
-            float dy = 50.f * CurrentMouseY;
+     
 
-
-            // Update the camera radius based on input.
-           mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
-        }
-        if(Input::IsKeyPressed(KEY_E))
-	    {
-            auto camera = World->GetSceneCamera();
-
-            XMFLOAT3 pos = camera->GetPosition();
-            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-        	pos.y += 12.0f * deltaTime;
-            
-
-            camera->SetPosition(pos);
-	    }
-        if (Input::IsKeyPressed(KEY_Q))
-        {
-            auto camera = World->GetSceneCamera();
-
-            XMFLOAT3 pos = camera->GetPosition();
-            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-            pos.y -= 12.0f * deltaTime;
-
-
-            camera->SetPosition(pos);
-        }
-        if (Input::IsKeyPressed(KEY_W))
-        {
-            auto camera = World->GetSceneCamera();
-
-            XMFLOAT3 pos = camera->GetPosition();
-            XMFLOAT3 forw = camera->GetForward();
-            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-            //pos.x -= forw.x * 5 * deltaTime;
-            //pos.y -= forw.y * 5 * deltaTime;
-            //pos.z -= forw.x * 5 * deltaTime;
-            pos.z += 12.0f * deltaTime;
-
-            camera->SetPosition(pos);
-        }
-        if (Input::IsKeyPressed(KEY_A))
-        {
-            auto camera = World->GetSceneCamera();
-
-            XMFLOAT3 pos = camera->GetPosition();
-            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-            pos.x -= 12.0f * deltaTime;
-
-
-            camera->SetPosition(pos);
-        }
-        if (Input::IsKeyPressed(KEY_D))
-        {
-            auto camera = World->GetSceneCamera();
-
-            XMFLOAT3 pos = camera->GetPosition();
-            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-            pos.x += 12.0f * deltaTime;
-
-
-            camera->SetPosition(pos);
-        }
-        if (Input::IsKeyPressed(KEY_S))
-        {
-            auto camera = World->GetSceneCamera();
-
-            XMFLOAT3 pos = camera->GetPosition();
-            CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-            pos.z -= 12.0f * deltaTime;
-
-
-            camera->SetPosition(pos);
-        }
-
-        CORE_TRACE("Delta Mouse {0}, {1}", CurrentMouseX, CurrentMouseY);
 
         MouseLastX = CurrentMouseX;
         MouseLastY = CurrentMouseY;
@@ -202,16 +206,20 @@ namespace Engine
             Regen = false;
 
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            PerlinCompute->Dispatch(PerlinSettings);
+            PerlinCompute->PerlinFBM(PerlinSettings);
+            if(Smooth)
+            {
+                Smooth = false;
+                PerlinCompute->Smooth(CsgOperationSettings);
+            }
 
             /* polygonise the texture with marching cubes*/
             MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
             Renderer3D::RegenerateBuffers("MarchingTerrain", MarchingCubes->GetVertices(),
                 MarchingCubes->GetIndices());
 
-
             /* polygonise the texture with dual contouring */
-            /*DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            /*DualContouring->Dispatch(VoxelSettings, DensityTextureGenerator->GetTexture());
             Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
                 DualContouring->GetIndices());*/
             
@@ -222,7 +230,8 @@ namespace Engine
 
     void EditorLayer::OnRender(const DeltaTime& timer)
     {
-        World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), wireframe);
+
+        World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), Settings, wireframe);
     }
 
     void EditorLayer::OnImGuiRender()
@@ -233,11 +242,14 @@ namespace Engine
             //     {
             //         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
             //     }
+           
+
             static bool dockspace_open = true;
             static bool opt_fullscreen = false;
             static bool opt_padding = false;
             static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
+          
             // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
             // because it would be confusing to have two docking targets within each others.
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
@@ -276,7 +288,6 @@ namespace Engine
             if (opt_fullscreen)
                 ImGui::PopStyleVar(2);
 
-           // //..................................DOCKSPACE..................................//
 
 
             ImGuiIO& io = ImGui::GetIO();
@@ -289,7 +300,7 @@ namespace Engine
                 ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
             }
 
-           // style.WindowMinSize.x = minWindowSize;
+            style.WindowMinSize.x = minWindowSize;
 
             //MENU BAR - Menu dropdown
             if (ImGui::BeginMenuBar())
@@ -325,6 +336,43 @@ namespace Engine
                 ImGui::EndMenuBar();
             }
 
+            {
+                ImGui::Begin("DockSpace Settings");
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                ImGui::Checkbox("FullScreen", &opt_fullscreen);
+                ImGui::End();
+            }
+
+
+            static float dir[3] = { 0, -1, 0 };
+            static float amb[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+            //LIGHT
+            {
+                ImGui::Begin("Lighting Settings");
+                ImGui::Separator();
+                ImGui::Spacing();
+
+                ImGui::DragFloat3("Sun Direction", dir, 0.1, -1.0f, 1.0f);
+                ImGui::Spacing();
+            	ImGui::Separator();
+                ImGui::Spacing();
+                ImGui::ColorPicker4("Ambiance Override", amb);
+
+
+                ImGui::End();
+                Settings.SunDirection[0] = dir[0];
+                Settings.SunDirection[1] = dir[1];
+                Settings.SunDirection[2] = dir[2];
+
+                Settings.SunColour[0] = amb[0];
+                Settings.SunColour[1] = amb[1];
+                Settings.SunColour[2] = amb[2];
+                Settings.SunColour[3] = amb[3];
+
+            }
+
             //VOXEL SETTINGS 
             {
                 ImGui::Begin("Noise Settings");
@@ -334,6 +382,8 @@ namespace Engine
                 float gain = PerlinSettings.Gain;
                 float groundHeight = PerlinSettings.GroundHeight;
                 INT32 octaves = PerlinSettings.Octaves;
+                INT32 smooth = CsgOperationSettings.Radius;
+
                 if (ImGui::DragInt("Octaves", &octaves, 1, 1, 8))
                     Regen = true;
 
@@ -347,6 +397,11 @@ namespace Engine
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Ground Height", &groundHeight, 0.1f, 2.0f, (float)ChunkHeight))
                     Regen = true;
+
+                if (ImGui::DragInt("Smooth", &smooth, 1, 0, 8))
+                    Smooth = true;
+
+              
 
                 ImGui::Separator();
                 ImGui::End();
@@ -423,10 +478,9 @@ namespace Engine
                     ViewportSize = { viewport_region.x, viewport_region.y };
                 }
 
-           /*     const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
-                ViewportTexture->Copy(frameBuffer->GetFrameBuffer());*/
+                const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
 
-                //ImGui::Image((ImTextureID)PerlinCompute->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {1,0});
+                ImGui::Image((ImTextureID)frameBuffer->GetFrameBuffer(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {0,1});
 
 
                 ImGui::End();

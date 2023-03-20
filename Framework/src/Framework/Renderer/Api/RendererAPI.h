@@ -12,6 +12,7 @@
 
 namespace Engine
 {
+	struct WorldSettings;
 	class Texture;
 
 	class RendererAPI
@@ -57,7 +58,8 @@ namespace Engine
 
 		virtual void PreRender
 		(
-			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials, 
+			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			const WorldSettings& settings,
 			const MainCamera& camera,
 			float deltaTime,
 			float elapsedTime,

@@ -83,6 +83,8 @@ namespace Engine
 
 	void D3D12CopyContext::CopyTexture(ID3D12Resource* src, ID3D12Resource* dst, INT32 x, INT32 y, INT32 z)
 	{
+		ResetCopyList(nullptr);
+
 		D3D12_TEXTURE_COPY_LOCATION copySrc = {};
 		copySrc.pResource = src;
 		copySrc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;

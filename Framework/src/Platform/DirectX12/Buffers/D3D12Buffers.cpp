@@ -1,6 +1,8 @@
 #include "D3D12Buffers.h"
 
 #include "Framework/Core/Log/Log.h"
+#include "Framework/Scene/WorldSettings.h"
+
 #include "Framework/Core/Time/DeltaTime.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
@@ -326,6 +328,7 @@ namespace Engine
 	void D3D12ResourceBuffer::UpdatePassBuffer
 	(
 		D3D12FrameResource* resource,
+		const WorldSettings& settings,
 		const MainCamera& camera, 
 		const float deltaTime, 
 		const float elapsedTime, 
@@ -366,8 +369,8 @@ namespace Engine
 		MainPassConstantBuffer.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
 		MainPassConstantBuffer.NearZ = 1.0f;
 		MainPassConstantBuffer.FarZ = 1000.0f;
-		MainPassConstantBuffer.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
-		MainPassConstantBuffer.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
+		MainPassConstantBuffer.AmbientLight = { settings.SunColour[0], settings.SunColour[1], settings.SunColour[2], settings.SunColour[3] };
+		MainPassConstantBuffer.Lights[0].Direction = { settings.SunDirection[0], settings.SunDirection[1], settings.SunDirection[2] };
 		MainPassConstantBuffer.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
 		MainPassConstantBuffer.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 		MainPassConstantBuffer.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
@@ -431,6 +434,9 @@ namespace Engine
 				matConstants.DiffuseAlbedo = dx12Material->GetDiffuse();
 				matConstants.FresnelR0 = dx12Material->GetFresnelR0();
 				matConstants.Roughness = dx12Material->GetRoughness();
+				matConstants.Metalness = 1.0f - dx12Material->GetRoughness();
+				matConstants.UsePBR = dx12Material->ShouldUsePBR() ? 1.f : 0.f;
+				matConstants.UseTexture = dx12Material->ShouldUseTexture() ? 1.f : 0.f;
 				XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
 
 				materialBuffer->CopyData(dx12Material->MaterialBufferIndex, matConstants);

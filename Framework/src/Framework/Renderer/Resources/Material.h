@@ -23,6 +23,12 @@ namespace Engine
 
 		virtual void SetBufferIndex(INT32 index) = 0;
 
+		virtual void SetUsePBR(bool pbr) = 0;
+		virtual bool ShouldUsePBR() const = 0;
+
+		virtual void SetUseTexture(bool tex) = 0; 
+		virtual bool ShouldUseTexture() const = 0;
+
 		[[nodiscard]] virtual INT32 GetBufferIndex() const = 0;
 
 		[[nodiscard]] virtual const std::string& GetName() const = 0;

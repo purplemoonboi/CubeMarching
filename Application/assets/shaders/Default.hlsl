@@ -17,6 +17,7 @@
     #define NUM_SPOT_LIGHTS 0
 #endif
 
+
 // Include structures and functions for lighting.
 #include "LightingUtil.hlsl"
 
@@ -32,6 +33,10 @@ cbuffer cbMaterial : register(b1)
 	float4 gDiffuseAlbedo;
     float3 gFresnelR0;
     float  gRoughness;
+    float  gMetalness;
+    float  gUseTexture;
+    float  gUsePBR;
+    float  gPad;
 	float4x4 gMatTransform;
 };
 
@@ -59,7 +64,7 @@ cbuffer cbPass : register(b2)
     // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
     // are spot lights for a maximum of MaxLights per object.
     Light gLights[MaxLights];
-    int wire;
+    int gWire;
 };
  
 struct VertexIn
@@ -78,6 +83,19 @@ struct VertexOut
     float3 TangentW : TANGENT;
     float2 TexCoord : TEXCOORD;
 };
+
+Texture2D Albedo : register(t0);
+//Texture2D Normal : register(t1);
+//Texture2D Roughness : register(t2);
+//Texture2D AO : register(t3);
+
+//TextureCube IrradienceTexture : register(t4);
+//TextureCube SpecularTexture : register(t5);
+//Texture2D SpecularBRDF : register(t6);
+
+SamplerState DefaultSampler : register(s0);
+//SamplerState SpecBRDFSampler : register(s1);
+
 
 VertexOut VS(VertexIn vin)
 {
@@ -103,29 +121,66 @@ float4 PS(VertexOut pin) : SV_Target
 {
     float4 litColor = float4(0, 0, 0, 1);
    
-    if (wire == 0)
+    if (gWire == 0)
     {
-      // Interpolating normal can unnormalize it, so renormalize it.
+        // Interpolating normal can unnormalize it, so renormalize it.
         pin.NormalW = normalize(pin.NormalW);
 
-        // Vector from point being lit to eye. 
+        	// Vector from point being lit to eye. 
         float3 toEyeW = normalize(gEyePosW - pin.PosW);
 
-	    // Indirect lighting.
-        float4 ambient = gAmbientLight * gDiffuseAlbedo;
+        Material mat = { gDiffuseAlbedo, gFresnelR0, gRoughness, gMetalness };
 
-        const float shininess = 1.0f - gRoughness;
-        Material mat = { gDiffuseAlbedo, gFresnelR0, shininess };
-        //Material mat = { float4(pin.NormalW, 1), gFresnelR0, shininess };
         float3 shadowFactor = 1.0f;
+
+    //    if(gUsePBR > 0)
+    //    {
+    ////        float cosLo = max(0.0, dot(pin.NormalW, toEyeW));
+    ////        float3 specularRefrac = 2.0f * cosLo * pin.NormalW - toEyeW;
+    ////        uint levels = GetTextureCubeMipLevels(IrradienceTexture);
+
+    ////        float3 irradiance = IrradienceTexture.Sample(DefaultSampler, pin.NormalW).rgb;
+    ////        float3 specularIrradiance = SpecularTexture.SampleLevel(DefaultSampler, specularRefrac, mat.Shininess * levels).rgb;
+    ////        float2 specularBRDF = SpecularBRDF.Sample(SpecBRDFSampler, float2(cosLo, mat.Shininess)).rg;
+
+    ////        litColor = PBR(
+				////gLights, mat, 
+				////pin.PosW, pin.NormalW, toEyeW, cosLo,
+				////1.0f,
+				////irradiance,
+				////specularIrradiance,
+				////specularBRDF
+				////);
+
+    //    }
+        //else
+        
+            /* blinn phong */
+            
+			// Indirect lighting.
+            float4 albedo = float4(0, 0, 0, 1);
+
+            if(gUseTexture > 0)
+            {
+                albedo = Albedo.Sample(DefaultSampler, pin.TexCoord);
+            }
+            else
+            {
+                albedo = gDiffuseAlbedo;
+            }
+
+            float4 ambient = gAmbientLight * albedo;
     
-        float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
-        pin.NormalW, toEyeW, shadowFactor);
+            float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
+			pin.NormalW, toEyeW, shadowFactor);
 
-        litColor = ambient + directLight;
+            litColor = ambient + directLight;
 
-        // Common convention to take alpha from diffuse material.
-        litColor.a = gDiffuseAlbedo.a;
+			// Common convention to take alpha from diffuse material.
+            litColor.a = gDiffuseAlbedo.a;
+
+        
+		
     } 
     
     return litColor;

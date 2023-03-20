@@ -3,7 +3,7 @@
 #include "Framework/Core/Application/Application.h"
 
 #include <imgui.h>
-#include "../Platform/ImGuiImplD3D12.h"
+#include "Framework/ImGui/ImGuiApi/ImGuiInstructions.h"
 
 namespace Engine
 {
@@ -30,7 +30,7 @@ namespace Engine
 	void ImGuiLayer::OnAttach()
 	{
 
-		ImGuiImplD3D12::InitialiseImGui(1);
+		ImGuiInstructions::InitialiseImGui();
 
 		// Setup Dear ImGui style
 		SetDarkThemeColours();
@@ -38,7 +38,7 @@ namespace Engine
 
 	void ImGuiLayer::OnDetach()
 	{
-		ImGuiImplD3D12::CleanUp();
+		ImGuiInstructions::CleanUp();
 	}
 
 	void ImGuiLayer::OnEvent(Event& event)
@@ -47,7 +47,7 @@ namespace Engine
 
 	void ImGuiLayer::Begin() 
 	{
-		ImGuiImplD3D12::BeginRenderImpl();
+		ImGuiInstructions::BeginRenderImpl();
 		/*ImGui draw data here.*/
 
 	}
@@ -58,7 +58,7 @@ namespace Engine
 
 	void ImGuiLayer::End() 
 	{
-		ImGuiImplD3D12::EndRenderImpl();
+		ImGuiInstructions::EndRenderImpl();
 	}
 
 	void ImGuiLayer::SetDarkThemeColours()

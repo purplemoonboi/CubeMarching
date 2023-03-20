@@ -4,8 +4,10 @@
 
 namespace Engine
 {
+	struct WorldSettings;
 	class MainCamera;
 
+	
 	class Scene
 	{
 	public:
@@ -15,9 +17,11 @@ namespace Engine
 		Scene(const std::string& name);
 
 		void OnUpdate(const float deltaTime, const float elapsedTime);
-		void OnRender(const float deltaTime, const float elapsedTime, bool wireframe = false) const;
+		void OnRender(const float deltaTime, const float elapsedTime, const WorldSettings& settings, bool wireframe = false) const;
 
 		MainCamera* GetSceneCamera() { return SceneCamera; }
+
+
 
 	private:
 		MainCamera* SceneCamera;

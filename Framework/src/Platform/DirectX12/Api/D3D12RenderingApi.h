@@ -11,6 +11,7 @@
 
 namespace Engine
 {
+	struct WorldSettings;
 
 	struct ObjectConstant;
 
@@ -48,6 +49,7 @@ namespace Engine
 		void PreRender
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			const WorldSettings& settings,
 			const MainCamera& camera,
 			float deltaTime,
 			float elapsedTime,

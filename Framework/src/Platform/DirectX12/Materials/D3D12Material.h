@@ -41,7 +41,11 @@ namespace Engine
 
 		float GetRoughness() const { return Roughness; }
 
+		void SetUsePBR(bool pbr) { UsePBR = pbr; }
+		bool ShouldUsePBR() const { return UsePBR; }
 
+		void SetUseTexture(bool tex) { UseTexture = tex; }
+		bool ShouldUseTexture() const { return UseTexture; }
 
 	private:
 
@@ -49,6 +53,9 @@ namespace Engine
 		DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
 		DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
 		float Roughness = .25f;
+		float Metalness = 0.01f;
+		bool  UseTexture = false;
+		bool  UsePBR = false;
 		DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 
 		std::string Name;

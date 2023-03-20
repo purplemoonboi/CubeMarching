@@ -10,6 +10,7 @@
 
 namespace Engine
 {
+	struct WorldSettings;
 
 	// Using namespace
 	using Microsoft::WRL::ComPtr;
@@ -132,7 +133,14 @@ namespace Engine
 
 		//void RegisterRenderItem();
 
-		void UpdatePassBuffer(D3D12FrameResource* resource, const MainCamera& camera, const float deltaTime, const float elapsedTime, bool wireframe) ;
+		void UpdatePassBuffer(
+			D3D12FrameResource* resource,
+			const WorldSettings& settings,
+			const MainCamera& camera, 
+			const float deltaTime, 
+			const float elapsedTime, 
+			bool wireframe
+		) ;
 
 		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems) ;
 

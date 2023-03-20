@@ -53,7 +53,7 @@ namespace Engine
 	{
 		EventDispatcher dispatcher(event);
 
-		dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(Application::OnWindowResize));
+		//dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(Application::OnWindowResize));
 
 
 

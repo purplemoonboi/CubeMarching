@@ -1,6 +1,6 @@
 #include "D3D12RenderingApi.h"
 #include "Framework/Core/Log/Log.h"
-#include "Framework/ImGui/Platform/ImGuiImplD3D12.h"
+#include "Framework/ImGui/ImGuiApi/ImGuiInstructions.h"
 
 
 
@@ -15,6 +15,7 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
+#include "Platform/DirectX12/Textures/Loader/D3D12TextureLoader.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_dx12.h>
@@ -39,6 +40,7 @@ namespace Engine
 		const HRESULT srvUavResult = D3D12MemoryManager->InitialiseSrvUavHeap(Context->Device.Get(), 12);
 		THROW_ON_FAILURE(srvUavResult);
 
+		D3D12TextureLoader::Init(Context);
 		D3D12BufferUtils::Init(Context->Device.Get(), Context->GraphicsCmdList.Get());
 		D3D12Utils::Init(Context->Device.Get(), D3D12MemoryManager.get());
 
@@ -118,6 +120,7 @@ namespace Engine
 
 	void D3D12RenderingApi::PreRender(
 		const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+		const WorldSettings& settings,
 		const MainCamera& camera,
 		float deltaTime,
 		float elapsedTime,
@@ -144,20 +147,7 @@ namespace Engine
 		// Update constant buffers for each render item and material
 		UploadBuffer->UpdateObjectBuffers(CurrentFrameResource, items);
 		UploadBuffer->UpdateMaterialBuffers(CurrentFrameResource, materials);
-		UploadBuffer->UpdatePassBuffer(CurrentFrameResource, camera, deltaTime, elapsedTime, wireframe);
-
-		D3D12CopyContext::ResetCopyList(nullptr);
-
-		for (const auto& buffer : items)
-		{
-			auto* d3dBuffer = dynamic_cast<D3D12VertexBuffer*>(buffer->Geometry->VertexBuffer.get());
-			if (d3dBuffer->Flag == 1)
-			{
-				D3D12CopyContext::UpdateVertexBuffer(d3dBuffer);
-			}
-		}
-
-		D3D12CopyContext::ExecuteCopyList();
+		UploadBuffer->UpdatePassBuffer(CurrentFrameResource, settings, camera, deltaTime, elapsedTime, wireframe);
 
 		// If everything checks out prepare recording instructions under the
 		// current frame resource.
@@ -193,9 +183,7 @@ namespace Engine
 		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->SignalCount);
 		THROW_ON_FAILURE(signalResult);
 
-		auto completeVal = Context->Fence->GetCompletedValue();
-
-		if(completeVal< CurrentFrameResource->SignalCount)
+		if(Context->Fence->GetCompletedValue() < CurrentFrameResource->SignalCount)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
@@ -210,26 +198,7 @@ namespace Engine
 		THROW_ON_FAILURE(cmdListBeginRender);
 
 
-		// Indicate there will be a transition made to the resource.
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			FrameBuffer->CurrentBackBuffer(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET
-		)
-		);
-
-		Context->GraphicsCmdList->ClearRenderTargetView
-		(
-			FrameBuffer->GetCurrentBackBufferViewCpu(),
-			Colors::SandyBrown,
-			0,
-			nullptr
-		);
-
-		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(),
-			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr
-		);
-
+		FrameBuffer->Bind();
 	}
 
 	void D3D12RenderingApi::PostRender(){}
@@ -239,21 +208,15 @@ namespace Engine
 
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
 		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
-		Context->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
-		Context->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
-
-
-		Context->GraphicsCmdList->OMSetRenderTargets(1, &FrameBuffer->GetCurrentBackBufferViewCpu(),
-			true,
-			&FrameBuffer->GetDepthStencilViewCpu()
-		);
+		
 		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetConstantBufferDescHeap() };
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		/* Bind the shader root signature */
 		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
+
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
-		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
+		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(3, passBufferAddress);
 
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -275,8 +238,20 @@ namespace Engine
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
 			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetBufferIndex() * matConstBufferByteSize;
 
-			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
-			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
+			//if(renderItem->Texture != nullptr)
+			//{
+			//	const auto d3dTexture = dynamic_cast<D3D12Texture*>(renderItem->Texture);
+
+			//	/*CD3DX12_GPU_DESCRIPTOR_HANDLE texture(D3D12MemoryManager->GetShaderResourceDescHeap()->GetGPUDescriptorHandleForHeapStart());
+			//	texture.Offset(renderItem->Material->GetBufferIndex(), D3D12MemoryManager->GetDescriptorIncrimentSize());
+			//	Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, texture);*/
+
+			//	Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, d3dTexture->GpuHandleSrv);
+			//}
+			
+			
+			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, objConstBufferAddress);
+			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, materialBufferAddress);
 			
 			if (renderItem->Geometry->GetName() == "MarchingTerrain" || renderItem->Geometry->GetName() == "DualTerrain")
 			{
@@ -372,18 +347,22 @@ namespace Engine
 
 	void D3D12RenderingApi::Flush()
 	{
+
+		FrameBuffer->UnBind();
+
+		const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		THROW_ON_FAILURE(closeResult);
+		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
 		
-		
-		Context->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				FrameBuffer->CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PRESENT
-			)
-		);
+
+		/**
+		 *  We're finished with the current frame resource so signal the GPU.
+		 */
+		CurrentFrameResource->SignalCount = ++Context->SyncCounter;
+		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->SignalCount);
+		THROW_ON_FAILURE(signalResult);
 
 		/**
 		 * Deffer presenting until we have recorded the commands for ImGui
@@ -404,11 +383,7 @@ namespace Engine
 		);
 
 
-		const HRESULT closeResult = Context->GraphicsCmdList->Close();
-		THROW_ON_FAILURE(closeResult);
-		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
+		
 		const HRESULT presentResult = Context->SwapChain->Present(0, 0);
 		THROW_ON_FAILURE(presentResult);
 		FrameBuffer->SetBackBufferIndex((FrameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
@@ -419,7 +394,7 @@ namespace Engine
 		 * Because we are on the GPU timeline, the new fence point won't be 
 		 * set until the GPU finishes processing all the commands prior to this Signal().
 		 */
-		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), Context->SyncCounter);
+		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.GetShader(), Context->SyncCounter);
 		THROW_ON_FAILURE(signalResult);
 
 #endif

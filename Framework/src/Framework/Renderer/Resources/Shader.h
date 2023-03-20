@@ -71,11 +71,11 @@ namespace Engine
 		
 		static void Add(const std::string& name, ScopePointer<Shader> shader);
 		
-		static ScopePointer<Shader> Load(const std::string& filePath);
+		static Shader* Load(const std::string& filePath);
 		
-		static ScopePointer<Shader> Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
+		static Shader* Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
 		
-		static Shader* Get(const std::string& name);
+		static Shader* GetShader(const std::string& name);
 		
 		static bool Exists(const std::string& name);
 

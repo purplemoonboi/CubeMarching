@@ -88,23 +88,23 @@ namespace Engine
 		Add(name, std::move(shader));
 	}
 
-	ScopePointer<Shader> ShaderLibrary::Load(const std::string& filePath)
+	Shader* ShaderLibrary::Load(const std::string& filePath)
 	{
 		auto shader = Shader::Create(filePath);
+		Shader* out = shader.get();
 		Add(std::move(shader));
-		return shader;
+		return out;
 	}
 
-	//TODO: Need to fix this!
-	//TODO: Can't return pointer after we have moved data!
-	ScopePointer<Shader> ShaderLibrary::Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target)
+	Shader* ShaderLibrary::Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target)
 	{
 		auto shader = Shader::Create(filePath, entryPoint, target);
+		Shader* out = shader.get();
 		Add(std::move(shader));
-		return nullptr;
+		return out;
 	}
 
-	Shader* ShaderLibrary::Get(const std::string& name)
+	Shader* ShaderLibrary::GetShader(const std::string& name)
 	{
 		CORE_ASSERT(Exists(name), "Shader not found!");
 		return Shaders[name].get();

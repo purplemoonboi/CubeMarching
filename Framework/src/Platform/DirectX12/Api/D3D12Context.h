@@ -54,6 +54,8 @@ namespace Engine
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 SyncCounter;
 
+		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+
 	private:
 
 		// @brief Creates the command object responsible for recording commands to be sent to the
