@@ -108,6 +108,9 @@ namespace Engine
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2(app->GetWindow().GetWidth(), app->GetWindow().GetHeight());
 
+		frameBuffer->Bind();
+
+
 		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
 		context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -118,6 +121,9 @@ namespace Engine
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault(nullptr, context->GraphicsCmdList.Get());
 		}
+
+		frameBuffer->UnBind();
+
 
 		const HRESULT closeResult = context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);

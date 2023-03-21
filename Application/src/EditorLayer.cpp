@@ -7,6 +7,7 @@
 #include <../ImGui/imgui_internal.h>
 
 #include "Framework/Core/Compute/ComputeInstruction.h"
+#include "Framework/Renderer/Textures/RenderTarget.h"
 #include "Framework/Renderer/Textures/Texture.h"
 #include "Framework/Scene/WorldSettings.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
@@ -91,7 +92,7 @@ namespace Engine
 
 
         //User input
-        if(!IsViewportFocused)
+        if(IsViewportFocused)
         {
             if (MouseMoved && LeftMButton)
             {
@@ -224,6 +225,19 @@ namespace Engine
                 DualContouring->GetIndices());*/
             
         }
+
+        auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
+
+        if(ViewportSize.x > 0 && ViewportSize.x < 8196 && ViewportSize.y > 0 && ViewportSize.y < 8196)
+        {
+            if (rt->GetWidth() != (INT32)ViewportSize.x || rt->GetHeight() != (INT32)ViewportSize.y)
+            {
+                mc->SetAspectRatio(ViewportSize.x, ViewportSize.y);
+                mc->RecalculateAspectRatio(ViewportSize.x, ViewportSize.y);
+                rt->OnResize((INT32)ViewportSize.x, (INT32)ViewportSize.y);
+            }
+        }
+
     }
 
     static bool wireframe = false;
@@ -231,7 +245,10 @@ namespace Engine
     void EditorLayer::OnRender(const DeltaTime& timer)
     {
 
+
         World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), Settings, wireframe);
+
+
     }
 
     void EditorLayer::OnImGuiRender()
@@ -245,11 +262,11 @@ namespace Engine
            
 
             static bool dockspace_open = true;
-            static bool opt_fullscreen = false;
-            static bool opt_padding = false;
+            static bool opt_fullscreen = true;
+            static bool opt_padding = true;
             static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-          
+			
             // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
             // because it would be confusing to have two docking targets within each others.
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
@@ -473,27 +490,20 @@ namespace Engine
                     ViewportSize = { viewport_region.x, viewport_region.y };
                 }
 
-                const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
-
-                if(frameBuffer->GetWidth() != (INT32)ViewportSize.x || frameBuffer->GetHeight() != (INT32)ViewportSize.y)
-                {
-                    FrameBufferSpecifications fb = {};
-                    fb.Width = (INT32)ViewportSize.x;
-                    fb.Height = (INT32)ViewportSize.y;
-
-                    fb.OffsetX = viewport_region.x;
-                    fb.OffsetY = viewport_region.y;
-
-                    frameBuffer->SetBufferSpecifications(fb);
-                    frameBuffer->RebuildFrameBuffer(fb);
-                }
-
-                ImGui::Image((ImTextureID)frameBuffer->GetFrameBuffer(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {0,1});
+                
+                auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
+                ImGui::Image((ImTextureID)rt->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,0}, {1,1});
 
 
                 ImGui::End();
                 ImGui::PopStyleVar();
             }
+
+            ImGui::Begin("Debug");
+            ImGui::Checkbox("Is Focused", &IsViewportFocused);
+            ImGui::Checkbox("Is Hovered", &IsViewportHovered);
+            ImGui::End();
+
 
             //END DOCKSPACE
             ImGui::End();

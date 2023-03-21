@@ -7,10 +7,11 @@
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Resources/D3D12ResourceManager.h"
-
+#include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
 namespace Engine
 {
+
 	struct WorldSettings;
 
 	struct ObjectConstant;
@@ -67,6 +68,8 @@ namespace Engine
 
 		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
 
+		[[nodiscard]] RenderTarget* GetRenderTextureAlbedo() const override { return RenderTarget.get(); }
+
 	private:
 		
 		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
@@ -79,6 +82,8 @@ namespace Engine
 
 		// A unique pointer to the frame buffer
 		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
+
+		ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
 
 		// A unique pointer to the Api's memory allocator class.
 		ScopePointer<D3D12MemoryManager> D3D12MemoryManager = nullptr;

@@ -42,7 +42,7 @@ namespace Engine
 
 		D3D12TextureLoader::Init(Context);
 		D3D12BufferUtils::Init(Context->Device.Get(), Context->GraphicsCmdList.Get());
-		D3D12Utils::Init(Context->Device.Get(), D3D12MemoryManager.get());
+		D3D12Utils::Init(D3D12MemoryManager.get(), Context);
 
 		D3D12CopyContext::Init(Context);
 
@@ -53,6 +53,10 @@ namespace Engine
 		FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
 		FrameBuffer->Init(Context);
 		FrameBuffer->RebuildFrameBuffer(fbs);
+
+		std::vector<INT8> bytes;
+		bytes.insert(bytes.begin(), 1920 * 1080, 0);
+		RenderTarget = CreateScope<D3D12RenderTarget>(bytes.data(), 1920, 1080);
 
 		constexpr UINT32 maxObjCount = 16;
 		constexpr UINT32 maxMatCount = 16;
@@ -203,13 +207,36 @@ namespace Engine
 		THROW_ON_FAILURE(cmdListBeginRender);
 
 
-		FrameBuffer->Bind();
 	}
 
-	void D3D12RenderingApi::PostRender(){}
+	void D3D12RenderingApi::PostRender()
+	{
+
+
+
+	}
 
 	void D3D12RenderingApi::BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 	{
+		//RenderTarget->Bind(Context);
+
+
+		Context->GraphicsCmdList->RSSetViewports(1, &RenderTarget->Viewport);
+		Context->GraphicsCmdList->RSSetScissorRects(1, &RenderTarget->Rect);
+
+		// Change offscreen texture to be used as a a render target output.
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
+			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		// Clear the back buffer and depth buffer.
+		Context->GraphicsCmdList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::SandyBrown, 0, nullptr);
+		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		// Specify the buffers we are going to render to.
+		Context->GraphicsCmdList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv, 
+			true, &FrameBuffer->GetDepthStencilViewCpu());
+
+
 
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
 		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
@@ -282,6 +309,12 @@ namespace Engine
 
 		}
 
+		// Change offscreen texture to be used as a a render target output.
+		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+
+
+		//RenderTarget->UnBind(Context);
 	}
 
 	void D3D12RenderingApi::BindTerrainPass
@@ -344,48 +377,48 @@ namespace Engine
 
 	void D3D12RenderingApi::BindLightingPass()
 	{
+
 	}
 
 	void D3D12RenderingApi::BindPostProcessingPass()
 	{
+		
 	}
 
 	void D3D12RenderingApi::Flush()
 	{
 
-		FrameBuffer->UnBind();
-
-		//const HRESULT closeResult = Context->GraphicsCmdList->Close();
-		//THROW_ON_FAILURE(closeResult);
-		//ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
-		//Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-		////
-
-		///**
-		// *  We're finished with the current frame resource so signal the GPU.
-		// */
-		//CurrentFrameResource->SignalCount = ++Context->SyncCounter;
-		//const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->SignalCount);
-		//THROW_ON_FAILURE(signalResult);
-
+		
 		/**
 		 * Deffer presenting until we have recorded the commands for ImGui
 		 * If ImGui is supported
 		 */
 
+		//const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		//THROW_ON_FAILURE(closeResult);
+
+		//ID3D12CommandList* cmdList[] = { Context->GraphicsCmdList.Get() };
+		//Context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+
+		//// Has the GPU finished processing the commands of the current frame resource
+		//// If not, wait until the GPU has completed commands up to this fence point.
+		//if (Context->Fence->GetCompletedValue() < CurrentFrameResource->SignalCount)
+		//{
+		//	const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+		//	const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
+		//	THROW_ON_FAILURE(eventCompletion);
+		//	WaitForSingleObject(eventHandle, INFINITE);
+		//	CloseHandle(eventHandle);
+		//}
+
+		//const HRESULT cr = CurrentFrameResource->CmdListAlloc->Reset();
+		//THROW_ON_FAILURE(cr);
+
+		//const HRESULT hr = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
+		//THROW_ON_FAILURE(hr);
 
 #ifndef ENGINE_IMGUI_SUPPORT
-		Context->GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				FrameBuffer->CurrentBackBuffer(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PRESENT
-			)
-		);
+		FrameBuffer->UnBind();
 
 
 		

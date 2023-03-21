@@ -30,6 +30,7 @@ namespace Engine
 		void UnBind() override;
 		void RebuildFrameBuffer(FrameBufferSpecifications& specifications) override;
 
+
 		void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) override;
 
 		void SetBackBufferIndex(INT32 value) { BackBufferIndex = value; }
@@ -56,19 +57,13 @@ namespace Engine
 
 
 	private:
-		ComPtr<ID3D12Resource> Resource = nullptr;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE FrameBufferSrvCpu;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE FrameBufferSrv;
 
 		/**
 		 * @brief Main render target buffer.
 		 */
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
+		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
-		// @brief Heap descriptor for resources
-		ComPtr<ID3D12DescriptorHeap> RtvHeap;
-		// @brief Heap descriptor for depth-stencil resource
-		ComPtr<ID3D12DescriptorHeap> DsvHeap;
 
 		// @brief - A structure describing the buffer which we render to.
 		D3D12_VIEWPORT ScreenViewport;

@@ -100,9 +100,12 @@ namespace Engine
 		CreateDevice();
 		CheckMSAAQualityAndCache();
 		LogAdapters();
-
+		CreateRtvAndDsvHeaps();
 		CreateCommandObjects();
 		CreateSwapChain();
+
+
+
 		BuildRootSignature();
 
 		Device->SetName(L"GPU Device");
@@ -248,6 +251,38 @@ namespace Engine
 
 		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
 		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
+
+		return true;
+	}
+
+	bool D3D12Context::CreateRtvAndDsvHeaps()
+	{
+
+		// Resource 
+		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+		rtvHeapDesc.NumDescriptors = SWAP_CHAIN_BUFFER_COUNT + 1;
+		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		rtvHeapDesc.NodeMask = 0;
+
+		THROW_ON_FAILURE(Device->CreateDescriptorHeap
+		(
+			&rtvHeapDesc,
+			IID_PPV_ARGS(RtvHeap.GetAddressOf())
+		));
+
+		// Depth stencil
+		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+		dsvHeapDesc.NumDescriptors = 1;
+		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		dsvHeapDesc.NodeMask = 0;
+
+		THROW_ON_FAILURE(Device->CreateDescriptorHeap
+		(
+			&dsvHeapDesc,
+			IID_PPV_ARGS(DsvHeap.GetAddressOf())
+		));
 
 		return true;
 	}

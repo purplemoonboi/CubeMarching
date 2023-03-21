@@ -12,6 +12,7 @@
 
 namespace Engine
 {
+	class RenderTarget;
 	struct WorldSettings;
 	class Texture;
 
@@ -78,7 +79,7 @@ namespace Engine
 
 		[[nodiscard]] virtual MemoryManager* GetMemoryManager() const = 0;
 
-
+		[[nodiscard]] virtual RenderTarget* GetRenderTextureAlbedo()const = 0;
 	private:
 
 		static Api RenderingApi;

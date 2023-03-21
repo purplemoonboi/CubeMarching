@@ -350,6 +350,37 @@ namespace Engine
 		return defaultBuffer;
 	}
 
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
+	{
+		ComPtr<ID3D12Resource> resource = nullptr;
+
+		D3D12_RESOURCE_DESC texDesc;
+		ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
+		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		texDesc.Alignment = 0;
+		texDesc.Width = width;
+		texDesc.Height = height;
+		texDesc.DepthOrArraySize = 1;
+		texDesc.MipLevels = 1;
+		texDesc.Format = format;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.SampleDesc.Quality = 0;
+		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+		const HRESULT hr = Device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&texDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&resource));
+
+		THROW_ON_FAILURE(hr);
+
+		return resource;
+	}
+
 	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
 	{
 		ComPtr<ID3D12Resource> counterBuffer = nullptr;
