@@ -21,5 +21,7 @@ namespace Engine
 		ComPtr<ID3D12CommandAllocator> ImGuiAlloc = nullptr;
 		ComPtr<ID3D12GraphicsCommandList> ImGuiCmdList = nullptr;
 
+
+		UINT64 SignalCount = 0;
 	};
 }

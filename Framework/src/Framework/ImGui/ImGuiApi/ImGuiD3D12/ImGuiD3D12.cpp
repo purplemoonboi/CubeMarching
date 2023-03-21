@@ -76,10 +76,23 @@ namespace Engine
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+		/*auto const* api = dynamic_cast<D3D12RenderingApi*>(RenderInstruction::GetApiPtr());
+
+		auto* context = dynamic_cast<D3D12Context*>(api->GetGraphicsContext());
+
+		if(context->Fence->GetCompletedValue() < SignalCount)
+		{
+			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT eventCompletion = context->Fence->SetEventOnCompletion(SignalCount, eventHandle);
+			THROW_ON_FAILURE(eventCompletion);
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+
 		const HRESULT result = ImGuiAlloc->Reset();
 		THROW_ON_FAILURE(result);
 		const HRESULT hr = ImGuiCmdList->Reset(ImGuiAlloc.Get(), nullptr);
-		THROW_ON_FAILURE(hr);
+		THROW_ON_FAILURE(hr);*/
 
 	}
 
@@ -96,28 +109,31 @@ namespace Engine
 		io.DisplaySize = ImVec2(app->GetWindow().GetWidth(), app->GetWindow().GetHeight());
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
-		ImGuiCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), ImGuiCmdList.Get());
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->GraphicsCmdList.Get());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault(nullptr, ImGuiCmdList.Get());
+			ImGui::RenderPlatformWindowsDefault(nullptr, context->GraphicsCmdList.Get());
 		}
 
-		const HRESULT closeResult = ImGuiCmdList->Close();
+		const HRESULT closeResult = context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 
-		ID3D12CommandList* cmdList[] = { ImGuiCmdList.Get() };
+		ID3D12CommandList* cmdList[] = { context->GraphicsCmdList.Get() };
 		context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
 		const HRESULT presentResult = context->SwapChain->Present(0, 0);
 		THROW_ON_FAILURE(presentResult);
+
 		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+		api->GetCurrentFrameResource()->SignalCount = ++context->SyncCounter;
 
-		
-
+		const HRESULT signalResult = context->CommandQueue->Signal(context->Fence.Get(),
+			api->GetCurrentFrameResource()->SignalCount);
+		THROW_ON_FAILURE(signalResult);
 	}
 
 	void ImGuiD3D12::CleanUp()

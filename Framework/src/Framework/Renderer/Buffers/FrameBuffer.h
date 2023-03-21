@@ -18,7 +18,8 @@ namespace Engine
 		INT32 Width, Height;
 		INT32 Samples;
 		bool SwapChainTarget;
-
+		INT32 OffsetX;
+		INT32 OffsetY;
 	};
 
 	// @brief Abstract class, needs to be implemented on a per Api basis.
@@ -30,7 +31,8 @@ namespace Engine
 		virtual void Init(GraphicsContext* context) = 0;
 		virtual void Bind() = 0;
 		virtual void UnBind() = 0;
-		virtual void RebuildFrameBuffer(INT32 width, INT32 height) = 0;
+		virtual void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) = 0;
+		virtual void RebuildFrameBuffer(FrameBufferSpecifications& fbSpecs) = 0;
 		virtual UINT64 GetFrameBuffer() const = 0;
 		virtual INT32 GetWidth() const= 0;
 		virtual INT32 GetHeight() const = 0;

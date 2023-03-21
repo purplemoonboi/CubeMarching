@@ -28,9 +28,10 @@ namespace Engine
 
 		void Bind() override;
 		void UnBind() override;
-		void RebuildFrameBuffer(INT32 width, INT32 height) override;
+		void RebuildFrameBuffer(FrameBufferSpecifications& specifications) override;
 
-		void SetViewportDimensions(INT32 width, INT32 height);
+		void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) override;
+
 		void SetBackBufferIndex(INT32 value) { BackBufferIndex = value; }
 
 		[[nodiscard]] const FrameBufferSpecifications& GetSpecifications() const override { return FrameBufferSpecs; }

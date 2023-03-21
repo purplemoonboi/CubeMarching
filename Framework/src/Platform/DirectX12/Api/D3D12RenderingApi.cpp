@@ -52,7 +52,7 @@ namespace Engine
 
 		FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
 		FrameBuffer->Init(Context);
-		FrameBuffer->RebuildFrameBuffer(fbs.Width, fbs.Height);
+		FrameBuffer->RebuildFrameBuffer(fbs);
 
 		constexpr UINT32 maxObjCount = 16;
 		constexpr UINT32 maxMatCount = 16;
@@ -86,7 +86,12 @@ namespace Engine
 		if(Context != nullptr && FrameBuffer != nullptr)
 		{
 			CORE_TRACE("Buffer resize");
-			FrameBuffer->RebuildFrameBuffer(width, height);
+			FrameBufferSpecifications fbSpecs = {};
+			fbSpecs.Width = width;
+			fbSpecs.Height = height;
+			fbSpecs.OffsetX = x;
+			fbSpecs.OffsetY = y;
+			FrameBuffer->RebuildFrameBuffer(fbSpecs);
 		}
 	}
 
@@ -350,19 +355,19 @@ namespace Engine
 
 		FrameBuffer->UnBind();
 
-		const HRESULT closeResult = Context->GraphicsCmdList->Close();
-		THROW_ON_FAILURE(closeResult);
-		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		//const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		//THROW_ON_FAILURE(closeResult);
+		//ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		//Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-		
+		////
 
-		/**
-		 *  We're finished with the current frame resource so signal the GPU.
-		 */
-		CurrentFrameResource->SignalCount = ++Context->SyncCounter;
-		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->SignalCount);
-		THROW_ON_FAILURE(signalResult);
+		///**
+		// *  We're finished with the current frame resource so signal the GPU.
+		// */
+		//CurrentFrameResource->SignalCount = ++Context->SyncCounter;
+		//const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->SignalCount);
+		//THROW_ON_FAILURE(signalResult);
 
 		/**
 		 * Deffer presenting until we have recorded the commands for ImGui

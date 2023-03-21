@@ -117,7 +117,8 @@ namespace Engine
 			),
 			DirectX::Colors::SandyBrown,
 			0,
-			nullptr);
+			nullptr
+		);
 
 		Context->GraphicsCmdList->ClearDepthStencilView(DsvHeap->GetCPUDescriptorHandleForHeapStart(),
 			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
@@ -129,8 +130,7 @@ namespace Engine
 
 		Context->GraphicsCmdList->OMSetRenderTargets(1, 
 			&CD3DX12_CPU_DESCRIPTOR_HANDLE(RtvHeap->GetCPUDescriptorHandleForHeapStart(), BackBufferIndex, RtvDescriptorSize),
-			true,
-			&DsvHeap->GetCPUDescriptorHandleForHeapStart()
+			true, &DsvHeap->GetCPUDescriptorHandleForHeapStart()
 		);
 
 	}
@@ -178,11 +178,13 @@ namespace Engine
 		);
 	}
 
-	void D3D12FrameBuffer::RebuildFrameBuffer(INT32 width, INT32 height)
+	void D3D12FrameBuffer::RebuildFrameBuffer(FrameBufferSpecifications& specifications)
 	{
 		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
 		CORE_ASSERT(Context->GraphicsCmdList, "The 'graphics command list' has failed...");
+
+		FrameBufferSpecs = specifications;
 
 		// Flush before changing any resources.
 		Context->FlushCommandQueue();
@@ -214,6 +216,9 @@ namespace Engine
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(RtvHeap->GetCPUDescriptorHandleForHeapStart());
 
+		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
+		
+
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
 		{
 			Context->SwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
@@ -225,13 +230,9 @@ namespace Engine
 				rtvHeapHandle
 			);
 			SwapChainBuffer->Get()->SetName(L"Swap Chain");
-
 			THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
-
 			rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
-
-
 
 		// Create the depth/stencil buffer and view.
 		D3D12_RESOURCE_DESC depthStencilDesc;
@@ -252,7 +253,6 @@ namespace Engine
 		depthStencilDesc.SampleDesc.Quality = Context->GetMsaaState() ? (Context->GetMsaaQaulity() - 1) : 0;
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
 
 		D3D12_CLEAR_VALUE optClear;
 		optClear.Format = DepthStencilFormat;
@@ -304,8 +304,8 @@ namespace Engine
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Tex2D(BackBufferFormat, width, 
-				height),
+			&CD3DX12_RESOURCE_DESC::Tex2D(BackBufferFormat, specifications.Width, 
+				specifications.Height),
 			D3D12_RESOURCE_STATE_COMMON,
 			nullptr,
 			IID_PPV_ARGS(&Resource)
@@ -322,40 +322,40 @@ namespace Engine
 		Context->Device->CreateShaderResourceView(Resource.Get(), &srvDesc, FrameBufferSrvCpu);
 		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
-		
 
 		// Execute the resize commands.
 		const HRESULT closeResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
-
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.
 		Context->FlushCommandQueue();
 
-
 		// Update the viewport transform to cover the client area.
-		ScreenViewport.TopLeftX = 0;
-		ScreenViewport.TopLeftY = 0;
-		ScreenViewport.Width = static_cast<float>(width);
-		ScreenViewport.Height = static_cast<float>(height);
+		ScreenViewport.TopLeftX = FrameBufferSpecs.OffsetX;
+		ScreenViewport.TopLeftY = FrameBufferSpecs.OffsetY;
+		ScreenViewport.Width = static_cast<float>(FrameBufferSpecs.Width);
+		ScreenViewport.Height = static_cast<float>(FrameBufferSpecs.Height);
 		ScreenViewport.MinDepth = 0.0f;
 		ScreenViewport.MaxDepth = 1.0f;
 
-		ScissorRect = { 0, 0, width, height };
+		ScissorRect = { 0, 0, FrameBufferSpecs.Width, FrameBufferSpecs.Height };
+	}
+
+	void D3D12FrameBuffer::SetBufferSpecifications(FrameBufferSpecifications& fbSpecs)
+	{
+		FrameBufferSpecs.Width = fbSpecs.Width;
+		FrameBufferSpecs.Height = fbSpecs.Height;
+		FrameBufferSpecs.OffsetX = fbSpecs.OffsetX;
+		FrameBufferSpecs.OffsetY = fbSpecs.OffsetY;
+
 	}
 
 	UINT64 D3D12FrameBuffer::GetFrameBuffer() const
 	{
 		return FrameBufferSrv.ptr;
-	}
-
-	void D3D12FrameBuffer::SetViewportDimensions(INT32 width, INT32 height)
-	{
-		FrameBufferSpecs.Width = width;
-		FrameBufferSpecs.Height = height;
 	}
 
 	ID3D12Resource* D3D12FrameBuffer::CurrentBackBuffer() const

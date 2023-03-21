@@ -274,11 +274,6 @@ namespace Engine
             if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
                 window_flags |= ImGuiWindowFlags_NoBackground;
 
-            // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-            // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-            // all active windows docked into it will lose their parent and become undocked.
-            // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-            // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
             if (!opt_padding)
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
             ImGui::Begin("DockSpace", &dockspace_open, window_flags);//BEGIN DOCKSPACE
@@ -479,6 +474,19 @@ namespace Engine
                 }
 
                 const auto frameBuffer = RenderInstruction::GetApiPtr()->GetFrameBuffer();
+
+                if(frameBuffer->GetWidth() != (INT32)ViewportSize.x || frameBuffer->GetHeight() != (INT32)ViewportSize.y)
+                {
+                    FrameBufferSpecifications fb = {};
+                    fb.Width = (INT32)ViewportSize.x;
+                    fb.Height = (INT32)ViewportSize.y;
+
+                    fb.OffsetX = viewport_region.x;
+                    fb.OffsetY = viewport_region.y;
+
+                    frameBuffer->SetBufferSpecifications(fb);
+                    frameBuffer->RebuildFrameBuffer(fb);
+                }
 
                 ImGui::Image((ImTextureID)frameBuffer->GetFrameBuffer(), ImVec2(ViewportSize.x, ViewportSize.y), {0,1}, {0,1});
 
