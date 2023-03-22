@@ -10,13 +10,12 @@
 #include "IsoSurface/DensityTextureGenerator.h"
 #include "IsoSurface/MarchingCubes.h"
 #include "IsoSurface/DualContouring.h"
-//#include "IsoSurface/MarchingCubesHP.h"
+#include "IsoSurface/MarchingCubesHP.h"
 //#include "IsoSurface/DualContouringSPO.h"
 
 namespace Engine
 {
 
-	class Texture;
 
 	class EditorLayer : public Layer
 	{
@@ -47,16 +46,16 @@ namespace Engine
 		VoxelWorldSettings VoxelSettings;
 		PerlinNoiseSettings PerlinSettings;
 		CSGOperationSettings CsgOperationSettings;
-		bool Regen = true;
-		bool Smooth = false;
 
 		ScopePointer<DensityTextureGenerator> PerlinCompute;
 
 		ScopePointer<MarchingCubes> MarchingCubes;
 		ScopePointer<DualContouring> DualContouring;
+		ScopePointer<MarchingCubesHP> MarchingCubesHP;
 		//ScopePointer<DualContouringSPO> DualContourSPO;
 
-		ScopePointer<Texture> ViewportTexture;
+		bool Regen = true;
+		bool Smooth = false;
 
 	private:
 		void Remap(float& x, float clx, float cmx, float nlx, float nmx);

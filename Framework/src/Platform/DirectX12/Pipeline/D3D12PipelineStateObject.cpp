@@ -108,6 +108,7 @@ namespace Engine
 
 		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
 		desc.pRootSignature = rootSignature.Get();
+		
 		desc.CS =
 		{
 			reinterpret_cast<BYTE*>(d3d12Shader->GetShader()->GetBufferPointer()),

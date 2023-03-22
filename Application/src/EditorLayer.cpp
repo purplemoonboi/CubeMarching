@@ -27,7 +27,7 @@ namespace Engine
         PerlinCompute = CreateScope<class DensityTextureGenerator>();
 
         MarchingCubes = CreateScope<class MarchingCubes>();
-        //MarchingCubesHP = CreateScope<class MarchingCubesHP>
+        MarchingCubesHP = CreateScope<class MarchingCubesHP>();
 
         DualContouring = CreateScope<class DualContouring>();
     	//DualContourSPO   = CreateScope < class DualContouringSPO >();
@@ -57,16 +57,14 @@ namespace Engine
 
         PerlinCompute->Init(csApi, api->GetMemoryManager());
 
-        MarchingCubes->Init(csApi, api->GetMemoryManager());
-        Renderer3D::CreateCustomMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+        //MarchingCubes->Init(csApi, api->GetMemoryManager());
+        //Renderer3D::CreateCustomMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
-    	DualContouring->Init(csApi, api->GetMemoryManager());
-        Renderer3D::CreateCustomMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+    	//DualContouring->Init(csApi, api->GetMemoryManager());
+        //Renderer3D::CreateCustomMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
 
+        MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
-        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
-
-        ViewportTexture = Texture::Create(0, 1920U, 1080U, TextureFormat::RGBA_UINT_UNORM);
 
         RenderInstruction::ExecGraphicsCommandList();
 
@@ -88,8 +86,6 @@ namespace Engine
             Remap(CurrentMouseX, 0, 1920, -1, 1);
             Remap(CurrentMouseY, 0, 1080, -1, 1);
         }
-
-
 
         //User input
         if(IsViewportFocused)
@@ -193,12 +189,9 @@ namespace Engine
                 camera->SetPosition(pos);
             }
         }
-     
-
 
         MouseLastX = CurrentMouseX;
         MouseLastY = CurrentMouseY;
-
 
         World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
     
@@ -208,22 +201,25 @@ namespace Engine
 
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->PerlinFBM(PerlinSettings);
-            if(Smooth)
+
+            /*if(Smooth)
             {
                 Smooth = false;
                 PerlinCompute->Smooth(CsgOperationSettings);
-            }
+            }*/
 
             /* polygonise the texture with marching cubes*/
-            MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            /*MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
             Renderer3D::RegenerateBuffers("MarchingTerrain", MarchingCubes->GetVertices(),
-                MarchingCubes->GetIndices());
+                MarchingCubes->GetIndices());*/
 
             /* polygonise the texture with dual contouring */
             /*DualContouring->Dispatch(VoxelSettings, DensityTextureGenerator->GetTexture());
             Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
                 DualContouring->GetIndices());*/
-            
+
+            MarchingCubesHP->Generate(PerlinCompute->GetTexture());
+
         }
 
         auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
