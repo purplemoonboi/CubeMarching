@@ -174,7 +174,7 @@ namespace Engine
 			Transform(-5, 5, 5, 0, 45, 0, 10, 10, 10)
 		);
 
-		boxItem->Texture = RenderData.TextureLibrary.GetTexture("Crate");
+		//boxItem->Texture = RenderData.TextureLibrary.GetTexture("Crate");
 		//boxItem->Material->SetUseTexture(true);
 		RenderData.OpaqueRenderItems.push_back(boxItem.get());
 		RenderData.RenderItems.push_back(std::move(boxItem));
@@ -227,8 +227,9 @@ namespace Engine
 	{
 		auto mat = Material::Create("Green");
 		mat->SetAlbedo(0.0f, 1.0f, 0.3f);
-		mat->SetFresnel(0.0f, 0.0f, 1.0f);
-		mat->SetRoughness(0.5f);
+		mat->SetFresnel(0.05f, 0.05f, 0.05f);
+		mat->SetRoughness(0.2f);
+		
 		mat->SetBufferIndex(0);
 		RenderData.MaterialLibrary.Add("Green", std::move(mat));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Green"));
@@ -244,9 +245,9 @@ namespace Engine
 
 	void Renderer3D::BuildTextures()
 	{
-		auto texture = Texture::Create(L"assets\\textures\\WoodCrate02.dds", "Crate");
+		/*auto texture = Texture::Create(L"assets\\textures\\WoodCrate02.dds", "Crate");
 		RenderData.Textures.push_back(texture.get());
-		RenderData.TextureLibrary.Add("Crate", std::move(texture));
+		RenderData.TextureLibrary.Add("Crate", std::move(texture));*/
 	}
 
 	void Renderer3D::RegenerateBuffers

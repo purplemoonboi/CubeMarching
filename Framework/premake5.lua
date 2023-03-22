@@ -21,7 +21,11 @@ project "Framework"
 				"vendor/ImGui/backends/imgui_impl_dx12.h",
 				"vendor/ImGui/backends/imgui_impl_dx12.cpp",
 				"vendor/ImGui/backends/imgui_impl_win32.h",
-				"vendor/ImGui/backends/imgui_impl_win32.cpp"
+				"vendor/ImGui/backends/imgui_impl_win32.cpp",
+				"vendor/yaml-cpp/include**.h",
+
+				"vendor/ImGuizmo/ImGuizmo.h",
+				"vendor/ImGuizmo/ImGuizmo.cpp"
 			
 			}
 
@@ -29,9 +33,12 @@ project "Framework"
 			{
 				"src",
 				"vendor/spdlog/include",
-				"vendor/DX12/Microsoft",
-				"vendor/FDLuna",
-				"vendor/ImGui"
+				"%{IncludeDir.Microsoft}",
+				"%{IncludeDir.FDLuna}",
+				"%{IncludeDir.ImGui}",
+				"%{IncludeDir.entt}",
+				"%{IncludeDir.yaml_cpp}",
+				"%{IncludeDir.ImGuizmo}"
 			}
 
 			links
@@ -51,7 +58,8 @@ project "Framework"
 			{
 				"_CRT_SECURE_NO_WARNINGS",
 				"CM_WINDOWS_PLATFORM",
-				"USE_PIX"
+				"USE_PIX",
+				"YAML_CPP_STATIC_DEFINE"
 			}
 
 			filter "configurations:Debug"

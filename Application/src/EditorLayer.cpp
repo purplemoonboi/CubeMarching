@@ -21,7 +21,7 @@ namespace Engine
         Layer(L"Scene Editor"),
 		TimerManager(nullptr)
     {
-        World = new Scene("Test Scene");
+        Scene = CreateRef<class Scene>("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
         PerlinCompute = CreateScope<class DensityTextureGenerator>();
@@ -60,16 +60,18 @@ namespace Engine
         //MarchingCubes->Init(csApi, api->GetMemoryManager());
         //Renderer3D::CreateCustomMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
-    	//DualContouring->Init(csApi, api->GetMemoryManager());
-        //Renderer3D::CreateCustomMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+    	DualContouring->Init(csApi, api->GetMemoryManager());
+        Renderer3D::CreateCustomMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
 
         MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
         RenderInstruction::ExecGraphicsCommandList();
 
-        MainCamera* mc = World->GetSceneCamera();
+        MainCamera* mc = Scene->GetSceneCamera();
         mc->SetPosition({0, 0, 0});
+
+        SceneHierarchy.SetContext(Scene);
     }
 
     void EditorLayer::OnDetach()
@@ -78,30 +80,44 @@ namespace Engine
 
     void EditorLayer::OnUpdate(const DeltaTime& deltaTime)
     {
-        MainCamera* mc = World->GetSceneCamera();
+        MainCamera* mc = Scene->GetSceneCamera();
 
-
-        if(CurrentMouseX != MouseLastX)
-        {
-            Remap(CurrentMouseX, 0, 1920, -1, 1);
-            Remap(CurrentMouseY, 0, 1080, -1, 1);
-        }
 
         //User input
         if(IsViewportFocused)
         {
-            if (MouseMoved && LeftMButton)
+            if (LeftMButton)
             {
-
-                // Make each pixel correspond to a quarter of a degree.
-                float dx = 90.0f * CurrentMouseX;
-                float dy = 90.0f * CurrentMouseY;
+                const auto camera = Scene->GetSceneCamera();
 
 
-                // Update angles based on input to orbit camera around box.
-                mc->UpdateCameraZenith(dy, deltaTime);
 
-                mc->UpdateCamerasAzimuth(-dx, deltaTime);
+                if (Input::IsKeyPressed(KEY_E))
+                {
+                    camera->Ascend(deltaTime);
+                }
+                if (Input::IsKeyPressed(KEY_Q))
+                {
+                    camera->Ascend(-deltaTime);
+                }
+                if (Input::IsKeyPressed(KEY_W))
+                {
+                    camera->Walk(deltaTime);
+                }
+                if (Input::IsKeyPressed(KEY_S))
+                {
+                    camera->Walk(-deltaTime);
+                }
+                if (Input::IsKeyPressed(KEY_A))
+                {
+                    camera->Strafe(-deltaTime);
+                }
+                if (Input::IsKeyPressed(KEY_D))
+                {
+                    camera->Strafe(deltaTime);
+                }
+                
+                
             }
             if (RightMButton)
             {
@@ -113,94 +129,24 @@ namespace Engine
                 // Update the camera radius based on input.
                 mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
             }
-            if (Input::IsKeyPressed(KEY_E))
-            {
-                auto camera = World->GetSceneCamera();
-
-                XMFLOAT3 pos = camera->GetPosition();
-                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-                pos.y += 12.0f * deltaTime;
-
-
-                camera->SetPosition(pos);
-            }
-            if (Input::IsKeyPressed(KEY_Q))
-            {
-                auto camera = World->GetSceneCamera();
-
-                XMFLOAT3 pos = camera->GetPosition();
-                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-                pos.y -= 12.0f * deltaTime;
-
-
-                camera->SetPosition(pos);
-            }
-            if (Input::IsKeyPressed(KEY_W))
-            {
-                auto camera = World->GetSceneCamera();
-
-                XMFLOAT3 pos = camera->GetPosition();
-                XMFLOAT3 forw = camera->GetForward();
-                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-                //pos.x -= forw.x * 5 * deltaTime;
-                //pos.y -= forw.y * 5 * deltaTime;
-                //pos.z -= forw.x * 5 * deltaTime;
-                pos.z += 12.0f * deltaTime;
-
-                camera->SetPosition(pos);
-            }
-            if (Input::IsKeyPressed(KEY_A))
-            {
-                auto camera = World->GetSceneCamera();
-
-                XMFLOAT3 pos = camera->GetPosition();
-                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-                pos.x -= 12.0f * deltaTime;
-
-
-                camera->SetPosition(pos);
-            }
-            if (Input::IsKeyPressed(KEY_D))
-            {
-                auto camera = World->GetSceneCamera();
-
-                XMFLOAT3 pos = camera->GetPosition();
-                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-                pos.x += 12.0f * deltaTime;
-
-
-                camera->SetPosition(pos);
-            }
-            if (Input::IsKeyPressed(KEY_S))
-            {
-                auto camera = World->GetSceneCamera();
-
-                XMFLOAT3 pos = camera->GetPosition();
-                CORE_TRACE("Moving Camera Position {0},{1},{2}", pos.x, pos.y, pos.z);
-
-                pos.z -= 12.0f * deltaTime;
-
-
-                camera->SetPosition(pos);
-            }
+          
         }
 
-        MouseLastX = CurrentMouseX;
-        MouseLastY = CurrentMouseY;
+ 
 
-        World->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
+        Scene->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
     
         if (Regen)
         {
+            if(RegenTexture)
+            {
+                PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
+                PerlinCompute->PerlinFBM(PerlinSettings);
+                RegenTexture = false;
+            }
             Regen = false;
 
-            PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            PerlinCompute->PerlinFBM(PerlinSettings);
+
 
             /*if(Smooth)
             {
@@ -214,9 +160,9 @@ namespace Engine
                 MarchingCubes->GetIndices());*/
 
             /* polygonise the texture with dual contouring */
-            /*DualContouring->Dispatch(VoxelSettings, DensityTextureGenerator->GetTexture());
+            DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
             Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
-                DualContouring->GetIndices());*/
+                DualContouring->GetIndices());
 
             MarchingCubesHP->Generate(PerlinCompute->GetTexture());
 
@@ -242,7 +188,7 @@ namespace Engine
     {
 
 
-        World->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), Settings, wireframe);
+        Scene->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), Settings, wireframe);
 
 
     }
@@ -344,15 +290,23 @@ namespace Engine
                 ImGui::EndMenuBar();
             }
 
+
+            auto* cam = Scene->GetSceneCamera();
+            static float speed = cam->GetCameraFlySpeed();
+            static float angleSpeed = cam->GetCameraAngularSpeed();
             {
-                ImGui::Begin("DockSpace Settings");
+                ImGui::Begin("Scene Camera");
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
-                ImGui::Checkbox("FullScreen", &opt_fullscreen);
+                ImGui::DragFloat("Speed", &speed, 1.0f, 1.0f, 100.0f);
+                ImGui::Spacing();
+                ImGui::DragFloat("Angular Speed", &angleSpeed, 1.0f, 1.0f, 10.0f);
+                ImGui::Spacing();
                 ImGui::End();
             }
-
+            cam->SetCameraFlySpeed(speed);
+            cam->SetCameraAngularSpeed(angleSpeed);
 
             static float dir[3] = { 0, -1, 0 };
             static float amb[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -393,18 +347,18 @@ namespace Engine
                 INT32 smooth = CsgOperationSettings.Radius;
 
                 if (ImGui::DragInt("Octaves", &octaves, 1, 1, 8))
-                    Regen = true;
+                    RegenTexture = true;
 
                 if (ImGui::DragFloat("Frequency", &freq, 0.1f, 0.001f, 0.999f))
-                    Regen = true;
+                    RegenTexture = true;
 
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Gain", &gain, 0.1f, 0.1f, 4.0f))
-                    Regen = true;
+                    RegenTexture = true;
 
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Ground Height", &groundHeight, 0.1f, 2.0f, (float)ChunkHeight))
-                    Regen = true;
+                    RegenTexture = true;
 
                 if (ImGui::DragInt("Smooth", &smooth, 1, 0, 8))
                     Smooth = true;
@@ -421,7 +375,6 @@ namespace Engine
                 float isoVal        = VoxelSettings.IsoValue;
                 float planetRadius  = VoxelSettings.PlanetRadius;
                 float resolution    = VoxelSettings.Resolution;
-                float octreeSize    = VoxelSettings.OctreeSize;
 
 
                 ImGui::Begin("Voxel Settings");
@@ -434,10 +387,6 @@ namespace Engine
                     Regen = true;
 
                 ImGui::Spacing();
-                if (ImGui::DragFloat("Octree Size", &octreeSize, 0.1f, 4.0f, 64.0f))
-                    Regen = true;
-
-                ImGui::Spacing();
                 ImGui::Checkbox("Wireframe", &wireframe);
 
 
@@ -447,7 +396,6 @@ namespace Engine
                 VoxelSettings.IsoValue = isoVal;
                 VoxelSettings.PlanetRadius = planetRadius;
                 VoxelSettings.Resolution = resolution;
-                VoxelSettings.OctreeSize = octreeSize;
                 ImGui::End();
             }
 
@@ -495,11 +443,9 @@ namespace Engine
                 ImGui::PopStyleVar();
             }
 
-            ImGui::Begin("Debug");
-            ImGui::Checkbox("Is Focused", &IsViewportFocused);
-            ImGui::Checkbox("Is Hovered", &IsViewportHovered);
-            ImGui::End();
 
+
+            SceneHierarchy.OnImGuiRender();
 
             //END DOCKSPACE
             ImGui::End();
@@ -524,10 +470,7 @@ namespace Engine
 
     bool EditorLayer::OnWindowResize(WindowResizeEvent& wndResize)
     {
-        World->GetSceneCamera()->RecalculateAspectRatio(wndResize.GetWidth(), wndResize.GetHeight());
-
-     
-
+        Scene->GetSceneCamera()->RecalculateAspectRatio(ViewportSize.x, ViewportSize.y);
         return false;
     }
 
@@ -539,6 +482,8 @@ namespace Engine
             LeftMButton = true;
             MouseDownX = (float)mEvent.GetMouseX();
             MouseDownY = (float)mEvent.GetMouseY();
+            auto camera = Scene->GetSceneCamera();
+
         }
         if ((mEvent.GetMouseButton() & MK_RBUTTON) != 0)
         {
@@ -568,6 +513,14 @@ namespace Engine
         CurrentMouseX = mEvent.GetXCoordinate();
         CurrentMouseY = mEvent.GetYCoordinate();
         MouseMoved = true;
+
+        if(LeftMButton && IsViewportFocused)
+        {
+            auto camera = Scene->GetSceneCamera();
+            camera->Pitch(CurrentMouseY);
+            camera->RotateY(CurrentMouseX);
+        }
+   
 
         return false;
     }

@@ -30,12 +30,15 @@ namespace Engine
 	struct MaterialConstants
 	{
 		DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-		DirectX::XMFLOAT3 FresnelR0 = { 1.f, 1.f, 1.f };
+
+		DirectX::XMFLOAT3 FresnelR0 = { 0.05f, 0.05f, 0.05f };
 		float Roughness = 0.25f;
-		float Metalness = 0.00f;
+
+		float Metalness = 0.01f;
 		float UseTexture = 0;
 		float UsePBR = 0;
 		float Pad = 0.f;
+
 		// Used in texture mapping.
 		DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 	};

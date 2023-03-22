@@ -356,7 +356,7 @@ namespace Engine
 		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
 		(
 			4, slotRootParameter, 
-			samplers.size(),samplers.data(),
+			1, &samplers[0],
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		);
 

@@ -89,7 +89,7 @@ namespace Engine
 		INT32 NumOfPointsPerAxis = VoxelTextureWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
 	
-		INT32 Resolution = VoxelTextureWidth - 1;
+		INT32 Resolution = ChunkWidth;
 		INT32 OctreeSize = 8;
 		INT32 PrimitiveCount = DensityPrimitiveCount; /* for density primitives */
 	};

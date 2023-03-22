@@ -92,16 +92,12 @@ namespace Engine
 
 					if (MouseData.MouseClicked > 0)
 					{
-						auto hwnd = static_cast<HWND>(Window.GetNativeWindow());
-						SetCapture(hwnd);
 						MouseData.MouseClicked = 0;
-						//CORE_TRACE("Mouse Clicked Event");
 						MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
 						MouseData.Invoke(me);
 					}
 					if (MouseData.MouseReleased > 0)
 					{
-						ReleaseCapture();
 						MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
 						MouseData.Invoke(me);
 					}
@@ -273,7 +269,7 @@ namespace Engine
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
-
+			SetCapture(static_cast<HWND>(Window.GetNativeWindow()));
 			MouseData.MouseClicked = 1;
 			MouseData.MouseReleased = 0;
 			MouseData.X = GET_X_LPARAM(lParam);
@@ -284,6 +280,7 @@ namespace Engine
 		case WM_LBUTTONUP:
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP:
+			ReleaseCapture();
 
 			MouseData.MouseClicked = 0;
 			MouseData.MouseReleased = 1;

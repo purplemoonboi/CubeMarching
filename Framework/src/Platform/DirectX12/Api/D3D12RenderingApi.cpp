@@ -49,6 +49,7 @@ namespace Engine
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
 		fbs.Height = viewportHeight;
+		
 
 		FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
 		FrameBuffer->Init(Context);

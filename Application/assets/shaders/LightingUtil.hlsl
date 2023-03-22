@@ -109,9 +109,10 @@ float3 BRDF(float4 albedo, float3 Li, float3 R0, float3 normal, float metalness)
    
     float3 F = SchlickFresnel(R0, normal, Li);
 
-    float kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metalness);
+    //float kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metalness);
+    float3 kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metalness).r;
     
-    float3 diffuseBRDF = kd * albedo;
+    float3 diffuseBRDF = kd * albedo.rgb;
     
     return diffuseBRDF;
 }
@@ -128,7 +129,7 @@ float3 BRDFSpecular(
     
 
   
-    float F = SchlickFresnel(R0, normal, Li);
+    float3 F = SchlickFresnel(R0, normal, Li);
     
     float r = shininess + 1.0f;
     float k = (r * r) / 8.0f;
@@ -179,7 +180,7 @@ float3 PBR(
     float dW = 1.0f / MaxLights;
     
     float metalness = mat.Metalness;
-    float3 F0 = lerp(Dielectric, mat.DiffuseAlbedo, metalness);
+    float3 F0 = lerp(Dielectric, mat.DiffuseAlbedo.rgb, metalness);
 
     
     float3 Lo = toEye;

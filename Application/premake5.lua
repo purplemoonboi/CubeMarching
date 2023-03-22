@@ -22,7 +22,9 @@ project "Application"
 				"%{wks.location}/Framework/vendor/spdlog/include",
 				"%{wks.location}/Framework/vendor/Microsoft",
 				"%{wks.location}/Framework/vendor/FDLuna",
-				"%{wks.location}/Framework/src"
+				"%{wks.location}/Framework/src",
+				"%{IncludeDir.entt}",
+				"%{IncludeDir.ImGuizmo}"
 			}
 
 			links

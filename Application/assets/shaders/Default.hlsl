@@ -31,12 +31,15 @@ cbuffer cbPerObject : register(b0)
 cbuffer cbMaterial : register(b1)
 {
 	float4 gDiffuseAlbedo;
+    
     float3 gFresnelR0;
     float  gRoughness;
+    
     float  gMetalness;
     float  gUseTexture;
     float  gUsePBR;
     float  gPad;
+    
 	float4x4 gMatTransform;
 };
 
@@ -49,14 +52,18 @@ cbuffer cbPass : register(b2)
     float4x4 gInvProj;
     float4x4 gViewProj;
     float4x4 gInvViewProj;
+
     float3 gEyePosW;
     float cbPerObjectPad1;
+    
     float2 gRenderTargetSize;
     float2 gInvRenderTargetSize;
+
     float gNearZ;
     float gFarZ;
     float gTotalTime;
     float gDeltaTime;
+    
     float4 gAmbientLight;
 
     // Indices [0, NUM_DIR_LIGHTS) are directional lights;
@@ -120,7 +127,8 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
     float4 litColor = float4(0, 0, 0, 1);
-   
+    float4 ambient = (float4) 0;
+    float4 directLight = (float4) 0;
     if (gWire == 0)
     {
         // Interpolating normal can unnormalize it, so renormalize it.
@@ -133,51 +141,20 @@ float4 PS(VertexOut pin) : SV_Target
 
         float3 shadowFactor = 1.0f;
 
-    //    if(gUsePBR > 0)
-    //    {
-    ////        float cosLo = max(0.0, dot(pin.NormalW, toEyeW));
-    ////        float3 specularRefrac = 2.0f * cosLo * pin.NormalW - toEyeW;
-    ////        uint levels = GetTextureCubeMipLevels(IrradienceTexture);
+       /* blinn phong */
+       
+		// Indirect lighting.
+      
 
-    ////        float3 irradiance = IrradienceTexture.Sample(DefaultSampler, pin.NormalW).rgb;
-    ////        float3 specularIrradiance = SpecularTexture.SampleLevel(DefaultSampler, specularRefrac, mat.Shininess * levels).rgb;
-    ////        float2 specularBRDF = SpecularBRDF.Sample(SpecBRDFSampler, float2(cosLo, mat.Shininess)).rg;
-
-    ////        litColor = PBR(
-				////gLights, mat, 
-				////pin.PosW, pin.NormalW, toEyeW, cosLo,
-				////1.0f,
-				////irradiance,
-				////specularIrradiance,
-				////specularBRDF
-				////);
-
-    //    }
-        //else
-        
-            /* blinn phong */
-            
-			// Indirect lighting.
-            float4 albedo = float4(0, 0, 0, 1);
-
-            if(gUseTexture > 0)
-            {
-                albedo = Albedo.Sample(DefaultSampler, pin.TexCoord);
-            }
-            else
-            {
-                albedo = gDiffuseAlbedo;
-            }
-
-            float4 ambient = gAmbientLight * albedo;
+        ambient = gAmbientLight * gDiffuseAlbedo;
     
-            float4 directLight = ComputeLighting(gLights, mat, pin.PosW,
-			pin.NormalW, toEyeW, shadowFactor);
+       directLight = ComputeLighting(gLights, mat, pin.PosW,
+		pin.NormalW, toEyeW, shadowFactor);
 
-            litColor = ambient + directLight;
+       litColor = ambient + directLight;
 
-			// Common convention to take alpha from diffuse material.
-            litColor.a = gDiffuseAlbedo.a;
+		// Common convention to take alpha from diffuse material.
+       litColor.a = gDiffuseAlbedo.a;
 
         
 		

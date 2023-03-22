@@ -4,3 +4,9 @@
 [submodule "Framework/vendor/ImGui"]
 	path = Framework/vendor/ImGui
 	url = https://github.com/ocornut/imgui.git
+[submodule "Framework/vendor/ImGuizmo"]
+	path = Framework/vendor/ImGuizmo
+	url = https://github.com/purplemoonboi/ImGuizmo.git
+[submodule "Framework/vendor/yaml-cpp"]
+	path = Framework/vendor/yaml-cpp
+	url = https://github.com/purplemoonboi/yaml-cpp.git

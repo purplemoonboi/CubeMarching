@@ -13,6 +13,8 @@
 #include "IsoSurface/MarchingCubesHP.h"
 //#include "IsoSurface/DualContouringSPO.h"
 
+#include "Panels/SceneHierarchyPanel.h"
+
 namespace Engine
 {
 
@@ -55,9 +57,13 @@ namespace Engine
 		//ScopePointer<DualContouringSPO> DualContourSPO;
 
 		bool Regen = true;
+		bool RegenTexture = true;
+
 		bool Smooth = false;
 
 	private:
+		Editor::SceneHierarchyPanel SceneHierarchy;
+
 		void Remap(float& x, float clx, float cmx, float nlx, float nmx);
 
 		bool IsViewportFocused;
@@ -69,8 +75,7 @@ namespace Engine
 		float CurrentMouseY = 0;
 		float MouseDownX = 0;
 		float MouseDownY = 0;
-		float MouseLastX = 0;
-		float MouseLastY = 0;
+
 
 
 		bool LeftMButton = false;
@@ -78,7 +83,7 @@ namespace Engine
 		bool MouseMoved = false;
 
 		AppTimeManager* TimerManager;
-		Scene* World;
+		RefPointer<Scene> Scene;
 	};
 
 }

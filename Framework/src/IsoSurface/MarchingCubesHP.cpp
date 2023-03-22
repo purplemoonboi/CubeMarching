@@ -96,7 +96,7 @@ namespace Engine
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(MortonResource.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
+		
 		/**
 		 *		- Debug: copy the counter value -
 		 */

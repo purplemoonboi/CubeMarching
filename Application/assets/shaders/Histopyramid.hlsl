@@ -52,11 +52,10 @@ void PrefixSum(
     */  
     
     float3 ftId = float3(tId.x, tId.y, tId.z);
-    //ftId /= Resolution * Resolution * Resolution;
+
     ftId /= (X * Y * Z);
     MortonCodes[(tId.z * Z) * X + (tId.y * Y) + tId.x] = Morton3D(ftId.x, ftId.y, ftId.z);
     
-    uint i = 0;
 
     int3 cornerCoords[8];
     cornerCoords[0] = tId + int3(0, 0, 0);
@@ -68,7 +67,7 @@ void PrefixSum(
     cornerCoords[6] = tId + int3(1, 1, 1);
     cornerCoords[7] = tId + int3(0, 1, 1);
 
-    
+    uint i = 0;
     uint cubeConfiguration = 0;
     for (i = 0; i < 8; i++)
     {
@@ -80,8 +79,6 @@ void PrefixSum(
     
     // #1. save the cube configuration into the array
     HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] = (cubeConfiguration == 0 || cubeConfiguration == 255) ? 0 : 1;
-   
-    
     GroupMemoryBarrierWithGroupSync();
     
     // #2. parallel prefix-sum 
@@ -99,7 +96,6 @@ void PrefixSum(
     // #3. Output
     HistoPyramid[(tId.z * Z) * X + (tId.y * Y) + tId.x] = HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x];
     
-
 }
 
 groupshared uint Offsets[X * Y * Z];
@@ -115,7 +111,7 @@ void PrefixSumOffset(
     //  #1. Fetch totals of the previous segment
     if(tId.x < gId.x)
     {
-        Offsets[(tId.z * Z) * X + (tId.y * Y) + tId.x] = HistoPyramid[((tId.z + 1) * (Z - 1)) * (X - 1) + (tId.y * Y) + tId.x];
+        Offsets[(tId.z * Z) * X + (tId.y * Y) + tId.x] = HistoPyramid[((tId.z + 1) * Z) * X + (tId.y * Y) + tId.x];
     }
     else
     {
@@ -125,7 +121,7 @@ void PrefixSumOffset(
     
     //  #2. Prefix sum 
     uint i;
-    for (i = X / 2; i > 0; i = i/2)
+    for (i = (X / 2); i > 0; i = (i / 2))
     {
         if(tId.x < i)
         {
