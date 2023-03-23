@@ -128,13 +128,29 @@ void svd_pseudoinverse(inout mat3x3 o, float4 sigma, mat3x3 v)
     float d2 = svd_invdet(sigma.z, PSUEDO_INVERSE_THRESHOLD);
 
     o[0][0] = v[0][0] * d0 * v[0][0] + v[0][1] * d1 * v[0][1] + v[0][2] * d2 * v[0][2];
+    
+    
     o[0][1] = v[0][0] * d0 * v[1][0] + v[0][1] * d1 * v[1][1] + v[0][2] * d2 * v[1][2];
+    
+    
     o[0][2] = v[0][0] * d0 * v[2][0] + v[0][1] * d1 * v[2][1] + v[0][2] * d2 * v[2][2];
+    
+    
     o[1][0] = v[1][0] * d0 * v[0][0] + v[1][1] * d1 * v[0][1] + v[1][2] * d2 * v[0][2];
+    
+    
     o[1][1] = v[1][0] * d0 * v[1][0] + v[1][1] * d1 * v[1][1] + v[1][2] * d2 * v[1][2];
+    
+    
     o[1][2] = v[1][0] * d0 * v[2][0] + v[1][1] * d1 * v[2][1] + v[1][2] * d2 * v[2][2];
+    
+    
     o[2][0] = v[2][0] * d0 * v[0][0] + v[2][1] * d1 * v[0][1] + v[2][2] * d2 * v[0][2];
+    
+    
     o[2][1] = v[2][0] * d0 * v[1][0] + v[2][1] * d1 * v[1][1] + v[2][2] * d2 * v[1][2];
+    
+    
     o[2][2] = v[2][0] * d0 * v[2][0] + v[2][1] * d1 * v[2][1] + v[2][2] * d2 * v[2][2];
 }
 
@@ -161,7 +177,12 @@ void svd_vmul_sym(inout float4 result, mat3x3_tri A, float4 v)
 // QEF
 /////////////////////////////////////////////////
 
-void qef_add(float4 n, float4 p, inout mat3x3_tri ATA, inout float4 Atb, inout float4 pointaccum, inout float btb)
+void qef_add
+    (
+    float4 n, float4 p, 
+        inout mat3x3_tri ATA, inout float4 Atb, 
+            inout float4 pointaccum, inout float btb
+)
 {
     ATA[0] += n.x * n.x;
     ATA[1] += n.x * n.y;

@@ -92,8 +92,8 @@ namespace Engine
 			{"TEXCOORD",	ShaderDataType::Float2, 24, 2},
 		};
 
-		BuildMaterials();
 		BuildTextures();
+		BuildMaterials();
 
 		/** build the pipeline state objects */
 		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
@@ -174,8 +174,7 @@ namespace Engine
 			Transform(-5, 5, 5, 0, 45, 0, 10, 10, 10)
 		);
 
-		//boxItem->Texture = RenderData.TextureLibrary.GetTexture("Crate");
-		//boxItem->Material->SetUseTexture(true);
+		
 		RenderData.OpaqueRenderItems.push_back(boxItem.get());
 		RenderData.RenderItems.push_back(std::move(boxItem));
 
@@ -226,28 +225,77 @@ namespace Engine
 	void Renderer3D::BuildMaterials()
 	{
 		auto mat = Material::Create("Green");
-		mat->SetAlbedo(0.0f, 1.0f, 0.3f);
+		mat->SetDiffuse(0.0f, 1.0f, 0.3f, 1.0f);
 		mat->SetFresnel(0.05f, 0.05f, 0.05f);
 		mat->SetRoughness(0.2f);
 		
-		mat->SetBufferIndex(0);
+		mat->SetMaterialBufferIndex(0);
 		RenderData.MaterialLibrary.Add("Green", std::move(mat));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Green"));
 
 		auto matB = Material::Create("Default");
-		matB->SetAlbedo(0.8f, 0.8f, 0.8f);
+		matB->SetDiffuse(0.8f, 0.8f, 0.8f, 1.0f);
 		matB->SetFresnel(0.02f, 0.02f, 0.02f);
 		matB->SetRoughness(0.5f);
-		matB->SetBufferIndex(1);
+		matB->SetMaterialBufferIndex(1);
 		RenderData.MaterialLibrary.Add("Default", std::move(matB));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Default"));
+
+		auto terrainMaterial = Material::Create("Terrain");
+		terrainMaterial->SetDiffuse(0.8f, 0.8f, 0.8f, 1.0f);
+		terrainMaterial->SetFresnel(0.02f, 0.02f, 0.02f);
+		terrainMaterial->SetRoughness(0.5f);
+		terrainMaterial->SetMaterialBufferIndex(1);
+		// Terrain get sepcial material setup
+		//for(INT32 i =1; i<7;++i)
+		//{
+		//	terrainMaterial->Textures[(i-1)] = RenderData.Textures[i];
+		//}
+
+		RenderData.MaterialLibrary.Add("Terrain", std::move(terrainMaterial));
+		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Terrain"));
 	}
 
 	void Renderer3D::BuildTextures()
 	{
-		/*auto texture = Texture::Create(L"assets\\textures\\WoodCrate02.dds", "Crate");
+		auto texture = Texture::Create(L"assets\\textures\\crate\\WoodCrate02.dds", "Crate");
 		RenderData.Textures.push_back(texture.get());
-		RenderData.TextureLibrary.Add("Crate", std::move(texture));*/
+		RenderData.TextureLibrary.Add("Crate", std::move(texture));
+
+
+		/**
+		 *	moss
+		 */
+
+		//auto mossAlbedo = Texture::Create(L"assets\\textures\\moss\\Moss_albedo.dds", "MossAlbedo");
+		//RenderData.Textures.push_back(mossAlbedo.get());
+		//RenderData.TextureLibrary.Add("MossAlbedo", std::move(mossAlbedo));
+
+		//auto mossNormal = Texture::Create(L"assets\\textures\\moss\\Moss_normal.dds", "MossNormal");
+		//RenderData.Textures.push_back(mossNormal.get());
+		//RenderData.TextureLibrary.Add("MossNormal", std::move(mossNormal));
+
+		//auto mossRough = Texture::Create(L"assets\\textures\\moss\\Moss_roughness.dds", "MossRough");
+		//RenderData.Textures.push_back(mossRough.get());
+		//RenderData.TextureLibrary.Add("MossRough", std::move(mossRough));
+
+
+		///**
+		// *  rock
+		// */
+
+
+		//auto rockAlbedo = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_albedo.dds", "RockAlbedo");
+		//RenderData.Textures.push_back(rockAlbedo.get());
+		//RenderData.TextureLibrary.Add("RockAlbedo", std::move(rockAlbedo));
+
+		//auto rockNormal = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_normal.dds", "RockNormal");
+		//RenderData.Textures.push_back(rockNormal.get());
+		//RenderData.TextureLibrary.Add("RockNormal", std::move(rockNormal));
+
+		//auto rockRough = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_roughness.dds", "RockRough");
+		//RenderData.Textures.push_back(rockRough.get());
+		//RenderData.TextureLibrary.Add("RockRough", std::move(rockRough));
 	}
 
 	void Renderer3D::RegenerateBuffers
@@ -260,11 +308,11 @@ namespace Engine
 
 		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
 		{
-			auto vertexBuffer = RenderData.Geometries[meshTag]->VertexBuffer.get();
-			auto indexBuffer = RenderData.Geometries[meshTag]->IndexBuffer.get();
+			VertexBuffer* vertexBuffer = RenderData.Geometries[meshTag]->VertexBuffer.get();
+			IndexBuffer* indexBuffer = RenderData.Geometries[meshTag]->IndexBuffer.get();
 
-			vertexBuffer->Release();
-			indexBuffer->Release();
+			//vertexBuffer->Destroy();
+			//indexBuffer->Destroy();
 
 			const INT32 size = vertices.size() * sizeof(Vertex);
 			vertexBuffer->SetData(vertices.data(), size, vertices.size());
@@ -289,13 +337,12 @@ namespace Engine
 
 	}
 
-	void Renderer3D::CreateCustomMesh
+	void Renderer3D::CreateVoxelMesh
 	(
 		std::vector<Vertex> vertices,
 		std::vector<UINT16> indices,
 		const std::string& meshTag,
-		Transform transform,
-		const std::string& materialTag
+		Transform transform
 	)
 	{
 		if (RenderData.OpaqueRenderItems.size() < 20)
@@ -328,11 +375,14 @@ namespace Engine
 				ScopePointer<RenderItem> renderItem = RenderItem::Create
 				(
 					RenderData.Geometries[meshTag].get(),
-					RenderData.MaterialLibrary.Get(materialTag),
+					RenderData.MaterialLibrary.Get("Terrain"),
 					meshTag+"_Args",
 					constCbvOffset,
 					transform
 				);
+
+				
+
 
 				RenderData.OpaqueRenderItems.push_back(renderItem.get());
 				RenderData.RenderItems.push_back(std::move(renderItem));

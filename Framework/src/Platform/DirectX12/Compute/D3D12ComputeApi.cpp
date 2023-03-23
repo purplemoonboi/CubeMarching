@@ -116,11 +116,11 @@ namespace Engine
 		// Has the GPU finished processing the commands of the current frame resource?
 		// If not, wait until the GPU has completed commands up to this fence point.
 		const UINT64 a = *voxelWorldSyncValue;
-		const UINT64 b = Context->Fence->GetCompletedValue();
+		const UINT64 b = FenceValue;
 		if (a != 0 && b < a)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(*voxelWorldSyncValue, eventHandle);
+			const HRESULT eventCompletion = Fence->SetEventOnCompletion(*voxelWorldSyncValue, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);

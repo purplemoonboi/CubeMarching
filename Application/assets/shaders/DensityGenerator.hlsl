@@ -276,11 +276,18 @@ void ComputeNoise3D(int3 id : SV_DispatchThreadID)
     float gain = Gain;
    
     
-    for (int i = 0; i < Octaves; i++)
+    if(fId.y < Ground)
     {
-        noise += snoise(fId * freq);
-        freq *= gain;
+        for (int i = 0; i < Octaves; i++)
+        {
+            noise += snoise(fId * freq);
+            freq *= gain;
+        }
+    
+    
+        noise = 1.0f - (noise * noise);
     }
+    
     
     Noise3D[id] = noise;
 }

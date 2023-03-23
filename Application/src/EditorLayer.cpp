@@ -57,11 +57,11 @@ namespace Engine
 
         PerlinCompute->Init(csApi, api->GetMemoryManager());
 
-        //MarchingCubes->Init(csApi, api->GetMemoryManager());
-        //Renderer3D::CreateCustomMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+       //MarchingCubes->Init(csApi, api->GetMemoryManager());
+       //Renderer3D::CreateVoxelMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
     	DualContouring->Init(csApi, api->GetMemoryManager());
-        Renderer3D::CreateCustomMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+        Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
 
         MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
@@ -135,15 +135,19 @@ namespace Engine
  
 
         Scene->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
-    
+
+        if (RegenTexture)
+        {
+            PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
+            PerlinCompute->PerlinFBM(PerlinSettings);
+            RegenTexture = false;
+
+            Regen = true;
+        }
+
         if (Regen)
         {
-            if(RegenTexture)
-            {
-                PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-                PerlinCompute->PerlinFBM(PerlinSettings);
-                RegenTexture = false;
-            }
+            
             Regen = false;
 
 
@@ -155,7 +159,7 @@ namespace Engine
             }*/
 
             /* polygonise the texture with marching cubes*/
-            /*MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+           /* MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
             Renderer3D::RegenerateBuffers("MarchingTerrain", MarchingCubes->GetVertices(),
                 MarchingCubes->GetIndices());*/
 
@@ -164,7 +168,7 @@ namespace Engine
             Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
                 DualContouring->GetIndices());
 
-            MarchingCubesHP->Generate(PerlinCompute->GetTexture());
+            //MarchingCubesHP->Generate(PerlinCompute->GetTexture());
 
         }
 

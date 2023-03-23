@@ -237,19 +237,21 @@ namespace Engine
 		Context->GraphicsCmdList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv, 
 			true, &FrameBuffer->GetDepthStencilViewCpu());
 
-
-
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
 		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
 		
-		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetConstantBufferDescHeap() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetShaderResourceDescHeap() };
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 		/* Bind the shader root signature */
 		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
 
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
-		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(3, passBufferAddress);
+		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
+
+		// We can bind all textures in the scene - we declared 'n' amount of descriptors in the root signature.
+		/*Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(3,
+			D3D12MemoryManager->GetConstantBufferDescHeap()->GetGPUDescriptorHandleForHeapStart());*/
 
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -269,25 +271,17 @@ namespace Engine
 			ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
-			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetBufferIndex() * matConstBufferByteSize;
+			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetMaterialIndex() * matConstBufferByteSize;
 
-			//if(renderItem->Texture != nullptr)
-			//{
-			//	const auto d3dTexture = dynamic_cast<D3D12Texture*>(renderItem->Texture);
-
-			//	/*CD3DX12_GPU_DESCRIPTOR_HANDLE texture(D3D12MemoryManager->GetShaderResourceDescHeap()->GetGPUDescriptorHandleForHeapStart());
-			//	texture.Offset(renderItem->Material->GetBufferIndex(), D3D12MemoryManager->GetDescriptorIncrimentSize());
-			//	Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, texture);*/
-
-			//	Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(0, d3dTexture->GpuHandleSrv);
-			//}
 			
 			
-			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, objConstBufferAddress);
-			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, materialBufferAddress);
+			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 			
 			if (renderItem->Geometry->GetName() == "MarchingTerrain" || renderItem->Geometry->GetName() == "DualTerrain")
 			{
+				
+
 				Context->GraphicsCmdList->DrawInstanced
 				(
 					renderItem->Geometry->VertexBuffer->GetCount(),

@@ -110,10 +110,6 @@ namespace Engine
 
 		frameBuffer->Bind();
 
-
-		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
-		context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->GraphicsCmdList.Get());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

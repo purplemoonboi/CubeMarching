@@ -28,22 +28,6 @@ Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
 RWStructuredBuffer<Triangle> triangles : register(u0);
 
-float3 coordToWorld(int3 coord)
-{
-    return (coord / (TextureSize - 1.0) - 0.5f) * PlanetSize;
-}
-
-int indexFromCoord(int3 coord)
-{
-    //coord = coord - int3(ChunkCoord);
-    return coord.z * Resolution * Resolution + coord.y * Resolution + coord.x;
-}
-
-float sampleDensity(int3 coord)
-{
-    coord = max(0, min(coord, TextureSize));
-    return DensityTexture.Load(float4(coord, 0));
-}
 
 float3 CalculateNormal(int3 coord)
 {
@@ -51,23 +35,19 @@ float3 CalculateNormal(int3 coord)
     int3 offsetY = int3(0, 1, 0);
     int3 offsetZ = int3(0, 0, 1);
 
-    float dx = sampleDensity(coord + offsetX) - sampleDensity(coord - offsetX);
-    float dy = sampleDensity(coord + offsetY) - sampleDensity(coord - offsetY);
-    float dz = sampleDensity(coord + offsetZ) - sampleDensity(coord - offsetZ);
+    float dx = DensityTexture.Load(float4(coord + offsetX, 0)) - DensityTexture.Load(float4(coord - offsetX, 0));
+    float dy = DensityTexture.Load(float4(coord + offsetY, 0)) - DensityTexture.Load(float4(coord - offsetY, 0));
+    float dz = DensityTexture.Load(float4(coord + offsetZ, 0)) - DensityTexture.Load(float4(coord - offsetZ, 0));
 
     return normalize(float3(dx, dy, dz));
 }
 
-// Calculate the position of the vertex
-// The position lies somewhere along the edge defined by the two corner points.
-// Where exactly along the edge is determined by the values of each corner point.
+
 Vertex createVertex(int3 coordA, int3 coordB)
 {
-	
-    //float3 posA = coordToWorld(coordA);
-    //float3 posB = coordToWorld(coordB);
-    float densityA = sampleDensity(coordA);
-    float densityB = sampleDensity(coordB);
+
+    float densityA = DensityTexture.Load(float4(coordA, 0));
+    float densityB = DensityTexture.Load(float4(coordB, 0));
 
 	// Interpolate between the two corner points based on the density
     float t = (IsoLevel - densityA) / (densityB - densityA);
@@ -80,10 +60,11 @@ Vertex createVertex(int3 coordA, int3 coordB)
     float3 normalA = CalculateNormal(coordA);
     float3 normalB = CalculateNormal(coordB);
     float3 normal = normalize(normalA + t * (normalB - normalA));
+    
 
 	// ID
-    int indexA = indexFromCoord(coordA);
-    int indexB = indexFromCoord(coordB);
+    int indexA = coordA.z * Resolution * Resolution + coordA.y * Resolution + coordA.x;
+    int indexB = coordB.z * Resolution * Resolution + coordB.y * Resolution + coordB.x;
 
 	// Create vertex
     Vertex vertex;
@@ -129,31 +110,19 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     if(cubeConfiguration == 0 || cubeConfiguration == 255)
         return;
 	
-    int edgeIndices[16] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+ 
 
-    for (int j = 0; j < 16; j++)
+    for (i = 0; i < 16 && TriangleTable[(cubeConfiguration * 16) + i] != -1; i += 3)
     {
-        edgeIndices[j] = TriangleTable[(cubeConfiguration * 16) + j];
-    }
 
-    for (i = 0; i < 16; i += 3)
-    {
-        if (edgeIndices[i] == -1)
-        {
-            break;
-        }
+        int a0 = cornerIndexAFromEdge[TriangleTable[(cubeConfiguration * 16) + i]];
+        int a1 = cornerIndexBFromEdge[TriangleTable[(cubeConfiguration * 16) + i]];
+        
+        int b0 = cornerIndexAFromEdge[TriangleTable[(cubeConfiguration * 16) + i + 1]];
+        int b1 = cornerIndexBFromEdge[TriangleTable[(cubeConfiguration * 16) + i + 1]];
 
-        int edgeIndexA = edgeIndices[i];
-        int a0 = cornerIndexAFromEdge[edgeIndexA];
-        int a1 = cornerIndexBFromEdge[edgeIndexA];
-
-        int edgeIndexB = edgeIndices[i + 1];
-        int b0 = cornerIndexAFromEdge[edgeIndexB];
-        int b1 = cornerIndexBFromEdge[edgeIndexB];
-
-        int edgeIndexC = edgeIndices[i + 2];
-        int c0 = cornerIndexAFromEdge[edgeIndexC];
-        int c1 = cornerIndexBFromEdge[edgeIndexC];
+        int c0 = cornerIndexAFromEdge[TriangleTable[(cubeConfiguration * 16) + i + 2]];
+        int c1 = cornerIndexBFromEdge[TriangleTable[(cubeConfiguration * 16) + i + 2]];
 
 		// Create triangle
         Triangle tri = (Triangle) 0;

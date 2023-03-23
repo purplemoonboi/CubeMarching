@@ -61,7 +61,7 @@ namespace Engine
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
-		static void CreateCustomMesh(std::vector<Vertex> vertices, std::vector<UINT16> indices, const std::string& meshTag, Transform transform, const std::string& materialTag = "Default");
+		static void CreateVoxelMesh(std::vector<Vertex> vertices, std::vector<UINT16> indices, const std::string& meshTag, Transform transform);
 
 
 		struct VoxelWorldRenderingStats

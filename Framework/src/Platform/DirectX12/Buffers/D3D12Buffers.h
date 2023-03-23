@@ -32,7 +32,7 @@ namespace Engine
 		// @brief Releases this buffer.
 		void UnBind() const override;
 
-		void Release() override;
+		void Destroy() override;
 
 		// @brief Sets the vertex data for this buffer.
 		void SetData(const void* data, INT32 size, INT32 count) override;
@@ -86,7 +86,7 @@ namespace Engine
 
 		void UnBind() const override;
 		void SetData(const UINT16* data, UINT count) override;
-		void Release() override;
+		void Destroy() override;
 
 		bool Regenerate();
 

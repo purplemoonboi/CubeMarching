@@ -14,6 +14,7 @@ struct Light
     float3 Position;    // point light only
     float SpotPower;    // spot light only
     float3 Radiance;    // light radiance
+    float Pad;
 };
 
 struct Material
@@ -21,7 +22,7 @@ struct Material
     float4 DiffuseAlbedo;
     float3 FresnelR0;
     float Shininess;
-    float Metalness;
+
 };
 
 //  Material                F0   (Linear)       F0    (sRGB)
@@ -36,19 +37,7 @@ struct Material
 //  Aluminium	            (0.91, 0.92, 0.92)	(0.96, 0.96, 0.97)	
 //  Silver	                (0.95, 0.93, 0.88)	(0.98, 0.97, 0.95)
 
-uint GetTexture2DMipLevels(Texture2D tex)
-{
-    uint width, height, levels;
-    tex.GetDimensions(0, width, height, levels);
-    return levels;
-}
 
-uint GetTextureCubeMipLevels(TextureCube tex)
-{
-    uint width, height, levels;
-    tex.GetDimensions(0, width, height, levels);
-    return levels;
-}
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
@@ -179,7 +168,7 @@ float3 PBR(
     float3 N = normal;
     float dW = 1.0f / MaxLights;
     
-    float metalness = mat.Metalness;
+    float metalness = mat.Shininess;
     float3 F0 = lerp(Dielectric, mat.DiffuseAlbedo.rgb, metalness);
 
     

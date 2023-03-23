@@ -42,18 +42,11 @@ namespace Engine
 
 		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, Material* material, const std::string& drawArgs, UINT constantBufferIndex, Transform transform);
 
-		// Dirty flag indicating the object data has changed and we need to update the constant buffer.
-		// Because we have an object cbuffer for each FrameResource, we have to apply the
-		// update to each FrameResource.  Thus, when we modify obect data we should set 
-		// NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
 		INT32 NumFramesDirty = NUMBER_OF_FRAME_RESOURCES;
-
-		// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
 		UINT ObjectConstantBufferIndex = -1;
 
 		// A raw pointer to geometry
 		MeshGeometry* Geometry;
-		Texture* Texture = nullptr;
 		Material* Material = nullptr;
 
 		DirectX::BoundingBox Bounds;

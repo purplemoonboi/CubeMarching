@@ -1,78 +1,5 @@
-//***************************************************************************************
-// Default.hlsl by Frank Luna (C) 2015 All Rights Reserved.
-//
-// Default shader, currently supports lighting.
-//***************************************************************************************
+#include "CoreUtils.hlsl"
 
-// Defaults for number of lights.
-#ifndef NUM_DIR_LIGHTS
-    #define NUM_DIR_LIGHTS 3
-#endif
-
-#ifndef NUM_POINT_LIGHTS
-    #define NUM_POINT_LIGHTS 0
-#endif
-
-#ifndef NUM_SPOT_LIGHTS
-    #define NUM_SPOT_LIGHTS 0
-#endif
-
-
-// Include structures and functions for lighting.
-#include "LightingUtil.hlsl"
-
-// Constant data that varies per frame.
-
-cbuffer cbPerObject : register(b0)
-{
-    float4x4 gWorld;
-};
-
-cbuffer cbMaterial : register(b1)
-{
-	float4 gDiffuseAlbedo;
-    
-    float3 gFresnelR0;
-    float  gRoughness;
-    
-    float  gMetalness;
-    float  gUseTexture;
-    float  gUsePBR;
-    float  gPad;
-    
-	float4x4 gMatTransform;
-};
-
-// Constant data that varies per material.
-cbuffer cbPass : register(b2)
-{
-    float4x4 gView;
-    float4x4 gInvView;
-    float4x4 gProj;
-    float4x4 gInvProj;
-    float4x4 gViewProj;
-    float4x4 gInvViewProj;
-
-    float3 gEyePosW;
-    float cbPerObjectPad1;
-    
-    float2 gRenderTargetSize;
-    float2 gInvRenderTargetSize;
-
-    float gNearZ;
-    float gFarZ;
-    float gTotalTime;
-    float gDeltaTime;
-    
-    float4 gAmbientLight;
-
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
-    Light gLights[MaxLights];
-    int gWire;
-};
  
 struct VertexIn
 {
@@ -91,17 +18,19 @@ struct VertexOut
     float2 TexCoord : TEXCOORD;
 };
 
-Texture2D Albedo : register(t0);
-//Texture2D Normal : register(t1);
-//Texture2D Roughness : register(t2);
-//Texture2D AO : register(t3);
+Texture2D MossAlbedo        : register(t0);
+Texture2D MossNormal        : register(t1);
+Texture2D MossRoughness     : register(t2);
+
+Texture2D RockAlbedo        : register(t3);
+Texture2D RockNormal        : register(t4);
+Texture2D RockRoughness     : register(t5);
 
 //TextureCube IrradienceTexture : register(t4);
 //TextureCube SpecularTexture : register(t5);
 //Texture2D SpecularBRDF : register(t6);
 
-SamplerState DefaultSampler : register(s0);
-//SamplerState SpecBRDFSampler : register(s1);
+
 
 
 VertexOut VS(VertexIn vin)
@@ -117,7 +46,9 @@ VertexOut VS(VertexIn vin)
 
     vout.TangentW = mul(vin.Tangent, (float3x3) gWorld);
 
-    vout.TexCoord = vin.TexCoord;
+    float4 texC = mul(float4(vin.TexCoord, 0.0f, 1.0f), gTexTransform);
+    vout.TexCoord = mul(texC, gMatTransform).xy;
+    
     // Transform to homogeneous clip space.
     vout.PosH = mul(posW, gViewProj);
 
@@ -129,6 +60,7 @@ float4 PS(VertexOut pin) : SV_Target
     float4 litColor = float4(0, 0, 0, 1);
     float4 ambient = (float4) 0;
     float4 directLight = (float4) 0;
+    
     if (gWire == 0)
     {
         // Interpolating normal can unnormalize it, so renormalize it.
@@ -136,20 +68,52 @@ float4 PS(VertexOut pin) : SV_Target
 
         	// Vector from point being lit to eye. 
         float3 toEyeW = normalize(gEyePosW - pin.PosW);
+        
+        
+        if(DiffuseMapIndex == 100)
+        {
+            float2 texCoords = (float2) 0;
+            
+            
+            
+            float4 mossAlbedo    = gTextureMaps[DiffuseMapIndex].Sample(PointClampSampler, texCoords);
+            float3 mossNormal    = gTextureMaps[NormalMapIndex].Sample(PointClampSampler, texCoords).rgb;
+            float4 mossRoughness = gTextureMaps[gRoughness].Sample(PointClampSampler, texCoords);
+            
+            //float4 rockAlbedo    = gTextureMaps[3].Sample(PointClampSampler, texCoords);
+            //float3 rockNormal    = gTextureMaps[4].Sample(PointClampSampler, texCoords).rgb;
+            //float4 rockRoughness = gTextureMaps[5].Sample(PointClampSampler, texCoords);
+            
+            mossNormal = NormalSampleToWorldSpace(mossNormal, pin.NormalW, pin.TangentW);
+            //rockNormal = NormalSampleToWorldSpace(rockNormal, pin.NormalW, pin.TangentW);
 
-        Material mat = { gDiffuseAlbedo, gFresnelR0, gRoughness, gMetalness };
+            float shininess = 1.0f - gRoughness;
+            Material mat = { mossAlbedo, gFresnelR0, mossRoughness.r };
 
-        float3 shadowFactor = 1.0f;
+            float3 shadowFactor = 1.0f;
 
-       /* blinn phong */
-       
-		// Indirect lighting.
+			 /* blinn phong */
+            ambient = gAmbientLight * mossAlbedo;
+
+            directLight = ComputeLighting(gLights, mat, mossNormal,
+				pin.NormalW, toEyeW, shadowFactor);
+
+        }
+        else
+        {
+            float shininess = 1.0f - gRoughness;
+            Material mat = { gDiffuseAlbedo, gFresnelR0, shininess };
+
+            float3 shadowFactor = 1.0f;
+
+			 /* blinn phong */
+            ambient = gAmbientLight * gDiffuseAlbedo;
+
+            directLight = ComputeLighting(gLights, mat, pin.PosW,
+				pin.NormalW, toEyeW, shadowFactor);
+        }
+        
       
-
-        ambient = gAmbientLight * gDiffuseAlbedo;
-    
-       directLight = ComputeLighting(gLights, mat, pin.PosW,
-		pin.NormalW, toEyeW, shadowFactor);
 
        litColor = ambient + directLight;
 

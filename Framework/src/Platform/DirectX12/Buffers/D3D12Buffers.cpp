@@ -68,22 +68,22 @@ namespace Engine
 
 	}
 
-	void D3D12VertexBuffer::Release()
+	void D3D12VertexBuffer::Destroy()
 	{
 
 		if(CpuLocalCopy != nullptr)
 		{
-			CpuLocalCopy->Release();
+			CpuLocalCopy.Reset();
 			CpuLocalCopy = nullptr;
 		}
 		if(GpuBuffer != nullptr)
 		{
-			GpuBuffer->Release();
+			GpuBuffer.Reset();
 			GpuBuffer = nullptr;
 		}
 		if(Gpu_UploadBuffer != nullptr)
 		{
-			Gpu_UploadBuffer->Release();
+			Gpu_UploadBuffer.Reset();
 			Gpu_UploadBuffer = nullptr;
 		}
 		
@@ -135,8 +135,8 @@ namespace Engine
 		// Create the GPU vertex buffer
 		if(GpuBuffer != nullptr)
 		{
-			GpuBuffer->Release();
-			Gpu_UploadBuffer->Release();
+			GpuBuffer.Reset();
+			Gpu_UploadBuffer.Reset();
 		}
 
 		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
@@ -196,7 +196,7 @@ namespace Engine
 			Data.push_back(data[i]);
 	}
 
-	void D3D12IndexBuffer::Release()
+	void D3D12IndexBuffer::Destroy()
 	{
 		if(DefaultBuffer != nullptr)
 		{
@@ -335,17 +335,9 @@ namespace Engine
 		bool wireframe
 	)
 	{
-		/**
-		 * Get the camera's view and projection matrix
-		 */
+
 		const XMMATRIX view = XMLoadFloat4x4(&camera.GetView());
 		const XMMATRIX proj = XMLoadFloat4x4(&camera.GetProjection());
-
-		/**
-		 *	Create the view matrix
-		 *	Store the inverse matrices
-		 *	Copy the data into the pass buffer
-		 */
 
 		const XMMATRIX viewProj	    = XMMatrixMultiply(view, proj);
 		const XMMATRIX invView		= XMMatrixInverse(&XMMatrixDeterminant(view), view);
@@ -358,11 +350,6 @@ namespace Engine
 		XMStoreFloat4x4(&MainPassConstantBuffer.InvProj,		XMMatrixTranspose(invProj));
 		XMStoreFloat4x4(&MainPassConstantBuffer.ViewProj,		XMMatrixTranspose(viewProj));
 		XMStoreFloat4x4(&MainPassConstantBuffer.InvViewProj,	XMMatrixTranspose(invViewProj));
-
-		/**
-		 *	Upload the camera data such as the position, near and far planes
-		 *	and time data such as delta and elapsed time.
-		 */
 
 		MainPassConstantBuffer.EyePosW = camera.GetPosition();
 		MainPassConstantBuffer.RenderTargetSize	= XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
@@ -378,7 +365,6 @@ namespace Engine
 		MainPassConstantBuffer.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
 		MainPassConstantBuffer.TotalTime = elapsedTime;
 		MainPassConstantBuffer.DeltaTime = deltaTime;
-		MainPassConstantBuffer.Wire = wireframe;
 
 		const auto currentPassCB = resource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
@@ -386,35 +372,27 @@ namespace Engine
 
 	void D3D12ResourceBuffer::UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems)
 	{
-
 		const auto constantBuffer = resource->ConstantBuffer.get();
 
 		for(const auto& renderItem : renderItems)
 		{
-			
-			/**
-			 * Only update the constant buffer of an item if it has changed.
-			 */
-
 			if(renderItem->NumFramesDirty > 0)
 			{
 				const auto d3d12RenderItem = dynamic_cast<D3D12RenderItem*>(renderItem);
 
-				const XMMATRIX world = XMLoadFloat4x4(&d3d12RenderItem->World);
+				CXMMATRIX world = XMLoadFloat4x4(&d3d12RenderItem->World);
+				CXMMATRIX texTransform = XMLoadFloat4x4(&d3d12RenderItem->TexTransforms);
 
 				ObjectConstant objConst;
 				XMStoreFloat4x4(&objConst.World, XMMatrixTranspose(world));
+				XMStoreFloat4x4(&objConst.TexTransform, XMMatrixTranspose(texTransform));
+				objConst.MaterialIndex = d3d12RenderItem->Material->GetMaterialIndex();
+				objConst.ObjPad0 = 0;
+				objConst.ObjPad1 = 0;
+				objConst.ObjPad2 = 0;
 
-				/**
-				 * Update the object's constant buffer
-				 */
 				constantBuffer->CopyData(d3d12RenderItem->ObjectConstantBufferIndex, objConst);
-
-				/**
-				 * Decriment the flag, the current object has been updated
-				 */
 				d3d12RenderItem->NumFramesDirty--;
-				d3d12RenderItem->HasBeenUpdated = true;
 			}
 		}
 	}
@@ -425,24 +403,25 @@ namespace Engine
 
 		for (const auto& material : materials)
 		{
-			const auto dx12Material = dynamic_cast<D3D12Material*>(material);
-			if (dx12Material->DirtyFrameCount > 0)
+			const auto d3dMaterial = dynamic_cast<D3D12Material*>(material);
+			if (d3dMaterial->DirtyFrameCount > 0)
 			{
-				const XMMATRIX matTransform = XMLoadFloat4x4(&dx12Material->GetMaterialTransform());
-
 				MaterialConstants matConstants;
-				matConstants.DiffuseAlbedo = dx12Material->GetDiffuse();
-				matConstants.FresnelR0 = dx12Material->GetFresnelR0();
-				matConstants.Roughness = dx12Material->GetRoughness();
-				matConstants.Metalness = 1.0f - dx12Material->GetRoughness();
-				matConstants.UsePBR = dx12Material->ShouldUsePBR() ? 1.f : 0.f;
-				matConstants.UseTexture = dx12Material->ShouldUseTexture() ? 1.f : 0.f;
+				matConstants.DiffuseAlbedo		= d3dMaterial->DiffuseAlbedo;
+				matConstants.FresnelR0			= d3dMaterial->FresnelR0;
+				matConstants.Roughness			= d3dMaterial->Roughness;
+				matConstants.DiffuseMapIndex	= d3dMaterial->DiffuseMapIndex;
+				matConstants.NormalMapIndex		= d3dMaterial->NormalMapIndex;
+				matConstants.RoughMapIndex		= d3dMaterial->RoughMapIndex;
+				matConstants.AoMapIndex			= d3dMaterial->AoMapIndex;
+				matConstants.HeighMapIndex		= d3dMaterial->HeightMapIndex;
+				matConstants.Wire				= d3dMaterial->UseWire;
+
+				const XMMATRIX matTransform = XMLoadFloat4x4(&d3dMaterial->MatTransform);
 				XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
 
-				materialBuffer->CopyData(dx12Material->MaterialBufferIndex, matConstants);
-
-				// Next FrameResource need to be updated too.
-				dx12Material->DirtyFrameCount--;
+				materialBuffer->CopyData(d3dMaterial->MaterialBufferIndex, matConstants);
+				d3dMaterial->DirtyFrameCount--;
 			}
 		}
 	}

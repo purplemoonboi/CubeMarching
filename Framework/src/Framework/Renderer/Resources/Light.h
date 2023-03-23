@@ -24,23 +24,24 @@ namespace Engine
 		DirectX::XMFLOAT3 Position = { 0.0f, 0.0f, 0.0f };  // point/spot light only
 		float SpotPower = 64.0f;
 		DirectX::XMFLOAT3 Radiance = { 0.01, 0.01, 0.01 };
-
+		float Pad = 0.0f;
 	};
 
 	struct MaterialConstants
 	{
 		DirectX::XMFLOAT4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-		DirectX::XMFLOAT3 FresnelR0 = { 0.05f, 0.05f, 0.05f };
+		DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
 		float Roughness = 0.25f;
-
-		float Metalness = 0.01f;
-		float UseTexture = 0;
-		float UsePBR = 0;
-		float Pad = 0.f;
-
-		// Used in texture mapping.
 		DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
+		UINT32 DiffuseMapIndex;
+		UINT32 NormalMapIndex;
+		UINT32 RoughMapIndex;
+		UINT32 AoMapIndex;
+		UINT32 HeighMapIndex;
+		UINT32 Wire;
+		UINT32 Pad0 = 0;
+		UINT32 Pad1 = 0;
+		
 	};
 }
 

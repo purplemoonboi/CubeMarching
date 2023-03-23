@@ -156,7 +156,7 @@ namespace Engine
 		srvDesc.Texture2D.MipLevels = GpuResource->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-		D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
+		GpuHandleSrv = D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
 	void D3D12Texture::LoadFromFile(const std::wstring& fileName, const std::string& name)

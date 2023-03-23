@@ -1,5 +1,6 @@
 #pragma once
 #include <intsafe.h>
+#include <array>
 #include <string>
 #include <unordered_map>
 #include "Framework/Core/core.h"
@@ -7,34 +8,66 @@
 
 namespace Engine
 {
+	class Texture;
 	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
 
+	struct IColourRGBA
+	{
+		IColourRGBA(INT8 r, INT8 g, INT8 b, INT8 a)
+			: R(r), G(g), B(b), A(a)
+		{}
+		INT8 R = 0;
+		INT8 G = 0;
+		INT8 B = 0;
+		INT8 A = 0;
+	};
+
+	struct IColourRGB
+	{
+		IColourRGB(INT8 r, INT8 g, INT8 b)
+			: R(r), G(g), B(b)
+		{}
+
+		INT8 R = 0;
+		INT8 G = 0;
+		INT8 B = 0;
+		INT8 A = 0;
+	};
+
+	struct ColourRGBA
+	{
+		ColourRGBA(float r, float g, float b, float a)
+			: R(r), G(g), B(b), A(a)
+		{}
+
+		float R = 0.f;
+		float G = 0.f;
+		float B = 0.f;
+		float A = 0.f;
+	};
+
+	struct ColourRGB
+	{
+		ColourRGB(float r, float g, float b)
+			: R(r), G(g), B(b)
+		{}
+
+		float R = 0.f;
+		float G = 0.f;
+		float B = 0.f;
+	};
 
 	class Material
 	{
 	public:
 		static ScopePointer<Material> Create(std::string&& name);
-
-		virtual void SetAlbedo(float r, float g, float b, float a = 1.0f) = 0;
-
-		virtual void SetRoughness(float roughness) = 0;
-
+		virtual void SetDiffuse(float r, float g, float b, float a) = 0;
 		virtual void SetFresnel(float r, float g, float b) = 0;
-
-		virtual void SetBufferIndex(INT32 index) = 0;
-
-		virtual void SetUsePBR(bool pbr) = 0;
-		virtual bool ShouldUsePBR() const = 0;
-
-		virtual void SetUseTexture(bool tex) = 0; 
-		virtual bool ShouldUseTexture() const = 0;
-
-		[[nodiscard]] virtual INT32 GetBufferIndex() const = 0;
-
+		virtual void SetRoughness(float roughness) = 0;
+		virtual void SetMaterialBufferIndex(UINT32 index) = 0;
 		[[nodiscard]] virtual const std::string& GetName() const = 0;
-
-	protected:
-
+		[[nodiscard]] virtual UINT32 GetMaterialIndex() const = 0;
+		std::array<Texture*, 8> Textures = { nullptr };
 	};
 
 	class MaterialLibrary

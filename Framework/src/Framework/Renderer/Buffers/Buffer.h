@@ -162,7 +162,7 @@ namespace Engine
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
 		virtual void SetData(const void* data, INT32 size, INT32 count) = 0;
-		virtual void Release() = 0;
+		virtual void Destroy() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
 		virtual UINT32 GetCount() = 0;
 		[[nodiscard]] virtual const BufferLayout& GetLayout() const = 0;
@@ -180,7 +180,7 @@ namespace Engine
 
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
-		virtual void Release() = 0;
+		virtual void Destroy() = 0;
 		
 		virtual void SetData(const UINT16* data, UINT count) = 0;
 

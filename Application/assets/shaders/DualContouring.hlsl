@@ -157,7 +157,6 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             
             float3 n = CalculateNormal(p);
     
-            
             qef_add(float4(n.x, n.y, n.z, 0), float4(p.x, p.y, p.z, 0), ATA, Atb, pointaccum, btb);
             averageNormal += n;
             edgeCount++;
@@ -165,13 +164,14 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         }
     }
 
-    //avgPosition /= edgeCount;
     
     averageNormal = normalize(averageNormal / edgeCount);
+    
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
     float4 solvedPosition = (float4) 0;
     
     float error = qef_solve(ATA, Atb, pointaccum, solvedPosition);
+    
     float3 minimum = cornerCoords[0];
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
 

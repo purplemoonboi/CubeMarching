@@ -321,34 +321,17 @@ namespace Engine
 
 	bool D3D12Context::BuildRootSignature()
 	{
-		CD3DX12_DESCRIPTOR_RANGE albedoTex;
-		albedoTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // register t0
-
-		//CD3DX12_DESCRIPTOR_RANGE normalTex;
-		//normalTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV,1,1); // register t1
-
-		//CD3DX12_DESCRIPTOR_RANGE roughnessTex;
-		//roughnessTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // register t2
-
-		//CD3DX12_DESCRIPTOR_RANGE aoTex;
-		//aoTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); // register t3
-
-		//CD3DX12_DESCRIPTOR_RANGE irrTex;
-		//irrTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); // register t4
-
-		//CD3DX12_DESCRIPTOR_RANGE specTex;
-		//specTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5); // register t5
-
-		//CD3DX12_DESCRIPTOR_RANGE specBRDFTex;
-		//specBRDFTex.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6); // register t6
+		CD3DX12_DESCRIPTOR_RANGE textureTable0;
+		textureTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0); // register t0
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
 
-		slotRootParameter[0].InitAsDescriptorTable(1, &albedoTex, D3D12_SHADER_VISIBILITY_PIXEL);
-		slotRootParameter[1].InitAsConstantBufferView(0);// register b0
-		slotRootParameter[2].InitAsConstantBufferView(1);// register b1
-		slotRootParameter[3].InitAsConstantBufferView(2);// register b2
+		slotRootParameter[0].InitAsConstantBufferView(0);// register b0
+		slotRootParameter[1].InitAsConstantBufferView(1);// register b1
+		slotRootParameter[2].InitAsConstantBufferView(2);// register b2
+		slotRootParameter[3].InitAsDescriptorTable(1, &textureTable0, D3D12_SHADER_VISIBILITY_PIXEL);
+
 
 		const auto samplers = GetStaticSamplers();
 
@@ -356,7 +339,7 @@ namespace Engine
 		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
 		(
 			4, slotRootParameter, 
-			1, &samplers[0],
+			samplers.size(),samplers.data(),
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		);
 
