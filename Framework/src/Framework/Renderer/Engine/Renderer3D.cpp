@@ -258,9 +258,9 @@ namespace Engine
 
 	void Renderer3D::BuildTextures()
 	{
-		auto texture = Texture::Create(L"assets\\textures\\crate\\WoodCrate02.dds", "Crate");
+		/*auto texture = Texture::Create(L"assets\\textures\\crate\\WoodCrate02.dds", "Crate");
 		RenderData.Textures.push_back(texture.get());
-		RenderData.TextureLibrary.Add("Crate", std::move(texture));
+		RenderData.TextureLibrary.Add("Crate", std::move(texture));*/
 
 
 		/**

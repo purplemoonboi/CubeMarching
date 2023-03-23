@@ -22,3 +22,17 @@ unsigned int Morton3D(float x, float y, float z)
     return xx * 4 + yy * 2 + zz;
 }
 
+uint Encode12BitMorton(float3 xyz)
+{
+    uint xb = ((int) xyz.x) & 0x11110000b;
+    uint yb = ((int) xyz.y) & 0x11110000b;
+    uint zb = ((int) xyz.z) & 0x11110000b;
+    
+    uint morton = 0x000000000000;
+    
+    morton = ((xb & 0x1b) >> 2048) | ((yb & 0x1b) >> 1024) | ((zb & 0x1b) >> 512)
+           | ((xb & 0x01b) >> 256) | ((yb & 0x01b) >> 128) | ((zb & 0x01b) >> 64)
+           | ((xb & 0x001b) >> 32) | ((yb & 0x001b) >> 16) | (zb & 0x001b);
+    
+    return morton;
+}

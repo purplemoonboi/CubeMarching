@@ -60,8 +60,8 @@ namespace Engine
        //MarchingCubes->Init(csApi, api->GetMemoryManager());
        //Renderer3D::CreateVoxelMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
-    	DualContouring->Init(csApi, api->GetMemoryManager());
-        Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+    	//DualContouring->Init(csApi, api->GetMemoryManager());
+        //Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
 
         MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
@@ -82,15 +82,11 @@ namespace Engine
     {
         MainCamera* mc = Scene->GetSceneCamera();
 
-
-        //User input
         if(IsViewportFocused)
         {
             if (LeftMButton)
             {
                 const auto camera = Scene->GetSceneCamera();
-
-
 
                 if (Input::IsKeyPressed(KEY_E))
                 {
@@ -164,11 +160,11 @@ namespace Engine
                 MarchingCubes->GetIndices());*/
 
             /* polygonise the texture with dual contouring */
-            DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            /*DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
             Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
-                DualContouring->GetIndices());
+                DualContouring->GetIndices());*/
 
-            //MarchingCubesHP->Generate(PerlinCompute->GetTexture());
+            MarchingCubesHP->ConstructLBVH(PerlinCompute->GetTexture());
 
         }
 

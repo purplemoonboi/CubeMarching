@@ -20,8 +20,9 @@ namespace Engine
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
-		void Generate(Texture* texture);
+		void ConstructLBVH(Texture* texture);
 
+		void StreamMCVoxels();
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const
 		{
@@ -47,6 +48,18 @@ namespace Engine
 		ScopePointer<PipelineStateObject> StreamPso;
 		ScopePointer<Shader> StreamShader;
 
+		ScopePointer<PipelineStateObject> MortonCodePso;
+		ScopePointer<Shader> ComputeMortonCodes;
+
+		ScopePointer<PipelineStateObject> RadixSortPso;
+		ScopePointer<Shader> RadixSortShader;
+
+		ScopePointer<PipelineStateObject> LBVHPso;
+		ScopePointer<Shader> LBVHShader;
+
+		ScopePointer<PipelineStateObject> PrefixSumLBVHPso;
+		ScopePointer<Shader> PrefixSumLBVHShader;
+
 		void BuildResources();
 
 		ComPtr<ID3D12Resource> HPResource;
@@ -55,16 +68,24 @@ namespace Engine
 		ComPtr<ID3D12Resource> MortonResource;
 		ComPtr<ID3D12Resource> MortonResourceReadBack;
 
+		ComPtr<ID3D12Resource> OutMortonResoure;
+		ComPtr<ID3D12Resource> OutMortonReadBack;
+
+		ComPtr<ID3D12Resource> HistogramResoure;
+		ComPtr<ID3D12Resource> HistogramReadBack;
+
+
+
 		ComPtr<ID3D12Resource> TriBufferResource;
 		ComPtr<ID3D12Resource> TriReadBackResource;
 
 		ComPtr<ID3D12Resource> LookUpTableResource;
 		ComPtr<ID3D12Resource> LookUpTableUpload;
 
-
 		ComPtr<ID3D12Resource> ResourceCounter;
 		ComPtr<ID3D12Resource> CounterReadBack;
 		ComPtr<ID3D12Resource> CounterUpload;
+
 
 		void BuildViews();
 
@@ -73,6 +94,8 @@ namespace Engine
 		D3D12_GPU_DESCRIPTOR_HANDLE HPResourceUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE TriResourceUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE MortonCodeUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE OutMortonUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE HistogramUav;
 
 		std::vector<Triangle> RawTriangleBuffer;
 

@@ -17,10 +17,10 @@ namespace Engine
 	{
 		if (GpuResource != nullptr)
 		{
-			GpuResource->Release();
+			/*GpuResource->Release();
 			GpuResource = nullptr;
 			UploadBuffer->Release();
-			UploadBuffer = nullptr;
+			UploadBuffer = nullptr;*/
 		}
 	}
 

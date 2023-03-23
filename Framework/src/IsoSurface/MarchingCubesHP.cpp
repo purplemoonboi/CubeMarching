@@ -54,12 +54,47 @@ namespace Engine
 		StreamPso = PipelineStateObject::Create(ComputeContext,
 			StreamShader.get(), RootSignature);
 
+		const ShaderArgs argsD =
+		{
+			L"assets\\shaders\\Histopyramid.hlsl",
+			"SortMortonCodes",
+			"cs_5_0"
+		};
+		RadixSortShader = Shader::Create(argsD.FilePath, argsD.EntryPoint, argsD.ShaderModel);
+		RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
+
+		const ShaderArgs argsE =
+		{
+			L"assets\\shaders\\Histopyramid.hlsl",
+			"ComputeMortonCode",
+			"cs_5_0"
+		};
+		ComputeMortonCodes = Shader::Create(argsE.FilePath, argsE.EntryPoint, argsE.ShaderModel);
+		MortonCodePso = PipelineStateObject::Create(ComputeContext, ComputeMortonCodes.get(), RootSignature);
+
+		const ShaderArgs argsF =
+		{
+			L"assets\\shaders\\Histopyramid.hlsl",
+			"ConstructLBVH",
+			"cs_5_0"
+		};
+		LBVHShader = Shader::Create(argsF.FilePath, argsF.EntryPoint, argsF.ShaderModel);
+		LBVHPso = PipelineStateObject::Create(ComputeContext, LBVHShader.get(), RootSignature);
+
+		const ShaderArgs argsG =
+		{
+			L"assets\\shaders\\Histopyramid.hlsl",
+			"PrefixSumLBVH",
+			"cs_5_0"
+		};
+		PrefixSumLBVHShader= Shader::Create(argsG.FilePath, argsG.EntryPoint, argsG.ShaderModel);
+		PrefixSumLBVHPso = PipelineStateObject::Create(ComputeContext, PrefixSumLBVHShader.get(), RootSignature);
 
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 	}
 
-	void MarchingCubesHP::Generate(Texture* texture)
+	void MarchingCubesHP::ConstructLBVH(Texture* texture)
 	{
 		ComputeContext->Wait(&FenceValue);
 		ComputeContext->ResetComputeCommandList(BuildUpPso.get());
@@ -81,10 +116,8 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, HPResourceUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, MortonCodeUav);
 
-		UINT groupXZ = ChunkWidth / 8;
-		UINT groupY = ChunkHeight / 8;
-
-		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
+		const UINT groupDispatch = (ChunkWidth * ChunkHeight * ChunkWidth) / 512;
+		ComputeContext->CommandList->Dispatch(groupDispatch, 1, 1);
 
 		/**
 		 *		#2. Copy the morton codes back for validation
@@ -109,20 +142,16 @@ namespace Engine
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
-		auto const prefixSumOffset = dynamic_cast<D3D12PipelineStateObject*>(PrefixOffsetPso.get());
-		ComputeContext->CommandList->SetPipelineState(prefixSumOffset->GetPipelineState());
-
-		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
 		/**
 		 *		#1. copy the results from the prefix parallel sum
 		 */
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(HPResource.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutMortonResoure.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->CommandList->CopyResource(HPResourceReadBack.Get(), HPResource.Get());
+		ComputeContext->CommandList->CopyResource(OutMortonReadBack.Get(), OutMortonResoure.Get());
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(HPResource.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutMortonResoure.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
@@ -158,6 +187,10 @@ namespace Engine
 
 	}
 
+	void MarchingCubesHP::StreamMCVoxels()
+	{
+	}
+
 	void MarchingCubesHP::BuildRootSignature()
 	{
 		//	SRVs
@@ -178,9 +211,18 @@ namespace Engine
 		CD3DX12_DESCRIPTOR_RANGE mortonCodes;
 		mortonCodes.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2);
 
+		CD3DX12_DESCRIPTOR_RANGE sortedMortons;
+		sortedMortons.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3);
+
+		CD3DX12_DESCRIPTOR_RANGE bucketTable;
+		bucketTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 4);
+
+		CD3DX12_DESCRIPTOR_RANGE cycleCounter;
+		cycleCounter.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 5);
+
 
 		// Root parameter can be a table, root descriptor or root constants.
-		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
+		CD3DX12_ROOT_PARAMETER slotRootParameter[8];
 		//  SRVs
 		slotRootParameter[0].InitAsDescriptorTable(1, &lookUpTable);
 		slotRootParameter[1].InitAsDescriptorTable(1, &textureTable);
@@ -188,9 +230,12 @@ namespace Engine
 		slotRootParameter[2].InitAsDescriptorTable(1, &triangleTable);					
 		slotRootParameter[3].InitAsDescriptorTable(1, &histoPyramidTable);				
 		slotRootParameter[4].InitAsDescriptorTable(1, &mortonCodes);
+		slotRootParameter[5].InitAsDescriptorTable(1, &sortedMortons);
+		slotRootParameter[6].InitAsDescriptorTable(1, &bucketTable);
+		slotRootParameter[7].InitAsDescriptorTable(1, &cycleCounter);
 
 		// A root signature is an array of root parameters.
-		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(5, slotRootParameter,
+		const CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(8, slotRootParameter,
 			0,
 			nullptr,
 			D3D12_ROOT_SIGNATURE_FLAG_NONE
@@ -237,6 +282,9 @@ namespace Engine
 		constexpr UINT64 mortonCapacity = VoxelWorldElementCount * sizeof(UINT32);
 		MortonResource = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
 		MortonResourceReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
+
+		OutMortonResoure = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
+		OutMortonReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
 
 		constexpr UINT64 lookUpCapacity = (4096 * sizeof(INT32));
 		LookUpTableResource = D3D12BufferUtils::CreateStructuredBuffer(lookUpCapacity, false, false);
@@ -302,6 +350,10 @@ namespace Engine
 		MortonCodeUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
 			MortonResource.Get());
 
-		
+		OutMortonUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+			OutMortonResoure.Get());
+
+		HistogramUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+			HistogramResoure.Get());
 	}
 }
