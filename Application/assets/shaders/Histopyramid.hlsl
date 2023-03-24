@@ -36,36 +36,29 @@ cbuffer cbSettings : register(b0)
 #define BLOCK_SIZE 512
 
 
-StructuredBuffer<int> TriangulationTable    : register(t0);
-Texture3D<float> DensityTexture             : register(t1);
+StructuredBuffer<int> TriangulationTable        : register(t0);
+Texture3D<float> DensityTexture                 : register(t1);
 
-RWStructuredBuffer<Triangle> TriangleBuffer : register(u0);
-RWStructuredBuffer<uint> HistoPyramid       : register(u1);
-
-RWStructuredBuffer<uint> gInputMortons : register(u2);
-RWStructuredBuffer<uint> gSortedMortons : register(u3);
-RWStructuredBuffer<uint> gBucketBuffer : register(u4);
-RWStructuredBuffer<int> gCycleCounter : register(u5);
-
-groupshared uint HPSums[X * Y * Z];
+RWStructuredBuffer<Triangle> TriangleBuffer     : register(u0);
+RWStructuredBuffer<uint> HistoPyramid           : register(u1);
+RWStructuredBuffer<uint> gInputMortons          : register(u2);
+RWStructuredBuffer<uint> gSortedMortons         : register(u3);
+RWStructuredBuffer<uint> gBucketBuffer          : register(u4);
+RWStructuredBuffer<int> gCycleCounter           : register(u5);
+RWStructuredBuffer<uint> gVoxelConfigurations   : register(u6);
 
 
-[numthreads(BLOCK_SIZE,1,1)]
-void PrefixSum(
-    uint3 gId : SV_GroupID, 
-        uint3 gtId : SV_GroupThreadID, 
+[numthreads(BLOCK_SIZE, 1, 1)]
+void ConfigureVoxels(
+    uint3 gId : SV_GroupID,
+        uint3 gtId : SV_GroupThreadID,
             uint3 tId : SV_DispatchThreadID
 )
 {
-    /* 
-    *  First phase is building the histopyramid 
-    *  from the base level to level 'k' 
-    */  
-    
-    float3 ftId = float3(tId.x, tId.y, tId.z);
+    float3 ftId = float3(tId.xyz);
 
-    ftId /= (X * Y * Z);
-    gInputMortons[(tId.z * Z) * X + (tId.y * Y) + tId.x] = Morton3D(ftId.x, ftId.y, ftId.z);
+    ftId /= TextureSize - 1;
+    gInputMortons[tId.x] = Morton3D(ftId.x, ftId.y, ftId.z);
     
 
     int3 cornerCoords[8];
@@ -88,24 +81,44 @@ void PrefixSum(
         }
     }
     
+    gVoxelConfigurations[tId.x] = cubeConfiguration;
+}
+
+groupshared uint localSums[16];
+
+
+[numthreads(BLOCK_SIZE,1,1)]
+void PrefixSum(
+    uint3 gId : SV_GroupID, 
+        uint3 gtId : SV_GroupThreadID, 
+            uint3 tId : SV_DispatchThreadID
+)
+{
+    /* 
+    *  First phase is building the histopyramid 
+    *  from the base level to level 'k' 
+    */  
+    
+   
+    
     // #1. save the cube configuration into the array
-    HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] = (cubeConfiguration == 0 || cubeConfiguration == 255) ? 0 : 1;
+    localSums[tId.x] = gVoxelConfigurations[tId.x];
     GroupMemoryBarrierWithGroupSync();
     
     // #2. parallel prefix-sum 
-    
+    uint i;
+
     for (i = 1; i < X; i = i * 2)
     {
         if (tId.x >= i)
         {
-            HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] += 
-                HPSums[(tId.z * Z) * X + (tId.y * Y) + (tId.x - i)];
+            localSums[tId.x] += (localSums[(tId.x - i)]);
         }
         GroupMemoryBarrierWithGroupSync();
     }
     
     // #3. Output
-    HistoPyramid[(tId.z * Z) * X + (tId.y * Y) + tId.x] = HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x];
+    HistoPyramid[tId.x] = localSums[tId.x];
     
 }
 
@@ -165,13 +178,41 @@ void ComputeMortonCode(
 {
     // normalise the position into a unit cube of dimensions [0,1]
     float3 np = (float3) dtId.xyz / Resolution;
-    gInputMortons[(dtId.z * Z) * X + dtId.y * Y + dtId.x] = 
-            Morton3D(np.x, np.y, np.z);
+    gInputMortons[(dtId.z * Z) * X + dtId.y * Y + dtId.x] = Morton3D(np.x, np.y, np.z);
 }
 
+    
+/*
+    RWStructuredBuffer<uint> gInputMortons  : register(u2);
+    RWStructuredBuffer<uint> gSortedMortons : register(u3);
+    RWStructuredBuffer<uint> gBucketBuffer  : register(u4);
+*/
 
-// For morting code
-groupshared uint localBuffer[16];
+groupshared uint lInputCodes[BLOCK_SIZE];
+groupshared uint lSortedCodes[BLOCK_SIZE];
+groupshared uint lBits[BLOCK_SIZE];
+groupshared uint lSums[BLOCK_SIZE];
+
+#ifndef USING_NVIDIA_FERMI
+#define USING_NVIDIA_FERMI
+groupshared uint lBuckets[BLOCK_SIZE / SMX_SIZE_FERMI];
+#else
+groupshared uint lBuckets[BLOCK_SIZE / SMX_SIZE_ATI];
+#endif
+
+void ScanBlock(uint predicate, uint lgIdx)
+{
+    // prefix parallel sum
+    for (uint t = (lgIdx * BUCKET_SIZE + 1); t < (lgIdx * BUCKET_SIZE + BUCKET_SIZE); t = t * 2)
+    {
+        if (lgIdx >= t)
+        {
+            lSums[t] += lSums[t - 1];
+        }
+        GroupMemoryBarrierWithGroupSync();
+    }
+}
+
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void SortMortonCodes(
@@ -180,67 +221,60 @@ void SortMortonCodes(
                 uint3 dtId : SV_DispatchThreadID,
                    uint gIdx : SV_GroupIndex
 )
-{
-    
+{  
     // #1 Each block sorts in local memory and computes 
     //    offsets for the 16 buckets.
-    
-    // a. Store the block of elements which maps to this 
-    //    thread group. 
-   
-    //   note - input size = 4096
-    //   if 512 threads per block?
-    //   then 4 'blocks' max 
-    
-    //   note - if input is 4-bit keys
-    //   then R-Base is 2^4 (hence 16 buckets)
-    
-
-#ifndef USING_NVIDIA_FERMI
-#define USING_NVIDIA_FERMI
-    uint k = BLOCK_SIZE / SMX_SIZE_FERMI;    
-#else
-    uint k = BLOCK_SIZE / SMX_SIZE_ATI;
-#endif
-    
-    // normalise the position into a unit cube of dimensions [0,1]
-    float3 np = (float3) dtId.xyz / Resolution;
-    gInputMortons[(dtId.z * Z) * X + dtId.y * Y + dtId.x] =
-            Morton3D(np.x, np.y, np.z);
-
-    // remove this and dispatch EncodeMortion(...) instead.
-    AllMemoryBarrierWithGroupSync();
-    
-    // will need to upload a value to the Cb so we can scale for more than
-    // one dispatch group.
-    uint lgIdx = (dtId.x / BLOCK_SIZE) * NUM_BUCKETS;
-    
-    // remap the index to a range between [0,BUCKET_SIZE]
-    uint lIdx = dtId.x - (dtId.x * lgIdx);
-    localBuffer[lIdx] = gInputMortons[dtId.x];
-    GroupMemoryBarrierWithGroupSync();
-    
-    uint i;
-    uint mask;
-    
-    for (i = 0; i < BIT_KEY_SIZE; i++)
-    {
-        mask = 1 << i;
-        uint bit = (localBuffer[lIdx] & mask) ? 1 : 0;
-    
-        for (uint t = 1; t < 16; t = t * 2)
-        {
-            if (dtId.x >= t)
-            {
-                localBuffer[t] += localBuffer[t - 1];
-            }
-            GroupMemoryBarrierWithGroupSync();
-        }
-  
-    }
         
+#ifdef USING_NVIDIA_FERMI
+#define USING_NVIDIA_FERMI
+    uint k = BLOCK_SIZE / SMX_SIZE_FERMI;//16    
+#else
+    uint k = BLOCK_SIZE / SMX_SIZE_ATI;//8
+#endif
+   
+     // local-group-index :- We need 16 (8 for ATI) groups for 
+     // a block of 512 threads where each group contains 32
+     // (64 for ATI) threads on one SMX core. So we calculate 
+     // the index relative to the local group.
+     uint lgIdx = (dtId.x / BLOCK_SIZE) * NUM_BUCKETS; // [0 - 32]
+   
+     // store the global input array into group 
+     // shared memory.
+     lInputCodes[dtId.x - (gId.x * BLOCK_SIZE)] = gInputMortons[(gId.x * dtId.x) + dtId.x];
     
+     uint mask = 1 << gCycleCounter[0];
+     GroupMemoryBarrierWithGroupSync();
+
+     lBits[dtId.x] = (lInputCodes[dtId.x] & mask) ? 1 : 0;
     
+     // for exclusive scan...
+     //lSums[0] = 0;
+     lSums[(lgIdx * BUCKET_SIZE)] = 0;
+     
+     // otherwise for inclusive
+     // lSums[0] = lBits[0];
+     //lSums[(lgIdx * BUCKET_SIZE) + 32] = lBits[(lgIdx * BUCKET_SIZE) + 32];
+     
+     // prefix parallel sum
+     for (int i = 0; i < BUCKET_SIZE; i++)
+     {
+         for (uint t = (lgIdx * BUCKET_SIZE + 1); t < (lgIdx * BUCKET_SIZE + BUCKET_SIZE); t = t * 2)
+         {
+             if (lgIdx >= t)
+             {
+                 lSums[t] += lSums[t - 1];
+             }
+             GroupMemoryBarrierWithGroupSync();
+         }
+     }
+     
+     uint falseTotal = BUCKET_SIZE - (lSums[dtId.x] + lBits[dtId.x]);
+    
+     uint dest = lBits[dtId.x] ? lSums[dtId.x] + falseTotal : dtId.x - lSums[dtId.x];
+
+     lSortedCodes[dest] = lInputCodes[dtId.x];
+
+     gInputMortons[(gId.x * (dtId.x)) + dtId.x] = lSortedCodes[dest];
     
 }
 
@@ -257,35 +291,35 @@ void PrefixSumBVH(
 
     
     
-    // #1. save the cube configuration into the array
-    HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] = 0;
-    GroupMemoryBarrierWithGroupSync();
+//    // #1. save the cube configuration into the array
+//    HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] = 0;
+//    GroupMemoryBarrierWithGroupSync();
     
-    // #2. parallel prefix-sum 
-    uint i;
-    for (i = 1; i < X; i = i * 2)
-    {
-        if (tId.x >= i)
-        {
-            HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] +=
-                HPSums[(tId.z * Z) * X + (tId.y * Y) + (tId.x - i)];
-        }
-        GroupMemoryBarrierWithGroupSync();
-    }
+//    // #2. parallel prefix-sum 
+//    uint i;
+//    for (i = 1; i < X; i = i * 2)
+//    {
+//        if (tId.x >= i)
+//        {
+//            HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x] +=
+//                HPSums[(tId.z * Z) * X + (tId.y * Y) + (tId.x - i)];
+//        }
+//        GroupMemoryBarrierWithGroupSync();
+//    }
     
-    // #3. Output
-    HistoPyramid[(tId.z * Z) * X + (tId.y * Y) + tId.x] = HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x];
+//    // #3. Output
+//    HistoPyramid[(tId.z * Z) * X + (tId.y * Y) + tId.x] = HPSums[(tId.z * Z) * X + (tId.y * Y) + tId.x];
     
 }
 
-[numthreads(32, 1, 1)]
-void ConstructLBVH(
-        uint3 gId : SV_GroupID, 
-            uint3 gtId : SV_GroupThreadID, 
-                uint3 dtId : SV_DispatchThreadID
-)
-{
+//[numthreads(32, 1, 1)]
+//void ConstructLBVH(
+//        uint3 gId : SV_GroupID, 
+//            uint3 gtId : SV_GroupThreadID, 
+//                uint3 dtId : SV_DispatchThreadID
+//)
+//{
     
     
     
-}
+//}

@@ -136,6 +136,9 @@ namespace Engine
 		if(GpuBuffer != nullptr)
 		{
 			GpuBuffer.Reset();
+		}
+		if (Gpu_UploadBuffer != nullptr)
+		{
 			Gpu_UploadBuffer.Reset();
 		}
 
@@ -200,21 +203,32 @@ namespace Engine
 	{
 		if(DefaultBuffer != nullptr)
 		{
+			DefaultBuffer.Reset();
 			DefaultBuffer->Release();
-			DefaultBuffer = nullptr;
 		}
 		if(UploadBuffer != nullptr)
 		{
+			UploadBuffer.Reset();
 			UploadBuffer->Release();
-			UploadBuffer = nullptr;
 		}
 	}
 
 	bool D3D12IndexBuffer::Regenerate()
 	{
 		// Reserve memory and copy the indices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(IndexBufferByteSize, &CpuData));
-		CopyMemory(CpuData->GetBufferPointer(), Data.data(), IndexBufferByteSize);
+		if (CpuData != nullptr)
+		{
+			CopyMemory(CpuData->GetBufferPointer(), Data.data(), IndexBufferByteSize);
+		}
+
+		if (DefaultBuffer != nullptr)
+		{
+			DefaultBuffer.Reset();
+		}
+		if (UploadBuffer != nullptr)
+		{
+			UploadBuffer.Reset();
+		}
 
 		// Create the GPU vertex buffer
 		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer

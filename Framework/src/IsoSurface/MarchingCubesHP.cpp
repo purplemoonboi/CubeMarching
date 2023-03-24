@@ -22,7 +22,7 @@ namespace Engine
 		BuildResources();
 		BuildViews();
 
-		const ShaderArgs args =
+		/*const ShaderArgs args =
 		{
 			L"assets\\shaders\\Histopyramid.hlsl",
 			"PrefixSum",
@@ -42,9 +42,9 @@ namespace Engine
 		};
 		PrefixOffsetShader = Shader::Create(argsB.FilePath, argsB.EntryPoint, argsB.ShaderModel);
 		PrefixOffsetPso = PipelineStateObject::Create(ComputeContext,
-			PrefixOffsetShader.get(), RootSignature);
+			PrefixOffsetShader.get(), RootSignature);*/
 
-		const ShaderArgs argsC =
+		/*const ShaderArgs argsC =
 		{
 			L"assets\\shaders\\Histopyramid.hlsl",
 			"TraverseHP",
@@ -52,7 +52,7 @@ namespace Engine
 		};
 		StreamShader = Shader::Create(argsC.FilePath, argsC.EntryPoint, argsC.ShaderModel);
 		StreamPso = PipelineStateObject::Create(ComputeContext,
-			StreamShader.get(), RootSignature);
+			StreamShader.get(), RootSignature);*/
 
 		const ShaderArgs argsD =
 		{
@@ -63,7 +63,7 @@ namespace Engine
 		RadixSortShader = Shader::Create(argsD.FilePath, argsD.EntryPoint, argsD.ShaderModel);
 		RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
 
-		const ShaderArgs argsE =
+		/*const ShaderArgs argsE =
 		{
 			L"assets\\shaders\\Histopyramid.hlsl",
 			"ComputeMortonCode",
@@ -88,7 +88,7 @@ namespace Engine
 			"cs_5_0"
 		};
 		PrefixSumLBVHShader= Shader::Create(argsG.FilePath, argsG.EntryPoint, argsG.ShaderModel);
-		PrefixSumLBVHPso = PipelineStateObject::Create(ComputeContext, PrefixSumLBVHShader.get(), RootSignature);
+		PrefixSumLBVHPso = PipelineStateObject::Create(ComputeContext, PrefixSumLBVHShader.get(), RootSignature);*/
 
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);

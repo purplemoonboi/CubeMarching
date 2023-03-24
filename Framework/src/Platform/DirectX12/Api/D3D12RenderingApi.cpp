@@ -183,6 +183,11 @@ namespace Engine
 			}
 		}
 
+		if (RenderTarget->DirtyFlag == 1)
+		{
+			RenderTarget->Regenerate();
+		}
+
 		const HRESULT closeResult = Context->GraphicsCmdList->Close();
 		THROW_ON_FAILURE(closeResult);
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };

@@ -51,11 +51,13 @@ namespace Engine
 		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuSrv;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuRtv;
 
-
 		INT32 SrvIndex = -1;
 
 		D3D12_RECT Rect;
 		D3D12_VIEWPORT Viewport;
+
+		void Regenerate();
+		INT8 DirtyFlag = 0;
 
 	};
 

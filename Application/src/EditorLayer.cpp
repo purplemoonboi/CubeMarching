@@ -63,7 +63,7 @@ namespace Engine
     	//DualContouring->Init(csApi, api->GetMemoryManager());
         //Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
 
-        MarchingCubesHP->Init(csApi, api->GetMemoryManager());
+        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
         RenderInstruction::ExecGraphicsCommandList();
@@ -164,7 +164,7 @@ namespace Engine
             Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
                 DualContouring->GetIndices());*/
 
-            MarchingCubesHP->ConstructLBVH(PerlinCompute->GetTexture());
+            //MarchingCubesHP->ConstructLBVH(PerlinCompute->GetTexture());
 
         }
 

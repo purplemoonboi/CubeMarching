@@ -63,25 +63,7 @@ namespace Engine
 			Width = width;
 			Height = height;
 
-			GpuResource = D3D12BufferUtils::CreateRenderTexture(Width, Height, Format);
-			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-			srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-			srvDesc.Texture2D.MostDetailedMip = 0;
-			srvDesc.Texture2D.MipLevels = 1;
-
-			D3D12Utils::RefreshShaderResourceViews(srvDesc, GpuResource.Get(), ResourceCpuSrv);
-			D3D12Utils::RefreshRenderTargetView(GpuResource.Get(), nullptr, ResourceCpuRtv);
-
-			Viewport.TopLeftX = 0;
-			Viewport.TopLeftY = 0;
-			Viewport.Width = static_cast<float>(Width);
-			Viewport.Height = static_cast<float>(Height);
-			Viewport.MinDepth = 0.0f;
-			Viewport.MaxDepth = 1.0f;
-
-			Rect = { 0, 0, Width, Height};
+			DirtyFlag = 1;
 		}
 	}
 
@@ -117,5 +99,32 @@ namespace Engine
 
 	void D3D12RenderTarget::Copy(void* src)
 	{
+	}
+	void D3D12RenderTarget::Regenerate()
+	{
+		GpuResource.Reset();
+
+		GpuResource = D3D12BufferUtils::CreateRenderTexture(Width, Height, Format);
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.MipLevels = 1;
+
+		D3D12Utils::RefreshShaderResourceViews(srvDesc, GpuResource.Get(), ResourceCpuSrv);
+		D3D12Utils::RefreshRenderTargetView(GpuResource.Get(), nullptr, ResourceCpuRtv);
+
+		Viewport.TopLeftX = 0;
+		Viewport.TopLeftY = 0;
+		Viewport.Width = static_cast<float>(Width);
+		Viewport.Height = static_cast<float>(Height);
+		Viewport.MinDepth = 0.0f;
+		Viewport.MaxDepth = 1.0f;
+
+		Rect = { 0, 0, Width, Height };
+
+
+		DirtyFlag = 0;
 	}
 }
