@@ -200,20 +200,6 @@ groupshared uint lBuckets[BLOCK_SIZE / SMX_SIZE_FERMI];
 groupshared uint lBuckets[BLOCK_SIZE / SMX_SIZE_ATI];
 #endif
 
-void ScanBlock(uint predicate, uint lgIdx)
-{
-    // prefix parallel sum
-    for (uint t = (lgIdx * BUCKET_SIZE + 1); t < (lgIdx * BUCKET_SIZE + BUCKET_SIZE); t = t * 2)
-    {
-        if (lgIdx >= t)
-        {
-            lSums[t] += lSums[t - 1];
-        }
-        GroupMemoryBarrierWithGroupSync();
-    }
-}
-
-
 [numthreads(BLOCK_SIZE, 1, 1)]
 void SortMortonCodes(
         uint3 gId : SV_GroupID,
@@ -240,7 +226,7 @@ void SortMortonCodes(
    
      // store the global input array into group 
      // shared memory.
-     lInputCodes[dtId.x - (gId.x * BLOCK_SIZE)] = gInputMortons[(gId.x * dtId.x) + dtId.x];
+     lInputCodes[dtId.x] = gInputMortons[(gId.x * dtId.x) + dtId.x];
     
      uint mask = 1 << gCycleCounter[0];
      GroupMemoryBarrierWithGroupSync();
@@ -275,7 +261,7 @@ void SortMortonCodes(
      lSortedCodes[dest] = lInputCodes[dtId.x];
 
      gInputMortons[(gId.x * (dtId.x)) + dtId.x] = lSortedCodes[dest];
-    
+    gBucketBuffer[(gId.x * (dtId.x)) + dtId.x] = lSums[dtId.x];
 }
 
 [numthreads(X, Y, Z)]

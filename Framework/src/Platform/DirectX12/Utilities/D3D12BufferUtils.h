@@ -74,6 +74,7 @@ namespace Engine
 		static ComPtr<ID3D12Resource> CreateReadBackBuffer(UINT32 bufferWidth);
 
 		static ComPtr<ID3D12Resource> CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite = false, bool allowAtomics = false);
+		static ComPtr<ID3D12Resource> CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* uploadBuffer = nullptr, const void* data = nullptr, bool allowWrite = false, bool allowAtomics = false);
 
 		static void CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth);
 

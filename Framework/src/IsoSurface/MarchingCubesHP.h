@@ -22,6 +22,8 @@ namespace Engine
 
 		void ConstructLBVH(Texture* texture);
 
+		void RadixSortGPU();
+
 		void StreamMCVoxels();
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const
@@ -67,6 +69,7 @@ namespace Engine
 
 		ComPtr<ID3D12Resource> MortonResource;
 		ComPtr<ID3D12Resource> MortonResourceReadBack;
+		ComPtr<ID3D12Resource> MortonUploadBuffer;
 
 		ComPtr<ID3D12Resource> OutMortonResoure;
 		ComPtr<ID3D12Resource> OutMortonReadBack;

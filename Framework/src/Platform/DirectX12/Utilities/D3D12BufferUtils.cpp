@@ -497,6 +497,54 @@ namespace Engine
 		
 	}
 
+	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* resource, const void* data, bool allowWrite, bool allowAtomics)
+	{
+
+		ComPtr<ID3D12Resource> buffer = nullptr;
+
+		const D3D12_RESOURCE_FLAGS bufferFlags = (allowWrite) ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
+		const D3D12_RESOURCE_STATES bufferState = (allowWrite) ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
+		const D3D12_HEAP_FLAGS heapFlags = (allowAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
+
+		const HRESULT result = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			heapFlags,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, bufferFlags),
+			bufferState,
+			nullptr,
+			IID_PPV_ARGS(&buffer)
+		);
+		THROW_ON_FAILURE(result);
+
+		const HRESULT result = Device->CreateCommittedResource
+		(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&resource)
+		);
+		THROW_ON_FAILURE(result);
+
+		D3D12_SUBRESOURCE_DATA srcData = {};
+		srcData.pData = data;
+		srcData.RowPitch = bufferWidth;
+		srcData.SlicePitch = srcData.RowPitch;
+
+		GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), bufferState,
+			D3D12_RESOURCE_STATE_COPY_DEST));
+
+		UpdateSubresources(GraphicsCmdList, buffer.Get(), resource, 0, 0, 1, &srcData);
+
+		GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+			bufferState));
+
+		return buffer;
+
+	}
+
 	UINT D3D12BufferUtils::CalculateConstantBufferByteSize(UINT byteSize)
 	{
 		return (byteSize + 255) & ~255;

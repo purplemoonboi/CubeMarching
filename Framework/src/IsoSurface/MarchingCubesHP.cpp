@@ -22,7 +22,8 @@ namespace Engine
 		BuildResources();
 		BuildViews();
 
-		/*const ShaderArgs args =
+/*
+		const ShaderArgs args =
 		{
 			L"assets\\shaders\\Histopyramid.hlsl",
 			"PrefixSum",
@@ -42,9 +43,9 @@ namespace Engine
 		};
 		PrefixOffsetShader = Shader::Create(argsB.FilePath, argsB.EntryPoint, argsB.ShaderModel);
 		PrefixOffsetPso = PipelineStateObject::Create(ComputeContext,
-			PrefixOffsetShader.get(), RootSignature);*/
+			PrefixOffsetShader.get(), RootSignature);
 
-		/*const ShaderArgs argsC =
+		const ShaderArgs argsC =
 		{
 			L"assets\\shaders\\Histopyramid.hlsl",
 			"TraverseHP",
@@ -52,18 +53,9 @@ namespace Engine
 		};
 		StreamShader = Shader::Create(argsC.FilePath, argsC.EntryPoint, argsC.ShaderModel);
 		StreamPso = PipelineStateObject::Create(ComputeContext,
-			StreamShader.get(), RootSignature);*/
+			StreamShader.get(), RootSignature);
 
-		const ShaderArgs argsD =
-		{
-			L"assets\\shaders\\Histopyramid.hlsl",
-			"SortMortonCodes",
-			"cs_5_0"
-		};
-		RadixSortShader = Shader::Create(argsD.FilePath, argsD.EntryPoint, argsD.ShaderModel);
-		RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
-
-		/*const ShaderArgs argsE =
+		const ShaderArgs argsE =
 		{
 			L"assets\\shaders\\Histopyramid.hlsl",
 			"ComputeMortonCode",
@@ -88,7 +80,17 @@ namespace Engine
 			"cs_5_0"
 		};
 		PrefixSumLBVHShader= Shader::Create(argsG.FilePath, argsG.EntryPoint, argsG.ShaderModel);
-		PrefixSumLBVHPso = PipelineStateObject::Create(ComputeContext, PrefixSumLBVHShader.get(), RootSignature);*/
+		PrefixSumLBVHPso = PipelineStateObject::Create(ComputeContext, PrefixSumLBVHShader.get(), RootSignature);
+*/
+
+		const ShaderArgs radixSort =
+		{
+			L"assets\\shaders\\Histopyramid.hlsl",
+			"SortMortonCodes",
+			"cs_5_0"
+		};
+		RadixSortShader = Shader::Create(radixSort.FilePath, radixSort.EntryPoint, radixSort.ShaderModel);
+		RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
 
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
@@ -184,6 +186,26 @@ namespace Engine
 			MortonCodes.push_back(mc[i]);
 		}
 		MortonResourceReadBack->Unmap(0, nullptr);
+
+	}
+
+	void MarchingCubesHP::RadixSortGPU()
+	{
+
+		ComputeContext->ResetComputeCommandList(RadixSortPso.get());
+
+		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
+
+		auto d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(RadixSortPso.get());
+		ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
+
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, MortonCodeUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, OutMortonUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HistogramUav);
+
+		ComputeContext->CommandList->Dispatch(512, 1, 1);
+
+		ComputeContext->ExecuteComputeCommandList(&FenceValue);
 
 	}
 
@@ -285,6 +307,10 @@ namespace Engine
 
 		OutMortonResoure = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
 		OutMortonReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
+
+		HistogramResoure = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
+		HistogramReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
+		D3D12BufferUtils::CreateUploadBuffer(MortonUploadBuffer, mortonCapacity);
 
 		constexpr UINT64 lookUpCapacity = (4096 * sizeof(INT32));
 		LookUpTableResource = D3D12BufferUtils::CreateStructuredBuffer(lookUpCapacity, false, false);
