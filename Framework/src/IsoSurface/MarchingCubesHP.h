@@ -22,7 +22,7 @@ namespace Engine
 
 		void ConstructLBVH(Texture* texture);
 
-		void RadixSortGPU();
+		void SortChunk();
 
 		void StreamMCVoxels();
 
@@ -99,6 +99,7 @@ namespace Engine
 		D3D12_GPU_DESCRIPTOR_HANDLE MortonCodeUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE OutMortonUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE HistogramUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE CycleCounterUav;
 
 		std::vector<Triangle> RawTriangleBuffer;
 

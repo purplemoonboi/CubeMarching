@@ -517,7 +517,7 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(result);
 
-		const HRESULT result = Device->CreateCommittedResource
+		const HRESULT uploadResult = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -526,7 +526,7 @@ namespace Engine
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		THROW_ON_FAILURE(result);
+		THROW_ON_FAILURE(uploadResult);
 
 		D3D12_SUBRESOURCE_DATA srcData = {};
 		srcData.pData = data;
