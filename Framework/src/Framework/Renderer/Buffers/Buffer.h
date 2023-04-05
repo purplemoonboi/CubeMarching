@@ -162,6 +162,7 @@ namespace Engine
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
 		virtual void SetData(const void* data, INT32 size, INT32 count) = 0;
+		virtual void SetData(const void* bufferAddress, INT32 count) = 0;
 		virtual void Destroy() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
 		virtual UINT32 GetCount() = 0;
@@ -182,7 +183,7 @@ namespace Engine
 		virtual void UnBind() const = 0;
 		virtual void Destroy() = 0;
 		
-		virtual void SetData(const UINT16* data, UINT count) = 0;
+		virtual void SetData(const UINT16* data, INT32 count) = 0;
 
 
 		virtual INT32 GetCount() const = 0;

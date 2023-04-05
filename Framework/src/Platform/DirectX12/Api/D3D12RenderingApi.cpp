@@ -14,6 +14,7 @@
 #include "Platform/DirectX12/Copy/D3D12CopyContext.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+#include "Platform/DirectX12/RootSignature/D3D12RootSignature.h"
 
 #include "Platform/DirectX12/Textures/Loader/D3D12TextureLoader.h"
 
@@ -51,13 +52,13 @@ namespace Engine
 		fbs.Height = viewportHeight;
 		
 
-		FrameBuffer = std::make_unique<class D3D12FrameBuffer>(fbs);
+		FrameBuffer = CreateScope<class D3D12FrameBuffer>(fbs);
 		FrameBuffer->Init(Context);
 		FrameBuffer->RebuildFrameBuffer(fbs);
 
 		std::vector<INT8> bytes;
-		bytes.insert(bytes.begin(), 1920 * 1080, 0);
-		RenderTarget = CreateScope<D3D12RenderTarget>(bytes.data(), 1920, 1080);
+		bytes.insert(bytes.begin(), viewportWidth * viewportHeight, 0);
+		RenderTarget = CreateScope<D3D12RenderTarget>(bytes.data(), viewportWidth, viewportHeight);
 
 		constexpr UINT32 maxObjCount = 16;
 		constexpr UINT32 maxMatCount = 16;
@@ -171,17 +172,6 @@ namespace Engine
 		const HRESULT cmdReset = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdReset);
 
-		for(auto item : items)
-		{
-			if(item->Geometry->DirtFlag == 1)
-			{
-				auto* vb = dynamic_cast<D3D12VertexBuffer*>(item->Geometry->VertexBuffer.get());
-				vb->Regenerate();
-				auto* ib = dynamic_cast<D3D12IndexBuffer*>(item->Geometry->IndexBuffer.get());
-				ib->Regenerate();
-				item->Geometry->DirtFlag = 0;
-			}
-		}
 
 		if (RenderTarget->DirtyFlag == 1)
 		{
@@ -314,66 +304,25 @@ namespace Engine
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 
 
+		for (auto item : renderItems)
+		{
+			if (item->Geometry->DirtFlag == 1)
+			{
+				auto* vb = dynamic_cast<D3D12VertexBuffer*>(item->Geometry->VertexBuffer.get());
+				vb->Regenerate();
+				auto* ib = dynamic_cast<D3D12IndexBuffer*>(item->Geometry->IndexBuffer.get());
+				ib->Regenerate();
+				item->Geometry->DirtFlag = 0;
+			}
+		}
+
 		//RenderTarget->UnBind(Context);
+
+		const HRESULT deviceHr = Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceHr);
+
 	}
 
-	void D3D12RenderingApi::BindTerrainPass
-	(
-		PipelineStateObject* pso, 
-		const MeshGeometry* terrainMesh,
-		UINT constantBufferOffset, UINT materialBufferOffset
-	
-	)
-	{
-		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
-		Context->GraphicsCmdList->RSSetViewports(1, &FrameBuffer->GetViewport());
-		Context->GraphicsCmdList->RSSetScissorRects(1, &FrameBuffer->GetScissorsRect());
-
-
-
-		Context->GraphicsCmdList->OMSetRenderTargets(1, &FrameBuffer->GetCurrentBackBufferViewCpu(),
-			true,
-			&FrameBuffer->GetDepthStencilViewCpu()
-		);
-		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetConstantBufferDescHeap() };
-		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-		/* Bind the shader root signature */
-		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
-		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
-		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
-	
-		const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(terrainMesh->VertexBuffer.get());
-		const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(terrainMesh->IndexBuffer.get());
-
-		Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
-		Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
-		Context->GraphicsCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
-		const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
-
-		ID3D12Resource* objectConstantBuffer = CurrentFrameResource->ConstantBuffer->Resource();
-		ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
-
-		const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + constantBufferOffset * objConstBufferByteSize;
-		const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + materialBufferOffset * matConstBufferByteSize;
-
-		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
-		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
-
-
-		Context->GraphicsCmdList->DrawInstanced
-		(
-			terrainMesh->VertexBuffer->GetCount(),
-			1,
-			terrainMesh->DrawArgs.at("Terrain").StartIndexLocation,
-			terrainMesh->DrawArgs.at("Terrain").BaseVertexLocation
-		);
-
-		
-	}
 
 	void D3D12RenderingApi::BindLightingPass()
 	{

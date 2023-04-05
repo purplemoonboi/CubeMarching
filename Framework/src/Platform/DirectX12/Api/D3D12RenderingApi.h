@@ -11,6 +11,7 @@
 
 namespace Engine
 {
+	class D3D12RootSignature;
 
 	struct WorldSettings;
 
@@ -29,8 +30,6 @@ namespace Engine
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
 
 		void BindDepthPass() override;
-
-		void BindTerrainPass(PipelineStateObject* pso, const MeshGeometry* terrainMesh, UINT constantBufferOffset = 0, UINT materialBufferOffset = 0) override;
 
 		void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
 
@@ -71,8 +70,10 @@ namespace Engine
 		[[nodiscard]] RenderTarget* GetRenderTextureAlbedo() const override { return RenderTarget.get(); }
 
 	private:
-		
+
+		// Buffer for uploading shader constants.
 		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
+		// All of our frame resources.
 		std::vector<ScopePointer<D3D12FrameResource>> FrameResources;
 		UINT32 CurrentFrameResourceIndex = 0;
 
@@ -82,13 +83,14 @@ namespace Engine
 
 		// A unique pointer to the frame buffer
 		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
-
+		// Custom render buffer
 		ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
-
+		// Core root signature
+		//ScopePointer<D3D12RootSignature> RootSignature = nullptr;
 		// A unique pointer to the Api's memory allocator class.
 		ScopePointer<D3D12MemoryManager> D3D12MemoryManager = nullptr;
 
-
+		// Keeps track of the current frame resource in flight.
 		D3D12FrameResource* CurrentFrameResource = nullptr;
 
 	};

@@ -18,6 +18,17 @@ namespace Engine
 	class D3D12Context;
 	class D3D12MemoryManager;
 
+	// @brief The buffer event system is exclusive for modern APIs such as Direct X12 and Vulkan.
+	//	      Because it is the programmer's responsibility for ensuring safe allocation and deallocation
+	//		  of GPU resources, a simple event system for scheduling commands was devised.
+	enum class BufferEventsFlags : INT8
+	{
+		Idle = 0x0000,				// Buffer remains in this state until....
+		DirtyBuffer = 0x0001,		//....a change has been requested....
+		QueueDeletion = 0x0010,		//....a request for buffer deletion.
+		InFlight = 0x0011			//....buffer is in use on GPU.
+	};
+
 	class D3D12VertexBuffer : public VertexBuffer
 	{
 	public:
@@ -36,6 +47,7 @@ namespace Engine
 
 		// @brief Sets the vertex data for this buffer.
 		void SetData(const void* data, INT32 size, INT32 count) override;
+		void SetData(const void* buffer, INT32 count) override;
 
 		void SetLayout(const BufferLayout& layout) override;
 
@@ -64,7 +76,8 @@ namespace Engine
 		ComPtr<ID3D12Resource> Gpu_UploadBuffer = nullptr;
 
 		UINT VertexBufferByteSize;
-		INT8 Flag = 0;
+
+		BufferEventsFlags BufferState = BufferEventsFlags::Idle;
 
 	private:
 
@@ -85,7 +98,7 @@ namespace Engine
 		void Bind() const override;
 
 		void UnBind() const override;
-		void SetData(const UINT16* data, UINT count) override;
+		void SetData(const UINT16* data, INT32 count) override;
 		void Destroy() override;
 
 		bool Regenerate();
@@ -94,7 +107,9 @@ namespace Engine
 		[[nodiscard]] UINT16* GetData() const override;
 		[[nodiscard]] D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const;
 
-	private:
+		BufferEventsFlags BufferState = BufferEventsFlags::Idle;
+
+
 		INT32 Count;
 
 		// @brief CPU copy of the index buffer
@@ -146,6 +161,7 @@ namespace Engine
 
 		void UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials) ;
 
+		void UpdateVoxelTerrainBuffer(D3D12FrameResource* resource, RenderItem* terrain, const std::vector<Vertex>& vertices);
 
 		const INT32 GetCount() const ;
 

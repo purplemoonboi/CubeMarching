@@ -56,19 +56,22 @@ namespace Engine
         RenderInstruction::ResetGraphicsCommandList();
 
         PerlinCompute->Init(csApi, api->GetMemoryManager());
+        PerlinCompute->PerlinFBM(PerlinSettings);
 
-       //MarchingCubes->Init(csApi, api->GetMemoryManager());
-       //Renderer3D::CreateVoxelMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+		//MarchingCubes->Init(csApi, api->GetMemoryManager());
+		//Renderer3D::CreateVoxelMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
-    	//DualContouring->Init(csApi, api->GetMemoryManager());
-        //Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+    	DualContouring->Init(csApi, api->GetMemoryManager());
+        DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-        MarchingCubesHP->Init(csApi, api->GetMemoryManager());
+        Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+
+        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
         RenderInstruction::ExecGraphicsCommandList();
 
-        MarchingCubesHP->SortChunk();
+        //MarchingCubesHP->SortChunk();
 
         MainCamera* mc = Scene->GetSceneCamera();
         mc->SetPosition({0, 0, 0});
@@ -130,7 +133,10 @@ namespace Engine
           
         }
 
- 
+
+        //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+
+
 
         Scene->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
 
@@ -143,12 +149,11 @@ namespace Engine
             Regen = true;
         }
 
+
         if (Regen)
         {
             
             Regen = false;
-
-
 
             /*if(Smooth)
             {
@@ -157,14 +162,11 @@ namespace Engine
             }*/
 
             /* polygonise the texture with marching cubes*/
-           /* MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            Renderer3D::RegenerateBuffers("MarchingTerrain", MarchingCubes->GetVertices(),
-                MarchingCubes->GetIndices());*/
+            //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
             /* polygonise the texture with dual contouring */
-            /*DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            Renderer3D::RegenerateBuffers("DualTerrain", DualContouring->GetVertices(), 
-                DualContouring->GetIndices());*/
+            //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+           
 
             //MarchingCubesHP->ConstructLBVH(PerlinCompute->GetTexture());
 
@@ -374,9 +376,10 @@ namespace Engine
                 PerlinSettings.GroundHeight = groundHeight;
                 PerlinSettings.Octaves = octaves;
 
-                float isoVal        = VoxelSettings.IsoValue;
-                float planetRadius  = VoxelSettings.PlanetRadius;
-                float resolution    = VoxelSettings.Resolution;
+                float isoVal         = VoxelSettings.IsoValue;
+                bool useBinarySearch = VoxelSettings.UseBinarySearch;
+                INT32 resolution = VoxelSettings.Resolution;
+                bool useTexture = VoxelSettings.UseTexture;
 
 
                 ImGui::Begin("Voxel Settings");
@@ -385,7 +388,15 @@ namespace Engine
                     Regen = true;
 
                 ImGui::Spacing();
-                if (ImGui::DragFloat("Resolution", &resolution, 0.1f, 2.0f, 64.0f))
+                if (ImGui::DragInt("Resolution", &resolution, 0.1f, 2.0f, 64.0f))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::Checkbox("UseBinarySearch", &useBinarySearch))
+                    Regen = true;
+
+                ImGui::Spacing();
+                if (ImGui::Checkbox("UseTexture", &useTexture))
                     Regen = true;
 
                 ImGui::Spacing();
@@ -396,8 +407,9 @@ namespace Engine
                 ImGui::Separator();
 
                 VoxelSettings.IsoValue = isoVal;
-                VoxelSettings.PlanetRadius = planetRadius;
+                VoxelSettings.UseBinarySearch = useBinarySearch;
                 VoxelSettings.Resolution = resolution;
+                VoxelSettings.UseTexture = useTexture;
                 ImGui::End();
             }
 

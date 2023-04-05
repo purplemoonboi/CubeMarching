@@ -55,8 +55,8 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 32;
-	constexpr UINT64 ChunkHeight = 32;
+	constexpr UINT64 ChunkWidth = 128;
+	constexpr UINT64 ChunkHeight = 128;
 
 	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
 	constexpr UINT64 VoxelTextureHeight = ChunkHeight + 1;
@@ -85,13 +85,11 @@ namespace Engine
 	{
 		float IsoValue = 0.0;
 		INT32 TextureSize = VoxelTextureWidth;
-		float PlanetRadius = 10;
+		INT32 UseBinarySearch = 1;//Toggle for alternating between QEF and Binary Search
 		INT32 NumOfPointsPerAxis = VoxelTextureWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
-	
 		INT32 Resolution = ChunkWidth;
-		INT32 OctreeSize = 8;
-		INT32 PrimitiveCount = DensityPrimitiveCount; /* for density primitives */
+		INT32 UseTexture = 1;
 	};
 
 

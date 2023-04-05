@@ -27,6 +27,7 @@ namespace Engine
 		ScopePointer<D3D12UploadBuffer<PassConstants>> PassBuffer = nullptr;
         ScopePointer<D3D12UploadBuffer<MaterialConstants>> MaterialBuffer = nullptr;
 		ScopePointer<D3D12UploadBuffer<ObjectConstant>> ConstantBuffer = nullptr;
+        ScopePointer<D3D12UploadBuffer<Vertex>> TerrainBuffer = nullptr;
 
 		// Fence value to mark commands up to this fence point.  This lets us
 		// check if these frame resources are still in use by the GPU.

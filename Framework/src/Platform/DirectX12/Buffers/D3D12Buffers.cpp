@@ -105,6 +105,11 @@ namespace Engine
 
 	}
 
+	void D3D12VertexBuffer::SetData(const void* buffer, INT32 count)
+	{
+
+	}
+
 	void D3D12VertexBuffer::SetLayout(const BufferLayout& layout)
 	{
 		Layout = layout;
@@ -141,6 +146,7 @@ namespace Engine
 		{
 			Gpu_UploadBuffer.Reset();
 		}
+
 
 		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
@@ -187,8 +193,10 @@ namespace Engine
 
 	}
 
-	void D3D12IndexBuffer::SetData(const UINT16* data, UINT count)
+	void D3D12IndexBuffer::SetData(const UINT16* data, INT32 count)
 	{
+		CopyMemory(CpuData->GetBufferPointer(), data, count);
+
 		Data.clear();
 
 		Count = count;
@@ -196,7 +204,9 @@ namespace Engine
 
 		Data.reserve(count);
 		for (INT32 i = 0; i < count; ++i)
+		{
 			Data.push_back(data[i]);
+		}
 	}
 
 	void D3D12IndexBuffer::Destroy()
@@ -216,10 +226,8 @@ namespace Engine
 	bool D3D12IndexBuffer::Regenerate()
 	{
 		// Reserve memory and copy the indices into our CPU buffer
-		if (CpuData != nullptr)
-		{
-			CopyMemory(CpuData->GetBufferPointer(), Data.data(), IndexBufferByteSize);
-		}
+		CopyMemory(CpuData->GetBufferPointer(), Data.data(), IndexBufferByteSize);
+
 
 		if (DefaultBuffer != nullptr)
 		{
@@ -438,6 +446,22 @@ namespace Engine
 				d3dMaterial->DirtyFrameCount--;
 			}
 		}
+	}
+
+	void D3D12ResourceBuffer::UpdateVoxelTerrainBuffer
+	(
+		D3D12FrameResource* resource,
+		RenderItem* terrain,
+		const std::vector<Vertex>& vertices
+	)
+	{
+		const INT32 vertexCount = static_cast<INT32>(vertices.size());
+
+		for(INT32 i = 0; i < vertexCount; ++i)
+		{
+			resource->TerrainBuffer->CopyData(i, vertices[i]);
+		}
+		//terrain->Geometry->VertexBuffer->SetData();
 	}
 
 

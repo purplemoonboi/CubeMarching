@@ -72,9 +72,12 @@ namespace Engine
 		const float ccoord[] = { settings.ChunkCoord.x, settings.ChunkCoord.y, settings.ChunkCoord.z };
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.IsoValue, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.TextureSize, 1);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PlanetRadius, 2);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.Resolution, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.UseBinarySearch, 2);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 4);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.Resolution, 7);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.UseTexture, 8);
+
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, tex->GpuHandleSrv);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VertexBufferUav);
@@ -105,8 +108,6 @@ namespace Engine
 
 		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
-
-
 
 		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkWidth, ChunkWidth);
 
@@ -228,7 +229,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
-		slotRootParameter[0].InitAsConstants(7, 0);					// world settings view
+		slotRootParameter[0].InitAsConstants(8, 0);							// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &textureSlot);		// texture 
 		slotRootParameter[2].InitAsDescriptorTable(1, &vertexSlot);			// vertex buffer
 		slotRootParameter[3].InitAsDescriptorTable(1, &triangleSlot);		// triangle buffer

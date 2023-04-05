@@ -1,17 +1,16 @@
 
 #define SVD_NUM_SWEEPS 4
-#define PSUEDO_INVERSE_THRESHOLD 1e-6f
+#define PSUEDO_INVERSE_THRESHOLD 1e-12f
 
-typedef float mat3x3[3][3];
-typedef float mat3x3_tri[6];
+//typedef float float3x3[3][3];
+//typedef float mat3x3_tri[6];
 
 
-void svd_mul_matrix_vec(inout float4 result, mat3x3 a, float4 b)
+void svd_mul_matrix_vec(inout float3 result, float3x3 a, float3 solvedPosition)
 {
-    result.x = dot(float4(a[0][0], a[0][1], a[0][2], 0.0f), b);
-    result.y = dot(float4(a[1][0], a[1][1], a[1][2], 0.0f), b);
-    result.z = dot(float4(a[2][0], a[2][1], a[2][2], 0.0f), b);
-    result.w = 0.0f;
+    result.x = dot(float3(a[0][0], a[0][1], a[0][2]), solvedPosition);
+    result.y = dot(float3(a[1][0], a[1][1], a[1][2]), solvedPosition);
+    result.z = dot(float3(a[2][0], a[2][1], a[2][2]), solvedPosition);
 }
 
 void givens_coeffs_sym(float a_pp, float a_pq, float a_qq, inout float c, inout float s)
@@ -49,7 +48,7 @@ void svd_rotateq_xy(inout float x, inout float y, inout float a, float c, float 
     y = ss * u + mx + cc * v;
 }
 
-void svd_rotate(inout mat3x3 vtav, mat3x3 v, int a, int b)
+void svd_rotate(inout float3x3 vtav, inout float3x3 v, int a, int b)
 {
     if (vtav[a][b] == 0.0f)
         return;
@@ -93,9 +92,10 @@ void svd_rotate(inout mat3x3 vtav, mat3x3 v, int a, int b)
     v[2][b] = y;
 }
 
-void svd_solve_sym(inout mat3x3_tri a, inout float4 sigma, mat3x3 v)
+void svd_solve_sym(inout float a[6], inout float4 sigma, float3x3 v)
 {
-    mat3x3 vtav = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+    float3x3 vtav = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+   
     vtav[0][0] = a[0];
     vtav[0][1] = a[1];
     vtav[0][2] = a[2];
@@ -105,8 +105,8 @@ void svd_solve_sym(inout mat3x3_tri a, inout float4 sigma, mat3x3 v)
     vtav[2][0] = 0.0f;
     vtav[2][1] = 0.0f;
     vtav[2][2] = a[5];
-	
-    for (int i = 0; i < SVD_NUM_SWEEPS; ++i)
+    
+    for (int i = 0; i < SVD_NUM_SWEEPS; i++)
     {
         svd_rotate(vtav, v, 0, 1);
         svd_rotate(vtav, v, 0, 2);
@@ -121,57 +121,43 @@ float svd_invdet(float x, float tol)
     return (abs(x) < tol || abs(1.0f / x) < tol) ? 0.0f : (1.0f / x);
 }
 
-void svd_pseudoinverse(inout mat3x3 o, float4 sigma, mat3x3 v)
+void svd_pseudoinverse(inout float3x3 o, float4 sigma, float3x3 v)
 {
     float d0 = svd_invdet(sigma.x, PSUEDO_INVERSE_THRESHOLD);
     float d1 = svd_invdet(sigma.y, PSUEDO_INVERSE_THRESHOLD);
     float d2 = svd_invdet(sigma.z, PSUEDO_INVERSE_THRESHOLD);
 
     o[0][0] = v[0][0] * d0 * v[0][0] + v[0][1] * d1 * v[0][1] + v[0][2] * d2 * v[0][2];
-    
-    
     o[0][1] = v[0][0] * d0 * v[1][0] + v[0][1] * d1 * v[1][1] + v[0][2] * d2 * v[1][2];
-    
-    
     o[0][2] = v[0][0] * d0 * v[2][0] + v[0][1] * d1 * v[2][1] + v[0][2] * d2 * v[2][2];
     
-    
     o[1][0] = v[1][0] * d0 * v[0][0] + v[1][1] * d1 * v[0][1] + v[1][2] * d2 * v[0][2];
-    
-    
     o[1][1] = v[1][0] * d0 * v[1][0] + v[1][1] * d1 * v[1][1] + v[1][2] * d2 * v[1][2];
-    
-    
     o[1][2] = v[1][0] * d0 * v[2][0] + v[1][1] * d1 * v[2][1] + v[1][2] * d2 * v[2][2];
     
-    
     o[2][0] = v[2][0] * d0 * v[0][0] + v[2][1] * d1 * v[0][1] + v[2][2] * d2 * v[0][2];
-    
-    
     o[2][1] = v[2][0] * d0 * v[1][0] + v[2][1] * d1 * v[1][1] + v[2][2] * d2 * v[1][2];
-    
-    
     o[2][2] = v[2][0] * d0 * v[2][0] + v[2][1] * d1 * v[2][1] + v[2][2] * d2 * v[2][2];
 }
 
-void svd_solve_ATA_Atb(inout mat3x3_tri ATA, float4 Atb, inout float4 x)
+void svd_solve_ATA_Atb(inout float ATA[6], float3 Atb, inout float3 solvedPosition)
 {
-    mat3x3 V = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
+    float3x3 V = { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } };
 	
     float4 sigma = float4(0, 0, 0, 0);
     svd_solve_sym(ATA, sigma, V);
 	
-    mat3x3 Vinv = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+    float3x3 Vinv = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
     svd_pseudoinverse(Vinv, sigma, V);
-    svd_mul_matrix_vec(x, Vinv, Atb);
+    svd_mul_matrix_vec(solvedPosition, Vinv, Atb);
 }
 
-void svd_vmul_sym(inout float4 result, mat3x3_tri A, float4 v)
+void svd_vmul_sym(inout float3 result, float ATA[6], float3 com)
 {
-    float4 A_row_x = float4(A[0], A[1], A[2], 0);
-    result.x = dot(A_row_x, v);
-    result.y = A[1] * v.x + A[3] * v.y + A[4] * v.z;
-    result.z = A[2] * v.x + A[4] * v.y + A[5] * v.z;
+    float3 A_row_x = float4(ATA[0], ATA[1], ATA[2], 0);
+    result.x = dot(A_row_x, com);
+    result.y = ATA[1] * com.x + ATA[3] * com.y + ATA[4] * com.z;
+    result.z = ATA[2] * com.x + ATA[4] * com.y + ATA[5] * com.z;
 }
 
 // QEF
@@ -179,8 +165,8 @@ void svd_vmul_sym(inout float4 result, mat3x3_tri A, float4 v)
 
 void qef_add
     (
-    float4 n, float4 p, 
-        inout mat3x3_tri ATA, inout float4 Atb, 
+    float3 n, float3 p, 
+        inout float ATA[6], inout float3 Atb, 
             inout float4 pointaccum, inout float btb
 )
 {
@@ -203,27 +189,25 @@ void qef_add
     pointaccum.w += 1.0f;
 }
 
-float qef_calc_error(mat3x3_tri A, float4 x, float4 b)
+float qef_calc_error(float ATA[6], float3 solvedPosition, float3 Atb)
 {
-    float4 tmp = float4(0, 0, 0, 0);
-    svd_vmul_sym(tmp, A, x);
-    tmp = b - tmp;
+    float3 tmp = (float3) 0;
+    svd_vmul_sym(tmp, ATA, solvedPosition);
+    tmp = Atb - tmp;
 	
     return dot(tmp, tmp);
 }
 
-float qef_solve(mat3x3_tri ATA, float4 Atb, float4 pointaccum, inout float4 x)
+float qef_solve(float ATA[6], float3 Atb, float3 com, inout float3 solvedPosition)
 {
-    float4 masspoint = pointaccum / pointaccum.w;
 	
-    float4 A_mp = float4(0, 0, 0, 0);
-    svd_vmul_sym(A_mp, ATA, masspoint);
+    float3 A_mp = (float3)0;
+    svd_vmul_sym(A_mp, ATA, com);
+    
     A_mp = Atb - A_mp;
-	
-    svd_solve_ATA_Atb(ATA, A_mp, x);
-	
-    float error = qef_calc_error(ATA, x, Atb);
-    x += masspoint;
+    svd_solve_ATA_Atb(ATA, A_mp, solvedPosition);
+    float error = qef_calc_error(ATA, solvedPosition, Atb);
+    //solvedPosition += com;
 	
     return error;
 }

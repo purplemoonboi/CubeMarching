@@ -60,20 +60,7 @@ namespace Engine
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
 
-		/*Context->GraphicsCmdList->ClearRenderTargetView(CD3DX12_CPU_DESCRIPTOR_HANDLE(Context->RtvHeap->GetCPUDescriptorHandleForHeapStart(),
-				BackBufferIndex,
-				RtvDescriptorSize
-			),
-			DirectX::Colors::SandyBrown,
-			0,
-			nullptr
-		);
-
-		Context->GraphicsCmdList->ClearDepthStencilView(Context->DsvHeap->GetCPUDescriptorHandleForHeapStart(),
-			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-			1.0f, 0, 0, nullptr
-		);*/
-
+	
 		Context->GraphicsCmdList->RSSetViewports(1, &ScreenViewport);
 		Context->GraphicsCmdList->RSSetScissorRects(1, &ScissorRect);
 

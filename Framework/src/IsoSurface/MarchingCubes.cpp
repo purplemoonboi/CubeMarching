@@ -48,6 +48,7 @@ namespace Engine
 
 	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, Texture* texture)
 	{
+		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->Device.Get());
 
 		ComputeContext->Wait(&FenceValue);
 
@@ -64,8 +65,9 @@ namespace Engine
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.PlanetRadius, 2);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseBinarySearch, 2);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 4);
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.x, 4);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.y, 5);
@@ -127,6 +129,9 @@ namespace Engine
 
 		INT32* atomicCount = nullptr;
 
+		const HRESULT deviceHr = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceHr);
+
 		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&atomicCount));
 		THROW_ON_FAILURE(countMapResult);
 
@@ -186,7 +191,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-		slotRootParameter[0].InitAsConstants(7, 0);					// world settings view
+		slotRootParameter[0].InitAsConstants(8, 0);					// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &table0);		// density texture buffer 
 		slotRootParameter[2].InitAsShaderResourceView(1);			// tri table texture 
 		slotRootParameter[3].InitAsDescriptorTable(1, &table2);		// output buffer 

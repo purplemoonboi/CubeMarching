@@ -46,7 +46,12 @@ namespace Engine
 		ComPtr<ID3D12CommandAllocator>		Allocator;
 		ComPtr<ID3D12Fence>					Fence;
 
-		ComPtr<ID3D12RootSignature>			RootSignature;
+		ComPtr<ID3D12RootSignature> RootSignature;
+
+		// @brief Heap descriptor for resources
+		ComPtr<ID3D12DescriptorHeap> RtvHeap;
+		// @brief Heap descriptor for depth-stencil resource
+		ComPtr<ID3D12DescriptorHeap> DsvHeap;
 
 		[[nodiscard]] UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
 		[[nodiscard]] bool GetMsaaState() const { return MsaaState; }
@@ -56,10 +61,7 @@ namespace Engine
 
 		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
-		// @brief Heap descriptor for resources
-		ComPtr<ID3D12DescriptorHeap> RtvHeap;
-		// @brief Heap descriptor for depth-stencil resource
-		ComPtr<ID3D12DescriptorHeap> DsvHeap;
+
 
 	private:
 
@@ -76,11 +78,11 @@ namespace Engine
 		// @brief Checks the MSAA qaulity support and caches level.
 		bool CheckMSAAQualityAndCache();
 
+		//
 		bool CreateRtvAndDsvHeaps();
 
-		bool BuildRootSignature();
-
-	
+		//
+		bool CreateRootSignature();
 
 		// @brief Unsigned integer representing the supported multi sampling quality.
 		UINT32 MsaaQaulity = 0;
@@ -93,7 +95,6 @@ namespace Engine
 		D3D_DRIVER_TYPE DriverType = D3D_DRIVER_TYPE_HARDWARE;
 
 
-	private:
 		HWND WindowHandle;
 
 	};

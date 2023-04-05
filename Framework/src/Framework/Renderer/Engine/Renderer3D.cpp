@@ -147,39 +147,6 @@ namespace Engine
 
 
 
-		auto boxData = Geo.CreateBox(1, 1, 1, 1);
-		auto boxMesh = MeshGeometry::Create("Box");
-		boxMesh->VertexBuffer = VertexBuffer::Create(
-			boxData.Vertices.data(),
-			sizeof(Vertex) * boxData.Vertices.size(),
-			boxData.Vertices.size(),
-			false);
-
-		boxMesh->IndexBuffer = IndexBuffer::Create(
-			boxData.GetIndices16().data(),
-			sizeof(UINT16) * boxData.GetIndices16().size(),
-			boxData.GetIndices16().size());
-
-		SubGeometry boxArgs = { (UINT)boxMesh->IndexBuffer->GetCount(), 0, 0 };
-		boxMesh->DrawArgs.emplace("Box", boxArgs);
-
-		RenderData.Geometries.emplace("Box", std::move(boxMesh));
-
-		ScopePointer<RenderItem> boxItem = RenderItem::Create
-		(
-			RenderData.Geometries["Box"].get(),
-			RenderData.MaterialLibrary.Get("Green"),
-			"BoxArgs",
-			1,
-			Transform(-5, 5, 5, 0, 45, 0, 10, 10, 10)
-		);
-
-		
-		RenderData.OpaqueRenderItems.push_back(boxItem.get());
-		RenderData.RenderItems.push_back(std::move(boxItem));
-
-		
-
 	}
 
 	void Renderer3D::Shutdown()
@@ -298,45 +265,6 @@ namespace Engine
 		//RenderData.TextureLibrary.Add("RockRough", std::move(rockRough));
 	}
 
-	void Renderer3D::RegenerateBuffers
-	(
-		const std::string& meshTag,
-		std::vector<Vertex> vertices,
-		std::vector<UINT16> indices
-	)
-	{
-
-		if (RenderData.Geometries.find(meshTag) != RenderData.Geometries.end())
-		{
-			VertexBuffer* vertexBuffer = RenderData.Geometries[meshTag]->VertexBuffer.get();
-			IndexBuffer* indexBuffer = RenderData.Geometries[meshTag]->IndexBuffer.get();
-
-			//vertexBuffer->Destroy();
-			//indexBuffer->Destroy();
-
-			const INT32 size = vertices.size() * sizeof(Vertex);
-			vertexBuffer->SetData(vertices.data(), size, vertices.size());
-			indexBuffer->SetData(indices.data(), indices.size());
-
-			if(meshTag=="MarchingTerrain")
-			{
-				VoxelStats.MCPolyCount = vertices.size();
-				VoxelStats.MCTriCount = vertices.size()/3;
-			}
-			if(meshTag=="DualTerrain")
-			{
-				VoxelStats.DCPolyCount = vertices.size();
-				VoxelStats.DCTriCount = vertices.size() / 3;
-			}
-
-			// We need to schedule the creation of the buffers
-			// as this does not happen immediately for some
-			// apis. 
-			RenderData.Geometries[meshTag]->DirtFlag = 1;
-		}
-
-	}
-
 	void Renderer3D::CreateVoxelMesh
 	(
 		std::vector<Vertex> vertices,
@@ -347,8 +275,6 @@ namespace Engine
 	{
 		if (RenderData.OpaqueRenderItems.size() < 20)
 		{
-
-
 			if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
 			{
 

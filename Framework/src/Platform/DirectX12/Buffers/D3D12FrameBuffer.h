@@ -65,6 +65,7 @@ namespace Engine
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
 
+
 		// @brief - A structure describing the buffer which we render to.
 		D3D12_VIEWPORT ScreenViewport;
 		// @brief - Used to specify an area of the buffer we would like to render to.

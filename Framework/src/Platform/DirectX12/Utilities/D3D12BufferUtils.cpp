@@ -25,6 +25,8 @@ namespace Engine
 	{
 		ComPtr<ID3D12Resource> defaultBuffer;
 
+		const HRESULT deviceCr = Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceCr);
 
 		//Create the committed resource
 		const HRESULT vertexResult = Device->CreateCommittedResource
@@ -92,6 +94,9 @@ namespace Engine
 				D3D12_RESOURCE_STATE_GENERIC_READ
 			)
 		);
+
+		const HRESULT deviceHr = Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceHr);
 
 		// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
 		//			  because the cmd list has NOT executed the copy.
@@ -219,6 +224,9 @@ namespace Engine
 				D3D12_RESOURCE_STATE_COMMON
 			)
 		);
+
+		const HRESULT deviceHr = Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(deviceHr);
 
 		// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
 		//			  because the cmd list has NOT executed the copy.

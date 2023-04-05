@@ -17,11 +17,12 @@ struct Triangle
 
 cbuffer cbSettings : register(b0)
 {
-	float IsoLevel;
+    float IsoLevel;
     int TextureSize;
-	float PlanetSize;
-	int Resolution;
+    int UseBinarySearch;
+    int NumPointsPerAxis;
 	float3 ChunkCoord;
+	int Resolution;
 };
 
 Texture3D<float> DensityTexture : register(t0);

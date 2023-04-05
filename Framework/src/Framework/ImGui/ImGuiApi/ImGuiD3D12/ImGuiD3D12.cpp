@@ -75,25 +75,6 @@ namespace Engine
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
-
-		/*auto const* api = dynamic_cast<D3D12RenderingApi*>(RenderInstruction::GetApiPtr());
-
-		auto* context = dynamic_cast<D3D12Context*>(api->GetGraphicsContext());
-
-		if(context->Fence->GetCompletedValue() < SignalCount)
-		{
-			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = context->Fence->SetEventOnCompletion(SignalCount, eventHandle);
-			THROW_ON_FAILURE(eventCompletion);
-			WaitForSingleObject(eventHandle, INFINITE);
-			CloseHandle(eventHandle);
-		}
-
-		const HRESULT result = ImGuiAlloc->Reset();
-		THROW_ON_FAILURE(result);
-		const HRESULT hr = ImGuiCmdList->Reset(ImGuiAlloc.Get(), nullptr);
-		THROW_ON_FAILURE(hr);*/
-
 	}
 
 	void ImGuiD3D12::EndRenderImpl()

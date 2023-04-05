@@ -72,8 +72,8 @@ namespace Engine
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
-		const UINT groupXZ = ChunkWidth   / settings.OctreeSize;
-		const UINT groupY  = ChunkHeight / settings.OctreeSize; 
+		const UINT groupXZ = ChunkWidth   / settings.Resolution;
+		const UINT groupY  = ChunkHeight / settings.Resolution; 
 
 		/* first pass - compute the density values at the corners of each voxel */
 
@@ -85,8 +85,7 @@ namespace Engine
 		const float ccoord[] = { settings.ChunkCoord.x, settings.ChunkCoord.y, settings.ChunkCoord.z };
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
+		
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, CornerMaterialsUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
@@ -101,8 +100,6 @@ namespace Engine
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, CornerCountUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, FinalCountUav);
@@ -115,8 +112,6 @@ namespace Engine
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.NumOfPointsPerAxis, 3);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.OctreeSize, 4);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.PrimitiveCount, 5);
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VoxelMaterialsUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CornerIndexesUav);
