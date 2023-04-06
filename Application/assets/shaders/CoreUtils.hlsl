@@ -34,11 +34,11 @@ cbuffer cbMaterial : register(b1)
     float3 gFresnelR0;
     float gRoughness;
     float4x4 gMatTransform;
-    uint DiffuseMapIndex;
-    uint NormalMapIndex;
-    uint RoughMapIndex;
-    uint AoMapIndex;
-    uint HeighMapIndex;
+    int DiffuseMapIndex;
+    int NormalMapIndex;
+    int RoughMapIndex;
+    int AoMapIndex;
+    int HeighMapIndex;
     uint gWire;
     uint2 Pad;
 };

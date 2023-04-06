@@ -212,13 +212,8 @@ namespace Engine
 		terrainMaterial->SetDiffuse(0.8f, 0.8f, 0.8f, 1.0f);
 		terrainMaterial->SetFresnel(0.02f, 0.02f, 0.02f);
 		terrainMaterial->SetRoughness(0.5f);
-		terrainMaterial->SetMaterialBufferIndex(1);
-		// Terrain get sepcial material setup
-		//for(INT32 i =1; i<7;++i)
-		//{
-		//	terrainMaterial->Textures[(i-1)] = RenderData.Textures[i];
-		//}
-
+		terrainMaterial->SetDiffuseTexIndex(0);
+		terrainMaterial->SetMaterialBufferIndex(2);
 		RenderData.MaterialLibrary.Add("Terrain", std::move(terrainMaterial));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Terrain"));
 	}
@@ -233,10 +228,9 @@ namespace Engine
 		/**
 		 *	moss
 		 */
-
-		//auto mossAlbedo = Texture::Create(L"assets\\textures\\moss\\Moss_albedo.dds", "MossAlbedo");
-		//RenderData.Textures.push_back(mossAlbedo.get());
-		//RenderData.TextureLibrary.Add("MossAlbedo", std::move(mossAlbedo));
+		auto mossAlbedo = Texture::Create(L"assets\\textures\\moss\\Moss_albedo.dds", "MossAlbedo");
+		RenderData.Textures.push_back(mossAlbedo.get());
+		RenderData.TextureLibrary.Add("MossAlbedo", std::move(mossAlbedo));
 
 		//auto mossNormal = Texture::Create(L"assets\\textures\\moss\\Moss_normal.dds", "MossNormal");
 		//RenderData.Textures.push_back(mossNormal.get());
@@ -250,11 +244,9 @@ namespace Engine
 		///**
 		// *  rock
 		// */
-
-
-		//auto rockAlbedo = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_albedo.dds", "RockAlbedo");
-		//RenderData.Textures.push_back(rockAlbedo.get());
-		//RenderData.TextureLibrary.Add("RockAlbedo", std::move(rockAlbedo));
+		auto rockAlbedo = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_albedo.dds", "RockAlbedo");
+		RenderData.Textures.push_back(rockAlbedo.get());
+		RenderData.TextureLibrary.Add("RockAlbedo", std::move(rockAlbedo));
 
 		//auto rockNormal = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_normal.dds", "RockNormal");
 		//RenderData.Textures.push_back(rockNormal.get());
@@ -265,7 +257,7 @@ namespace Engine
 		//RenderData.TextureLibrary.Add("RockRough", std::move(rockRough));
 	}
 
-	void Renderer3D::CreateVoxelMesh
+	void Renderer3D::CreateVoxelTerrain
 	(
 		std::vector<Vertex> vertices,
 		std::vector<UINT16> indices,
@@ -306,8 +298,6 @@ namespace Engine
 					constCbvOffset,
 					transform
 				);
-
-				
 
 
 				RenderData.OpaqueRenderItems.push_back(renderItem.get());

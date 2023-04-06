@@ -64,6 +64,11 @@ namespace Engine
 		virtual void SetDiffuse(float r, float g, float b, float a) = 0;
 		virtual void SetFresnel(float r, float g, float b) = 0;
 		virtual void SetRoughness(float roughness) = 0;
+
+		virtual void SetDiffuseTexIndex(INT32 index) = 0;
+		virtual void SetNormalTexIndex(INT32 index) = 0;
+		virtual void SetRoughnessTexIndex(INT32 index) = 0;
+		virtual void SetDisplacementTexIndex(INT32 index) = 0;
 		virtual void SetMaterialBufferIndex(UINT32 index) = 0;
 		[[nodiscard]] virtual const std::string& GetName() const = 0;
 		[[nodiscard]] virtual UINT32 GetMaterialIndex() const = 0;

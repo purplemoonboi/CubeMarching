@@ -33,7 +33,8 @@ cbuffer cbSettings : register(b0)
 #define NUM_BUCKETS 32
 #define SMX_SIZE_FERMI 32
 #define SMX_SIZE_ATI 64
-#define BLOCK_SIZE 512
+//#define BLOCK_SIZE 512
+#define BLOCK_SIZE 32
 #define GROUP_SIZE 32
 
 
@@ -190,6 +191,28 @@ void ComputeMortonCode(
     RWStructuredBuffer<int>  gCycleCounter  : register(u5)
 */
 
+
+uint EncodeMorton3D(float3 v)
+{
+    v *= 1024.0f;
+    uint x = (uint) v.x;
+    uint y = (uint) v.y;
+    uint z = (uint) v.z;
+    x = (x | (x << 16))  & 0x030000FF;
+    x = (x | (x <<  8))  & 0x0300F00F;
+    x = (x | (x <<  4))  & 0x030C30C3;
+    x = (x | (x <<  2))  & 0x09249249;
+    y = (y | (y << 16))  & 0x030000FF;
+    y = (y | (y <<  8))  & 0x0300F00F;
+    y = (y | (y <<  4))  & 0x030C30C3;
+    y = (y | (y <<  2))  & 0x09249249;
+    z = (z | (z << 16))  & 0x030000FF;
+    z = (z | (z <<  8))  & 0x0300F00F;
+    z = (z | (z <<  4))  & 0x030C30C3;
+    z = (z | (z <<  2))  & 0x09249249;
+    return x | (y << 1) | (z << 2);
+}
+
 groupshared uint lInputCodes[BLOCK_SIZE];
 groupshared uint lSortedCodes[BLOCK_SIZE];
 groupshared uint lSums[BLOCK_SIZE];
@@ -197,14 +220,14 @@ groupshared uint lBits[BLOCK_SIZE];
 
 #ifndef USING_NVIDIA_FERMI
 #define USING_NVIDIA_FERMI
-groupshared uint lBitBuckets[BLOCK_SIZE/SMX_SIZE_FERMI];
+//groupshared uint lBitBuckets[BLOCK_SIZE/SMX_SIZE_FERMI];
 #else
 groupshared uint lBuckets[BLOCK_SIZE / SMX_SIZE_ATI];
 #endif
 
-#define BLOCK_SIZE_F 512.0
+#define BLOCK_SIZE_F 32.0
 
-[numthreads(BLOCK_SIZE, 1, 1)]
+[numthreads(2, 2, 2)]
 void LocalSort4BitKey(
         uint3 gId : SV_GroupID,
             uint3 gtId : SV_GroupThreadID,
@@ -222,61 +245,62 @@ void LocalSort4BitKey(
     uint k = BLOCK_SIZE / SMX_SIZE_ATI; //8
 #endif
     
-    // store the global input array into group 
-    // shared memory.
-    lInputCodes[dtId.x] = gInputMortons[(gId.x * BLOCK_SIZE) + dtId.x];
-    // tracks the global cycle iteration.
-    uint cycle = gCycleCounter[0];
+    //// store the global input array into group 
+    //// shared memory.
+    //lInputCodes[dtId.x] = gInputMortons[(gId.x * BLOCK_SIZE) + dtId.x];
+    //// tracks the global cycle iteration.
+    //uint cycle = gCycleCounter[0];
     
-    // @brief - while we have 512 threads in group memory, on Fermi cards
-    // 32 threads will execute instructions on a SMX core (processing unit).
-    // so we split the group into local groups offset with respect to 
-    // (DispatchThread / BLOCK_SIZE) * NUM_THREADS 
-    // which yields '16' groups for Fermi cards. (8 groups on ATI cards).
+    //// @brief - while we have 512 threads in group memory, on Fermi cards
+    //// 32 threads will execute instructions on a SMX core (processing unit).
+    //// so we split the group into local groups offset with respect to 
+    //// (DispatchThread / BLOCK_SIZE) * NUM_THREADS 
+    //// which yields '16' groups for Fermi cards. (8 groups on ATI cards).
     
-    // returns which sub-group this thread belongs to.
-    float dtfId = dtId.x;
-    uint lgId = (dtfId / BLOCK_SIZE_F) * k; // [0 - 16]
+    //// returns which sub-group this thread belongs to.
+    float3 dtfId = dtId;
+    //uint lgId = (dtfId / BLOCK_SIZE_F) * k; // [0 - 16]
     
-    // local group begin index
-    uint lgBegin = (lgId * GROUP_SIZE);
+    //// local group begin index
+    //uint lgBegin = (lgId * GROUP_SIZE);
     
-    // local group end index.
-    uint lgEnd = (lgId * GROUP_SIZE) + (GROUP_SIZE - 1);
+    //// local group end index.
+    //uint lgEnd = (lgId * GROUP_SIZE) + (GROUP_SIZE - 1);
     
-    GroupMemoryBarrierWithGroupSync();
-    uint dest = 0;
+    //GroupMemoryBarrierWithGroupSync();
+    //uint dest = 0;
 
-    uint mask = 1 << 0;
-    uint code = lInputCodes[dtId.x];
+    //uint mask = 1 << 0;
+    //uint code = lInputCodes[dtId.x];
     
-    //...check the ith bit in the key...
-    lBits[dtId.x] = (code & mask) ? 1 : 0;
+    ////...check the ith bit in the key...
+    //lBits[dtId.x] = (code & mask) ? 1 : 0;
 
-    //...for our local group, perform a scan...
-    for (uint t = lgBegin + 1; t < lgEnd; t = t * 2)
-    {
-        if(dtId.x >= t)
-        {
-            lSums[dtId.x] += lBits[dtId.x - t];
-        }
-    }
-    GroupMemoryBarrierWithGroupSync();
+    ////...for our local group, perform a scan...
+    //for (uint t = lgBegin; t < lgEnd; t++)
+    //{
+    //    if (dtId.x >= t)
+    //    {
+    //        lSums[dtId.x] += lBits[dtId.x - t];
+    //    }
+    //}
+    //GroupMemoryBarrierWithGroupSync();
     
-    //uint falseTotal = BLOCK_SIZE - (lSums[(lgId * GROUP_SIZE) + GROUP_SIZE] + 1);
-    uint falseTotal = GROUP_SIZE - (lSums[lgEnd] + lBits[lgEnd]);
+    ////uint falseTotal = BLOCK_SIZE - (lSums[(lgId * GROUP_SIZE) + GROUP_SIZE] + 1);
+    //uint falseTotal = GROUP_SIZE - (lSums[lgEnd] + lBits[lgEnd]);
     
-    dest = lBits[dtId.x] ? lSums[dtId.x] + falseTotal : dtId.x - lSums[dtId.x];
+    //dest = lBits[dtId.x] ? lSums[dtId.x] + falseTotal : dtId.x - lSums[dtId.x];
 
-    //...then scatter the code into group memory...
-    uint sortedCode = lInputCodes[dtId.x];
-    GroupMemoryBarrierWithGroupSync();
+    ////...then scatter the code into group memory...
+    //uint sortedCode = lInputCodes[dtId.x];
+    //GroupMemoryBarrierWithGroupSync();
     
-    lSortedCodes[dest] = sortedCode;
+    uint m = EncodeMorton3D(dtfId);
+    uint index = (dtId.x * 8 * 8 + dtId.y * 8 + dtId.z) * gId.x;
+    gSortedMortons[dtId.x] = dtId.x + dtId.y + dtId.z;
 
-    //lSums[dtId.x] = 0;
-
-    gSortedMortons[dtId.x] = lSortedCodes[dtId.x];
+        
+  
 }
 
 

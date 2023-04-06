@@ -16,13 +16,19 @@ unsigned int Morton3D(float x, float y, float z)
     x = min(max(x * 1024.0f, 0.0f), 1023.0f);
     y = min(max(y * 1024.0f, 0.0f), 1023.0f);
     z = min(max(z * 1024.0f, 0.0f), 1023.0f);
-    unsigned int xx = ExpandBits((unsigned int) x);
-    unsigned int yy = ExpandBits((unsigned int) y);
-    unsigned int zz = ExpandBits((unsigned int) z);
+    uint xx = ExpandBits((uint) x);
+    uint yy = ExpandBits((uint) y);
+    uint zz = ExpandBits((uint) z);
     return xx * 4 + yy * 2 + zz;
 }
 
-uint Encode12BitMorton(float3 xyz)
+uint EncodeMorton(float3 xyz)
 {
+    uint code = 0;
+    
+    uint xx = ((uint)xyz.x & 0x11110000);
+    uint yy = ((uint)xyz.y & 0x11110000);
+    uint zz = ((uint)xyz.z & 0x11110000);
+    
     return 0;
 }

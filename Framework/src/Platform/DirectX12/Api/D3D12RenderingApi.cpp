@@ -245,8 +245,8 @@ namespace Engine
 		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
 
 		// We can bind all textures in the scene - we declared 'n' amount of descriptors in the root signature.
-		/*Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(3,
-			D3D12MemoryManager->GetConstantBufferDescHeap()->GetGPUDescriptorHandleForHeapStart());*/
+		Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(3,
+			D3D12MemoryManager->GetConstantBufferDescHeap()->GetGPUDescriptorHandleForHeapStart());
 
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -304,19 +304,7 @@ namespace Engine
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
 
 
-		for (auto item : renderItems)
-		{
-			if (item->Geometry->DirtFlag == 1)
-			{
-				auto* vb = dynamic_cast<D3D12VertexBuffer*>(item->Geometry->VertexBuffer.get());
-				vb->Regenerate();
-				auto* ib = dynamic_cast<D3D12IndexBuffer*>(item->Geometry->IndexBuffer.get());
-				ib->Regenerate();
-				item->Geometry->DirtFlag = 0;
-			}
-		}
-
-		//RenderTarget->UnBind(Context);
+			//RenderTarget->UnBind(Context);
 
 		const HRESULT deviceHr = Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceHr);

@@ -59,19 +59,21 @@ namespace Engine
         PerlinCompute->PerlinFBM(PerlinSettings);
 
 		//MarchingCubes->Init(csApi, api->GetMemoryManager());
-		//Renderer3D::CreateVoxelMesh(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+		//Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
     	DualContouring->Init(csApi, api->GetMemoryManager());
         DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-        Renderer3D::CreateVoxelMesh(DualContouring->GetVertices(), DualContouring->GetIndices(), "DualTerrain", Transform(20, 0, 0));
+        Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
+            DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
 
-        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
+    	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
+        //MarchingCubesHP->SortChunk();
+
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
         RenderInstruction::ExecGraphicsCommandList();
 
-        //MarchingCubesHP->SortChunk();
 
         MainCamera* mc = Scene->GetSceneCamera();
         mc->SetPosition({0, 0, 0});
@@ -154,6 +156,7 @@ namespace Engine
         {
             
             Regen = false;
+
 
             /*if(Smooth)
             {

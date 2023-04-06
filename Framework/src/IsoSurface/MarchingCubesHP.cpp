@@ -131,12 +131,12 @@ namespace Engine
 		/**
 		 *		#2. Copy the morton codes back for validation
 		 */
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(MortonResource.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(InputMortonCodes.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->CommandList->CopyResource(MortonResourceReadBack.Get(), MortonResource.Get());
+		ComputeContext->CommandList->CopyResource(MortonReadBackBuffer.Get(), InputMortonCodes.Get());
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(MortonResource.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(InputMortonCodes.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 		
 		/**
@@ -155,12 +155,12 @@ namespace Engine
 		/**
 		 *		#1. copy the results from the prefix parallel sum
 		 */
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutMortonResoure.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(SortedMortonCodes.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->CommandList->CopyResource(OutMortonReadBack.Get(), OutMortonResoure.Get());
+		ComputeContext->CommandList->CopyResource(MortonReadBackBuffer.Get(), SortedMortonCodes.Get());
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(OutMortonResoure.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(SortedMortonCodes.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
@@ -186,20 +186,20 @@ namespace Engine
 		UINT32* mc = nullptr;
 		std::vector<UINT32> MortonCodes;
 		MortonCodes.reserve(VoxelWorldElementCount);
-		const HRESULT hh = MortonResourceReadBack->Map(0, nullptr, reinterpret_cast<void**>(&mc));
+		const HRESULT hh = MortonReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mc));
 		THROW_ON_FAILURE(hh);
 		for (i = 0; i < VoxelWorldElementCount; ++i)
 		{
 			MortonCodes.push_back(mc[i]);
 		}
-		MortonResourceReadBack->Unmap(0, nullptr);
+		MortonReadBackBuffer->Unmap(0, nullptr);
 
 	}
 
 	void MarchingCubesHP::SortChunk()
 	{
 		constexpr UINT64 DATA_SIZE = ChunkWidth;
-		ComputeContext->ResetComputeCommandList(RadixSortPso.get());
+		ComputeContext->ResetComputeCommandList(nullptr);
 
 		std::vector<UINT32> randMortons;
 		randMortons.reserve(DATA_SIZE);
@@ -227,39 +227,39 @@ namespace Engine
 			UINT32(1 << 3 | 1 << 2 | 1 << 1 | 1), //1111
 		};
 
-		for(INT32 i = 0; i < (DATA_SIZE/16); ++i)
+		for(INT32 i = 0; i < 2; ++i)
 		{
-			for(INT32 j = 15; j >= 0; --j)
+			for (INT32 j = 15; j >= 0; --j)
 			{
 				randMortons.push_back(keys[j]);
-				/*CORE_TRACE("Bit {0} - {1}, {2}, {3}, {4}", j,
+				CORE_TRACE("Bit {0} - {1}, {2}, {3}, {4}", j,
 					(keys[j] & 1 << 3) ? 1 : 0,
 					(keys[j] & 1 << 2) ? 1 : 0,
 					(keys[j] & 1 << 1) ? 1 : 0,
-					(keys[j] & 1 << 0) ? 1 : 0);*/
+					(keys[j] & 1 << 0) ? 1 : 0);
 			}
-			
 		}
+		
 
 		D3D12_SUBRESOURCE_DATA srcData = {};
 		srcData.pData = randMortons.data();
 		srcData.RowPitch = randMortons.size() * sizeof(UINT32);
 		srcData.SlicePitch = srcData.RowPitch;
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			MortonResource.Get(),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 
-			D3D12_RESOURCE_STATE_COPY_DEST
-		));
+		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		//	InputMortonCodes.Get(),
+		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS, 
+		//	D3D12_RESOURCE_STATE_COPY_DEST
+		//));
 
-		UpdateSubresources(ComputeContext->CommandList.Get(), MortonResource.Get(),
-			MortonUploadBuffer.Get(), 0, 0, 1, &srcData);
+		//UpdateSubresources(ComputeContext->CommandList.Get(), InputMortonCodes.Get(),
+		//	MortonUploadBuffer.Get(), 0, 0, 1, &srcData);
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			MortonResource.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-		));
+		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		//	InputMortonCodes.Get(),
+		//	D3D12_RESOURCE_STATE_COPY_DEST,
+		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+		//));
 
 
 		ComputeContext->ExecuteComputeCommandList(&FenceValue);
@@ -277,44 +277,40 @@ namespace Engine
 		ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, MortonCodeUav);
-		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, OutMortonUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, SortedMortonUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HistogramUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(7, CycleCounterUav);
 
-		ComputeContext->CommandList->Dispatch(1, 1, 1);
+		ComputeContext->CommandList->Dispatch(4, 1, 1);
 
-
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			OutMortonResoure.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
+		/*ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+			SortedMortonCodes.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
 		));
 
 			ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-				MortonResource.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST
+				InputMortonCodes.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST
 			));
 
-				ComputeContext->CommandList->CopyResource(MortonResource.Get(), OutMortonResoure.Get());
+				ComputeContext->CommandList->CopyResource(InputMortonCodes.Get(), SortedMortonCodes.Get());
 
 					ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-						OutMortonResoure.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+						SortedMortonCodes.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 					));
 
 						ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-							MortonResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-						));
+							InputMortonCodes.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+						));*/
 
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(SortedMortonCodes.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			OutMortonResoure.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
-		));
+		ComputeContext->CommandList->CopyResource(MortonReadBackBuffer.Get(), SortedMortonCodes.Get());
 
-			ComputeContext->CommandList->CopyResource(OutMortonReadBack.Get(), OutMortonResoure.Get());
-
-				ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-					OutMortonResoure.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-				));
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(SortedMortonCodes.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		/** counter copy */
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+	/*	ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			ResourceCounter.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE
 		));
 
@@ -334,7 +330,6 @@ namespace Engine
 		CounterReadBack->Unmap(0, nullptr);
 		
 
-		/** reset cycle counter. */
 		constexpr INT32 value[1] = { 0 };
 		D3D12_SUBRESOURCE_DATA countData = {};
 		countData.pData = &value[0];
@@ -358,16 +353,21 @@ namespace Engine
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 		));
+*/
+
 
 		ComputeContext->ExecuteComputeCommandList(&FenceValue);
+
+		const HRESULT dr = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(dr);
 
 		UINT32* data = nullptr;
 		std::vector<UINT32> sortedCodes;
 		sortedCodes.reserve(DATA_SIZE);
 		CORE_TRACE("##########################################################");
 
-		const HRESULT hr = OutMortonReadBack->Map(0, nullptr, reinterpret_cast<void**>(&data));
-
+		const HRESULT hr = MortonReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
+		THROW_ON_FAILURE(hr);
 		for (INT32 i = 0; i < DATA_SIZE; ++i)
 		{
 			auto val = data[i];
@@ -379,7 +379,7 @@ namespace Engine
 				(val & 1 << 0) ? 1 : 0);
 		}
 
-		OutMortonReadBack->Unmap(0, nullptr);
+		MortonReadBackBuffer->Unmap(0, nullptr);
 
 	}
 
@@ -477,13 +477,13 @@ namespace Engine
 		HPResourceReadBack = D3D12BufferUtils::CreateReadBackBuffer(capacity);
 
 		constexpr UINT64 mortonCapacity = VoxelWorldElementCount * sizeof(UINT32);
-		MortonResource = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
-		MortonResourceReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
+		InputMortonCodes = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
+		SortedMortonCodes = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
+
 		D3D12BufferUtils::CreateUploadBuffer(MortonUploadBuffer, mortonCapacity);
+		MortonReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
 
 
-		OutMortonResoure = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
-		OutMortonReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
 
 		HistogramResoure = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
 		HistogramReadBack = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
@@ -550,10 +550,10 @@ namespace Engine
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 		MortonCodeUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
-			MortonResource.Get());
+			InputMortonCodes.Get());
 
-		OutMortonUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
-			OutMortonResoure.Get());
+		SortedMortonUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+			SortedMortonCodes.Get());
 
 		HistogramUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
 			HistogramResoure.Get());

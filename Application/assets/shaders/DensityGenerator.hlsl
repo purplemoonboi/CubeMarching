@@ -276,7 +276,7 @@ void ComputeNoise3D(int3 id : SV_DispatchThreadID)
     float gain = Gain;
    
     
-    if(fId.y < Ground)
+    if(fId.y > Ground)
     {
         for (int i = 0; i < 2; i++)
         {

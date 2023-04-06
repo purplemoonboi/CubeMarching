@@ -67,12 +67,11 @@ namespace Engine
 		ComPtr<ID3D12Resource> HPResource;
 		ComPtr<ID3D12Resource> HPResourceReadBack;
 
-		ComPtr<ID3D12Resource> MortonResource;
-		ComPtr<ID3D12Resource> MortonResourceReadBack;
-		ComPtr<ID3D12Resource> MortonUploadBuffer;
+		ComPtr<ID3D12Resource> InputMortonCodes;
+		ComPtr<ID3D12Resource> SortedMortonCodes;
 
-		ComPtr<ID3D12Resource> OutMortonResoure;
-		ComPtr<ID3D12Resource> OutMortonReadBack;
+		ComPtr<ID3D12Resource> MortonUploadBuffer;
+		ComPtr<ID3D12Resource> MortonReadBackBuffer;
 
 		ComPtr<ID3D12Resource> HistogramResoure;
 		ComPtr<ID3D12Resource> HistogramReadBack;
@@ -97,7 +96,7 @@ namespace Engine
 		D3D12_GPU_DESCRIPTOR_HANDLE HPResourceUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE TriResourceUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE MortonCodeUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE OutMortonUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE SortedMortonUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE HistogramUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE CycleCounterUav;
 

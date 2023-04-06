@@ -20,6 +20,11 @@ namespace Engine
 		void SetRoughness(float roughness)					override { Roughness = roughness; }
 		void SetMaterialBufferIndex(UINT32 index)			override { MaterialBufferIndex = index; };
 
+		void SetDiffuseTexIndex(INT32 index) override { DiffuseMapIndex = index; }
+		void SetNormalTexIndex(INT32 index) override { NormalMapIndex = index; }
+		void SetRoughnessTexIndex(INT32 index) override { RoughMapIndex = index; }
+		void SetDisplacementTexIndex(INT32 index) override { DiffuseMapIndex = index; }
+
 		INT32 DirtyFrameCount = NUMBER_OF_FRAME_RESOURCES;
 		INT32 MaterialBufferIndex = -1;
 		INT32 DiffuseSrvHeapIndex = -1;
@@ -33,12 +38,12 @@ namespace Engine
 		
 		DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
 
-		UINT32 DiffuseMapIndex = 0;
-		UINT32 NormalMapIndex = 0;
-		UINT32 RoughMapIndex = 0;
-		UINT32 AoMapIndex = 0;
-		UINT32 HeightMapIndex = 0;
-		UINT32 UseWire = 0;
+		INT32 DiffuseMapIndex = -1;
+		INT32 NormalMapIndex  = -1;
+		INT32 RoughMapIndex   = -1;
+		INT32 AoMapIndex	  = -1;
+		INT32 HeightMapIndex  = -1;
+		UINT32 UseWire	= 0;
 
 		std::string Name;
 

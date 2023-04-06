@@ -33,11 +33,11 @@ namespace Engine
 		DirectX::XMFLOAT3 FresnelR0 = { 0.01f, 0.01f, 0.01f };
 		float Roughness = 0.25f;
 		DirectX::XMFLOAT4X4 MatTransform = MathHelper::Identity4x4();
-		UINT32 DiffuseMapIndex;
-		UINT32 NormalMapIndex;
-		UINT32 RoughMapIndex;
-		UINT32 AoMapIndex;
-		UINT32 HeighMapIndex;
+		INT32 DiffuseMapIndex;
+		INT32 NormalMapIndex;
+		INT32 RoughMapIndex;
+		INT32 AoMapIndex;
+		INT32 HeighMapIndex;
 		UINT32 Wire;
 		UINT32 Pad0 = 0;
 		UINT32 Pad1 = 0;
