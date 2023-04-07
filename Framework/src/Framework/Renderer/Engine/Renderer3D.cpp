@@ -52,6 +52,7 @@ namespace Engine
 		std::vector<RenderItem*> OpaqueRenderItems;
 		std::vector<RenderItem*> WireFrameRenderItems;
 
+		ScopePointer<RenderItem> Terrain;
 
 		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
 
@@ -79,17 +80,20 @@ namespace Engine
 		const auto api = RenderInstruction::GetApiPtr();
 
 		/** build and compile shaders */
-		auto vS = Shader::Create(L"assets\\shaders\\Default.hlsl", "VS", "vs_5_1");
-		auto pS = Shader::Create(L"assets\\shaders\\Default.hlsl", "PS", "ps_5_1");
+		auto vS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "VS", "vs_5_1");
+		auto pS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "PS", "ps_5_1");
+		auto pTS = Shader::Create(L"assets\\shaders\\TerrainPS.hlsl", "PS", "ps_5_1");
 
 		RenderData.ShaderLibrary.Add("vs", std::move(vS));
 		RenderData.ShaderLibrary.Add("ps", std::move(pS));
+		RenderData.ShaderLibrary.Add("tps", std::move(pTS));
 
 		const BufferLayout layout =
 		{
 			{"POSITION",	ShaderDataType::Float3, 0,  0},
 			{"NORMAL",		ShaderDataType::Float3, 12, 1},
-			{"TEXCOORD",	ShaderDataType::Float2, 24, 2},
+			{"TANGENT",		ShaderDataType::Float3, 24, 1},
+			{"TEXCOORD",	ShaderDataType::Float2, 32, 3},
 		};
 
 		BuildTextures();
@@ -101,6 +105,15 @@ namespace Engine
 			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
+			layout,
+			FillMode::Opaque
+		));
+
+		RenderData.PSOs.emplace("Terrain", PipelineStateObject::Create
+		(
+			api->GetGraphicsContext(),
+			RenderData.ShaderLibrary.GetShader("vs"),
+			RenderData.ShaderLibrary.GetShader("tps"),
 			layout,
 			FillMode::Opaque
 		));
@@ -172,7 +185,9 @@ namespace Engine
 
 
 		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
+		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
 
+		RenderInstruction::BindTerrainPass(tpso, RenderData.Terrain.get());
 
 		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}
@@ -214,6 +229,7 @@ namespace Engine
 		terrainMaterial->SetRoughness(0.5f);
 		terrainMaterial->SetDiffuseTexIndex(0);
 		terrainMaterial->SetMaterialBufferIndex(2);
+
 		RenderData.MaterialLibrary.Add("Terrain", std::move(terrainMaterial));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Terrain"));
 	}
@@ -232,9 +248,9 @@ namespace Engine
 		RenderData.Textures.push_back(mossAlbedo.get());
 		RenderData.TextureLibrary.Add("MossAlbedo", std::move(mossAlbedo));
 
-		//auto mossNormal = Texture::Create(L"assets\\textures\\moss\\Moss_normal.dds", "MossNormal");
-		//RenderData.Textures.push_back(mossNormal.get());
-		//RenderData.TextureLibrary.Add("MossNormal", std::move(mossNormal));
+		auto mossNormal = Texture::Create(L"assets\\textures\\moss\\Moss_normal.dds", "MossNormal");
+		RenderData.Textures.push_back(mossNormal.get());
+		RenderData.TextureLibrary.Add("MossNormal", std::move(mossNormal));
 
 		//auto mossRough = Texture::Create(L"assets\\textures\\moss\\Moss_roughness.dds", "MossRough");
 		//RenderData.Textures.push_back(mossRough.get());
@@ -248,9 +264,9 @@ namespace Engine
 		RenderData.Textures.push_back(rockAlbedo.get());
 		RenderData.TextureLibrary.Add("RockAlbedo", std::move(rockAlbedo));
 
-		//auto rockNormal = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_normal.dds", "RockNormal");
-		//RenderData.Textures.push_back(rockNormal.get());
-		//RenderData.TextureLibrary.Add("RockNormal", std::move(rockNormal));
+		auto rockNormal = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_normal.dds", "RockNormal");
+		RenderData.Textures.push_back(rockNormal.get());
+		RenderData.TextureLibrary.Add("RockNormal", std::move(rockNormal));
 
 		//auto rockRough = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_roughness.dds", "RockRough");
 		//RenderData.Textures.push_back(rockRough.get());
@@ -290,7 +306,7 @@ namespace Engine
 
 				const INT32 constCbvOffset = RenderData.OpaqueRenderItems.size();
 
-				ScopePointer<RenderItem> renderItem = RenderItem::Create
+				RenderData.Terrain = RenderItem::Create
 				(
 					RenderData.Geometries[meshTag].get(),
 					RenderData.MaterialLibrary.Get("Terrain"),
@@ -299,9 +315,8 @@ namespace Engine
 					transform
 				);
 
-
-				RenderData.OpaqueRenderItems.push_back(renderItem.get());
-				RenderData.RenderItems.push_back(std::move(renderItem));
+				RenderData.OpaqueRenderItems.push_back(RenderData.Terrain.get());
+				//RenderData.RenderItems.push_back(std::move(renderItem));
 			}
 		}
 			

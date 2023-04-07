@@ -53,8 +53,6 @@ namespace Engine
 
 		static void BuildTextures();
 
-		static void RegenerateBuffers(const std::string& meshTag, std::vector<Vertex> vertices, std::vector<UINT16> indices);
-
 		static void CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions = 1);
 
 		static void CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name, UINT32 subSivisions = 1);

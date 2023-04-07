@@ -195,16 +195,19 @@ namespace Engine
 				Vertex vertex;
 				vertex.Position = tri.VertexC.Position;
 				vertex.Normal = tri.VertexC.Normal;
+				vertex.Tangent = tri.VertexC.Tangent;
 				Vertices.push_back(vertex);
 				Indices.push_back(++index);
 
 				vertex.Position = tri.VertexB.Position;
 				vertex.Normal = tri.VertexB.Normal;
+				vertex.Tangent = tri.VertexB.Tangent;
 				Vertices.push_back(vertex);
 				Indices.push_back(++index);
 
 				vertex.Position = tri.VertexA.Position;
 				vertex.Normal = tri.VertexA.Normal;
+				vertex.Tangent = tri.VertexA.Tangent;
 				Vertices.push_back(vertex);
 				Indices.push_back(++index);
 			}
@@ -229,7 +232,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
-		slotRootParameter[0].InitAsConstants(8, 0);							// world settings view
+		slotRootParameter[0].InitAsConstants(9, 0);							// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &textureSlot);		// texture 
 		slotRootParameter[2].InitAsDescriptorTable(1, &vertexSlot);			// vertex buffer
 		slotRootParameter[3].InitAsDescriptorTable(1, &triangleSlot);		// triangle buffer

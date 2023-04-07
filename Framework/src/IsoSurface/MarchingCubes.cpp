@@ -67,11 +67,13 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseBinarySearch, 2);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
-		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 4);
 
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.x, 4);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.y, 5);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.z, 6);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 7);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseTexture, 8);
+
 
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
 
@@ -149,10 +151,7 @@ namespace Engine
 
 		for(INT32 i = 0; i < triCount; ++i)
 		{
-			if (&data[i] != nullptr)
-			{
-				RawTriBuffer.push_back(data[i]);
-			}
+			RawTriBuffer.push_back(data[i]);
 		}
 		ReadBackBuffer->Unmap(0, nullptr);
 
@@ -191,7 +190,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-		slotRootParameter[0].InitAsConstants(8, 0);					// world settings view
+		slotRootParameter[0].InitAsConstants(9, 0);					// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &table0);		// density texture buffer 
 		slotRootParameter[2].InitAsShaderResourceView(1);			// tri table texture 
 		slotRootParameter[3].InitAsDescriptorTable(1, &table2);		// output buffer 

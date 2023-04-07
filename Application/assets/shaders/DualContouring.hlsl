@@ -5,6 +5,7 @@ struct Vertex
 {
     float3 position;
     float3 normal;
+    float3 tangent;
     int configuration;
 };
 
@@ -274,6 +275,8 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     
     /* for surface nets algo */
     float3 p = (float3) 0;
+    float3 averageTang = (float3) 0;
+    
     
     for (i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
     {
@@ -281,9 +284,6 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         int c1 = cornerIndexAFromEdge[i];
         int c2 = cornerIndexBFromEdge[i];
         
-        /* check the bit at this corner */
-        //int m1 = (cubeConfiguration >> c1) & 0xb1;
-        //int m2 = (cubeConfiguration >> c2) & 0xb1;
         
         float3 p1 = cornerCoords[c1];
         float3 p2 = cornerCoords[c2];
@@ -303,6 +303,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
 
             float3 p = p1 + t * (p2 - p1);
             float3 n = CalculateNormal(p);
+            float3 tang = float3(n.x, n.y, n.z);
             
             p.x = Remap(p.x, 0.0f, 128.0f, 0.0f, 1.0f);
             p.y = Remap(p.y, 0.0f, 128.0f, 0.0f, 1.0f);
@@ -311,12 +312,10 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             //p2.x = Remap(p2.x, 0.0f, 128.0f, 0.0f, 1.0f);
             //p2.y = Remap(p2.y, 0.0f, 128.0f, 0.0f, 1.0f);
             //p2.z = Remap(p2.z, 0.0f, 128.0f, 0.0f, 1.0f);
-            
-           
-            
-            
+
             qef_add(n, p, ATA, Atb, pointaccum, btb);
             averageNormal += n;
+            averageTang += tang;
             edgeCount++;
 
         }
@@ -324,7 +323,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
 
     
     averageNormal = normalize(averageNormal / edgeCount);
-    
+    averageTang = normalize(averageTang / edgeCount);
     
    
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
@@ -371,6 +370,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     
     vertex.position = solvedPosition.xyz;
     vertex.normal = averageNormal;
+    vertex.tangent = averageTang;
     vertex.configuration = 1;
     
     Vertices[index] = vertex;

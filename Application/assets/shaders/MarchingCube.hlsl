@@ -21,8 +21,9 @@ cbuffer cbSettings : register(b0)
     int TextureSize;
     int UseBinarySearch;
     int NumPointsPerAxis;
-	float3 ChunkCoord;
-	int Resolution;
+    float3 ChunkCoord;
+    int Resolution;
+    int UseTexture;
 };
 
 Texture3D<float> DensityTexture : register(t0);
@@ -54,8 +55,8 @@ Vertex createVertex(int3 coordA, int3 coordB)
     float t = (IsoLevel - densityA) / (densityB - densityA);
     float3 position = coordA + t * (coordB - coordA);
 
-    position = position / (TextureSize - 1);
-    position *= 32;
+    //position = position / (TextureSize - 1);
+    //position *= 32;
     
 	// Normal:
     float3 normalA = CalculateNormal(coordA);
@@ -80,13 +81,14 @@ Vertex createVertex(int3 coordA, int3 coordB)
 [numthreads(8, 8, 8)]
 void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
+   
     if (id.x >= Resolution - 1 || id.y >= Resolution - 1 || id.z >= Resolution - 1)
     {
         return;
     }
 
     
-    int3 coord = id + int3(ChunkCoord);
+    int3 coord = id;// +int3(ChunkCoord);
 
     int3 cornerCoords[8];
     cornerCoords[0] = coord + int3(0, 0, 0);
@@ -111,11 +113,13 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     if(cubeConfiguration == 0 || cubeConfiguration == 255)
         return;
 	
- 
 
-    for (i = 0; i < 16 && TriangleTable[(cubeConfiguration * 16) + i] != -1; i += 3)
+
+    for (i = 0; i < 16; i += 3)
     {
-
+        if (TriangleTable[(cubeConfiguration * 16) + i] == -1)
+            break;
+        
         int a0 = cornerIndexAFromEdge[TriangleTable[(cubeConfiguration * 16) + i]];
         int a1 = cornerIndexBFromEdge[TriangleTable[(cubeConfiguration * 16) + i]];
         

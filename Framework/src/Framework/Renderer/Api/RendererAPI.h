@@ -40,7 +40,9 @@ namespace Engine
 
 		virtual void BindDepthPass() = 0;
 
-		virtual void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
+		virtual void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain) = 0;
+
+		virtual void BindStaticGeoPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
 
 		virtual void BindLightingPass() = 0;
 

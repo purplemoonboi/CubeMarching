@@ -153,7 +153,7 @@ namespace Engine
 		srvDesc.Format = Format;
 		srvDesc.ViewDimension = Dimension;
 		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = GpuResource->GetDesc().MipLevels;
+		srvDesc.Texture2D.MipLevels = 3;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
 		GpuHandleSrv = D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());

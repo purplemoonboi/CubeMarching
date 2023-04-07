@@ -17,6 +17,7 @@ namespace Engine
 	{
 		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f }; //12
 		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };	//12
+		DirectX::XMFLOAT3 Tangent = { 0.f, 0.f, 0.f };	//12
 		INT32 configuration;
 	};
 
@@ -55,13 +56,13 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 128;
-	constexpr UINT64 ChunkHeight = 128;
+	constexpr UINT64 ChunkWidth = 32;
+	constexpr UINT64 ChunkHeight = 32;
 
 	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
 	constexpr UINT64 VoxelTextureHeight = ChunkHeight + 1;
 
-	constexpr UINT64 VoxelWorldElementCount = ChunkWidth;// * ChunkHeight * ChunkWidth;
+	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 VoxelMaterialCount = VoxelWorldElementCount * 8;
 	/**
 	 * @brief Max size of a dense marching cubes voxel buffer.

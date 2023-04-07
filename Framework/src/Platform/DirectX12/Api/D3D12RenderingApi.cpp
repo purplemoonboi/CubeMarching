@@ -85,8 +85,6 @@ namespace Engine
 
 	}
 
-
-
 	void D3D12RenderingApi::SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 	{
 		if(Context != nullptr && FrameBuffer != nullptr)
@@ -100,12 +98,6 @@ namespace Engine
 			FrameBuffer->RebuildFrameBuffer(fbSpecs);
 		}
 	}
-
-	void D3D12RenderingApi::BindDepthPass()
-	{
-	}
-
-	
 
 	void D3D12RenderingApi::PreInit()
 	{
@@ -202,20 +194,7 @@ namespace Engine
 		const HRESULT cmdListBeginRender = Context->GraphicsCmdList->Reset(CurrentFrameResource->CmdListAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListBeginRender);
 
-
-	}
-
-	void D3D12RenderingApi::PostRender()
-	{
-
-
-
-	}
-
-	void D3D12RenderingApi::BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
-	{
 		//RenderTarget->Bind(Context);
-
 
 		Context->GraphicsCmdList->RSSetViewports(1, &RenderTarget->Viewport);
 		Context->GraphicsCmdList->RSSetScissorRects(1, &RenderTarget->Rect);
@@ -229,12 +208,9 @@ namespace Engine
 		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 		// Specify the buffers we are going to render to.
-		Context->GraphicsCmdList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv, 
+		Context->GraphicsCmdList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv,
 			true, &FrameBuffer->GetDepthStencilViewCpu());
 
-		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
-		
 		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetShaderResourceDescHeap() };
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -246,14 +222,30 @@ namespace Engine
 
 		// We can bind all textures in the scene - we declared 'n' amount of descriptors in the root signature.
 		Context->GraphicsCmdList->SetGraphicsRootDescriptorTable(3,
-			D3D12MemoryManager->GetConstantBufferDescHeap()->GetGPUDescriptorHandleForHeapStart());
+			D3D12MemoryManager->GetShaderResourceDescHeap()->GetGPUDescriptorHandleForHeapStart());
 
-		// For each render item...
-		for (auto& renderItem : renderItems)
+
+	}
+
+	void D3D12RenderingApi::PostRender()
+	{}
+
+	void D3D12RenderingApi::BindDepthPass()
+	{
+	}
+
+	void D3D12RenderingApi::BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
+	{
+		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
+		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
+
+
+		if (terrain != nullptr && CurrentFrameResource != nullptr)
 		{
-			const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(renderItem);
-			const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
-			const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
+
+			const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(terrain);
+			const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(terrain->Geometry->VertexBuffer.get());
+			const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(terrain->Geometry->IndexBuffer.get());
 
 			Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
 			Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
@@ -265,28 +257,71 @@ namespace Engine
 			ID3D12Resource* objectConstantBuffer = CurrentFrameResource->ConstantBuffer->Resource();
 			ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
 
-			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
-			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetMaterialIndex() * matConstBufferByteSize;
+			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItemDerived->ObjectConstantBufferIndex * objConstBufferByteSize;
+			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItemDerived->Material->GetMaterialIndex() * matConstBufferByteSize;
 
-			
-			
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 			Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
-			
-			if (renderItem->Geometry->GetName() == "MarchingTerrain" || renderItem->Geometry->GetName() == "DualTerrain")
-			{
-				
 
-				Context->GraphicsCmdList->DrawInstanced
-				(
-					renderItem->Geometry->VertexBuffer->GetCount(),
-					1,
-					renderItem->StartIndexLocation,
-					renderItem->BaseVertexLocation
-				);
-			}
-			else
+
+			Context->GraphicsCmdList->DrawInstanced
+			(
+				terrain->Geometry->VertexBuffer->GetCount(),
+				1,
+				terrain->StartIndexLocation,
+				terrain->BaseVertexLocation
+			);
+		}
+
+	}
+
+
+	void D3D12RenderingApi::BindStaticGeoPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
+	{
+		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
+		Context->GraphicsCmdList->SetPipelineState(dx12Pso->GetPipelineState());
+		
+		
+		// For each render item...
+		for (auto& renderItem : renderItems)
+		{
+
+			if(renderItem->Geometry->GetName() != "DualTerrain" && renderItem->Geometry->GetName() != "MarchingTerrain")
 			{
+				const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(renderItem);
+				const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
+				const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
+
+				Context->GraphicsCmdList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
+				Context->GraphicsCmdList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
+				Context->GraphicsCmdList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
+
+				const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
+				const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
+
+				ID3D12Resource* objectConstantBuffer = CurrentFrameResource->ConstantBuffer->Resource();
+				ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
+
+				const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
+				const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetMaterialIndex() * matConstBufferByteSize;
+
+				Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+				Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
+
+				/*if (renderItem->Geometry->GetName() == "MarchingTerrain" || renderItem->Geometry->GetName() == "DualTerrain")
+				{
+
+
+					Context->GraphicsCmdList->DrawInstanced
+					(
+						renderItem->Geometry->VertexBuffer->GetCount(),
+						1,
+						renderItem->StartIndexLocation,
+						renderItem->BaseVertexLocation
+					);
+				}*/
+
+
 				Context->GraphicsCmdList->DrawIndexedInstanced
 				(
 					renderItem->Geometry->IndexBuffer->GetCount(),
@@ -295,7 +330,11 @@ namespace Engine
 					renderItem->BaseVertexLocation,
 					0
 				);
+
 			}
+
+			
+			
 
 		}
 

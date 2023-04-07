@@ -72,7 +72,6 @@ namespace Engine
 		virtual void SetMaterialBufferIndex(UINT32 index) = 0;
 		[[nodiscard]] virtual const std::string& GetName() const = 0;
 		[[nodiscard]] virtual UINT32 GetMaterialIndex() const = 0;
-		std::array<Texture*, 8> Textures = { nullptr };
 	};
 
 	class MaterialLibrary

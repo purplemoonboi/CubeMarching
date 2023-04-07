@@ -32,9 +32,14 @@ namespace Engine
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
+		static void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
+		{
+			RendererApiPtr->BindTerrainPass(pso, terrain);
+		}
+
 		static void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 		{
-			RendererApiPtr->BindGeometryPass(pso, renderItems);
+			RendererApiPtr->BindStaticGeoPass(pso, renderItems);
 		}
 
 		static void ResetGraphicsCommandList()
