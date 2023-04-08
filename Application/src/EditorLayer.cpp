@@ -94,8 +94,8 @@ namespace Engine
 
         if(IsViewportFocused)
         {
-            if (LeftMButton)
-            {
+            /*if (LeftMButton)
+            {*/
                 const auto camera = Scene->GetSceneCamera();
 
                 if (Input::IsKeyPressed(KEY_E))
@@ -124,7 +124,7 @@ namespace Engine
                 }
                 
                 
-            }
+       //     }
             if (RightMButton)
             {
                 // Make each pixel correspond to 0.2 unit in the scene.

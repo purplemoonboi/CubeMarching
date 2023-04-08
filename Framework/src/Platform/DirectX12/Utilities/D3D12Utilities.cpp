@@ -23,6 +23,14 @@ namespace Engine
 	{
 		auto start = Context->RtvHeap->GetCPUDescriptorHandleForHeapStart();
 		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(start, 2, Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		D3D12_CLEAR_VALUE clearVal = {};
+		clearVal.Color[0] = DirectX::Colors::SandyBrown[0];
+		clearVal.Color[1] = DirectX::Colors::SandyBrown[1];
+		clearVal.Color[2] = DirectX::Colors::SandyBrown[2];
+		clearVal.Color[3] = DirectX::Colors::SandyBrown[3];
+		clearVal.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		
 		Context->Device->CreateRenderTargetView(resource, nullptr, handle);
 		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);

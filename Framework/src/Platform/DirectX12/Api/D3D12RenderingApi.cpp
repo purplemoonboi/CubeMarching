@@ -203,19 +203,21 @@ namespace Engine
 		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
 			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-		// Clear the back buffer and depth buffer.
-		Context->GraphicsCmdList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::SandyBrown, 0, nullptr);
-		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-		// Specify the buffers we are going to render to.
-		Context->GraphicsCmdList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv,
-			true, &FrameBuffer->GetDepthStencilViewCpu());
+		/* Bind the shader root signature */
+		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetShaderResourceDescHeap() };
 		Context->GraphicsCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-		/* Bind the shader root signature */
-		Context->GraphicsCmdList->SetGraphicsRootSignature(Context->RootSignature.Get());
+		// Specify the buffers we are going to render to.
+		Context->GraphicsCmdList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv,
+			true, &FrameBuffer->GetDepthStencilViewCpu());
+		
+
+		// Clear the back buffer and depth buffer.
+		Context->GraphicsCmdList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::SandyBrown, 0, nullptr);
+		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
 		Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
