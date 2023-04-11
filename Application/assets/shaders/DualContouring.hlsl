@@ -129,14 +129,7 @@ float snoise(float3 v)
 float SampleDensity(int3 coord)
 {
     //coord = max(0, min(coord, TextureSize));
-    
-    if(UseTexture == 0)
-    {
-        return snoise(coord);
-    }
-    
     return DensityTexture.Load(float4(coord, 0));
-    
 }
 
 float3 CalculateNormal(int3 coord)
@@ -212,7 +205,6 @@ float Remap(float x, float clx, float cmx, float nlx, float nmx)
     return nlx + (x - clx) * (nmx - nlx) / (cmx - clx);
 }
 
-
 [numthreads(8, 8, 8)]
 void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
 {
@@ -245,7 +237,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     int cubeConfiguration = 0;
     for (int i = 0; i < 8; i++)
     {
-        if (DensityTexture[cornerCoords[i]] < IsoLevel)
+        if (DensityTexture[cornerCoords[i]] > IsoLevel)
         {
             cubeConfiguration |= (1 << i);
         }
@@ -305,13 +297,6 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             float3 n = CalculateNormal(p);
             float3 tang = float3(n.x, n.y, n.z);
             
-            p.x = Remap(p.x, 0.0f, 128.0f, 0.0f, 1.0f);
-            p.y = Remap(p.y, 0.0f, 128.0f, 0.0f, 1.0f);
-            p.z = Remap(p.z, 0.0f, 128.0f, 0.0f, 1.0f);
-            
-            //p2.x = Remap(p2.x, 0.0f, 128.0f, 0.0f, 1.0f);
-            //p2.y = Remap(p2.y, 0.0f, 128.0f, 0.0f, 1.0f);
-            //p2.z = Remap(p2.z, 0.0f, 128.0f, 0.0f, 1.0f);
 
             qef_add(n, p, ATA, Atb, pointaccum, btb);
             averageNormal += n;
@@ -335,39 +320,15 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
 
     /* sometimes the position generated spawns the vertex outside the voxel */
-    /* if this happens place the vertex at the centre of mass */
-    
-    if(solvedPosition.x < 0)
-        solvedPosition.x *= -1.0f;
-
-    if (solvedPosition.y < 0)
-        solvedPosition.y *= -1.0f;
-    
-    if (solvedPosition.z < 0)
-        solvedPosition.z *= -1.0f;
-    
-    solvedPosition.x = Remap(solvedPosition.x, 0.0f, 1.0f, 0.0f, 32.0f);
-    solvedPosition.y = Remap(solvedPosition.y, 0.0f, 1.0f, 0.0f, 32.0f);
-    solvedPosition.z = Remap(solvedPosition.z, 0.0f, 1.0f, 0.0f, 32.0f);
-    
-    
+    /* if this happens place the vertex at the centre of mass */    
     if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
     solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
     {
         solvedPosition.xyz = com.xyz;
     }
-    
-    
-            
 
-    
     Vertex vertex = (Vertex) 0;
-    
-    //solvedPosition = solvedPosition / (TextureSize - 1);
-    solvedPosition *= 32;
-    
-    
-    
+
     vertex.position = solvedPosition.xyz;
     vertex.normal = averageNormal;
     vertex.tangent = averageTang;
@@ -448,7 +409,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     float gr = snoise(right);
     float gu = snoise(up);
     /* check the z-axis */
-    if (DensityTexture[coord] < 0 && DensityTexture[forward] > 0)
+    if (DensityTexture[coord] > IsoLevel && DensityTexture[forward] < IsoLevel)
     {
         /* ...sweep around the pxyz axes and append the vertices */
         if (Vertices[pxyz].configuration == 1 &&
@@ -476,7 +437,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     }
     
       
-    if (DensityTexture[coord] > 0 && DensityTexture[forward] < 0)
+    if (DensityTexture[coord] < IsoLevel && DensityTexture[forward] > IsoLevel)
     {
         /* ...sweep around the pxyz axes and append the vertices */
         if (Vertices[left_and_below_z].configuration == 1 &&
@@ -506,7 +467,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     
     
     /* check the x-axes */
-    if (DensityTexture[coord] < 0 && DensityTexture[right] > 0)
+    if (DensityTexture[coord] > IsoLevel && DensityTexture[right] < IsoLevel)
     {
         /* ...sweep around the pxyz axes and append the vertices */
         if (Vertices[right_of_x].configuration == 1 &&
@@ -535,7 +496,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         }
     }
     
-    if (DensityTexture[coord] > 0 && DensityTexture[right] < 0)
+    if (DensityTexture[coord] < IsoLevel && DensityTexture[right] > IsoLevel)
     {
          /* ...sweep around the pxyz axes and append the vertices */
         if (Vertices[below_pxyz].configuration == 1 &&
@@ -565,7 +526,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
 
     /* check the y-axis */
     
-    if (DensityTexture[coord] < 0 && DensityTexture[up] > 0)
+    if (DensityTexture[coord] > IsoLevel && DensityTexture[up] < IsoLevel)
     {
         
         if (Vertices[pxyz].configuration == 1 &&
@@ -595,7 +556,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     }
     
     
-    if (DensityTexture[coord] > 0 && DensityTexture[up] < 0)
+    if (DensityTexture[coord] < IsoLevel && DensityTexture[up] > IsoLevel)
     {
         /* ...sweep around the pxyz axes and append the vertices */
         

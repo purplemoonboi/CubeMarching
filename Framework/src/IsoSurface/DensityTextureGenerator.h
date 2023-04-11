@@ -54,6 +54,8 @@ namespace Engine
 		float Radius = 2.0f;
 		INT32 DensityPrimitive = 0;
 		INT32 CsgOperation = 0;
+		float RayDistance = 15.0f;
+
 	};
 
 	class DensityTextureGenerator

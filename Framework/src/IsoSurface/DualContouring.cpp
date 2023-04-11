@@ -40,11 +40,11 @@ namespace Engine
 		BuildDualContourPipelineStates();
 		CreateBuffers();
 
-		Vertices.reserve(100);
+		Vertices.reserve(VoxelWorldElementCount);
 		Vertex vert = {};
-		Vertices.insert(Vertices.begin(), 100, vert);
-		Indices.reserve(100);
-		Indices.insert(Indices.begin(), 100, 0);
+		Vertices.insert(Vertices.begin(), VoxelWorldElementCount, vert);
+		Indices.reserve(VoxelWorldElementCount);
+		Indices.insert(Indices.begin(), VoxelWorldElementCount, 0);
 
 	}
 
@@ -64,9 +64,6 @@ namespace Engine
 		/* first pass - compute the vertex positions of each voxel*/
 		const auto tex = dynamic_cast<D3D12Texture*>(texture);
 
-		auto ps = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
-
-		ComputeContext->CommandList->SetPipelineState(ps->GetPipelineState());
 		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
 
 		const float ccoord[] = { settings.ChunkCoord.x, settings.ChunkCoord.y, settings.ChunkCoord.z };
@@ -132,18 +129,22 @@ namespace Engine
 		ComputeContext->FlushComputeQueue(&FenceValue);
 
 		/* map counter values and cache before instructed counter resets */
-		INT32* vcountData = nullptr;
-		INT32 vcounter = 0;
-		const HRESULT vcounterHR = VertexCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&vcountData));
-		THROW_ON_FAILURE(vcounterHR);
-		vcounter = *vcountData;
-		VertexCounterReadBack->Unmap(0, nullptr);
+		//INT32* vcountData = nullptr;
+		//INT32 vcounter = 0;
+		//const HRESULT vcounterHR = VertexCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&vcountData));
+		//THROW_ON_FAILURE(vcounterHR);
+		//vcounter = *vcountData;
+		//VertexCounterReadBack->Unmap(0, nullptr);
 
 		UINT64* countData = nullptr;
 		UINT64 counter = 0;
 
 		const HRESULT counterHR = TriangleCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&countData));
 		THROW_ON_FAILURE(counterHR);
+
+		const HRESULT hh = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		THROW_ON_FAILURE(hh);
+
 		counter = *countData;
 
 		TriangleCounterReadBack->Unmap(0, nullptr);
@@ -153,7 +154,7 @@ namespace Engine
 		/**
 		 * read vertices
 		 */
-		DualContourVertex* rawVerts = nullptr;
+		/*DualContourVertex* rawVerts = nullptr;
 
 		const HRESULT vertHR = VertexBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&rawVerts));
 		THROW_ON_FAILURE(vertHR);
@@ -163,7 +164,7 @@ namespace Engine
 		{
 			vertices.push_back(rawVerts[i]);
 		}
-		VertexBackBuffer->Unmap(0, nullptr);
+		VertexBackBuffer->Unmap(0, nullptr);*/
 
 		/**
 		 * read triangles 
@@ -174,7 +175,6 @@ namespace Engine
 		THROW_ON_FAILURE(triHR);
 
 		RawVoxelBuffer.clear();
-		RawVoxelBuffer.resize(0);
 
 		for (INT32 i = 0; i < counter; ++i)
 		{
@@ -185,9 +185,7 @@ namespace Engine
 		if (!RawVoxelBuffer.empty())
 		{
 			Vertices.clear();
-			Vertices.resize(0);
 			Indices.clear();
-			Indices.resize(0);
 
 			UINT16 index = 0;
 			for (auto& tri : RawVoxelBuffer)
@@ -344,27 +342,27 @@ namespace Engine
 	{
 		ComputeContext->ResetComputeCommandList(nullptr);
 
-		const INT32 rawDataA[1] = { 0 };
-		D3D12_SUBRESOURCE_DATA subResourceDataA = {};
-		subResourceDataA.pData = rawDataA;
-		subResourceDataA.RowPitch = sizeof(INT32);
-		subResourceDataA.SlicePitch = subResourceDataA.RowPitch;
+		//const INT32 rawDataA[1] = { 0 };
+		//D3D12_SUBRESOURCE_DATA subResourceDataA = {};
+		//subResourceDataA.pData = rawDataA;
+		//subResourceDataA.RowPitch = sizeof(INT32);
+		//subResourceDataA.SlicePitch = subResourceDataA.RowPitch;
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			TriangleCounterBuffer.Get(),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-			D3D12_RESOURCE_STATE_COPY_DEST
-		));
+		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		//	TriangleCounterBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		//	D3D12_RESOURCE_STATE_COPY_DEST
+		//));
 
-		// Copy the data into the upload heap
-		UpdateSubresources(ComputeContext->CommandList.Get(), VertexCounterBuffer.Get(), VertexCounterUpload.Get(), 0, 0, 1, &subResourceDataA);
+		//// Copy the data into the upload heap
+		//UpdateSubresources(ComputeContext->CommandList.Get(), VertexCounterBuffer.Get(), VertexCounterUpload.Get(), 0, 0, 1, &subResourceDataA);
 
-		// Add the instruction to transition back to read 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			TriangleCounterBuffer.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-		));
+		//// Add the instruction to transition back to read 
+		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		//	TriangleCounterBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_COPY_DEST,
+		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+		//));
 
 		const INT32 rawData[1] = { 0 };
 		D3D12_SUBRESOURCE_DATA subResourceData = {};

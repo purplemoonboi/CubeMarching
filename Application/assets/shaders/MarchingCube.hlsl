@@ -61,8 +61,8 @@ Vertex createVertex(int3 coordA, int3 coordB)
     float t = (IsoLevel - densityA) / (densityB - densityA);
     float3 position = coordA + t * (coordB - coordA);
 
-    position = position / (TextureSize - 1);
-    position *= 16;
+    //position = position / (TextureSize - 1);
+    //position *= 16;
     
 	// Normal:
     float3 normalA = CalculateNormal(coordA);

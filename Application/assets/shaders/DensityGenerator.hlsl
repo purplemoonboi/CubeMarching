@@ -1,3 +1,38 @@
+cbuffer cbPerlinSettings : register(b0)
+{
+    float Octaves;
+    float Gain;
+    float Loss;
+    float Ground;
+    
+    float3 ChunkCoord;
+    float Frequency;
+    
+    float Amplitude; //for heightmaps
+    float BoundingMaxX;
+    float BoundingMaxY;
+    float BoundingMaxZ;
+    
+
+    int TextureWidth;
+    int TextureHeight;
+};
+
+cbuffer cbCsgBuffer : register(b1)
+{
+    float MousePosX;
+    float MousePosY;
+    float MousePosZ;
+    int IsMouseDown;
+    float Radius;
+    int DensityPrimitive;
+    int CsgOperation;
+    float deltaTime;
+};
+
+
+RWTexture3D<float> Noise3D : register(u0);
+RWTexture3D<float> SecondaryNoise3D : register(u1);
 
 // Noise Shader Library for Unity - https://github.com/keijiro/NoiseShader
 //
@@ -227,8 +262,8 @@ static float Torus(float3 worldPosition, float3 origin)
     float xt = local_pos.x;
     float yt = local_pos.y;
     float zt = local_pos.z;
-    float _radius = 10.0f;
-    float _radius2 = 2.33f;
+    float _radius = Radius;
+    float _radius2 = Radius / 4.0f;
 
     float x = xt;
     float y = yt;
@@ -240,50 +275,24 @@ static float Torus(float3 worldPosition, float3 origin)
     return d;
 }
 
-cbuffer cbPerlinSettings : register(b0)
-{
-    float Octaves;
-    float Gain;
-    float Loss;
-    float Ground;
-    
-    float3 ChunkCoord;
-    float Frequency;
-    
-    float Amplitude;//for heightmaps
-    float BoundingMaxX;
-    float BoundingMaxY;
-    float BoundingMaxZ;
-    
 
-    int TextureWidth;
-    int TextureHeight;
-};
-
-cbuffer cbCsgBuffer : register(b1)
-{
-    float3 MousePos;
-    int IsMouseDown;
-    int Radius;
-    int DensityPrimitive;
-    int CsgOperation;
-    float deltaTime;
-};
-
-RWTexture3D<float> Noise3D : register(u0);
-RWTexture3D<float> SecondaryNoise3D : register(u1);
 
 [numthreads(1,1,1)]
-void ComputeNoise3D(int3 id : SV_DispatchThreadID)
+void ComputeNoise3D(int3 id : SV_DispatchThreadID, int3 gId : SV_GroupID)
 {
-    const float3 fId = (float3) id + ChunkCoord;
     
     float noise = 1;
     float freq = Frequency;
     float gain = Gain;
+    float operation = 0.0f;
+    float prim = 0.0f;
+    float3 MousePos = float3(MousePosX, MousePosY, MousePosZ);
+    
+    float3 fId = (float3) id;//+ChunkCoord;
+    
    
     
-    if(IsMouseDown != 1)
+    if(IsMouseDown == 0)
     {
         for (int i = 0; i < Octaves; i++)
         {
@@ -293,34 +302,46 @@ void ComputeNoise3D(int3 id : SV_DispatchThreadID)
     }
     else
     {
-        float noise = Noise3D[id];
-        float prim = 0.f;
+        //fId /= TextureWidth - 1;
+        //fId *= 16.0f;
+        MousePos = abs(MousePos);
         switch (DensityPrimitive)
         {
             case 0:
-            {
-                    prim = Sphere(MousePos, float3(0, 0, 0), Radius);
-                }
+                prim = Box(fId, MousePos/2.0f, Radius);
+                break;
+            case 1:
+                prim = Sphere(fId, MousePos / 2.0f, Radius / 2.0f);
+                break;
+            case 2:
+                prim = Cylinder(fId, MousePos / 2.0f, Radius);
+                break;
+            case 3:
+                prim = Torus(fId, MousePos);
                 break;
         }
         switch (CsgOperation)
         {
             case 0:
-            {
-                    noise += prim * deltaTime;
-                }
+                operation = -1.0f;
                 break;
             case 1:
-            {
-                    noise -= prim * deltaTime;
-                }
-                break; 
+                operation = 1.0f;
+                break;
         }
+        
+        noise = Noise3D[id];
+        
+        if(prim < Radius)
+        {
+            noise += operation;
+            noise = clamp(noise, -1.0f, 1.0f);
+        }
+        
     }
-    
-    
-    
     Noise3D[id] = noise;
+
+    
 }
 
 [numthreads(8, 8, 8)]

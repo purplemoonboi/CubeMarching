@@ -59,20 +59,22 @@ namespace Engine
 
 		MarchingCubes->Init(csApi, api->GetMemoryManager());
 
-        Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
-            MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+        /*Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+            MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));*/
 
         /* polygonise the texture with marching cubes*/
 
-    	//DualContouring->Init(csApi, api->GetMemoryManager());
-        //   DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-        //   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-        //       DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
+    	DualContouring->Init(csApi, api->GetMemoryManager());
+           Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
+               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
 
     	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
-        //MarchingCubesHP->SortChunk();
+     //   MarchingCubesHP->SortChunk();
 
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
+
+        Renderer3D::CreateMesh("Brush", Transform(0, 0, 0, 0,0,0, 0.1,0.1,0.1), 1);
+
         RenderInstruction::ExecGraphicsCommandList();
 
 
@@ -123,14 +125,10 @@ namespace Engine
 
 
             }
+
+            // Update Texture
             if (RightMButton)
             {
-                // Make each pixel correspond to 0.2 unit in the scene.
-                float dx = 50.f * CurrentMouseX;
-                float dy = 50.f * CurrentMouseY;
-                // Update the camera radius based on input.
-                mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
-
                 CsgOperationSettings.IsMouseDown = 1;
                 ConvertMouseCoordinates(deltaTime);
                 UpdateTexture = true;
@@ -139,6 +137,8 @@ namespace Engine
             {
                 CsgOperationSettings.IsMouseDown = 0;
             }
+     
+
         }
 
 
@@ -147,24 +147,16 @@ namespace Engine
 
         if (UpdateTexture)
         {
+            UpdateTexture = false;
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
-            UpdateTexture = false;
-            UpdateVoxels = true;
-        }
-
-
-        if (UpdateVoxels)
-        {
-            UpdateVoxels = false;
-            MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
-
+            //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            //Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
 
             /* polygonise the texture with dual contouring */
-            //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
 
-            //MarchingCubesHP->ConstructLBVH(PerlinCompute->GetTexture());
         }
 
         auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
@@ -404,15 +396,22 @@ namespace Engine
 
             // CSG SETTINGS
             {
-                float radius        = CsgOperationSettings.Radius;
-
+                float radius = CsgOperationSettings.Radius;
+                float rayDist = CsgOperationSettings.RayDistance;
                 ImGui::Begin("CSG Settings");
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Brush Radius", &radius, 0.02f, 1.0f, 10.0f))
                 {
                     CsgOperationSettings.Radius = radius;
                 }
-               
+
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Ray Range", &rayDist, 0.02f, 2.0f, 100.0f))
+                {
+                    CsgOperationSettings.RayDistance = rayDist;
+                }
+
+
                 ImGui::Spacing();
                 const char* primitives[] = { "Box", "Sphere", "Cylinder", "Torus" };
                 static const char* currentPrim = nullptr;
@@ -586,9 +585,11 @@ namespace Engine
 
     void EditorLayer::ConvertMouseCoordinates(float deltaTime)
     {
+        float xx = CurrentMouseX / ViewportSize.x;
+        float yy = CurrentMouseY / ViewportSize.y;
 
-        const float x = (2.0f * CurrentMouseX) / ViewportSize.x - 1.0f;
-        const float y = 1.0f - (2.0f * CurrentMouseY) / ViewportSize.y;
+        const float x = (2.0f * xx) - 1.0f;
+        const float y = 1.0f - (2.0f * yy);
 
         const auto* camera = Scene->GetSceneCamera();
 
@@ -597,7 +598,7 @@ namespace Engine
 
         const float vx = x / inverseProjection(0, 0);
         const float vy = y / inverseProjection(1, 1);
-        const float vz = -1.0f;
+        const float vz = 1.0f;
 
         XMFLOAT4X4 inverseView;
         XMStoreFloat4x4(&inverseView, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetView())));
@@ -609,12 +610,30 @@ namespace Engine
             vx * inverseView(0, 2) + vy * inverseView(1, 2) + vz * inverseView(2, 2));
 
         // Normalize the direction vector to get a unit vector
-        CXMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&rayDirection));
+        rayDirection.x *= CsgOperationSettings.RayDistance;
+        rayDirection.y *= CsgOperationSettings.RayDistance;
+        rayDirection.z *= CsgOperationSettings.RayDistance;
+
+        CXMVECTOR direction = XMLoadFloat3(&rayDirection);
         XMStoreFloat3(&rayDirection, direction);
 
-        CsgOperationSettings.MousePos = { rayOrigin.x + rayDirection.x, rayOrigin.y + rayDirection.y, rayOrigin.z + rayDirection.z };
-        CORE_TRACE("Mouse Pos W: {0}, {1}, {2}", rayOrigin.x + rayDirection.x, rayOrigin.y + rayDirection.y, rayOrigin.z + rayDirection.z);
+        XMFLOAT3 camForward = camera->GetForward();
+
+        float xf = rayOrigin.x + camForward.x + rayDirection.x;
+        float yf = rayOrigin.y + camForward.y + rayDirection.y;
+        float zf = rayOrigin.z + camForward.z + rayDirection.z;
+
+        CsgOperationSettings.MousePos = { xf, yf, zf };
+        CORE_TRACE("Mouse Pos W: {0}, {1}, {2}", xf, yf, zf);
         CORE_TRACE("Camera Pos W: {0}, {1}, {2}", rayOrigin.x, rayOrigin.y, rayOrigin.z);
+
+        D3D12RenderItem* brush = dynamic_cast<D3D12RenderItem*>(Renderer3D::GetRenderItem(2));
+
+        float rad = CsgOperationSettings.Radius;
+        auto scale = XMMatrixScaling(rad * 0.1, rad*0.1, rad*0.1);
+        auto transform = XMMatrixTranslation(xf, yf, zf);
+        XMStoreFloat4x4(&brush->World, transform);
+        brush->NumFramesDirty++;
     }
 
 

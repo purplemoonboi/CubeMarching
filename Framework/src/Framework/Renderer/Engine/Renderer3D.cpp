@@ -320,9 +320,39 @@ namespace Engine
 		}
 	}
 
+	void Renderer3D::CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType)
+	{
+
+		switch(staticMeshType)
+		{
+		case 0:
+			{
+				CreateCube(2, 2, 2, const_cast<std::string&>(meshTag));
+			}
+			break;
+		case 1:
+			{
+				CreateSphere(1,const_cast<std::string&>(meshTag));
+			}
+			break;
+		}
+
+		ScopePointer<RenderItem> renderItem = RenderItem::Create
+		(
+			RenderData.Geometries[meshTag].get(),
+			RenderData.MaterialLibrary.Get("Green"),
+			meshTag+"_args",
+			RenderData.OpaqueRenderItems.size(),
+			transform
+		);
+
+		RenderData.OpaqueRenderItems.push_back(renderItem.get());
+		RenderData.RenderItems.push_back(std::move(renderItem));
+	}
+
 	void Renderer3D::SetBuffer(const std::string& renderItemTag, 
-		const std::vector<Vertex>& vertices,
-		const std::vector<UINT16>& indices
+	                           const std::vector<Vertex>& vertices,
+	                           const std::vector<UINT16>& indices
 	)
 	{
 		for(INT32 i=0;i<RenderData.OpaqueRenderItems.size();++i)
@@ -341,6 +371,11 @@ namespace Engine
 
 	void Renderer3D::SetTerrainBuffer(const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices)
 	{}
+
+	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
+	{
+		return RenderData.OpaqueRenderItems[index];
+	}
 
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{
