@@ -11,12 +11,16 @@ namespace Engine
 {
     // Stores the resources needed for the CPU to build the command lists
 	// for a frame.  
-    struct D3D12FrameResource //: FrameResource
+    struct D3D12FrameResource
     {
-        D3D12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount);
+        D3D12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount, UINT voxelBufferElementCount);
         D3D12FrameResource(const D3D12FrameResource& rhs) = delete;
         D3D12FrameResource& operator=(const D3D12FrameResource& rhs) = delete;
+        D3D12FrameResource&& operator=(D3D12FrameResource&& rhs) = delete;
         ~D3D12FrameResource();
+
+        bool QueryTerrainBuffer(UINT elementCount);
+        void UpdateVoxelBuffer(const D3D12Context* context, UINT elementCount);
 
         // We cannot reset the allocator until the GPU is done processing the commands.
         // So each frame needs their own allocator.
@@ -31,7 +35,7 @@ namespace Engine
 
 		// Fence value to mark commands up to this fence point.  This lets us
 		// check if these frame resources are still in use by the GPU.
-		UINT64 SignalCount = 0;
+		UINT64 Fence = 0;
     };
 
 }

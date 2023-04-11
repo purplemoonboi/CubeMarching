@@ -112,10 +112,10 @@ namespace Engine
 		THROW_ON_FAILURE(presentResult);
 
 		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
-		api->GetCurrentFrameResource()->SignalCount = ++context->SyncCounter;
+		api->GetCurrentFrameResource()->Fence = ++context->SyncCounter;
 
 		const HRESULT signalResult = context->CommandQueue->Signal(context->Fence.Get(),
-			api->GetCurrentFrameResource()->SignalCount);
+			api->GetCurrentFrameResource()->Fence);
 		THROW_ON_FAILURE(signalResult);
 	}
 

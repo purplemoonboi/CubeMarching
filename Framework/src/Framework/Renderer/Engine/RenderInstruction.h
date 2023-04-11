@@ -60,6 +60,7 @@ namespace Engine
 		static void PreRender
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			RenderItem* terrain,
 			const MainCamera& camera,
 			const WorldSettings& settings,
 			float deltaTime,
@@ -67,7 +68,7 @@ namespace Engine
 			bool wireframe
 		)
 		{
-			RendererApiPtr->PreRender(items, materials, settings, camera, deltaTime, elapsedTime, wireframe);
+			RendererApiPtr->PreRender(items, materials, terrain, settings, camera, deltaTime, elapsedTime, wireframe);
 		}
 
 		static void PostRender()

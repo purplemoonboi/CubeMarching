@@ -56,8 +56,8 @@ namespace Engine
 		DirectX::XMFLOAT3 vec = { 0,0,0 };
 	};
 
-	constexpr UINT64 ChunkWidth = 32;
-	constexpr UINT64 ChunkHeight = 32;
+	constexpr UINT64 ChunkWidth = 64;
+	constexpr UINT64 ChunkHeight = 64;
 
 	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
 	constexpr UINT64 VoxelTextureHeight = ChunkHeight + 1;

@@ -60,6 +60,7 @@ namespace Engine
 		virtual void PreRender
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			RenderItem* terrain,
 			const WorldSettings& settings,
 			const MainCamera& camera,
 			float deltaTime,

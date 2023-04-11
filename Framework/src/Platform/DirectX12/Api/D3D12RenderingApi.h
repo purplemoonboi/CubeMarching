@@ -51,6 +51,7 @@ namespace Engine
 		void PreRender
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+			RenderItem* terrain,
 			const WorldSettings& settings,
 			const MainCamera& camera,
 			float deltaTime,
@@ -72,6 +73,8 @@ namespace Engine
 		[[nodiscard]] RenderTarget* GetRenderTextureAlbedo() const override { return RenderTarget.get(); }
 
 	private:
+
+		ComPtr<ID3DBlob> TerrainBuffer;
 
 		// Buffer for uploading shader constants.
 		ScopePointer<D3D12ResourceBuffer> UploadBuffer;

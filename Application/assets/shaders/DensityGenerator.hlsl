@@ -246,21 +246,28 @@ cbuffer cbPerlinSettings : register(b0)
     float Gain;
     float Loss;
     float Ground;
+    
     float3 ChunkCoord;
     float Frequency;
+    
     float Amplitude;//for heightmaps
     float BoundingMaxX;
     float BoundingMaxY;
     float BoundingMaxZ;
+    
+
     int TextureWidth;
     int TextureHeight;
 };
 
-cbuffer cbPerlinSettings : register(b1)
+cbuffer cbCsgBuffer : register(b1)
 {
+    float3 MousePos;
+    int IsMouseDown;
     int Radius;
     int DensityPrimitive;
     int CsgOperation;
+    float deltaTime;
 };
 
 RWTexture3D<float> Noise3D : register(u0);
@@ -276,17 +283,41 @@ void ComputeNoise3D(int3 id : SV_DispatchThreadID)
     float gain = Gain;
    
     
-    if(fId.y > Ground)
+    if(IsMouseDown != 1)
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < Octaves; i++)
         {
             noise += snoise(fId * freq);
             freq *= gain;
         }
-    
-    
-        noise = 1.0f - (noise * noise);
     }
+    else
+    {
+        float noise = Noise3D[id];
+        float prim = 0.f;
+        switch (DensityPrimitive)
+        {
+            case 0:
+            {
+                    prim = Sphere(MousePos, float3(0, 0, 0), Radius);
+                }
+                break;
+        }
+        switch (CsgOperation)
+        {
+            case 0:
+            {
+                    noise += prim * deltaTime;
+                }
+                break;
+            case 1:
+            {
+                    noise -= prim * deltaTime;
+                }
+                break; 
+        }
+    }
+    
     
     
     Noise3D[id] = noise;

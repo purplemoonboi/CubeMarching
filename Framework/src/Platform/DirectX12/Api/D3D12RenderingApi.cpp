@@ -70,7 +70,8 @@ namespace Engine
 				Context,
 				1,
 				maxMatCount,
-				maxObjCount
+				maxObjCount,
+				1
 			)
 			);
 		}
@@ -123,6 +124,7 @@ namespace Engine
 
 	void D3D12RenderingApi::PreRender(
 		const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
+		RenderItem* terrain,
 		const WorldSettings& settings,
 		const MainCamera& camera,
 		float deltaTime,
@@ -138,14 +140,38 @@ namespace Engine
 		// Has the GPU finished processing the commands of the current frame resource
 		// If not, wait until the GPU has completed commands up to this fence point.
 		auto val = Context->Fence->GetCompletedValue();
-		if (val < CurrentFrameResource->SignalCount)
+		if (val < CurrentFrameResource->Fence)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
+			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
+
+		// We need to update this buffer with respect to the
+		// current frame resource. This is to avoid updating the vertex buffer when in 'flight'. i.e changing its data
+		// whilst in use on the GPU.
+		if(terrain != nullptr)
+		{
+			//...check the buffer sizes align. Note they always should unless we have
+			//requested to regenerate the buffer.
+			const UINT32 vCount = terrain->Geometry->VertexBuffer->GetCount();
+			if (CurrentFrameResource->QueryTerrainBuffer(vCount))
+			{
+				CurrentFrameResource->UpdateVoxelBuffer(Context, vCount);
+			}
+
+			if (terrain->NumFramesDirty > 0)
+			{
+				//...if so, we'll need to update the GPU buffer to point to the updated dynamic buffer
+				UploadBuffer->UpdateVoxelTerrain(CurrentFrameResource, terrain);
+			}
+		}
+		
+		
+				
+		
 
 		// Update constant buffers for each render item and material
 		UploadBuffer->UpdateObjectBuffers(CurrentFrameResource, items);
@@ -175,15 +201,15 @@ namespace Engine
 		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
-		CurrentFrameResource->SignalCount = ++Context->SyncCounter;
+		CurrentFrameResource->Fence = ++Context->SyncCounter;
 
-		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->SignalCount);
+		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), CurrentFrameResource->Fence);
 		THROW_ON_FAILURE(signalResult);
 
-		if(Context->Fence->GetCompletedValue() < CurrentFrameResource->SignalCount)
+		if(Context->Fence->GetCompletedValue() < CurrentFrameResource->Fence)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
+			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
@@ -310,19 +336,6 @@ namespace Engine
 				Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
 				Context->GraphicsCmdList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
 
-				/*if (renderItem->Geometry->GetName() == "MarchingTerrain" || renderItem->Geometry->GetName() == "DualTerrain")
-				{
-
-
-					Context->GraphicsCmdList->DrawInstanced
-					(
-						renderItem->Geometry->VertexBuffer->GetCount(),
-						1,
-						renderItem->StartIndexLocation,
-						renderItem->BaseVertexLocation
-					);
-				}*/
-
 
 				Context->GraphicsCmdList->DrawIndexedInstanced
 				(
@@ -380,10 +393,10 @@ namespace Engine
 
 		//// Has the GPU finished processing the commands of the current frame resource
 		//// If not, wait until the GPU has completed commands up to this fence point.
-		//if (Context->Fence->GetCompletedValue() < CurrentFrameResource->SignalCount)
+		//if (Context->Fence->GetCompletedValue() < CurrentFrameResource->Fence)
 		//{
 		//	const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-		//	const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->SignalCount, eventHandle);
+		//	const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentFrameResource->Fence, eventHandle);
 		//	THROW_ON_FAILURE(eventCompletion);
 		//	WaitForSingleObject(eventHandle, INFINITE);
 		//	CloseHandle(eventHandle);

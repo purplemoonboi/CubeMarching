@@ -10,6 +10,7 @@
 #include "Platform/DirectX12/Buffers/D3D12UploadBuffer.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
+#include <ppl.h>
 
 namespace Engine
 {
@@ -23,15 +24,15 @@ namespace Engine
 	{
 
 		// Reserve memory and copy the vertices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
-		CopyMemory(CpuLocalCopy->GetBufferPointer(), 0, size);
+		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
+		CopyMemory(Blob->GetBufferPointer(), 0, size);
 		
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
 			nullptr,
 			size,
-			Gpu_UploadBuffer
+			UploadBuffer
 		);
 	}
 
@@ -41,19 +42,17 @@ namespace Engine
 		VertexBufferByteSize(size),
 		VertexCount(vertexCount)
 	{
-
-
 		// Reserve memory and copy the vertices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuLocalCopy));
+		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
 		// Copy data into buffer
-		CopyMemory(CpuLocalCopy->GetBufferPointer(), vertices, size);
+		CopyMemory(Blob->GetBufferPointer(), vertices, size);
 
 		// Create the GPU vertex buffer
-		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
 		(
 			vertices,
 			size,
-			Gpu_UploadBuffer
+			UploadBuffer
 		);
 	}
 
@@ -71,20 +70,20 @@ namespace Engine
 	void D3D12VertexBuffer::Destroy()
 	{
 
-		if(CpuLocalCopy != nullptr)
+		if(Blob != nullptr)
 		{
-			CpuLocalCopy.Reset();
-			CpuLocalCopy = nullptr;
+			Blob.Reset();
+			Blob = nullptr;
 		}
-		if(GpuBuffer != nullptr)
+		if(DefaultBuffer != nullptr)
 		{
-			GpuBuffer.Reset();
-			GpuBuffer = nullptr;
+			DefaultBuffer.Reset();
+			DefaultBuffer = nullptr;
 		}
-		if(Gpu_UploadBuffer != nullptr)
+		if(UploadBuffer != nullptr)
 		{
-			Gpu_UploadBuffer.Reset();
-			Gpu_UploadBuffer = nullptr;
+			UploadBuffer.Reset();
+			UploadBuffer = nullptr;
 		}
 		
 	}
@@ -92,22 +91,32 @@ namespace Engine
 
 	void D3D12VertexBuffer::SetData(const void* data, INT32 size, INT32 count)
 	{
-		Data.clear();
+		if(count > VertexCount)
+		{
+			Blob.Reset();
+			const HRESULT hr = D3DCreateBlob(size, &Blob);
+			THROW_ON_FAILURE(hr);
+		}
 
+		CopyMemory(Blob->GetBufferPointer(), data, size);
 		VertexBufferByteSize = size;
 		VertexCount = count;
-
-		Data.reserve(count);
-
-		const auto* vertices = static_cast<Vertex*>(const_cast<void*>(data));
-		for (INT32 i = 0; i < count; ++i)
-			Data.push_back(vertices[i]);
-
 	}
 
-	void D3D12VertexBuffer::SetData(const void* buffer, INT32 count)
+	void D3D12VertexBuffer::SetBuffer(const void* buffer)
 	{
+		const auto rhs = (ID3D12Resource*)buffer;
+		const auto desc = rhs->GetDesc();
 
+		/*if (desc.Width > DefaultBuffer->GetDesc().Width)
+		{
+			DefaultBuffer.Reset();
+
+		}
+		else*/
+		{
+			DefaultBuffer = rhs;
+		}
 	}
 
 	void D3D12VertexBuffer::SetLayout(const BufferLayout& layout)
@@ -117,48 +126,23 @@ namespace Engine
 
 	const void* D3D12VertexBuffer::GetData() const
 	{
-		return CpuLocalCopy.Get();
+		
+		return Blob->GetBufferPointer();
 	}
 
 	const void* D3D12VertexBuffer::GetGPUResource() const
 	{
-		return GpuBuffer.Get();
+		return DefaultBuffer.Get();
 	}
 
 	D3D12_VERTEX_BUFFER_VIEW D3D12VertexBuffer::GetVertexBufferView() const
 	{
 		D3D12_VERTEX_BUFFER_VIEW vbv;
-		vbv.BufferLocation = GpuBuffer->GetGPUVirtualAddress();
+		vbv.BufferLocation = DefaultBuffer->GetGPUVirtualAddress();
 		vbv.StrideInBytes = sizeof(Vertex);
 		vbv.SizeInBytes    = sizeof(Vertex) * VertexCount;
 
 		return vbv;
-	}
-
-	bool D3D12VertexBuffer::Regenerate()
-	{
-		// Create the GPU vertex buffer
-		if(GpuBuffer != nullptr)
-		{
-			GpuBuffer.Reset();
-		}
-		if (Gpu_UploadBuffer != nullptr)
-		{
-			Gpu_UploadBuffer.Reset();
-		}
-
-
-		GpuBuffer = D3D12BufferUtils::CreateDefaultBuffer
-		(
-			Data.data(),
-			VertexBufferByteSize,
-			Gpu_UploadBuffer
-		);
-
-		if (GpuBuffer == nullptr)
-			return false;
-
-		return true;
 	}
 
 	D3D12IndexBuffer::D3D12IndexBuffer(UINT16* indices, UINT64 size, UINT indexCount)
@@ -169,8 +153,8 @@ namespace Engine
 	{
 
 		// Reserve memory and copy the indices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &CpuData));
-		CopyMemory(CpuData->GetBufferPointer(), indices, size);
+		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
+		CopyMemory(Blob->GetBufferPointer(), indices, size);
 
 		// Create the GPU vertex buffer
 		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
@@ -195,17 +179,28 @@ namespace Engine
 
 	void D3D12IndexBuffer::SetData(const UINT16* data, INT32 count)
 	{
-		CopyMemory(CpuData->GetBufferPointer(), data, count);
-
-		Data.clear();
-
-		Count = count;
-		IndexBufferByteSize = sizeof(UINT16) * count;
-
-		Data.reserve(count);
-		for (INT32 i = 0; i < count; ++i)
+		if (count > Count)
 		{
-			Data.push_back(data[i]);
+			Blob.Reset();
+			const HRESULT hr = D3DCreateBlob(count*sizeof(UINT16), &Blob);
+			THROW_ON_FAILURE(hr);
+		}
+		CopyMemory(Blob->GetBufferPointer(), data, count);
+		Count = count;
+	}
+
+	void D3D12IndexBuffer::SetBuffer(const void* bufferAddress)
+	{
+		const auto rhs = (ID3D12Resource*)bufferAddress;
+		const auto desc = rhs->GetDesc();
+		
+		/*if(desc.Width > DefaultBuffer->GetDesc().Width)
+		{
+			DefaultBuffer.Reset();
+		}
+		else*/
+		{
+			DefaultBuffer = rhs;
 		}
 	}
 
@@ -223,38 +218,9 @@ namespace Engine
 		}
 	}
 
-	bool D3D12IndexBuffer::Regenerate()
-	{
-		// Reserve memory and copy the indices into our CPU buffer
-		CopyMemory(CpuData->GetBufferPointer(), Data.data(), IndexBufferByteSize);
-
-
-		if (DefaultBuffer != nullptr)
-		{
-			DefaultBuffer.Reset();
-		}
-		if (UploadBuffer != nullptr)
-		{
-			UploadBuffer.Reset();
-		}
-
-		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
-		(
-			Data.data(),
-			IndexBufferByteSize,
-			UploadBuffer
-		);
-
-		if (DefaultBuffer == nullptr)
-			return false;
-
-		return true;
-	}
-
 	UINT16* D3D12IndexBuffer::GetData() const
 	{
-		return reinterpret_cast<UINT16*>(CpuData.Get());
+		return reinterpret_cast<UINT16*>(Blob.Get());
 	}
 
 	D3D12_INDEX_BUFFER_VIEW D3D12IndexBuffer::GetIndexBufferView() const
@@ -392,6 +358,52 @@ namespace Engine
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
 
+	void D3D12ResourceBuffer::UpdateVoxelTerrain(D3D12FrameResource* resource, RenderItem* terrain)
+	{
+		const auto voxelBuffer = resource->TerrainBuffer.get();
+		const auto d3d12RenderItem = dynamic_cast<D3D12RenderItem*>(terrain);
+		const auto vCount = terrain->Geometry->VertexBuffer->GetCount();
+		auto vertexBuffer = dynamic_cast<D3D12VertexBuffer*>(terrain->Geometry->VertexBuffer.get());
+
+
+		if(vCount != 0)
+		{
+			
+			const Vertex* vertices = static_cast<Vertex*>(const_cast<void*>(vertexBuffer->GetData()));
+			IsosurfaceVertexCount = vCount;
+
+			/*if(vCount > 32*32*32)
+			{
+
+				concurrency::parallel_for(0,  IsosurfaceVertexCount - 1, [this, &vertices, &voxelBuffer](int i)
+				{
+						Vertex vertex;
+						vertex.Position		= vertices[i].Position;
+						vertex.Normal		= vertices[i].Normal;
+						vertex.Tangent		= vertices[i].Tangent;
+						vertex.TexCoords	= vertices[i].TexCoords;
+						voxelBuffer->CopyData(i, vertex);
+				});
+			}
+			
+			else
+			*/
+			{
+				for (INT32 i = 0; i < vCount; ++i)
+				{
+					Vertex vertex;
+					vertex.Position = vertices[i].Position;
+					vertex.Normal = vertices[i].Normal;
+					vertex.Tangent = vertices[i].Tangent;
+					vertex.TexCoords = vertices[i].TexCoords;
+					voxelBuffer->CopyData(i, vertex);
+				}
+			}
+			
+			d3d12RenderItem->Geometry->VertexBuffer->SetBuffer(resource->TerrainBuffer->Resource());
+		}
+	}
+
 	void D3D12ResourceBuffer::UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems)
 	{
 		const auto constantBuffer = resource->ConstantBuffer.get();
@@ -456,7 +468,7 @@ namespace Engine
 	)
 	{
 		const INT32 vertexCount = static_cast<INT32>(vertices.size());
-
+		IsosurfaceVertexCount = vertexCount;
 		for(INT32 i = 0; i < vertexCount; ++i)
 		{
 			resource->TerrainBuffer->CopyData(i, vertices[i]);
@@ -468,7 +480,7 @@ namespace Engine
 	const INT32 D3D12ResourceBuffer::GetCount() const
 	{
 
-		return 0;
+		return IsosurfaceVertexCount;
 
 	}
 

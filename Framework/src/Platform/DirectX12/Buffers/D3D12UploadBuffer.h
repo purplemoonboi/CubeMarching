@@ -74,6 +74,33 @@ namespace Engine
 			memcpy(&MappedData[elementIndex * ElementByteSize], &data, sizeof(T));
 		}
 
+		void Destroy()
+		{
+			UploadBuffer.Reset();
+		}
+
+		void Create(const D3D12Context* context, UINT elementCount, bool isStatic)
+		{
+			ElementByteSize = sizeof(T);
+
+			if (isStatic)
+			{
+				ElementByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(T));
+			}
+
+			const HRESULT uploadResult = context->Device->CreateCommittedResource
+			(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(ElementByteSize * elementCount),
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&UploadBuffer)
+			);
+			THROW_ON_FAILURE(uploadResult);
+			THROW_ON_FAILURE(UploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&MappedData)));
+		}
+
 	private:
 		ComPtr<ID3D12Resource> UploadBuffer;
 		BYTE* MappedData = nullptr;

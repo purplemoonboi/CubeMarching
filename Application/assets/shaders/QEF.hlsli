@@ -207,7 +207,8 @@ float qef_solve(float ATA[6], float3 Atb, float3 com, inout float3 solvedPositio
     A_mp = Atb - A_mp;
     svd_solve_ATA_Atb(ATA, A_mp, solvedPosition);
     float error = qef_calc_error(ATA, solvedPosition, Atb);
-    //solvedPosition += com;
+    solvedPosition += com;
 	
     return error;
 }
+

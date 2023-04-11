@@ -30,6 +30,11 @@ Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
 RWStructuredBuffer<Triangle> triangles : register(u0);
 
+float SampleDensity(int3 coord)
+{
+   // coord = max(0, min(coord, TextureSize));
+    return DensityTexture.Load(float4(coord, 0));
+}
 
 float3 CalculateNormal(int3 coord)
 {
@@ -37,26 +42,27 @@ float3 CalculateNormal(int3 coord)
     int3 offsetY = int3(0, 1, 0);
     int3 offsetZ = int3(0, 0, 1);
 
-    float dx = DensityTexture.Load(float4(coord + offsetX, 0)) - DensityTexture.Load(float4(coord - offsetX, 0));
-    float dy = DensityTexture.Load(float4(coord + offsetY, 0)) - DensityTexture.Load(float4(coord - offsetY, 0));
-    float dz = DensityTexture.Load(float4(coord + offsetZ, 0)) - DensityTexture.Load(float4(coord - offsetZ, 0));
+    float dx = SampleDensity(coord + offsetX) - SampleDensity(coord - offsetX);
+    float dy = SampleDensity(coord + offsetY) - SampleDensity(coord - offsetY);
+    float dz = SampleDensity(coord + offsetZ) - SampleDensity(coord - offsetZ);
 
     return normalize(float3(dx, dy, dz));
 }
 
 
+
 Vertex createVertex(int3 coordA, int3 coordB)
 {
 
-    float densityA = DensityTexture.Load(float4(coordA, 0));
-    float densityB = DensityTexture.Load(float4(coordB, 0));
+    float densityA = SampleDensity(coordA);
+    float densityB = SampleDensity(coordB);
 
 	// Interpolate between the two corner points based on the density
     float t = (IsoLevel - densityA) / (densityB - densityA);
     float3 position = coordA + t * (coordB - coordA);
 
-    //position = position / (TextureSize - 1);
-    //position *= 32;
+    position = position / (TextureSize - 1);
+    position *= 16;
     
 	// Normal:
     float3 normalA = CalculateNormal(coordA);
@@ -82,13 +88,13 @@ Vertex createVertex(int3 coordA, int3 coordB)
 void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
    
-    if (id.x >= Resolution - 1 || id.y >= Resolution - 1 || id.z >= Resolution - 1)
+    if (id.x >= Resolution || id.y >= Resolution || id.z >= Resolution)
     {
         return;
     }
 
     
-    int3 coord = id;// +int3(ChunkCoord);
+    int3 coord = id +int3(ChunkCoord);
 
     int3 cornerCoords[8];
     cornerCoords[0] = coord + int3(0, 0, 0);
@@ -104,7 +110,7 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     for (int i = 0; i < 8; i++)
     {
 
-        if (DensityTexture[cornerCoords[i]] > IsoLevel)
+        if (SampleDensity(cornerCoords[i]) < IsoLevel)
         {
             cubeConfiguration |= (1 << i);
         }
@@ -113,10 +119,12 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
     if(cubeConfiguration == 0 || cubeConfiguration == 255)
         return;
 	
-
+  
 
     for (i = 0; i < 16; i += 3)
     {
+        
+      
         if (TriangleTable[(cubeConfiguration * 16) + i] == -1)
             break;
         
@@ -129,13 +137,14 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
         int c0 = cornerIndexAFromEdge[TriangleTable[(cubeConfiguration * 16) + i + 2]];
         int c1 = cornerIndexBFromEdge[TriangleTable[(cubeConfiguration * 16) + i + 2]];
 
-		// Create triangle
+        
         Triangle tri = (Triangle) 0;
         tri.vertexA = createVertex(cornerCoords[a0], cornerCoords[a1]);
         tri.vertexB = createVertex(cornerCoords[b0], cornerCoords[b1]);
         tri.vertexC = createVertex(cornerCoords[c0], cornerCoords[c1]);
 
         triangles[triangles.IncrementCounter()] = tri;
+
     }
 
 }

@@ -32,7 +32,6 @@ namespace Engine
         DualContouring = CreateScope<class DualContouring>();
     	//DualContourSPO   = CreateScope < class DualContouringSPO >();
 
-        Regen = true;
     }
 
     EditorLayer::~EditorLayer()
@@ -56,25 +55,24 @@ namespace Engine
         RenderInstruction::ResetGraphicsCommandList();
 
         PerlinCompute->Init(csApi, api->GetMemoryManager());
-        PerlinCompute->PerlinFBM(PerlinSettings);
+        PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
 		MarchingCubes->Init(csApi, api->GetMemoryManager());
-        MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
-		Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+        Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
             MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
 
-    	/*DualContouring->Init(csApi, api->GetMemoryManager());
-        DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+        /* polygonise the texture with marching cubes*/
 
-        Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-            DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
+    	//DualContouring->Init(csApi, api->GetMemoryManager());
+        //   DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+        //   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
+        //       DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
 
     	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //MarchingCubesHP->SortChunk();
 
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
-
         RenderInstruction::ExecGraphicsCommandList();
 
 
@@ -94,8 +92,8 @@ namespace Engine
 
         if(IsViewportFocused)
         {
-            /*if (LeftMButton)
-            {*/
+            if (LeftMButton)
+            {
                 const auto camera = Scene->GetSceneCamera();
 
                 if (Input::IsKeyPressed(KEY_E))
@@ -122,57 +120,51 @@ namespace Engine
                 {
                     camera->Strafe(deltaTime);
                 }
-                
-                
-       //     }
+
+
+            }
             if (RightMButton)
             {
                 // Make each pixel correspond to 0.2 unit in the scene.
                 float dx = 50.f * CurrentMouseX;
                 float dy = 50.f * CurrentMouseY;
-
-
                 // Update the camera radius based on input.
                 mc->UpdateCamerasDistanceToTarget((dx - dy), deltaTime);
+
+                CsgOperationSettings.IsMouseDown = 1;
+                ConvertMouseCoordinates(deltaTime);
+                UpdateTexture = true;
             }
-          
+            else
+            {
+                CsgOperationSettings.IsMouseDown = 0;
+            }
         }
 
 
 
         Scene->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
 
-        if (RegenTexture)
+        if (UpdateTexture)
         {
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            PerlinCompute->PerlinFBM(PerlinSettings);
-            RegenTexture = false;
-
-            Regen = true;
+            PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
+            UpdateTexture = false;
+            UpdateVoxels = true;
         }
 
 
-        if (Regen)
+        if (UpdateVoxels)
         {
-            
-            Regen = false;
+            UpdateVoxels = false;
+            MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
 
-
-            /*if(Smooth)
-            {
-                Smooth = false;
-                PerlinCompute->Smooth(CsgOperationSettings);
-            }*/
-
-            /* polygonise the texture with marching cubes*/
-            //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
 
             /* polygonise the texture with dual contouring */
             //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-           
 
             //MarchingCubesHP->ConstructLBVH(PerlinCompute->GetTexture());
-
         }
 
         auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
@@ -193,7 +185,6 @@ namespace Engine
 
     void EditorLayer::OnRender(const DeltaTime& timer)
     {
-
 
         Scene->OnRender(timer.GetSeconds(), TimerManager->TimeElapsed(), Settings, wireframe);
 
@@ -351,26 +342,21 @@ namespace Engine
                 float gain = PerlinSettings.Gain;
                 float groundHeight = PerlinSettings.GroundHeight;
                 INT32 octaves = PerlinSettings.Octaves;
-                INT32 smooth = CsgOperationSettings.Radius;
 
                 if (ImGui::DragInt("Octaves", &octaves, 1, 1, 8))
-                    RegenTexture = true;
+                    UpdateTexture = true;
 
                 if (ImGui::DragFloat("Frequency", &freq, 0.1f, 0.001f, 0.999f))
-                    RegenTexture = true;
+                    UpdateTexture = true;
 
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Gain", &gain, 0.1f, 0.1f, 4.0f))
-                    RegenTexture = true;
+                    UpdateTexture = true;
 
                 ImGui::Spacing();
                 if (ImGui::DragFloat("Ground Height", &groundHeight, 0.1f, 2.0f, (float)ChunkHeight))
-                    RegenTexture = true;
+                    UpdateTexture = true;
 
-                if (ImGui::DragInt("Smooth", &smooth, 1, 0, 8))
-                    Smooth = true;
-
-              
 
                 ImGui::Separator();
                 ImGui::End();
@@ -388,19 +374,19 @@ namespace Engine
                 ImGui::Begin("Voxel Settings");
                 ImGui::Spacing();
                 if (ImGui::DragFloat("IsoValue", &isoVal, 0.02f, -1.0f, 1.0f))
-                    Regen = true;
+                    UpdateVoxels = true;
 
                 ImGui::Spacing();
                 if (ImGui::DragInt("Resolution", &resolution, 0.1f, 2.0f, 64.0f))
-                    Regen = true;
+                    UpdateVoxels = true;
 
                 ImGui::Spacing();
                 if (ImGui::Checkbox("UseBinarySearch", &useBinarySearch))
-                    Regen = true;
+                    UpdateVoxels = true;
 
                 ImGui::Spacing();
                 if (ImGui::Checkbox("UseTexture", &useTexture))
-                    Regen = true;
+                    UpdateVoxels = true;
 
                 ImGui::Spacing();
                 ImGui::Checkbox("Wireframe", &wireframe);
@@ -413,6 +399,62 @@ namespace Engine
                 VoxelSettings.UseBinarySearch = useBinarySearch;
                 VoxelSettings.Resolution = resolution;
                 VoxelSettings.UseTexture = useTexture;
+                ImGui::End();
+            }
+
+            // CSG SETTINGS
+            {
+                float radius        = CsgOperationSettings.Radius;
+
+                ImGui::Begin("CSG Settings");
+                ImGui::Spacing();
+                if (ImGui::DragFloat("Brush Radius", &radius, 0.02f, 1.0f, 10.0f))
+                {
+                    CsgOperationSettings.Radius = radius;
+                }
+               
+                ImGui::Spacing();
+                const char* primitives[] = { "Box", "Sphere", "Cylinder", "Torus" };
+                static const char* currentPrim = nullptr;
+
+                if (ImGui::BeginCombo("Density Primitive", currentPrim)) // The second parameter is the label previewed before opening the combo.
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(primitives); ++n)
+                    {
+                        const bool isSelected = (currentPrim == primitives[n]); // You can store your selection however you want, outside or inside your objects
+                        if (ImGui::Selectable(primitives[n], isSelected))
+                        {
+                            currentPrim = primitives[n];
+                            CsgOperationSettings.DensityPrimitive = n;
+                        }
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::Spacing();
+                const char* operations[] = { "Add", "Subtract", "Union" };
+                static const char* currentOperation = nullptr;
+
+                if (ImGui::BeginCombo("Csg Operation", currentOperation)) // The second parameter is the label previewed before opening the combo.
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(operations); ++n)
+                    {
+                        const bool isSelected = (currentOperation == operations[n]); // You can store your selection however you want, outside or inside your objects
+                        if (ImGui::Selectable(operations[n], isSelected))
+                        {
+                            currentOperation = operations[n];
+                            CsgOperationSettings.CsgOperation = n;
+                        }
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
                 ImGui::End();
             }
 
@@ -540,6 +582,39 @@ namespace Engine
    
 
         return false;
+    }
+
+    void EditorLayer::ConvertMouseCoordinates(float deltaTime)
+    {
+
+        const float x = (2.0f * CurrentMouseX) / ViewportSize.x - 1.0f;
+        const float y = 1.0f - (2.0f * CurrentMouseY) / ViewportSize.y;
+
+        const auto* camera = Scene->GetSceneCamera();
+
+        XMFLOAT4X4 inverseProjection;
+        XMStoreFloat4x4(&inverseProjection, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetProjection())));
+
+        const float vx = x / inverseProjection(0, 0);
+        const float vy = y / inverseProjection(1, 1);
+        const float vz = -1.0f;
+
+        XMFLOAT4X4 inverseView;
+        XMStoreFloat4x4(&inverseView, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetView())));
+
+        XMFLOAT3 rayOrigin = camera->GetPosition();
+        XMFLOAT3 rayDirection(
+            vx * inverseView(0, 0) + vy * inverseView(1, 0) + vz * inverseView(2, 0),
+            vx * inverseView(0, 1) + vy * inverseView(1, 1) + vz * inverseView(2, 1),
+            vx * inverseView(0, 2) + vy * inverseView(1, 2) + vz * inverseView(2, 2));
+
+        // Normalize the direction vector to get a unit vector
+        CXMVECTOR direction = XMVector3Normalize(XMLoadFloat3(&rayDirection));
+        XMStoreFloat3(&rayDirection, direction);
+
+        CsgOperationSettings.MousePos = { rayOrigin.x + rayDirection.x, rayOrigin.y + rayDirection.y, rayOrigin.z + rayDirection.z };
+        CORE_TRACE("Mouse Pos W: {0}, {1}, {2}", rayOrigin.x + rayDirection.x, rayOrigin.y + rayDirection.y, rayOrigin.z + rayDirection.z);
+        CORE_TRACE("Camera Pos W: {0}, {1}, {2}", rayOrigin.x, rayOrigin.y, rayOrigin.z);
     }
 
 

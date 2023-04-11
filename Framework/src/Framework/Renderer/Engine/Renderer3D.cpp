@@ -158,8 +158,6 @@ namespace Engine
 		RenderData.OpaqueRenderItems.push_back(renderItem.get());
 		RenderData.RenderItems.push_back(std::move(renderItem));
 
-
-
 	}
 
 	void Renderer3D::Shutdown()
@@ -176,6 +174,7 @@ namespace Engine
 		(
 			RenderData.OpaqueRenderItems,
 			RenderData.Materials,
+			RenderData.Terrain.get(),
 			cam,
 			settings,
 			deltaTime,
@@ -316,14 +315,32 @@ namespace Engine
 				);
 
 				RenderData.OpaqueRenderItems.push_back(RenderData.Terrain.get());
-				//RenderData.RenderItems.push_back(std::move(renderItem));
+				//RenderData.RenderItems.push_back(std::move(RenderData.Terrain));
 			}
 		}
-			
-		
 	}
 
+	void Renderer3D::SetBuffer(const std::string& renderItemTag, 
+		const std::vector<Vertex>& vertices,
+		const std::vector<UINT16>& indices
+	)
+	{
+		for(INT32 i=0;i<RenderData.OpaqueRenderItems.size();++i)
+		{
+			if(RenderData.OpaqueRenderItems[i]->Geometry->GetName()==renderItemTag)
+			{
+				const auto ri = RenderData.OpaqueRenderItems[i];
+				ri->NumFramesDirty++;
+				const auto item = RenderData.Geometries.at(renderItemTag).get();
+				item->VertexBuffer->SetData(vertices.data(), vertices.size() * sizeof(Vertex), vertices.size());
+				item->IndexBuffer->SetData(indices.data(), vertices.size());
+				break;
+			}
+		}
+	}
 
+	void Renderer3D::SetTerrainBuffer(const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices)
+	{}
 
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{

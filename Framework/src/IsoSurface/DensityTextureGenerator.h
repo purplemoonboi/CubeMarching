@@ -49,9 +49,11 @@ namespace Engine
 
 	struct CSGOperationSettings
 	{
-		INT32 Radius = 2;
-		DensityPrimitives DensityType;
-		CsgOperation Operation;
+		XMFLOAT3 MousePos = {-1, -1, -1};
+		INT32 IsMouseDown = 0;
+		float Radius = 2.0f;
+		INT32 DensityPrimitive = 0;
+		INT32 CsgOperation = 0;
 	};
 
 	class DensityTextureGenerator
@@ -60,7 +62,7 @@ namespace Engine
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
-		void PerlinFBM(const PerlinNoiseSettings& args);
+		void PerlinFBM(const PerlinNoiseSettings& noiseSettings, const CSGOperationSettings& csgSettings);
 
 		void Smooth(const CSGOperationSettings& settings);
 

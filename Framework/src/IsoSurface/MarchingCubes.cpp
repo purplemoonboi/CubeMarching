@@ -39,11 +39,12 @@ namespace Engine
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
-		Vertices.reserve(100);
 		Vertex vert = {};
-		Vertices.insert(Vertices.begin(), 100, vert);
-		Indices.reserve(100);
-		Indices.insert(Indices.begin(), 100, 0);
+		Vertices.reserve(VoxelWorldElementCount);
+		Vertices.insert(Vertices.begin(), VoxelWorldElementCount, vert);
+
+		Indices.reserve(VoxelWorldElementCount);
+		Indices.insert(Indices.begin(), VoxelWorldElementCount, 0);
 	}
 
 	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, Texture* texture)
@@ -73,7 +74,6 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.z, 6);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 7);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseTexture, 8);
-
 
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
 

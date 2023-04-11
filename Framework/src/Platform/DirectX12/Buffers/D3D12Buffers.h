@@ -39,15 +39,12 @@ namespace Engine
 
 		// @brief Binds this buffer for modifications.
 		void Bind() const override;
-
-		// @brief Releases this buffer.
 		void UnBind() const override;
-
 		void Destroy() override;
 
 		// @brief Sets the vertex data for this buffer.
 		void SetData(const void* data, INT32 size, INT32 count) override;
-		void SetData(const void* buffer, INT32 count) override;
+		void SetBuffer(const void* buffer) override;
 
 		void SetLayout(const BufferLayout& layout) override;
 
@@ -61,28 +58,25 @@ namespace Engine
 		// @brief Returns the view into the vertex buffer;
 		[[nodiscard]] D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView() const;
 
-		bool Regenerate();
 
 		// @brief Describes how the buffer is arranged.
 		BufferLayout Layout;
 
 		// @brief A CPU copy of the buffer. 
-		ComPtr<ID3DBlob> CpuLocalCopy = nullptr;
+		ComPtr<ID3DBlob> Blob = nullptr;
 
 		// @brief Buffer to be sent to the GPU
-		ComPtr<ID3D12Resource> GpuBuffer = nullptr;
+		ComPtr<ID3D12Resource> DefaultBuffer = nullptr;
 
 		// @brief The intermediate buffer.
-		ComPtr<ID3D12Resource> Gpu_UploadBuffer = nullptr;
+		ComPtr<ID3D12Resource> UploadBuffer = nullptr;
 
 		UINT VertexBufferByteSize;
 
 		BufferEventsFlags BufferState = BufferEventsFlags::Idle;
 
 	private:
-
 		UINT VertexCount;
-		std::vector<Vertex> Data;
 	};
 
 
@@ -99,9 +93,9 @@ namespace Engine
 
 		void UnBind() const override;
 		void SetData(const UINT16* data, INT32 count) override;
+		void SetBuffer(const void* bufferAddress) override;
 		void Destroy() override;
 
-		bool Regenerate();
 
 		[[nodiscard]] INT32 GetCount() const override { return Count; }
 		[[nodiscard]] UINT16* GetData() const override;
@@ -113,7 +107,7 @@ namespace Engine
 		INT32 Count;
 
 		// @brief CPU copy of the index buffer
-		ComPtr<ID3DBlob> CpuData = nullptr;
+		ComPtr<ID3DBlob> Blob = nullptr;
 
 		// @brief GPU index buffer
 		ComPtr<ID3D12Resource> DefaultBuffer = nullptr;
@@ -126,7 +120,6 @@ namespace Engine
 
 		UINT64 IndexBufferByteSize;
 
-		std::vector<UINT16> Data;
 
 	};
 
@@ -157,6 +150,8 @@ namespace Engine
 			bool wireframe
 		) ;
 
+		void UpdateVoxelTerrain(D3D12FrameResource* resource, RenderItem* terrain);
+
 		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems) ;
 
 		void UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials) ;
@@ -165,6 +160,7 @@ namespace Engine
 
 		const INT32 GetCount() const ;
 
+		INT32 IsosurfaceVertexCount = 0;
 
 	private:
 
@@ -173,7 +169,6 @@ namespace Engine
 		PassConstants MainPassConstantBuffer;
 
 		INT32 ObjectCount = 0;
-
 
 	};
 

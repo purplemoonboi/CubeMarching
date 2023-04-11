@@ -144,7 +144,7 @@ namespace Engine
 	{
 		// Give a desc of the data we want to copy
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = vertexBuffer->CpuLocalCopy.Get();
+		subResourceData.pData = vertexBuffer->Blob.Get();
 		subResourceData.RowPitch = vertexBuffer->GetCount() * sizeof(Vertex);
 		subResourceData.SlicePitch = subResourceData.RowPitch;
 
@@ -156,7 +156,7 @@ namespace Engine
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
 			(
-				vertexBuffer->GpuBuffer.Get(),
+				vertexBuffer->DefaultBuffer.Get(),
 				D3D12_RESOURCE_STATE_COMMON,
 				D3D12_RESOURCE_STATE_GENERIC_READ
 			)
@@ -166,8 +166,8 @@ namespace Engine
 		UpdateSubresources<1>
 			(
 				CmdList.Get(),
-				vertexBuffer->GpuBuffer.Get(),
-				vertexBuffer->Gpu_UploadBuffer.Get(),
+				vertexBuffer->DefaultBuffer.Get(),
+				vertexBuffer->UploadBuffer.Get(),
 				0,
 				0,
 				1,
@@ -180,7 +180,7 @@ namespace Engine
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
 			(
-				vertexBuffer->GpuBuffer.Get(),
+				vertexBuffer->DefaultBuffer.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_GENERIC_READ
 			)

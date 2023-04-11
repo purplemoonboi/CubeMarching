@@ -94,15 +94,7 @@ namespace Engine
 			}
 		}
 
-		//3D Render
-		/**
-		if(camera != nullptr)
-		{
-			Foundation::Renderer3D::BeginScene();
 
-			Foundation::Renderer3D::EndScene();
-		}
-		**/
 
 		//Render Scene
 		if (camera != nullptr)
@@ -118,6 +110,7 @@ namespace Engine
 		/** process drawing instructions */
 
 		Renderer3D::BeginScene(*SceneCamera, settings, deltaTime, wireframe, elapsedTime);
+
 
 		
 

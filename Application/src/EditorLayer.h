@@ -42,7 +42,7 @@ namespace Engine
 		bool OnMouseUp(MouseButtonReleasedEvent& mEvent);
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
-
+		void ConvertMouseCoordinates(float deltaTime);
 	private:
 		WorldSettings Settings;
 		VoxelWorldSettings VoxelSettings;
@@ -56,8 +56,8 @@ namespace Engine
 		ScopePointer<MarchingCubesHP> MarchingCubesHP;
 		//ScopePointer<DualContouringSPO> DualContourSPO;
 
-		bool Regen = true;
-		bool RegenTexture = true;
+		bool UpdateVoxels = false;
+		bool UpdateTexture = true;
 
 		bool Smooth = false;
 

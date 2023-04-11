@@ -61,6 +61,8 @@ namespace Engine
 
 		static void CreateVoxelTerrain(std::vector<Vertex> vertices, std::vector<UINT16> indices, const std::string& meshTag, Transform transform);
 
+		static void SetBuffer(const std::string& renderItemTag, const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);
+		static void SetTerrainBuffer(const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);
 
 		struct VoxelWorldRenderingStats
 		{
