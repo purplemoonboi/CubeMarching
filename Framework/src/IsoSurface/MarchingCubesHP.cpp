@@ -92,7 +92,7 @@ namespace Engine
 
 		const ShaderArgs radixSort =
 		{
-			L"assets\\shaders\\Histopyramid.hlsl",
+			L"assets\\shaders\\Radix.hlsl",
 			"LocalSort4BitKey",
 			"cs_5_0"
 		};

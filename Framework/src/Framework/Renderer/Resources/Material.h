@@ -9,7 +9,6 @@
 namespace Engine
 {
 	class Texture;
-	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
 
 	struct IColourRGBA
 	{

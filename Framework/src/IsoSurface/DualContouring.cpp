@@ -51,12 +51,15 @@ namespace Engine
 	void DualContouring::Dispatch(const VoxelWorldSettings& settings, Texture* texture)
 	{
 
-		ComputeContext->Wait(&FenceValue);
+		//ComputeContext->Wait(&FenceValue);
 
 		ComputeContext->ResetComputeCommandList(GenerateVerticesPso.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+
+		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
+		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
 		UINT groupXZ = ChunkWidth/8;
 		UINT groupY =  ChunkHeight/8;
@@ -103,7 +106,7 @@ namespace Engine
 
 		/* second pass - generating triangles */
 
-		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
+		gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
 		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkWidth, ChunkWidth);

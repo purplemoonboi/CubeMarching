@@ -57,19 +57,19 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager());
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
-		MarchingCubes->Init(csApi, api->GetMemoryManager());
+		//MarchingCubes->Init(csApi, api->GetMemoryManager());
 
         /*Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
             MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));*/
 
         /* polygonise the texture with marching cubes*/
 
-    	DualContouring->Init(csApi, api->GetMemoryManager());
+    	/*DualContouring->Init(csApi, api->GetMemoryManager());
            Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
+               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
 
-    	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
-     //   MarchingCubesHP->SortChunk();
+    	MarchingCubesHP->Init(csApi, api->GetMemoryManager());
+		MarchingCubesHP->SortChunk();
 
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
@@ -129,9 +129,9 @@ namespace Engine
             // Update Texture
             if (RightMButton)
             {
-                CsgOperationSettings.IsMouseDown = 1;
-                ConvertMouseCoordinates(deltaTime);
-                UpdateTexture = true;
+                //CsgOperationSettings.IsMouseDown = 1;
+                //ConvertMouseCoordinates(deltaTime);
+                //UpdateTexture = true;
             }
             else
             {
@@ -154,8 +154,8 @@ namespace Engine
             //Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
 
             /* polygonise the texture with dual contouring */
-            DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
+            //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            //Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
 
         }
 

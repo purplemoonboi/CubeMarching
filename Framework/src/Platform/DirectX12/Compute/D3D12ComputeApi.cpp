@@ -6,6 +6,25 @@
 
 namespace Engine
 {
+	D3D12ComputeFrameResource::D3D12ComputeFrameResource(ID3D12Device* device)
+	{
+
+		/**
+		 * Create a command allocator for this resource
+		 */
+		const HRESULT cmdAllocResult = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE,
+			IID_PPV_ARGS(CommandAllocator.GetAddressOf()));
+		THROW_ON_FAILURE(cmdAllocResult);
+
+
+		const HRESULT hr=CommandAllocator->Reset();
+		THROW_ON_FAILURE(hr);
+	}
+
+	D3D12ComputeFrameResource::~D3D12ComputeFrameResource()
+	{
+	}
+
 	void D3D12ComputeApi::Init(GraphicsContext* context)
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
@@ -45,6 +64,11 @@ namespace Engine
 			IID_PPV_ARGS(CommandList.GetAddressOf()));
 		THROW_ON_FAILURE(cmdListResult);
 
+		for(INT32 i = 0; i < NUMBER_OF_CS_FRAMES_IN_FLIGHT;++i)
+		{
+			CsFrameResources[i] = CreateScope<D3D12ComputeFrameResource>(Context->Device.Get());
+		}
+
 		const HRESULT closeResult = CommandList->Close();
 		THROW_ON_FAILURE(closeResult);
 
@@ -53,19 +77,35 @@ namespace Engine
 
 	void D3D12ComputeApi::ResetComputeCommandList(PipelineStateObject* state)
 	{
-		const HRESULT allocResult = CommandAllocator->Reset();
-		THROW_ON_FAILURE(allocResult);
+		
+		CurrentFrameResourceIndex = (CurrentFrameResourceIndex + 1) % NUMBER_OF_CS_FRAMES_IN_FLIGHT;
+		CurrentCSFrameResource = CsFrameResources[CurrentFrameResourceIndex].get();
+		CORE_ASSERT(CurrentCSFrameResource, "No valid frame resource!");
+
+		// Has the GPU finished processing the commands of the current frame resource
+		// If not, wait until the GPU has completed commands up to this fence point.
+		if (Fence->GetCompletedValue() < CurrentCSFrameResource->Fence)
+		{
+			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentCSFrameResource->Fence, eventHandle);
+			THROW_ON_FAILURE(eventCompletion);
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+
+		const HRESULT hr = CurrentCSFrameResource->CommandAllocator->Reset();
+		THROW_ON_FAILURE(hr);
 
 		if(state != nullptr)
 		{
 			auto const d3d12PipelineState = dynamic_cast<D3D12PipelineStateObject*>(state);
-			const HRESULT resetResult = CommandList->Reset(CommandAllocator.Get(),
+			const HRESULT resetResult = CommandList->Reset(CurrentCSFrameResource->CommandAllocator.Get(),
 				d3d12PipelineState->GetPipelineState());
 			THROW_ON_FAILURE(resetResult);
 		}
 		else
 		{
-			const HRESULT resetResult = CommandList->Reset(CommandAllocator.Get(),
+			const HRESULT resetResult = CommandList->Reset(CurrentCSFrameResource->CommandAllocator.Get(),
 				nullptr);
 			THROW_ON_FAILURE(resetResult);
 		}
@@ -94,7 +134,6 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		//FenceValue = ++FenceValue;
 	
 		*voxelWorldSyncValue = ++FenceValue;
 		const HRESULT signalResult = Queue->Signal(Fence.Get(), *voxelWorldSyncValue);
@@ -113,17 +152,6 @@ namespace Engine
 	}
 	void D3D12ComputeApi::Wait(UINT64* voxelWorldSyncValue)
 	{
-		// Has the GPU finished processing the commands of the current frame resource?
-		// If not, wait until the GPU has completed commands up to this fence point.
-		const UINT64 a = *voxelWorldSyncValue;
-		const UINT64 b = FenceValue;
-		if (a != 0 && b < a)
-		{
-			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Fence->SetEventOnCompletion(*voxelWorldSyncValue, eventHandle);
-			THROW_ON_FAILURE(eventCompletion);
-			WaitForSingleObject(eventHandle, INFINITE);
-			CloseHandle(eventHandle);
-		}
+		
 	}
 }

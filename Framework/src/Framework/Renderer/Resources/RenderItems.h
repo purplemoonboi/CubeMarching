@@ -5,6 +5,7 @@
 #include "Framework/Renderer/Engine/Mesh.h"
 #include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Core/core.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Engine
 {

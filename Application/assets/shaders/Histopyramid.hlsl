@@ -47,33 +47,33 @@ void ConfigureVoxels(
             uint3 tId : SV_DispatchThreadID
 )
 {
-    float3 ftId = float3(tId.xyz);
+    //float3 ftId = float3(tId.xyz);
 
-    ftId /= TextureSize - 1;
-    gInputMortons[tId.x] = Morton3D(ftId.x, ftId.y, ftId.z);
+    //ftId /= TextureSize - 1;
+    //gInputMortons[tId.x] = Morton3D(ftId.x, ftId.y, ftId.z);
     
 
-    int3 cornerCoords[8];
-    cornerCoords[0] = tId + int3(0, 0, 0);
-    cornerCoords[1] = tId + int3(1, 0, 0);
-    cornerCoords[2] = tId + int3(1, 0, 1);
-    cornerCoords[3] = tId + int3(0, 0, 1);
-    cornerCoords[4] = tId + int3(0, 1, 0);
-    cornerCoords[5] = tId + int3(1, 1, 0);
-    cornerCoords[6] = tId + int3(1, 1, 1);
-    cornerCoords[7] = tId + int3(0, 1, 1);
+    //int3 cornerCoords[8];
+    //cornerCoords[0] = tId + int3(0, 0, 0);
+    //cornerCoords[1] = tId + int3(1, 0, 0);
+    //cornerCoords[2] = tId + int3(1, 0, 1);
+    //cornerCoords[3] = tId + int3(0, 0, 1);
+    //cornerCoords[4] = tId + int3(0, 1, 0);
+    //cornerCoords[5] = tId + int3(1, 1, 0);
+    //cornerCoords[6] = tId + int3(1, 1, 1);
+    //cornerCoords[7] = tId + int3(0, 1, 1);
 
-    uint i = 0;
-    uint cubeConfiguration = 0;
-    for (i = 0; i < 8; i++)
-    {
-        if (DensityTexture[cornerCoords[i]] < 0)
-        {
-            cubeConfiguration |= (1 << i);
-        }
-    }
+    //uint i = 0;
+    //uint cubeConfiguration = 0;
+    //for (i = 0; i < 8; i++)
+    //{
+    //    if (DensityTexture[cornerCoords[i]] < 0)
+    //    {
+    //        cubeConfiguration |= (1 << i);
+    //    }
+    //}
     
-    gVoxelConfigurations[tId.x] = cubeConfiguration;
+    //gVoxelConfigurations[tId.x] = cubeConfiguration;
 }
 
 groupshared uint localSums[16];
