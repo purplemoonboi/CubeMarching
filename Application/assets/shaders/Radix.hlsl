@@ -37,27 +37,19 @@ void LocalSort(
 )
 {
 
-
-    // For debugging a keys frequence...
-    // i do not trust myself that the radix sort
-    // worked.
-    //if(gId == 0)
-    //{
-    //    for (uint ff = 0; ff < 16;ff++)
-    //    {
-    //        lValOccurrence[ff] = 0;
-    //    }
-    //}
-
-    //GroupMemoryBarrierWithGroupSync();
-
-
-    //IncrimentKeyOccurence(lLocalCodes[gId]);
-
-
 	// store the global input array into group 
     // shared memory.
-    lLocalCodes[gId] = gInputMortons[gId];
+    
+    float z = (float)gId % 64.0f;
+    float y = ((float)gId / 64.0f) % 64.0f;
+    float x = (float)gId / (64.0f * 64.0f);
+    
+    uint trueIdx = Morton3D(x, y, z);
+    
+    GroupMemoryBarrierWithGroupSync();
+    
+    //lLocalCodes[gId] = gInputMortons[gId];
+    lLocalCodes[gId] = trueIdx;
     GroupMemoryBarrierWithGroupSync();
 
     // need to change this for morton codes.
@@ -118,15 +110,6 @@ void LocalSort(
         lLocalCodes[lDest[gId]] = sortedCode;
         
         GroupMemoryBarrierWithGroupSync();
-
-        //if (gId == 0)
-        //{
-        //    for (int a = 0; a < 16; a++)
-        //    {
-        //        gInputMortons[a] = lValOccurrence[a];
-        //    }
-
-        //}
 
     }
 

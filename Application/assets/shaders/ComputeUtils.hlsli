@@ -32,3 +32,4 @@ uint EncodeMorton(float3 xyz)
     
     return 0;
 }
+
