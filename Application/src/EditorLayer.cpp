@@ -57,7 +57,7 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager());
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
-		//MarchingCubes->Init(csApi, api->GetMemoryManager());
+		MarchingCubes->Init(csApi, api->GetMemoryManager());
 
         /*Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
             MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));*/
@@ -129,9 +129,9 @@ namespace Engine
             // Update Texture
             if (RightMButton)
             {
-                //CsgOperationSettings.IsMouseDown = 1;
-                //ConvertMouseCoordinates(deltaTime);
-                //UpdateTexture = true;
+                CsgOperationSettings.IsMouseDown = 1;
+                ConvertMouseCoordinates(deltaTime);
+                UpdateTexture = true;
             }
             else
             {
@@ -150,8 +150,8 @@ namespace Engine
             UpdateTexture = false;
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
-            //MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            //Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
+          /*  MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+            Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());*/
 
             /* polygonise the texture with dual contouring */
             //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());

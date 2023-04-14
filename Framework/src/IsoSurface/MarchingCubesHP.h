@@ -20,7 +20,7 @@ namespace Engine
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
-		void ConstructLBVH(Texture* texture);
+		void RadixSort(Texture* texture);
 
 		void SortChunk();
 
@@ -56,11 +56,11 @@ namespace Engine
 		ScopePointer<PipelineStateObject> RadixSortPso;
 		ScopePointer<Shader> RadixSortShader;
 
-		ScopePointer<PipelineStateObject> LBVHPso;
-		ScopePointer<Shader> LBVHShader;
+		ScopePointer<PipelineStateObject> GlobalBucketSumPso;
+		ScopePointer<Shader> GlobalBucketSumCS;
 
-		ScopePointer<PipelineStateObject> PrefixSumLBVHPso;
-		ScopePointer<Shader> PrefixSumLBVHShader;
+		ScopePointer<PipelineStateObject> GlobalComputeDestPso;
+		ScopePointer<Shader> GlobalComputeDestCS;
 
 		void BuildResources();
 
@@ -72,6 +72,7 @@ namespace Engine
 
 		ComPtr<ID3D12Resource> MortonUploadBuffer;
 		ComPtr<ID3D12Resource> MortonReadBackBuffer;
+		ComPtr<ID3D12Resource> MortonReadBackBufferB;
 
 		ComPtr<ID3D12Resource> HistogramResoure;
 		ComPtr<ID3D12Resource> HistogramReadBack;

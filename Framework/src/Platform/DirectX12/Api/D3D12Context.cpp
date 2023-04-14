@@ -87,10 +87,10 @@ namespace Engine
 
 		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
 		// This may happen if the application is launched through the PIX UI. 
-		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+		/*if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
 			LoadLibrary(GetLatestWinPixGpuCapturerPath_Cpp17().c_str());
-		}
+		}*/
 
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 		{

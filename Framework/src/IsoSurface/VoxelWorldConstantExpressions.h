@@ -62,12 +62,13 @@ namespace Engine
 	constexpr UINT64 VoxelTextureWidth = ChunkWidth + 1;
 	constexpr UINT64 VoxelTextureHeight = ChunkHeight + 1;
 
-	constexpr UINT64 VoxelWorldElementCount = ChunkWidth * ChunkHeight * ChunkWidth;
+	constexpr UINT64 VoxelWorldElementCount = 512;//ChunkWidth * ChunkHeight * ChunkWidth;
 	constexpr UINT64 VoxelMaterialCount = VoxelWorldElementCount * 8;
 	/**
 	 * @brief Max size of a dense marching cubes voxel buffer.
 	 * @note  Size-of-voxel-world * { max-num-of-tris(5) * size-of-triangle-struct }
 	 */
+	constexpr UINT64 MarchingCubesNumberOfTriangles = VoxelWorldElementCount * 5;
 	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Triangle);
 
 	/**

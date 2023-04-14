@@ -55,8 +55,8 @@ namespace Engine
 
 		ComputeContext->ResetComputeCommandList(ComputeState.get());
 
-		//ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
-		//ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
+		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
+		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
 		auto const d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(ComputeState.get());
 		ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());

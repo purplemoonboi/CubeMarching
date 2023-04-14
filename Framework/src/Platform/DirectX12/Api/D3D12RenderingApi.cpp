@@ -38,7 +38,7 @@ namespace Engine
 		const HRESULT cbvResult = D3D12MemoryManager->InitialiseCbvHeap(Context->Device.Get(), NUMBER_OF_FRAME_RESOURCES, 12);
 		THROW_ON_FAILURE(cbvResult);
 		
-		const HRESULT srvUavResult = D3D12MemoryManager->InitialiseSrvUavHeap(Context->Device.Get(), 12);
+		const HRESULT srvUavResult = D3D12MemoryManager->InitialiseSrvUavHeap(Context->Device.Get(), 32);
 		THROW_ON_FAILURE(srvUavResult);
 
 		D3D12TextureLoader::Init(Context);
