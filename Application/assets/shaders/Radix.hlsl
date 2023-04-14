@@ -30,7 +30,7 @@ bool ExtractNBit(uint i, uint code)
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void LocalSort(
-        //uint3 gId : SV_GroupID,
+        uint3 bId : SV_GroupID,
             uint3 gtId : SV_GroupThreadID,
                 uint3 dtId : SV_DispatchThreadID,
                    uint gId : SV_GroupIndex
@@ -45,7 +45,7 @@ void LocalSort(
     float x = (float)gId / (64.0f * 64.0f);
     
     uint trueIdx = Morton3D(x, y, z);
-    
+    uint cycle = gCycleCounter[0];
     GroupMemoryBarrierWithGroupSync();
     
     //lLocalCodes[gId] = gInputMortons[gId];
@@ -94,10 +94,19 @@ void LocalSort(
         }
 
         
-        if (gId == 0)
-        {
-            falseTotals =  (lSums[BLOCK_SIZE - 1] + lBits[BLOCK_SIZE - 1]);
+       if (gId == 0)
+       {
+           falseTotals =  (lSums[BLOCK_SIZE - 1] + lBits[BLOCK_SIZE - 1]);
+           if(cycle == i)
+           {
+                //...store the total active bits active w/ respect to the cycle.
+                //this is to make the global scan, due next, easier.
+                gBucketBuffer[bId.x] = lSums[BLOCK_SIZE - 1];
+           }
         }
+        
+       
+        
         GroupMemoryBarrierWithGroupSync();
     
         lDest[gId] = lBits[gId] ? lSums[gId] : gId - lSums[gId] + falseTotals;
@@ -117,61 +126,63 @@ void LocalSort(
 }
 
 
+groupshared uint lBuckets[BUCKET_SIZE];
 
-[numthreads(BLOCK_SIZE, 1, 1)]
+[numthreads(BUCKET_SIZE, 1, 1)]
 void GlobalBucketSum(
-    uint3 gtId : SV_GroupThreadID,
-    uint3 dtId : SV_DispatchThreadID,
-	uint gId : SV_GroupIndex
+    uint3 bId   : SV_GroupID,
+    uint3 gtId  : SV_GroupThreadID,
+    uint3 dtId  : SV_DispatchThreadID,
+	uint  gId   : SV_GroupIndex
 )
 {
-    
-   //...for our local group, perform a prefix sum...
-	[unroll(int(log2(BLOCK_SIZE)))]
-    for (uint t = 1; t < BLOCK_SIZE; t <<= 1)//... for t = 1 ... log2(N), t = 2^t
+
+    //...prefix sum over the global buckets...
+	[unroll(int(log2(BUCKET_SIZE)))]
+    for (uint t = 1; t < BUCKET_SIZE; t <<= 1)//... for t = 1 ... log2(N), t = 2^t
     {
         uint tmp = 0;
+        
         if (gId > t)
         {
-            tmp = lSums[gId] + lSums[gId - t];
-
+            tmp = lBuckets[gId] + lBuckets[gId - t];
         }
         else
         {
-            tmp = lSums[gId];
-
+            tmp = lBuckets[gId];
         }
         GroupMemoryBarrierWithGroupSync();
-
-        lSums[gId] = tmp;
+        
+        lBuckets[gId] = tmp;
+        
         GroupMemoryBarrierWithGroupSync();
     }
-
     
-  
+    gBucketBuffer[gId] = lBuckets[gId];
+    
+    
 }
 
 [numthreads(BLOCK_SIZE, 1, 1)]
 void GlobalDestination(
-    uint3 gId : SV_GroupID,
-    uint3 gtId : SV_GroupThreadID,
-    uint3 dtId : SV_DispatchThreadID
+    uint3 bId   : SV_GroupID,
+    uint3 gtId  : SV_GroupThreadID,
+    uint3 dtId  : SV_DispatchThreadID,
+    uint  gId   : SV_GroupIndex
 )
 {
     
-    // #1. save the cube configuration into the array
-    gBucketBuffer[dtId.x] = 0;
-    GroupMemoryBarrierWithGroupSync();
+    //...scatter keys back into the global array
+    //...take the it's offset calculated in it's block 
+    //...and add the offset from it's bucket.
+    uint dest = lSums[gId] + gBucketBuffer[bId.x];
     
-    // #2. parallel prefix-sum 
-    for (uint i = 1; i < BLOCK_SIZE; i = i * 2)
-    {
-        if (dtId.x >= i)
-        {
-            gBucketBuffer[dtId.x] += gBucketBuffer[dtId.x - i];
-        }
-        GroupMemoryBarrierWithGroupSync();
-    }
+    uint code = gSortedMortons[gId];
+    
+    DeviceMemoryBarrierWithGroupSync();
+    
+    gInputMortons[dest] = code;
+    
     
   
 }
