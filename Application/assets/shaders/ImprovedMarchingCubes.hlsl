@@ -231,7 +231,6 @@ void GenerateVertices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex,
             }
             else
             {
-            //..
                 tmp = lSums[gId] + lVertCounter[gId];
             }
             GroupMemoryBarrierWithGroupSync();
@@ -246,7 +245,6 @@ void GenerateVertices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex,
     //...didn't want global writes occurring back to back with
     //...global map insertions happening above.
     //...
-    //...copy back to global memory.
     [unroll(EDGE_COUNT)]
     for (i = 0; i < EDGE_COUNT; i++)
     {
@@ -359,3 +357,14 @@ void GenerateFaces(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, ui
     
 }
 
+[numthreads(NUM_THREADS, 1, 1)]
+void ConstructConnectivityInformation(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, uint3 bId : SV_GroupID, uint3 tId : SV_GroupThreadID)
+{
+    
+}
+
+[numthreads(NUM_THREADS, 1, 1)]
+void DetectBoundaryVertices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, uint3 bId : SV_GroupID, uint3 tId : SV_GroupThreadID)
+{
+    
+}

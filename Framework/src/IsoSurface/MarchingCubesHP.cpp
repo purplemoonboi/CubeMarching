@@ -55,8 +55,8 @@ namespace Engine
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
-		auto const d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
-		ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
+		auto const genVertsPso = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
+		ComputeContext->CommandList->SetPipelineState(genVertsPso->GetPipelineState());
 		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
 
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
@@ -73,6 +73,11 @@ namespace Engine
 		const UINT groupDispatch = (ChunkWidth * ChunkHeight * ChunkWidth) / 512;
 		ComputeContext->CommandList->Dispatch(groupDispatch, 1, 1);
 
+
+		auto const genFacePso = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglesPso.get());
+		ComputeContext->CommandList->SetPipelineState(genFacePso->GetPipelineState());
+
+		ComputeContext->CommandList->Dispatch(groupDispatch, 1, 1);
 
 		/**
 		 *		copy the triangle indices back onto CPU
