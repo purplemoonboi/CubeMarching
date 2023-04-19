@@ -61,8 +61,8 @@ Vertex createVertex(int3 coordA, int3 coordB)
     float t = (IsoLevel - densityA) / (densityB - densityA);
     float3 position = coordA + t * (coordB - coordA);
 
-    //position = position / (TextureSize - 1);
-    //position *= 16;
+    position = position / (TextureSize - 1);
+    position *= Resolution;
     
 	// Normal:
     float3 normalA = CalculateNormal(coordA);
@@ -88,7 +88,7 @@ Vertex createVertex(int3 coordA, int3 coordB)
 void GenerateChunk(int3 id : SV_DispatchThreadID)
 {
    
-    if (id.x >= Resolution || id.y >= Resolution || id.z >= Resolution)
+    if (id.x >= TextureSize - 1 || id.y >= TextureSize - 1 || id.z >= TextureSize - 1)
     {
         return;
     }

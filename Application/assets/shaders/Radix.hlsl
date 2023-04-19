@@ -101,8 +101,9 @@ void LocalSort(
            {
                 //...store the total active bits active w/ respect to the cycle.
                 //this is to make the global scan, due next, easier.
+                //gBucketBuffer[bId.x] = lSums[BLOCK_SIZE - 1] + lBits[bId.x*BLOCK_SIZE];
                 gBucketBuffer[bId.x] = lSums[BLOCK_SIZE - 1];
-           }
+            }
         }
         
        

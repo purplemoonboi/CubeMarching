@@ -57,10 +57,11 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager());
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
-		MarchingCubes->Init(csApi, api->GetMemoryManager());
-
-        /*Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
-            MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));*/
+        /*
+		    MarchingCubes->Init(csApi, api->GetMemoryManager());
+            Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+            MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+        */
 
         /* polygonise the texture with marching cubes*/
 
@@ -147,16 +148,27 @@ namespace Engine
 
         if (UpdateTexture)
         {
-            UpdateTexture = false;
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
-          /*  MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());*/
+            /*PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);*/
+            UpdateTexture = false;
+            UpdateVoxels = true;
+        }
+
+        if(UpdateVoxels)
+        {
+            /* polygonise the texture with marching cubes */
+            /*
+                MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+                Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
+            */
 
             /* polygonise the texture with dual contouring */
-            //DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-            //Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
+            /*
+                DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+                Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
+            */
 
+            UpdateVoxels = false;
         }
 
         auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
@@ -603,7 +615,12 @@ namespace Engine
         XMFLOAT4X4 inverseView;
         XMStoreFloat4x4(&inverseView, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetView())));
 
-        XMFLOAT3 rayOrigin = camera->GetPosition();
+        XMFLOAT3 camPos = camera->GetPosition();
+        Remap(camPos.x, -1024.0f, 1024.0f, 0.0f, (float) VoxelSettings.Resolution);
+        Remap(camPos.y, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);
+        Remap(camPos.z, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);
+
+        XMFLOAT3 rayOrigin = camPos;
         XMFLOAT3 rayDirection(
             vx * inverseView(0, 0) + vy * inverseView(1, 0) + vz * inverseView(2, 0),
             vx * inverseView(0, 1) + vy * inverseView(1, 1) + vz * inverseView(2, 1),
@@ -622,6 +639,7 @@ namespace Engine
         float xf = rayOrigin.x + camForward.x + rayDirection.x;
         float yf = rayOrigin.y + camForward.y + rayDirection.y;
         float zf = rayOrigin.z + camForward.z + rayDirection.z;
+
 
         CsgOperationSettings.MousePos = { xf, yf, zf };
         CORE_TRACE("Mouse Pos W: {0}, {1}, {2}", xf, yf, zf);

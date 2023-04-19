@@ -148,6 +148,7 @@ namespace Engine
 		RawTriBuffer.clear();
 		RawTriBuffer.reserve(triCount);
 
+		McData.TriangleCount = triCount;
 
 		for(INT32 i = 0; i < triCount; ++i)
 		{

@@ -25,6 +25,13 @@ namespace Engine
 	class MarchingCubes
 	{
 	public:
+		struct Data
+		{
+			INT32 TriangleCount = 0;
+			double DispatchTime = 0.0;
+
+		};
+	public:
 		MarchingCubes() = default;
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
@@ -53,6 +60,7 @@ namespace Engine
 
 		std::vector<Triangle> RawTriBuffer;
 
+		Data McData;
 
 		void BuildComputeRootSignature();
 

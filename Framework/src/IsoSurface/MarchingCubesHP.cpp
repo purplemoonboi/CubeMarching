@@ -51,6 +51,25 @@ namespace Engine
 		GlobalComputeDestCS = Shader::Create(globalSum.FilePath, globalSum.EntryPoint, globalSum.ShaderModel);
 		GlobalComputeDestPso = PipelineStateObject::Create(ComputeContext, GlobalComputeDestCS.get(), RootSignature);
 
+		const ShaderArgs genVerts =
+		{
+			L"assets\\shaders\\ImprovedMarchingCubes.hlsl",
+			"GenerateVertices",
+			"cs_5_0"
+		};
+		GenerateVerticesCS = Shader::Create(genVerts.FilePath, genVerts.EntryPoint, genVerts.ShaderModel);
+		GenerateVerticesPso = PipelineStateObject::Create(ComputeContext, GenerateVerticesCS.get(), RootSignature);
+
+		const ShaderArgs genTriangles =
+		{
+			L"assets\\shaders\\ImprovedMarchingCubes.hlsl",
+			"GenerateTriangles",
+			"cs_5_0"
+		};
+		GenerateTrianglesCS = Shader::Create(genTriangles.FilePath, genTriangles.EntryPoint, genTriangles.ShaderModel);
+		GenerateTrianglesPso = PipelineStateObject::Create(ComputeContext, GenerateTrianglesCS.get(), RootSignature);
+
+
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 	}
@@ -291,7 +310,6 @@ namespace Engine
 		UINT32* data = nullptr;
 		std::vector<UINT32> sortedCodes;
 		sortedCodes.reserve(DATA_SIZE);
-		CORE_TRACE("##########################################################");
 
 		const HRESULT hr = MortonReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
 		THROW_ON_FAILURE(hr);
@@ -393,8 +411,8 @@ namespace Engine
 	void MarchingCubesHP::BuildResources()
 	{
 		constexpr UINT64 triBufferCapacity = MarchingCubesVoxelBufferSize * sizeof(Triangle);
-		TriBufferResource = D3D12BufferUtils::CreateStructuredBuffer(triBufferCapacity, true, true);
-		TriReadBackResource	= D3D12BufferUtils::CreateReadBackBuffer(triBufferCapacity);
+		FaceBuffer = D3D12BufferUtils::CreateStructuredBuffer(triBufferCapacity, true, true);
+		FaceReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(triBufferCapacity);
 
 		constexpr UINT64 capacity = VoxelWorldElementCount * sizeof(INT32);
 		HPResource = D3D12BufferUtils::CreateStructuredBuffer(capacity, true, true);
@@ -451,7 +469,7 @@ namespace Engine
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 		TriResourceUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, 
-			TriBufferResource.Get(), ResourceCounter.Get());
+			FaceBuffer.Get(), ResourceCounter.Get());
 
 		/** create views for the histo-pyramid */
 		uavDesc.Format = DXGI_FORMAT_UNKNOWN;

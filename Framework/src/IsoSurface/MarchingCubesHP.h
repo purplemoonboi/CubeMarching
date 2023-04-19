@@ -14,6 +14,46 @@ namespace Engine
 	class Shader;
 	class Texture;
 
+	struct OctreeNode
+	{
+		INT32 MortonCode;
+		/* The 'Data' variable holds internal data of a node.
+		 *
+		 * From the MSB....
+		 *
+		 * The first '8' parent node index.
+		 *
+		 * The next '8' bits represent number of child nodes.
+		 *
+		 * The next '8'  bits cube configuration
+		 * (For MC algos this is the lookup index)
+		 * (For DC algos this can be a isValid flag)
+		 *
+		 * The remaining '8' bits are empty...
+		 *
+		 */
+		INT32 Data;
+	};
+
+	struct MCIVertex
+	{
+		XMFLOAT3 Position;
+		INT32 WorldIndex;
+	};
+
+	struct MCIEdgeElementTable
+	{
+		INT32 Key;
+		MCIVertex Value;
+	};
+
+	struct MCIFace
+	{
+		INT32 I0;
+		INT32 I1;
+		INT32 I2;
+	};
+
 	class MarchingCubesHP
 	{
 	public:
@@ -62,6 +102,12 @@ namespace Engine
 		ScopePointer<PipelineStateObject> GlobalComputeDestPso;
 		ScopePointer<Shader> GlobalComputeDestCS;
 
+		ScopePointer<PipelineStateObject> GenerateVerticesPso;
+		ScopePointer<Shader> GenerateVerticesCS;
+
+		ScopePointer<PipelineStateObject> GenerateTrianglesPso;
+		ScopePointer<Shader> GenerateTrianglesCS;
+
 		void BuildResources();
 
 		ComPtr<ID3D12Resource> HPResource;
@@ -78,16 +124,24 @@ namespace Engine
 		ComPtr<ID3D12Resource> HistogramReadBack;
 
 
+		ComPtr<ID3D12Resource> FaceBuffer;
+		ComPtr<ID3D12Resource> FaceReadBackBuffer;
 
-		ComPtr<ID3D12Resource> TriBufferResource;
-		ComPtr<ID3D12Resource> TriReadBackResource;
+		ComPtr<ID3D12Resource> VertexBuffer;
+		ComPtr<ID3D12Resource> VertexReadBackBuffer;
+
+		ComPtr<ID3D12Resource> IndicesBuffer;
+		ComPtr<ID3D12Resource> IndicesReadBackBuffer;
+
+		ComPtr<ID3D12Resource> HashMapBuffer;
+		ComPtr<ID3D12Resource> HashMapReadBackBuffer;
 
 		ComPtr<ID3D12Resource> LookUpTableResource;
 		ComPtr<ID3D12Resource> LookUpTableUpload;
 
-		ComPtr<ID3D12Resource> ResourceCounter;
-		ComPtr<ID3D12Resource> CounterReadBack;
-		ComPtr<ID3D12Resource> CounterUpload;
+		ComPtr<ID3D12Resource> VertexCounter;
+		ComPtr<ID3D12Resource> VertexCounterReadBack;
+		ComPtr<ID3D12Resource> VertexCounterUpload;
 
 
 		void BuildViews();
@@ -100,6 +154,13 @@ namespace Engine
 		D3D12_GPU_DESCRIPTOR_HANDLE SortedMortonUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE HistogramUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE CycleCounterUav;
+
+		D3D12_GPU_DESCRIPTOR_HANDLE FaceUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE VertexUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE IndexUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE HashMapUav;
+		D3D12_GPU_DESCRIPTOR_HANDLE VertexCounterUav;
+
 
 		std::vector<Triangle> RawTriangleBuffer;
 
