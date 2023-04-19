@@ -60,11 +60,8 @@ namespace Engine
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
-		void RadixSort(Texture* texture);
+		void Polygonise(Texture* texture);
 
-		void SortChunk();
-
-		void StreamMCVoxels();
 
 		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const
 		{
@@ -78,29 +75,10 @@ namespace Engine
 		UINT64 FenceValue = 0;
 
 		void BuildRootSignature();
+		void BuildResources();
+		void BuildViews();
 
 		ComPtr<ID3D12RootSignature> RootSignature;
-
-		ScopePointer<PipelineStateObject> BuildUpPso;
-		ScopePointer<Shader> BuildUpShader;
-
-		ScopePointer<PipelineStateObject> PrefixOffsetPso;
-		ScopePointer<Shader> PrefixOffsetShader;
-
-		ScopePointer<PipelineStateObject> StreamPso;
-		ScopePointer<Shader> StreamShader;
-
-		ScopePointer<PipelineStateObject> MortonCodePso;
-		ScopePointer<Shader> ComputeMortonCodes;
-
-		ScopePointer<PipelineStateObject> RadixSortPso;
-		ScopePointer<Shader> RadixSortShader;
-
-		ScopePointer<PipelineStateObject> GlobalBucketSumPso;
-		ScopePointer<Shader> GlobalBucketSumCS;
-
-		ScopePointer<PipelineStateObject> GlobalComputeDestPso;
-		ScopePointer<Shader> GlobalComputeDestCS;
 
 		ScopePointer<PipelineStateObject> GenerateVerticesPso;
 		ScopePointer<Shader> GenerateVerticesCS;
@@ -108,21 +86,8 @@ namespace Engine
 		ScopePointer<PipelineStateObject> GenerateTrianglesPso;
 		ScopePointer<Shader> GenerateTrianglesCS;
 
-		void BuildResources();
-
-		ComPtr<ID3D12Resource> HPResource;
-		ComPtr<ID3D12Resource> HPResourceReadBack;
-
-		ComPtr<ID3D12Resource> InputMortonCodes;
-		ComPtr<ID3D12Resource> SortedMortonCodes;
-
-		ComPtr<ID3D12Resource> MortonUploadBuffer;
-		ComPtr<ID3D12Resource> MortonReadBackBuffer;
-		ComPtr<ID3D12Resource> MortonReadBackBufferB;
-
-		ComPtr<ID3D12Resource> HistogramResoure;
-		ComPtr<ID3D12Resource> HistogramReadBack;
-
+		ComPtr<ID3D12Resource> LookUpTableResource;
+		ComPtr<ID3D12Resource> LookUpTableUpload;
 
 		ComPtr<ID3D12Resource> FaceBuffer;
 		ComPtr<ID3D12Resource> FaceReadBackBuffer;
@@ -136,24 +101,13 @@ namespace Engine
 		ComPtr<ID3D12Resource> HashMapBuffer;
 		ComPtr<ID3D12Resource> HashMapReadBackBuffer;
 
-		ComPtr<ID3D12Resource> LookUpTableResource;
-		ComPtr<ID3D12Resource> LookUpTableUpload;
-
 		ComPtr<ID3D12Resource> VertexCounter;
 		ComPtr<ID3D12Resource> VertexCounterReadBack;
 		ComPtr<ID3D12Resource> VertexCounterUpload;
 
 
-		void BuildViews();
 
 		D3D12_GPU_DESCRIPTOR_HANDLE LookUpTableSrv;
-
-		D3D12_GPU_DESCRIPTOR_HANDLE HPResourceUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE TriResourceUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE MortonCodeUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE SortedMortonUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE HistogramUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE CycleCounterUav;
 
 		D3D12_GPU_DESCRIPTOR_HANDLE FaceUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE VertexUav;

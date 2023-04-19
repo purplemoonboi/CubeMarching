@@ -68,8 +68,16 @@ namespace Engine
 	 * @brief Max size of a dense marching cubes voxel buffer.
 	 * @note  Size-of-voxel-world * { max-num-of-tris(5) * size-of-triangle-struct }
 	 */
+	constexpr UINT64 MarchingCubesNumberOfVertices = VoxelWorldElementCount * 15;
 	constexpr UINT64 MarchingCubesNumberOfTriangles = VoxelWorldElementCount * 5;
 	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Triangle);
+
+	/**
+	 * @brief Max size of GPU hash tables
+	 */
+	constexpr UINT32 MCIHashTableSize16 = 4096;
+	constexpr UINT32 MCIHashTableSize32 = 32768;
+	constexpr UINT32 MCIHashTableSize64 = 262144;
 
 	/**
 	 * @brief Max size of a dense dual contour voxel buffer.

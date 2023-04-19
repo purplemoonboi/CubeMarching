@@ -35,13 +35,10 @@ cbuffer cbSettings : register(b0)
 Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
 
-RWStructuredBuffer<Vertex> gVertexBuffer : register(u0);
-RWStructuredBuffer<Face> gFaceBuffer     : register(u1);
-
-
-RWStructuredBuffer<uint> gIndices        : register(u2);
-RWStructuredBuffer<uint> gVertexCounter  : register(u3);
-
+RWStructuredBuffer<Vertex> gVertexBuffer        : register(u0);
+RWStructuredBuffer<Face> gFaceBuffer            : register(u1);
+RWStructuredBuffer<uint> gIndices               : register(u2);
+RWStructuredBuffer<uint> gVertexCounter         : register(u3);
 RWStructuredBuffer<EdgeTableElement> gEdgeTable : register(u4);
 
 
