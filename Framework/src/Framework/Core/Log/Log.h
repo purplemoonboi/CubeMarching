@@ -27,6 +27,7 @@ namespace Engine
 
 }
 
+
 // @brief - Captures D3D failures outputting windows error code, function signature, file name and line number.
 class CoreException
 {

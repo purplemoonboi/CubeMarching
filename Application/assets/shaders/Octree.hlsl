@@ -27,6 +27,11 @@ cbuffer VoxelWorldSettings : register(b0)
 }
 
 RWStructuredBuffer<Node> Root : register(u0);// Contains all leaves.
+
+
+
+
+
 RWStructuredBuffer<Voxel> VertexBuffer :register(u1);
 
 Texture3D<float> DensityTexture : register(t0);

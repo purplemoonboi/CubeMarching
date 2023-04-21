@@ -38,20 +38,20 @@ namespace Engine
 	struct MCIVertex
 	{
 		XMFLOAT3 Position;
-		INT32 WorldIndex;
+		UINT32 WorldIndex;
 	};
 
 	struct MCIEdgeElementTable
 	{
-		INT32 Key;
+		UINT32 Key;
 		MCIVertex Value;
 	};
 
 	struct MCIFace
 	{
-		INT32 I0;
-		INT32 I1;
-		INT32 I2;
+		UINT32 I0;
+		UINT32 I1;
+		UINT32 I2;
 	};
 
 	class MarchingCubesHP
@@ -60,12 +60,17 @@ namespace Engine
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
-		void Polygonise(Texture* texture);
+		void Polygonise(const VoxelWorldSettings& worldSettings, Texture* texture);
 
 
-		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const
+		[[nodiscard]] const std::vector<UINT16>& GetIndexBuffer() const
 		{
-			return RawTriangleBuffer;
+			return RawIndexBuffer;
+		}
+
+		[[nodiscard]] const std::vector<Vertex>& GetVertexBuffer() const
+		{
+			return RawVertexBuffer;
 		}
 
 	private:
@@ -86,6 +91,10 @@ namespace Engine
 		ScopePointer<PipelineStateObject> GenerateTrianglesPso;
 		ScopePointer<Shader> GenerateTrianglesCS;
 
+		ScopePointer<PipelineStateObject> InitHashTablePso;
+		ScopePointer<Shader> InitHashTableCS;
+		bool HashTableGPUInit = false;
+
 		ComPtr<ID3D12Resource> LookUpTableResource;
 		ComPtr<ID3D12Resource> LookUpTableUpload;
 
@@ -94,9 +103,6 @@ namespace Engine
 
 		ComPtr<ID3D12Resource> VertexBuffer;
 		ComPtr<ID3D12Resource> VertexReadBackBuffer;
-
-		ComPtr<ID3D12Resource> IndicesBuffer;
-		ComPtr<ID3D12Resource> IndicesReadBackBuffer;
 
 		ComPtr<ID3D12Resource> HashMapBuffer;
 		ComPtr<ID3D12Resource> HashMapReadBackBuffer;
@@ -111,12 +117,15 @@ namespace Engine
 
 		D3D12_GPU_DESCRIPTOR_HANDLE FaceUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE VertexUav;
-		D3D12_GPU_DESCRIPTOR_HANDLE IndexUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE HashMapUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE VertexCounterUav;
 
+		MCIEdgeElementTable* HashTableData = nullptr;
 
-		std::vector<Triangle> RawTriangleBuffer;
+		std::vector<MCIEdgeElementTable> HashTableCPU_Copy;
+		std::vector<Vertex> RawVertexBuffer;
+		std::vector<UINT16> RawIndexBuffer;
+
 
 	};
 }

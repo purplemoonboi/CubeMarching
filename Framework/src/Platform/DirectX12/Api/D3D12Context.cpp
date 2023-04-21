@@ -30,7 +30,7 @@ static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 
 	if (newestVersionFound.empty())
 	{
-		// TODO: Error, no PIX installation found
+		return L"EMPTY";
 	}
 
 	return pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll";
@@ -62,23 +62,22 @@ namespace Engine
 
 	D3D12Context::~D3D12Context()
 	{
-		//if (CommandQueue != nullptr)
-		//{
-		//	FlushCommandQueue();
-		//	CommandQueue->Release();
-		//	CommandQueue = nullptr;
-		//}
-		//if (SwapChain != nullptr)
-		//{
-		//	SwapChain->Release();
-		//	SwapChain = nullptr;
-		//}
-		//if(Device != nullptr)
-		//{
-		//	Device->Release();
-		//	Device = nullptr;
-		//}
-		//
+		if (CommandQueue != nullptr)
+		{
+			CommandQueue.Reset();
+			CommandQueue = nullptr;
+		}
+		if (SwapChain != nullptr)
+		{
+			SwapChain.Reset();
+			SwapChain = nullptr;
+		}
+		if(Device != nullptr)
+		{
+			Device.Reset();
+			Device = nullptr;
+		}
+		
 		
 	}
 
@@ -87,10 +86,15 @@ namespace Engine
 
 		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
 		// This may happen if the application is launched through the PIX UI. 
-		/*if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
-			LoadLibrary(GetLatestWinPixGpuCapturerPath_Cpp17().c_str());
-		}*/
+			auto path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
+			if(path != L"EMPTY")
+			{
+				CORE_TRACE("")
+				LoadLibrary(path);
+			}
+		}
 
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 		{

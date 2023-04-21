@@ -252,21 +252,13 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
 void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThreadID)
 {
 
-   /*   @brief
-    *
-    *   Each thread will work on an edge in parallel.
-    *
-    *   We check each direction again for a sign change. { right -> up -> forward }
-    * 
-    *   If there is a sign change along that edge...
-    *   ...then we know the voxels parallel to the edge must contain vertices.
-    *
-    *   Using the voxel coord as the index into the vertex buffer... 
-    *
-    *   ...we append the vertices in anti-clockwise order to build the 
-    *   triangle.
-    *
-    *   @note This is the naive approach and can be improved with Sparse octrees.
+   /*   
+    * @brief - In this pass, we check each in parallel for a sign change.
+    *          For a sign change along an edge, we connect the voxels adjacent
+    *          to this edge.
+    *          Care needs to be taken with winding order. i.e a sign change of
+    *          '+' -> '-' requires reverse winding order '-' -> '+'
+    *   
     */
     
     int3 right      = id + int3(1, 0, 0);

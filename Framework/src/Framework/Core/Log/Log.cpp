@@ -13,8 +13,8 @@ namespace Engine
 		spdlog::set_pattern("%^ [%T]: %v%$");
 
 		CoreLog = spdlog::stdout_color_mt("DX12Application");
-
 		CoreLog->set_level(spdlog::level::trace);
+		
 
 		ClientLog = spdlog::stdout_color_mt("Application");
 		ClientLog->set_level(spdlog::level::trace);

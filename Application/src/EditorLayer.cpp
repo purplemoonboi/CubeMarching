@@ -40,6 +40,9 @@ namespace Engine
         MarchingCubes.reset();
         MarchingCubes = nullptr;
 
+        DualContouring.reset();
+        DualContouring = nullptr;
+
         PerlinCompute.reset();
         PerlinCompute = nullptr;
 
@@ -57,24 +60,26 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager());
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
-        /*
-		    MarchingCubes->Init(csApi, api->GetMemoryManager());
-            Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
-            MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
-        */
+        
+		/*MarchingCubes->Init(csApi, api->GetMemoryManager());
+        Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+        MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));*/
+        
 
-        /* polygonise the texture with marching cubes*/
+        /* polygonise the texture with marching cubes */
 
-    	/*DualContouring->Init(csApi, api->GetMemoryManager());
+    	
+    	DualContouring->Init(csApi, api->GetMemoryManager());
            Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
+               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
+               
 
-    	MarchingCubesHP->Init(csApi, api->GetMemoryManager());
-		MarchingCubesHP->SortChunk();
+    	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
 
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
-        Renderer3D::CreateMesh("Brush", Transform(0, 0, 0, 0,0,0, 0.1,0.1,0.1), 1);
+        Renderer3D::CreateMesh("Brush", 
+            Transform(0, 0, 0, 0,0,0, 0.1,0.1,0.1), 1);
 
         RenderInstruction::ExecGraphicsCommandList();
 
@@ -149,7 +154,7 @@ namespace Engine
         if (UpdateTexture)
         {
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            /*PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);*/
+            PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
             UpdateTexture = false;
             UpdateVoxels = true;
         }
@@ -163,11 +168,16 @@ namespace Engine
             */
 
             /* polygonise the texture with dual contouring */
-            /*
+            
                 DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
-            */
+            
 
+            /* polygonise the texture with improved marching cubes */
+            /*
+                MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
+                Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
+            */
             UpdateVoxels = false;
         }
 
