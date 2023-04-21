@@ -10,7 +10,9 @@ namespace Engine
 
 	class ComputeApi
 	{
+	
 	public:
+
 
 		virtual ~ComputeApi(){}
 		virtual void Init(GraphicsContext* context) = 0;

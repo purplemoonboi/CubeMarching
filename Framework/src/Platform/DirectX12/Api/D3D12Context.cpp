@@ -5,7 +5,8 @@
 
 #include <filesystem>
 #include <shlobj.h>
-#include <pix.h>
+#define USE_PIX
+#include <pix3.h>
 
 static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 {
@@ -88,12 +89,20 @@ namespace Engine
 		// This may happen if the application is launched through the PIX UI. 
 		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
+			CORE_TRACE("Injecting WinPixCapturer.dll...")
 			auto path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
 			if(path != L"EMPTY")
 			{
-				CORE_TRACE("")
 				LoadLibrary(path);
 			}
+			else
+			{
+				CORE_WARNING("PIX Capturer Invalid!");
+			}
+		}
+		else
+		{
+			CORE_WARNING("Failed to inject WinPixCapturer.dll")
 		}
 
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))

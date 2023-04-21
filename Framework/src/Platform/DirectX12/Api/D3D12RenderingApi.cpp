@@ -15,11 +15,13 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 #include "Platform/DirectX12/RootSignature/D3D12RootSignature.h"
-
 #include "Platform/DirectX12/Textures/Loader/D3D12TextureLoader.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_dx12.h>
+
+#include <DXProgrammableCapture.h>
+
 
 namespace Engine
 {

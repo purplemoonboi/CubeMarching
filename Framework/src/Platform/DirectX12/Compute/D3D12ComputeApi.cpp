@@ -4,6 +4,10 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Framework/Core/Log/Log.h"
 
+#include <DXProgrammableCapture.h>
+#define USE_PIX
+#include <pix3.h>
+
 namespace Engine
 {
 	D3D12ComputeFrameResource::D3D12ComputeFrameResource(ID3D12Device* device)
@@ -19,11 +23,14 @@ namespace Engine
 
 		const HRESULT hr=CommandAllocator->Reset();
 		THROW_ON_FAILURE(hr);
+
+		
 	}
 
 	D3D12ComputeFrameResource::~D3D12ComputeFrameResource()
 	{
 	}
+
 
 	void D3D12ComputeApi::Init(GraphicsContext* context)
 	{
@@ -72,11 +79,15 @@ namespace Engine
 		const HRESULT closeResult = CommandList->Close();
 		THROW_ON_FAILURE(closeResult);
 
+
 	}
 
 
 	void D3D12ComputeApi::ResetComputeCommandList(PipelineStateObject* state)
 	{
+
+		PIXBeginEvent(CommandList.Get(), UINT64(0xFF), L"Command List Event");
+		PIXBeginEvent(Queue.Get(), UINT64(0xFF), L"Command Queue Event");
 		
 		CurrentFrameResourceIndex = (CurrentFrameResourceIndex + 1) % NUMBER_OF_CS_FRAMES_IN_FLIGHT;
 		CurrentCSFrameResource = CsFrameResources[CurrentFrameResourceIndex].get();
@@ -128,6 +139,10 @@ namespace Engine
 
 	void D3D12ComputeApi::FlushComputeQueue(UINT64* voxelWorldSyncValue)
 	{
+
+		PIXEndEvent(CommandList.Get());
+		PIXEndEvent(Queue.Get());
+
 		const HRESULT closeResult = CommandList->Close();
 		THROW_ON_FAILURE(closeResult);
 
