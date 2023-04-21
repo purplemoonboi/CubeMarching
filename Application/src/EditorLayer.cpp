@@ -100,8 +100,7 @@ namespace Engine
 
         if(IsViewportFocused)
         {
-            if (LeftMButton)
-            {
+            
                 const auto camera = Scene->GetSceneCamera();
 
                 if (Input::IsKeyPressed(KEY_E))
@@ -130,7 +129,7 @@ namespace Engine
                 }
 
 
-            }
+            
 
             // Update Texture
             if (RightMButton)

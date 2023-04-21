@@ -71,11 +71,11 @@ float3 Interpolate(float3 c0, float3 c1, float f)
     return c0.x * (1 - f) + c1.x * f, c0.y * (1 - f) + c1.y * f, c0.z * (1 - f) + c1.z * f;
 }
 
-float3 MinimiseError(float3 c0, float3 c1, float f, float s,  int i)
+float3 MinimiseError(float3 c0, float3 c1, float f, float s, int i)
 {
     float3 outP = (float3) 0;
     
-    if(i == 0)
+    if (i == 0)
     {
         outP = Interpolate(c0, c1, f);
     }
@@ -97,7 +97,7 @@ float3 MinimiseError(float3 c0, float3 c1, float f, float s,  int i)
 
 float3 ZeroCrossing(float3 c0, float3 c1)
 {
-    float3 p =(float3)0;
+    float3 p = (float3) 0;
 
     float f = 0.5f;
     float s = 0.25f;
@@ -117,13 +117,13 @@ float Remap(float x, float clx, float cmx, float nlx, float nmx)
 [numthreads(8, 8, 8)]
 void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
 {
-    uint index = ((id.z * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
+    uint index = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + id.x;
     
     
     if (id.x >= TextureSize - 1 || id.y >= TextureSize - 1 || id.z >= TextureSize - 1)
     {
         Vertex vertex = (Vertex) 0;
-        vertex.position = (float3) 0;
+        vertex.position = float3(100, 0, 0);
         vertex.normal = id;
         vertex.configuration = -1;
         Vertices[index] = vertex;
@@ -131,7 +131,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     }
 
     
-    int3 coord = id;// + int3(ChunkCoord);
+    int3 coord = id; // + int3(ChunkCoord);
 
     int3 cornerCoords[8];
     cornerCoords[0] = coord + int3(0, 0, 0);
@@ -158,7 +158,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     if (cubeConfiguration == 0 || cubeConfiguration == 255)
     {
         Vertex vertex = (Vertex) 0;
-        vertex.position = float3(0,0,0);
+        vertex.position = float3(0, 0, 0);
         vertex.normal = id;
         vertex.configuration = -1;
         Vertices[index] = vertex;
@@ -246,4 +246,3 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     Vertices[index] = vertex;
     
 }
-

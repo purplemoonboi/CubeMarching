@@ -29,7 +29,7 @@ namespace Engine
 
 		const ShaderArgs argsTs =
 		{
-			L"assets\\shaders\\DualContouring.hlsl",
+			L"assets\\shaders\\DualConstructGeo.hlsl",
 			"GenerateTriangle",
 			"cs_5_0"
 		};
