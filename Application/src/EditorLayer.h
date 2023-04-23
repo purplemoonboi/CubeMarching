@@ -15,12 +15,20 @@
 
 #include "Panels/SceneHierarchyPanel.h"
 
+
+#include <pix3.h>
+
+
 namespace Engine
 {
 
 
 	class EditorLayer : public Layer
 	{
+	public:
+		HMODULE GpuCaptureModule;
+		HMODULE GpuTimingModule;
+		PIXCaptureParameters PIXCaptureParams;
 	public:
 
 		EditorLayer();

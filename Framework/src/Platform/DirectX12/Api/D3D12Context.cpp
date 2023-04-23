@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <shlobj.h>
+
 #define USE_PIX
 #include <pix3.h>
 
@@ -90,10 +91,12 @@ namespace Engine
 		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
 			CORE_TRACE("Injecting WinPixCapturer.dll...")
-			auto path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
+			const wchar_t* path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
 			if(path != L"EMPTY")
 			{
 				LoadLibrary(path);
+				GpuCaptureLib = PIXLoadLatestWinPixGpuCapturerLibrary();
+				GpuTimingLib  = PIXLoadLatestWinPixTimingCapturerLibrary();
 			}
 			else
 			{
@@ -109,7 +112,8 @@ namespace Engine
 		{
 			DebugController->EnableDebugLayer();
 		}
-
+		
+		
 		CreateDevice();
 		CheckMSAAQualityAndCache();
 		LogAdapters();

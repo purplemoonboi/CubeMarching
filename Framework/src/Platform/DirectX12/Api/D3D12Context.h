@@ -25,6 +25,9 @@ namespace Engine
 		void LogAdapters();
 		ComPtr<ID3D12Debug> DebugController;
 
+		HMODULE GpuCaptureLib;
+		HMODULE GpuTimingLib;
+
 	public:
 
 		D3D12Context(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);

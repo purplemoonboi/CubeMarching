@@ -51,6 +51,20 @@ namespace Engine
 
     void EditorLayer::OnAttach()
     {
+#ifdef USE_PIX
+
+        GpuCaptureModule = PIXLoadLatestWinPixGpuCapturerLibrary();
+        GpuTimingModule = PIXLoadLatestWinPixTimingCapturerLibrary();
+
+        PIXCaptureParams.GpuCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
+        /*PIXCaptureParams.TimingCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
+        PIXCaptureParams.TimingCaptureParameters.CaptureGpuTiming = TRUE;
+        PIXCaptureParams.TimingCaptureParameters.CaptureHeapAllocEvents = TRUE;
+        PIXCaptureParams.TimingCaptureParameters.CaptureCallstacks = TRUE;
+        PIXCaptureParams.TimingCaptureParameters.CapturePixMemEvents = TRUE;*/
+
+#endif
+
         const auto api = RenderInstruction::GetApiPtr();
 
         ComputeInstruction::Init(api->GetGraphicsContext());
@@ -62,9 +76,11 @@ namespace Engine
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
         
-		/*MarchingCubes->Init(csApi, api->GetMemoryManager());
-        Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
-        MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));*/
+		/*
+			MarchingCubes->Init(csApi, api->GetMemoryManager());
+			Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+				MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+        */
         
 
         /* polygonise the texture with marching cubes */
@@ -161,8 +177,19 @@ namespace Engine
 
         if(UpdateVoxels)
         {
-
+            
             /* polygonise the texture with marching cubes */
+           /* HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
+            if (!SUCCEEDED(hr))
+            {
+                CORE_ERROR("GPU capture failed...")
+            }
+            else
+            {
+                CORE_TRACE("Beginning GPU capture...");
+            }*/
+
+           
             /*
                 MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
@@ -179,7 +206,21 @@ namespace Engine
                 MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
             */
-            UpdateVoxels = false;
+            UpdateVoxels = true;
+
+            /*if(SUCCEEDED(hr))
+            {
+                hr = PIXEndCapture(FALSE);
+				if(!SUCCEEDED(hr))
+				{
+                    CORE_ERROR("Could not end GPU capture successfully...");
+				}
+                else
+                {
+                    CORE_TRACE("Ending GPU capture...");
+
+                }
+            }*/
         }
 
         auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();

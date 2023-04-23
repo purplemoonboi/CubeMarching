@@ -17,7 +17,7 @@ namespace Engine
 		{
 			L"assets\\shaders\\DensityGenerator.hlsl",
 			"ComputeNoise3D",
-			"cs_5_0"
+			"cs_5_1"
 		};
 		PerlinShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
 
@@ -25,7 +25,7 @@ namespace Engine
 		{
 			L"assets\\shaders\\DensityGenerator.hlsl",
 			"SmoothDensity",
-			"cs_5_0"
+			"cs_5_1"
 		};
 		SmoothShader = Shader::Create(argsB.FilePath, argsB.EntryPoint, argsB.ShaderModel);
 

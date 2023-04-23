@@ -50,7 +50,6 @@ namespace Engine
 		ComPtr<ID3D12GraphicsCommandList> CommandList;
 		ComPtr<ID3D12CommandAllocator> CommandAllocator;
 		ComPtr<ID3D12CommandQueue> Queue;
-		ComPtr<IDXGraphicsAnalysis> GpuCapture;
 
 		ComPtr<ID3D12Fence> Fence;
 

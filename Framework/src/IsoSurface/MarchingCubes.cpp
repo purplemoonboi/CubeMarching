@@ -12,6 +12,8 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
+#include <pix3.h>
+
 namespace Engine
 {
 
@@ -26,7 +28,7 @@ namespace Engine
 		{
 			L"assets\\shaders\\MarchingCube.hlsl",
 			"GenerateChunk",
-			"cs_5_0"
+			"cs_5_1"
 		};
 		ComputeShader = Shader::Create(args.FilePath, args.EntryPoint, args.ShaderModel);
 
@@ -45,11 +47,17 @@ namespace Engine
 
 		Indices.reserve(VoxelWorldElementCount);
 		Indices.insert(Indices.begin(), VoxelWorldElementCount, 0);
+
+		
+
 	}
 
 	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, Texture* texture)
 	{
 		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->Device.Get());
+
+		PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"MarchingCubes - List");
+		PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"MarchingCubes - Queue");
 
 		ComputeContext->Wait(&FenceValue);
 
@@ -175,6 +183,8 @@ namespace Engine
 				Indices.push_back(++index);
 			}
 		}
+		PIXEndEvent(ComputeContext->CommandList.Get());
+		PIXEndEvent(ComputeContext->Queue.Get());
 	}
 
 

@@ -2,6 +2,7 @@
 #include <DirectXMath.h>
 #include <intsafe.h>
 #include <memory>
+
 #include <utility>
 
 #include <Platform/DirectX12/DirectX12.h>
@@ -25,6 +26,7 @@ namespace Engine
 	class MarchingCubes
 	{
 	public:
+
 		struct Data
 		{
 			INT32 TriangleCount = 0;

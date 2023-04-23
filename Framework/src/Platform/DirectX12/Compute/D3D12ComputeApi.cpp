@@ -4,9 +4,6 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Framework/Core/Log/Log.h"
 
-#include <DXProgrammableCapture.h>
-#define USE_PIX
-#include <pix3.h>
 
 namespace Engine
 {
@@ -86,8 +83,7 @@ namespace Engine
 	void D3D12ComputeApi::ResetComputeCommandList(PipelineStateObject* state)
 	{
 
-		PIXBeginEvent(CommandList.Get(), UINT64(0xFF), L"Command List Event");
-		PIXBeginEvent(Queue.Get(), UINT64(0xFF), L"Command Queue Event");
+		
 		
 		CurrentFrameResourceIndex = (CurrentFrameResourceIndex + 1) % NUMBER_OF_CS_FRAMES_IN_FLIGHT;
 		CurrentCSFrameResource = CsFrameResources[CurrentFrameResourceIndex].get();
@@ -140,8 +136,7 @@ namespace Engine
 	void D3D12ComputeApi::FlushComputeQueue(UINT64* voxelWorldSyncValue)
 	{
 
-		PIXEndEvent(CommandList.Get());
-		PIXEndEvent(Queue.Get());
+		
 
 		const HRESULT closeResult = CommandList->Close();
 		THROW_ON_FAILURE(closeResult);
