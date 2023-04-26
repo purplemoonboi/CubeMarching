@@ -4,7 +4,7 @@
 #include <Platform/DirectX12/Compute/D3D12ComputeApi.h>
 #include <Platform/DirectX12/Allocator/D3D12MemoryManager.h>
 
-#include "VoxelWorldConstantExpressions.h"
+#include "IsoSurface/VoxelWorldConstantExpressions.h"
 
 
 namespace Engine
@@ -21,7 +21,7 @@ namespace Engine
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
 
-		void SortChunk();
+		void SortChunk(const VoxelWorldSettings& settings);
 
 
 	private:
@@ -31,8 +31,8 @@ namespace Engine
 
 		ComPtr<ID3D12RootSignature> RootSignature;
 
-		ScopePointer<PipelineStateObject> MortonCodePso;
-		ScopePointer<Shader> ComputeMortonCodes;
+		ScopePointer<PipelineStateObject> ComputeMortonPso;
+		ScopePointer<Shader> ComputeMortonCS;
 
 		ScopePointer<PipelineStateObject> RadixSortPso;
 		ScopePointer<Shader> RadixSortShader;
@@ -51,6 +51,8 @@ namespace Engine
 		ComPtr<ID3D12Resource> InputMortonCodes;
 		ComPtr<ID3D12Resource> SortedMortonCodes;
 		ComPtr<ID3D12Resource> CycleCounter;
+		ComPtr<ID3D12Resource> CycleCounterReadBack;
+		ComPtr<ID3D12Resource> CycleCounterUpload;
 
 		ComPtr<ID3D12Resource> MortonUploadBuffer;
 		ComPtr<ID3D12Resource> MortonReadBackBuffer;

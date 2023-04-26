@@ -31,6 +31,7 @@ namespace Engine
         MarchingCubesHP = CreateScope<class MarchingCubesHP>();
 
         DualContouring = CreateScope<class DualContouring>();
+        RadixSort = CreateScope<class Radix>();
     	//DualContourSPO   = CreateScope < class DualContouringSPO >();
 
     }
@@ -75,28 +76,25 @@ namespace Engine
         PerlinCompute->Init(csApi, api->GetMemoryManager());
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
-        
-		/*
-			MarchingCubes->Init(csApi, api->GetMemoryManager());
-			Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+    	MarchingCubes->Init(csApi, api->GetMemoryManager());
+    	Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
 				MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
-        */
-        
 
         /* polygonise the texture with marching cubes */
 
     	
-    	DualContouring->Init(csApi, api->GetMemoryManager());
+    	/*DualContouring->Init(csApi, api->GetMemoryManager());
            Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
+               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
                
+       /* RadixSort->Init(csApi, api->GetMemoryManager());
+        RadixSort->SortChunk(VoxelSettings);*/
 
     	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
 
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
-        Renderer3D::CreateMesh("Brush", 
-            Transform(0, 0, 0, 0,0,0, 0.1,0.1,0.1), 1);
+        Renderer3D::CreateMesh("Brush", Transform(0, 0, 0, 0,0,0), 1);
 
         RenderInstruction::ExecGraphicsCommandList();
 
@@ -190,23 +188,22 @@ namespace Engine
             }*/
 
            
-            /*
+            
                 MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
-            */
+            
 
             /* polygonise the texture with dual contouring */
-            
+            /*
                 DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
-            
+            */
 
             /* polygonise the texture with improved marching cubes */
-            /*
-                MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
-                Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
-            */
-            UpdateVoxels = true;
+            
+                //MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
+                //Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
+            
 
             /*if(SUCCEEDED(hr))
             {
@@ -221,6 +218,9 @@ namespace Engine
 
                 }
             }*/
+
+            UpdateVoxels = false;
+
         }
 
         auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
@@ -668,9 +668,9 @@ namespace Engine
         XMStoreFloat4x4(&inverseView, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetView())));
 
         XMFLOAT3 camPos = camera->GetPosition();
-        Remap(camPos.x, -1024.0f, 1024.0f, 0.0f, (float) VoxelSettings.Resolution);
+        /*Remap(camPos.x, -1024.0f, 1024.0f, 0.0f, (float) VoxelSettings.Resolution);
         Remap(camPos.y, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);
-        Remap(camPos.z, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);
+        Remap(camPos.z, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);*/
 
         XMFLOAT3 rayOrigin = camPos;
         XMFLOAT3 rayDirection(
@@ -700,7 +700,6 @@ namespace Engine
         D3D12RenderItem* brush = dynamic_cast<D3D12RenderItem*>(Renderer3D::GetRenderItem(2));
 
         float rad = CsgOperationSettings.Radius;
-        auto scale = XMMatrixScaling(rad * 0.1, rad*0.1, rad*0.1);
         auto transform = XMMatrixTranslation(xf, yf, zf);
         XMStoreFloat4x4(&brush->World, transform);
         brush->NumFramesDirty++;

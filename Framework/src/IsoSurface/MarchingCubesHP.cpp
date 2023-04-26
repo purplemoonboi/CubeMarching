@@ -33,6 +33,15 @@ namespace Engine
 		GenerateVerticesCS = Shader::Create(genVerts.FilePath, genVerts.EntryPoint, genVerts.ShaderModel);
 		GenerateVerticesPso = PipelineStateObject::Create(ComputeContext, GenerateVerticesCS.get(), RootSignature);
 
+		const ShaderArgs genIndices =
+		{
+			L"assets\\shaders\\ImprovedMarchingCubes.hlsl",
+			"GenerateIndices",
+			"cs_5_0"
+		};
+		GenerateIndicesCS = Shader::Create(genIndices.FilePath, genIndices.EntryPoint, genIndices.ShaderModel);
+		GenerateIndicesPso = PipelineStateObject::Create(ComputeContext, GenerateIndicesCS.get(), RootSignature);
+
 		const ShaderArgs genTriangles =
 		{
 			L"assets\\shaders\\ImprovedMarchingCubes.hlsl",
@@ -54,57 +63,45 @@ namespace Engine
 
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
+
+		ComputeContext->ResetComputeCommandList(InitHashTablePso.get());
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HashMapUav);
+		ComputeContext->CommandList->Dispatch(MCIHashTableSize32, 1, 1);
+
+		/**
+		 *	...for debugging
+		 */
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(HashMapBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		ComputeContext->CommandList->CopyResource(HashMapReadBackBuffer.Get(), HashMapBuffer.Get());
+
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(HashMapBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+
+		ComputeContext->FlushComputeQueue(&FenceValue);
+
+		INT32 i = 0;
+		const HRESULT hmMap = HashMapReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&HashTableData));
+		THROW_ON_FAILURE(hmMap);
+		for (i = 0; i < MCIHashTableSize32; ++i)
+		{
+			HashTableCPU_Copy.push_back(HashTableData[i]);
+		}
+		HashMapReadBackBuffer->Unmap(0, nullptr);
+
 	}
 
 	void MarchingCubesHP::Polygonise(const VoxelWorldSettings& worldSettings, Texture* texture)
 	{
-		ComputeContext->Wait(&FenceValue);
-		ComputeContext->ResetComputeCommandList(nullptr);
+		
 
+		ComputeContext->ResetComputeCommandList(GenerateVerticesPso.get());
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
 
-		if(!HashTableGPUInit)
-		{
-			//...Do this once per instance
-			HashTableGPUInit = true;
-			auto const hashTablePso = dynamic_cast<D3D12PipelineStateObject*>(InitHashTablePso.get());
-			ComputeContext->CommandList->SetPipelineState(hashTablePso->GetPipelineState());
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HashMapUav);
-
-			ComputeContext->CommandList->Dispatch(MCIHashTableSize32, 1, 1);
-
-			ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(HashMapBuffer.Get(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-			ComputeContext->CommandList->CopyResource(HashMapReadBackBuffer.Get(), HashMapBuffer.Get());
-
-			ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(HashMapBuffer.Get(),
-				D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-
-			ComputeContext->FlushComputeQueue(&FenceValue);
-
-			INT32 i = 0;
-			const HRESULT hmMap = HashMapReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&HashTableData));
-			THROW_ON_FAILURE(hmMap);
-			for (i = 0; i < MCIHashTableSize32; ++i)
-			{
-				HashTableCPU_Copy.push_back(HashTableData[i]);
-			}
-			HashMapReadBackBuffer->Unmap(0, nullptr);
-			ComputeContext->ResetComputeCommandList(GenerateVerticesPso.get());
-			ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
-			ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
-			ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
-		}
-
-
-
-
-		auto const genVertsPso = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
-		ComputeContext->CommandList->SetPipelineState(genVertsPso->GetPipelineState());
 
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
@@ -123,20 +120,36 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, VertexUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, FaceUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(5, VertexCounterUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HashMapUav);
 
-		if(HashTableGPUInit)
-		{
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HashMapUav);
-		}
-
-		const UINT groupDispatch = (ChunkWidth * ChunkHeight * ChunkWidth) / 128;
+		/*...generate vertices and fill out hash table...*/
+		UINT groupDispatch = (ChunkWidth * ChunkHeight * ChunkWidth) / 256;
 		ComputeContext->CommandList->Dispatch(groupDispatch, 1, 1);
 
 
-		auto const genFacePso = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglesPso.get());
-		ComputeContext->CommandList->SetPipelineState(genFacePso->GetPipelineState());
+		//auto pso = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglesPso.get());
+		//ComputeContext->CommandList->SetPipelineState(pso->GetPipelineState());
 
-		ComputeContext->CommandList->Dispatch(groupDispatch, 1, 1);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.IsoValue, 0);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.TextureSize, 1);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseBinarySearch, 2);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.NumOfPointsPerAxis, 3);
+
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.x, 4);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.y, 5);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.z, 6);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 7);
+		//ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseTexture, 8);
+
+		//ComputeContext->CommandList->SetComputeRootDescriptorTable(1, d3d12Texture->GpuHandleSrv);
+		//ComputeContext->CommandList->SetComputeRootDescriptorTable(2, LookUpTableSrv);
+		//ComputeContext->CommandList->SetComputeRootDescriptorTable(3, VertexUav);
+		//ComputeContext->CommandList->SetComputeRootDescriptorTable(4, FaceUav);
+		//ComputeContext->CommandList->SetComputeRootDescriptorTable(5, VertexCounterUav);
+		//ComputeContext->CommandList->SetComputeRootDescriptorTable(6, HashMapUav);
+
+		///*...generate faces and connect geometry...*/
+		//ComputeContext->CommandList->Dispatch(groupDispatch, 1, 1);
 
 		/**
 		 *		copy the triangle indices back onto CPU
@@ -152,27 +165,27 @@ namespace Engine
 		/**
 		 *		copy the vertex buffer back onto CPU
 		 */
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-		ComputeContext->CommandList->CopyResource(VertexReadBackBuffer.Get(), VertexBuffer.Get());
+		//ComputeContext->CommandList->CopyResource(VertexReadBackBuffer.Get(), VertexBuffer.Get());
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
-			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
 
 		/**
 		 *		copy the vertex counter buffer back onto CPU
 		 */
-	/*	ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounter.Get(),
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounter.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 		ComputeContext->CommandList->CopyResource(VertexReadBackBuffer.Get(), VertexCounter.Get());
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounter.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-*/
+
 
 		/**
 		 *		copy the hash table buffer back onto CPU
@@ -199,7 +212,7 @@ namespace Engine
 		std::vector<INT32> counts;
 
 		
-		const HRESULT fdMap = FaceReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&faceData));
+		/*const HRESULT fdMap = FaceReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&faceData));
 		THROW_ON_FAILURE(fdMap);
 		for(i = 0; i < MarchingCubesNumberOfTriangles; ++i)
 		{
@@ -210,7 +223,7 @@ namespace Engine
 		FaceReadBackBuffer->Unmap(0, nullptr);
 
 		INT32 masks;
-		const HRESULT vdMap = VertexReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+		const HRESULT vdMap = VertexReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&counterData));
 		THROW_ON_FAILURE(vdMap);
 		for (i = 0; i < MarchingCubesNumberOfVertices; ++i)
 		{
@@ -219,16 +232,16 @@ namespace Engine
 			v.TexCoords.x = vertexData[i].WorldIndex;
 			RawVertexBuffer.push_back(v);
 		}
-		VertexReadBackBuffer->Unmap(0, nullptr);
+		VertexReadBackBuffer->Unmap(0, nullptr);*/
 
 
-		const HRESULT cMap  = VertexCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&counterData));
+		const HRESULT cMap  = VertexIndicesReadBack->Map(0, nullptr, reinterpret_cast<void**>(&counterData));
 		THROW_ON_FAILURE(cMap);
-		for (i = 0; i < MarchingCubesNumberOfVertices; ++i)
+		for (i = 0; i < (ChunkWidth * ChunkHeight * ChunkWidth) * 3; ++i)
 		{
 			counts.push_back(counterData[i]);
 		}
-		VertexCounterReadBack->Unmap(0, nullptr);
+		VertexIndicesReadBack->Unmap(0, nullptr);
 
 		HashTableCPU_Copy.clear();
 		for (i = 0; i < MCIHashTableSize32; ++i)
@@ -320,11 +333,12 @@ namespace Engine
 
 		constexpr UINT64 vertexCapcity = MarchingCubesNumberOfVertices * sizeof(MCIVertex);
 		VertexBuffer = D3D12BufferUtils::CreateStructuredBuffer(vertexCapcity, true, true);
+
 		VertexReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(vertexCapcity);
 
-		constexpr UINT64 counterCapacity = MarchingCubesNumberOfVertices * sizeof(INT32);
+		constexpr UINT64 counterCapacity = (ChunkWidth * ChunkHeight * ChunkWidth) * 3 * sizeof(INT32);
 		VertexCounter = D3D12BufferUtils::CreateStructuredBuffer(counterCapacity, true, true);
-		VertexCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(counterCapacity);
+		VertexIndicesReadBack = D3D12BufferUtils::CreateReadBackBuffer(counterCapacity);
 		D3D12BufferUtils::CreateUploadBuffer(VertexCounterUpload, counterCapacity);
 
 		constexpr UINT64 hashMapCapacity = MCIHashTableSize32 * sizeof(MCIEdgeElementTable);
@@ -368,7 +382,7 @@ namespace Engine
 
 		/** create views for the counter buffer  */
 		uavDesc.Buffer.StructureByteStride = sizeof(INT32);
-		uavDesc.Buffer.NumElements = MarchingCubesNumberOfVertices;
+		uavDesc.Buffer.NumElements = (ChunkWidth * ChunkHeight * ChunkWidth) * 3;
 		VertexCounterUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VertexCounter.Get());
 
 

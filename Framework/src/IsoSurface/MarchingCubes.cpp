@@ -59,7 +59,6 @@ namespace Engine
 		PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"MarchingCubes - List");
 		PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"MarchingCubes - Queue");
 
-		ComputeContext->Wait(&FenceValue);
 
 		ComputeContext->ResetComputeCommandList(ComputeState.get());
 

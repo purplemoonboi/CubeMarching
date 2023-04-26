@@ -13,23 +13,22 @@ unsigned int ExpandBits(unsigned int v)
 // given 3D point located within the unit cube [0,1].
 unsigned int Morton3D(float x, float y, float z)
 {
-    x = min(max(x * 1024.0f, 0.0f), 1023.0f);
-    y = min(max(y * 1024.0f, 0.0f), 1023.0f);
-    z = min(max(z * 1024.0f, 0.0f), 1023.0f);
+    x = min(max(x * 32.0f, 0.0f), 31.0f);
+    y = min(max(y * 32.0f, 0.0f), 31.0f);
+    z = min(max(z * 32.0f, 0.0f), 31.0f);
     uint xx = ExpandBits((uint) x);
     uint yy = ExpandBits((uint) y);
     uint zz = ExpandBits((uint) z);
     return xx * 4 + yy * 2 + zz;
 }
 
-uint EncodeMorton(float3 xyz)
+float3 IndexTo3DPoint(uint i, uint w, uint h, uint d)
 {
-    uint code = 0;
+    float z = (float)  i % h;
+    float y = ((float) i / w) % d;
+    float x = (float)  i / (w * d);
     
-    uint xx = ((uint)xyz.x & 0x11110000);
-    uint yy = ((uint)xyz.y & 0x11110000);
-    uint zz = ((uint)xyz.z & 0x11110000);
-    
-    return 0;
+    float3 p = float3(x, y, z);
+    return p;
 }
 

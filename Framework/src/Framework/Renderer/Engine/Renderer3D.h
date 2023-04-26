@@ -68,6 +68,8 @@ namespace Engine
 
 		static RenderItem* GetRenderItem(UINT16 index);
 
+		static void CreateOctreeDebugFrame(const std::vector<Vertex>& nodePositions);
+
 		struct VoxelWorldRenderingStats
 		{
 			UINT32 MCDrawCalls = 0;

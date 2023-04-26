@@ -19,6 +19,7 @@ namespace Engine
 		virtual void ResetComputeCommandList(PipelineStateObject* state = nullptr) = 0;
 		virtual void ExecuteComputeCommandList(UINT64* gpuSync) = 0;
 		virtual void FlushComputeQueue(UINT64* gpuSync) = 0;
+		virtual void GlobalSignal(UINT64* gpuSync) = 0;
 		virtual void Wait(UINT64* gpuSync) = 0;
 	};
 }

@@ -332,7 +332,7 @@ namespace Engine
 			break;
 		case 1:
 			{
-				CreateSphere(1,const_cast<std::string&>(meshTag));
+				CreateSphere(0.4,const_cast<std::string&>(meshTag));
 			}
 			break;
 		}

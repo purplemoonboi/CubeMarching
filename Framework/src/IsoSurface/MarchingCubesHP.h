@@ -88,6 +88,9 @@ namespace Engine
 		ScopePointer<PipelineStateObject> GenerateVerticesPso;
 		ScopePointer<Shader> GenerateVerticesCS;
 
+		ScopePointer<PipelineStateObject> GenerateIndicesPso;
+		ScopePointer<Shader> GenerateIndicesCS;
+
 		ScopePointer<PipelineStateObject> GenerateTrianglesPso;
 		ScopePointer<Shader> GenerateTrianglesCS;
 
@@ -108,7 +111,7 @@ namespace Engine
 		ComPtr<ID3D12Resource> HashMapReadBackBuffer;
 
 		ComPtr<ID3D12Resource> VertexCounter;
-		ComPtr<ID3D12Resource> VertexCounterReadBack;
+		ComPtr<ID3D12Resource> VertexIndicesReadBack;
 		ComPtr<ID3D12Resource> VertexCounterUpload;
 
 

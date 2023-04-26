@@ -1,4 +1,5 @@
 #include "MarchingCubeData.hlsli"
+#include "ComputeUtils.hlsli"
 
 struct Vertex
 {
@@ -37,24 +38,16 @@ StructuredBuffer<int> TriangleTable : register(t1);
 
 RWStructuredBuffer<Vertex> gVertexBuffer        : register(u0);
 RWStructuredBuffer<Face> gFaceBuffer            : register(u1);
-RWStructuredBuffer<uint> gVertexCounter         : register(u2);
+RWStructuredBuffer<int> gVertexCounter         : register(u2);
 RWStructuredBuffer<EdgeTableElement> gEdgeTable : register(u3);
 
 #define EMPTY 0xffffffff
 #define TABLE_SIZE16  4096
 #define TABLE_SIZE32  32768
 #define TABLE_SIZE64  262144
-
-#define NUM_THREADS 128
-#define EDGE_COUNT 12
+#define EDGE_COUNT 3
+#define NUM_THREADS 256
 #define CORNER_PER_VOXEL 8
-
-groupshared uint lFaceCount[NUM_THREADS];
-groupshared uint lSums[NUM_THREADS * EDGE_COUNT];
-
-groupshared uint lVertCounter[NUM_THREADS * EDGE_COUNT];
-groupshared float3 lVertices[NUM_THREADS * EDGE_COUNT];
-groupshared uint lEdges[NUM_THREADS * EDGE_COUNT];
 
 //...we use a pair of vertices as the unique key
 uint Hash(uint m, uint size)
@@ -121,6 +114,17 @@ Vertex GetValue(uint3 c0, uint3 c1, uint size)
     return v;
 }
 
+uint AddValue(uint i, Vertex v)
+{
+    gEdgeTable[i].value = v;
+    return 1;
+}
+
+Vertex GetValue(uint i)
+{
+    return gEdgeTable[i].value;
+}
+
 void DeleteValue(uint3 c0, uint3 c1, uint size)
 {
     uint k = (c0.x + c1.x + c0.y + c1.y + c0.z + c1.z) % size;
@@ -150,19 +154,19 @@ void DeleteValue(uint3 c0, uint3 c1, uint size)
 [numthreads(1, 1, 1)]
 void InitialiseHashTable(uint gId : SV_GroupIndex, uint3 dId : SV_DispatchThreadID)
 {
-    Vertex v = { (float3) 0, 0 };
+    Vertex v = { (float3) 0, EMPTY };
     gEdgeTable[dId.x].key = EMPTY;
     gEdgeTable[dId.x].value = v;
 }
+
+groupshared uint    lSums[NUM_THREADS * EDGE_COUNT];
+groupshared uint    lVertCounter[NUM_THREADS * EDGE_COUNT];
+groupshared float3  lVertices[NUM_THREADS * EDGE_COUNT];
 
 [numthreads(NUM_THREADS, 1, 1)]
 void GenerateVertices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex,  uint3 bId : SV_GroupID, uint3 tId : SV_GroupThreadID)
 {
     
-    //...Here is the overview of the improved algorithm
-    //...Note: I don't expect this to be faster, but it should
-    //...generate a tightly packed geometry, such that there are 
-    //...no overlapping vertices at the voxel edges.
     /*
     
         #1 - generate vertices along each edge
@@ -180,184 +184,200 @@ void GenerateVertices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex,
     float fRes = Resolution;
     float step = 1.0f / fRes;
     
-    float x = dId.x % fRes;
-    float y = round(dId.x / (fRes * fRes));
-    float z = round((dId.x / fRes) % fRes);
+    float3 p = IndexTo3DPoint(dId.x, Resolution, Resolution, Resolution);
     
-    uint3 vc = uint3(x, y, z);
-    
-    float3 p = (float3) 0;
-    
-    uint3 f = uint3(0, 0, 1);
-    uint3 u = uint3(0, 1, 0);
-    uint3 r = uint3(1, 0, 0);
-    
-    float s0 = DensityTexture.Load(float4(vc, 0));
-    float s1 = 0.0f;
-    
-    //...zero out vertex indices
-    [unroll(EDGE_COUNT)]
-    for (uint i = 0; i < EDGE_COUNT; i++)
-    {
-        lVertCounter[gId + i] = 0;
-        lVertices[gId + i] = (float3) 0;
-    }
+    //...voxel centroid
+    uint3 vc = uint3(p);
 
-   
-    int3 corner[8];
-    corner[0] = vc + int3(0, 0, 0);
-    corner[1] = vc + int3(1, 0, 0);
-    corner[2] = vc + int3(1, 0, 1);
-    corner[3] = vc + int3(0, 0, 1);
-    corner[4] = vc + int3(0, 1, 0);
-    corner[5] = vc + int3(1, 1, 0);
-    corner[6] = vc + int3(1, 1, 1);
-    corner[7] = vc + int3(0, 1, 1);
-        
-    uint c0[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 };
-    uint c1[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
+    int3 corner[3];
+    corner[0] = vc + int3(1, 0, 0);
+    corner[1] = vc + int3(0, 1, 0);
+    corner[2] = vc + int3(0, 0, 1);
+
+    float s0 = DensityTexture.Load(float4(vc, 0));
     
-    uint isoMask = 0x10000000;//...intersects isosurface
-    uint exMask  = 0x01000000;//...has already been indexed (additional check, is set through an atomic op)
-    uint viMask  = ~(isoMask | exMask);//...mask for index value (normally 16-bits is fine to rep indices)
+    //...offset index
+    uint i = gId * 3;
+    
+    for (uint t = 0; t < 3; t++)
+    {
+        lVertCounter[i + t] = 0;
+        lVertices[i + t] = (float3)0;
+    }
     
     [unroll(EDGE_COUNT)]
-    for (i = 0; i < EDGE_COUNT; i++)
+    for (t = 0; t < EDGE_COUNT; t++)
     {
-        Vertex v = { (float3) 0, 0xffffffff }; //GetValue(corner[c0[i]], corner[c1[i]], TABLE_SIZE32);
-        //...if the vertex along this edge hasn't been calculated yet.....
-        
-        float s0 = DensityTexture.Load(float4(corner[c0[i]], 0));
-        float s1 = DensityTexture.Load(float4(corner[c1[i]], 0));
+        Vertex v = { (float3) 0, EMPTY }; //GetValue(corner[c0[i]], corner[c1[i]], TABLE_SIZE32);
+    //...if the vertex along this edge hasn't been calculated yet.....
+    
+        float s1 = DensityTexture.Load(float4(corner[t], 0));
         float s = 0.0f;
-        
+        float3 em = (float3) 0;
+    
+        v.WorldIndex = 0;
+        v.Position = (float3) 0;
 
         if ((s0 > IsoLevel && s1 < IsoLevel))
         {
             s = (IsoLevel - s0) / (s1 - s0);
-            v.Position = (float3) corner[c0[i]] + s * ((float3)corner[c1[i]] - (float3)corner[c0[i]]);
-            
-            v.WorldIndex &= viMask; //...mark visited
-            lVertCounter[(gId * EDGE_COUNT) + i] = v.WorldIndex;
-            lVertices[(gId * EDGE_COUNT) + i] = v.Position;
+            em = (float3) vc + 0.5f * ((float3) corner[t] - (float3) vc);
+                    
+            v.Position = (float3) vc + s * ((float3) corner[t] - (float3) vc);
+            v.WorldIndex = 1;
+        
+            lVertCounter[i + t] = 1;
+            lVertices[i + t] = v.Position;
+        
             //...using the corner coords, we generate a key from.
-            AddValue(corner[c0[i]], corner[c1[i]], v, TABLE_SIZE32);
+            AddValue(vc, corner[i], v, TABLE_SIZE32);
         }
-        if ((s0 < IsoLevel && s1 > IsoLevel))//...switch winding order s0'-' -> s1'+'
+        if ((s0 < IsoLevel && s1 > IsoLevel))
         {
             s = (IsoLevel - s1) / (s0 - s1);
-            v.Position = (float3) corner[c1[i]] + s * ((float3) corner[c0[i]] - (float3)corner[c1[i]]);
-            v.WorldIndex &= viMask; //...mark visited
-            lVertCounter[(gId * EDGE_COUNT) + i] = v.WorldIndex;
-            lVertices[(gId * EDGE_COUNT) + i] = v.Position;
+            em = (float3) corner[t] + 0.5f * ((float3) vc - (float3) corner[t]);
+        
+            v.Position = (float3) corner[t] + s * ((float3) vc - (float3) corner[t]);
+            v.WorldIndex = 1;
+        
+            lVertCounter[i + t] = 1;
+            lVertices[i + t] = v.Position;
+        
             //...using the corner coords, we generate a key from.
-            AddValue(corner[c0[i]], corner[c1[i]], v, TABLE_SIZE32);
+            AddValue(vc, corner[i], v, TABLE_SIZE32);
         }
-
     }
-
-
     GroupMemoryBarrierWithGroupSync();
+
+    uint tmp = 0;
+    uint off = 0;
+    Vertex v, w;
+    
+    if (gId == 0)
+    {
+        lSums[gId] = 0;
+    }
+    else
+    {
+        lSums[gId] = lVertCounter[gId];
+    }
+    GroupMemoryBarrierWithGroupSync();
+    
+    //...sum the indices per thread
+    [unroll(3)]
+    for (uint f = i + 1; f < (i + 2); f++)
+    {
+        lSums[f] += lSums[f - 1];
+    }
+    GroupMemoryBarrierWithGroupSync();
+    
+    uint ltmp[3] = { 0, 0, 0 };
+    //...prefix sum over the entire block
+    [unroll(NUM_THREADS)]
+    for (t = 1; t < NUM_THREADS; t = t * 3)
+    {   
+        if (i > t)
+        {
+            off = lSums[i - t];
+            
+            ltmp[0] = lSums[i] + off;              //
+            ltmp[1] = lSums[i+1] + off;            // read buffer
+            ltmp[2] = lSums[i+2] + off;            //
+            GroupMemoryBarrierWithGroupSync();
+            lSums[i] = ltmp[0];                    //
+            lSums[i+1] = ltmp[1];                  // write to buffer
+            lSums[i+2] = ltmp[2];                  //
+            GroupMemoryBarrierWithGroupSync();
+
+        }
+    }
+    
+    gVertexCounter[(dId.x * 3)] = lSums[i];
+    gVertexCounter[(dId.x * 3)+1] = lSums[i + 1];
+    gVertexCounter[(dId.x * 3)+2] = lSums[i + 2];
+      
+}
+
+#define BLOCK_SIZE 512
+#define GROUP_SIZE 64
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void GenerateIndices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, uint3 bId : SV_GroupID, uint3 tId : SV_GroupThreadID)
+{     
     uint tmp = 0;
     uint suf = 0;
+    Vertex v, w;
     
-    //...local prefix sum over voxel
-    [unroll(EDGE_COUNT)]
-    for (uint t = 1; t < EDGE_COUNT; t++)
+    if(gId == 0)
     {
-        Vertex v, w;
-        v = GetValue(corner[c0[t]], corner[c1[t]], TABLE_SIZE32);
-        w = GetValue(corner[c0[t - 1]], corner[c1[t - 1]], TABLE_SIZE32);
-        
-        uint val = ~viMask;
-        
-        if ((v.WorldIndex & (val & 0x1)) == 1 && (w.WorldIndex & (val & 0x1)) == 1)
+        lSums[gId] = 0;
+    }
+    else
+    {
+        lSums[gId] = gVertexCounter[dId.x];
+    }
+    GroupMemoryBarrierWithGroupSync();
+    
+    //...local prefix sum 
+    [unroll(int(log2(BLOCK_SIZE)))]
+    for (uint t = 1; t < BLOCK_SIZE; t <<= 1)
+    {
+        if (gId > t)
         {
-            if ((v.WorldIndex & (val & 0x01)) == 0)//  && (w.WorldIndex & (val & 0x01)) == 0)
+            tmp = lSums[gId] + lSums[gId - t];
+        }
+        else
+        {
+            tmp = lSums[gId];
+        }
+        GroupMemoryBarrierWithGroupSync();
+        lSums[gId] = tmp;
+        GroupMemoryBarrierWithGroupSync(); 
+    }
+    
+    
+    if(gId == 0)
+    {
+        
+    }
+    
+    //...for each vertex in subsequent blocks
+    //...apply the offset from the previous blocks.
+    [unroll(GROUP_SIZE)]
+    for (t = 1; t < GROUP_SIZE; t++)
+    {
+        if (bId.x > t)
+        {
+            w.WorldIndex = gVertexCounter[bId.x - t];
+            
+            [unroll(BLOCK_SIZE)]
+            for (uint j = 0; j < BLOCK_SIZE; j++)
             {
-                tmp = (v.WorldIndex & viMask);
-                suf = (w.WorldIndex & viMask);
-                suf += tmp;
-                //...update the vertex
-                w.WorldIndex = (~viMask) | (suf & viMask);
-                AddValue(corner[c0[t]], corner[c1[t]], v, TABLE_SIZE32);
+                
+                v = GetValue(bId.x + j);
+        
+                if (bId.x > t && v.WorldIndex != EMPTY)
+                {
+                    tmp = v.WorldIndex + w.WorldIndex;
+                }
+                
                 GroupMemoryBarrierWithGroupSync();
+                v.WorldIndex = tmp;
+                AddValue(bId.x + j, v);
+                GroupMemoryBarrierWithGroupSync();
+                //...update this blocks highest index.
+                if(j == BLOCK_SIZE - 1)
+                {
+                    gVertexCounter[bId.x] = v.WorldIndex;
+                }
             }
         }
     }
     
-
-    ////...prefix sum to generate vertex indices...
-    //[unroll(int(log2(NUM_THREADS)))]
-    //for (t = 1; t < NUM_THREADS; t <<= 1)
-    //{
-    //    if (gId > t)
-    //    {
-                
-    //            //...check we have visited this edge already
-    //        if (v.WorldIndex & viMask)
-    //        {
-    //                //...fetch it's index
-    //            tmp = v.WorldIndex & isoMask;
-                    
-                    
-    //        }
-                
-    //    }
-    //    else
-    //    {
-    //        tmp = lSums[gId];
-    //    }
-    //    GroupMemoryBarrierWithGroupSync();
-    //    lSums[gId] = tmp;
-    //    GroupMemoryBarrierWithGroupSync();
-    //}
-    
-    
-    //...
-    //...not sure if the perf is affected too much by this.
-    //...didn't want global writes occurring back to back with
-    //...global map insertions happening above.
-    //...
-    [unroll(EDGE_COUNT)]
-    for (i = 0; i < EDGE_COUNT; i++)
-    {
-        Vertex v = GetValue(corner[c0[i]], corner[c1[i]], TABLE_SIZE32);
-        //v.Position = lVertices[gId * EDGE_COUNT + i];
-        //v.WorldIndex = lVertCounter[gId * EDGE_COUNT + i];
-        gVertexBuffer[dId.x * EDGE_COUNT + i] = v;
-        gVertexCounter[dId.x * EDGE_COUNT + i] = lVertCounter[gId * EDGE_COUNT + i];
-    }
-    
-   
 }
 
-[numthreads(NUM_THREADS, 1, 1)]
-void GenerateIndices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, uint3 bId : SV_GroupID, uint3 tId : SV_GroupThreadID)
-{
-    
-    lVertCounter[gId] = gVertexCounter[dId.x];
-    GroupMemoryBarrierWithGroupSync();
-    
-    //...prefix sum to generate vertex indices...
-    [unroll(int(log2(NUM_THREADS)))]
-    for (uint t = 1; t < NUM_THREADS; t <<= 1)
-    {
-        uint tmp = 0;
-        if (gId > t)
-        {
-            tmp = lVertCounter[gId] + lVertCounter[gId - t];
-        }
-        else
-        {
-            tmp = lVertCounter[gId];
-        }
-        GroupMemoryBarrierWithGroupSync();
-        lSums[gId] = tmp;
-        GroupMemoryBarrierWithGroupSync();
-    }
-    
-}
+groupshared uint lFaceCount[NUM_THREADS];
+
 
 [numthreads(NUM_THREADS, 1, 1)]
 void GenerateFaces(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, uint3 bId : SV_GroupID, uint3 tId : SV_GroupThreadID)
@@ -403,7 +423,7 @@ void GenerateFaces(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, ui
     uint fc = 0;
     if (!(cube & 255 || cube & 0))
     {
-        [unroll(15)]
+        [unroll(5)]
         for (i = 0; TriangleTable[(cube * 16) + i] != -1; i += 3)
         {
             fc += 1;
@@ -431,6 +451,8 @@ void GenerateFaces(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, ui
         lFaceCount[gId] = tmp;
         GroupMemoryBarrierWithGroupSync();
     }
+
+    
     
 }
 

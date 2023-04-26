@@ -244,7 +244,7 @@ namespace Engine
 		
 
 		// Clear the back buffer and depth buffer.
-		Context->GraphicsCmdList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::SandyBrown, 0, nullptr);
+		Context->GraphicsCmdList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
 		Context->GraphicsCmdList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();

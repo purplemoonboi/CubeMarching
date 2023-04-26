@@ -9,7 +9,7 @@
 namespace Engine
 {
 
-	constexpr UINT NUMBER_OF_CS_FRAMES_IN_FLIGHT = 3;
+	constexpr UINT NUMBER_OF_CS_FRAMES_IN_FLIGHT = 1;
 	struct D3D12FrameResource;
 	using Microsoft::WRL::ComPtr;
 	class D3D12Context;
@@ -41,6 +41,7 @@ namespace Engine
 		void ExecuteComputeCommandList(UINT64* voxelWorldSyncValue) override;
 		void FlushComputeQueue(UINT64* voxelWorldSyncValue) override;
 		void Wait(UINT64* voxelWorldSyncValue) override;
+		void GlobalSignal(UINT64* gpuSync) override;
 		D3D12Context* Context = nullptr;
 
 		std::array<ScopePointer<D3D12ComputeFrameResource>, NUMBER_OF_CS_FRAMES_IN_FLIGHT> CsFrameResources;

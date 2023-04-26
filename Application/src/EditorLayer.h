@@ -7,6 +7,8 @@
 #include <Framework/Core/Events/AppEvents.h>
 #include <Framework/Core/Events/KeyEvent.h>
 
+#include <Framework/Algorithm/Radix.h>
+
 #include "IsoSurface/DensityTextureGenerator.h"
 #include "IsoSurface/MarchingCubes.h"
 #include "IsoSurface/DualContouring.h"
@@ -62,6 +64,7 @@ namespace Engine
 		ScopePointer<MarchingCubes> MarchingCubes;
 		ScopePointer<DualContouring> DualContouring;
 		ScopePointer<MarchingCubesHP> MarchingCubesHP;
+		ScopePointer<Radix> RadixSort;
 		//ScopePointer<DualContouringSPO> DualContourSPO;
 
 		bool UpdateVoxels = false;

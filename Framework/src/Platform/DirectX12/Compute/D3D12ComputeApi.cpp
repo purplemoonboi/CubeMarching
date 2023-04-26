@@ -127,7 +127,7 @@ namespace Engine
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		*voxelWorldSyncValue = ++FenceValue;
+		*voxelWorldSyncValue = ++CurrentCSFrameResource->Fence;
 
 		const HRESULT signalResult = Queue->Signal(Fence.Get(), *voxelWorldSyncValue);
 		THROW_ON_FAILURE(signalResult);
@@ -136,7 +136,6 @@ namespace Engine
 	void D3D12ComputeApi::FlushComputeQueue(UINT64* voxelWorldSyncValue)
 	{
 
-		
 
 		const HRESULT closeResult = CommandList->Close();
 		THROW_ON_FAILURE(closeResult);
@@ -145,16 +144,16 @@ namespace Engine
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
 	
-		*voxelWorldSyncValue = ++FenceValue;
-		const HRESULT signalResult = Queue->Signal(Fence.Get(), *voxelWorldSyncValue);
+		*voxelWorldSyncValue = ++CurrentCSFrameResource->Fence;
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), CurrentCSFrameResource->Fence);
 		THROW_ON_FAILURE(signalResult);
 
 		auto const completedValue = Fence->GetCompletedValue();
 
-		if (completedValue < *voxelWorldSyncValue)
+		if (completedValue < CurrentCSFrameResource->Fence)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			THROW_ON_FAILURE(Fence->SetEventOnCompletion(*voxelWorldSyncValue, eventHandle));
+			THROW_ON_FAILURE(Fence->SetEventOnCompletion(CurrentCSFrameResource->Fence, eventHandle));
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
 		}
@@ -163,5 +162,14 @@ namespace Engine
 	void D3D12ComputeApi::Wait(UINT64* voxelWorldSyncValue)
 	{
 		
+	}
+
+	void D3D12ComputeApi::GlobalSignal(UINT64* gpuSync)
+	{
+		*gpuSync = ++CurrentCSFrameResource->Fence;
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), CurrentCSFrameResource->Fence);
+		THROW_ON_FAILURE(signalResult);
+		
+
 	}
 }
