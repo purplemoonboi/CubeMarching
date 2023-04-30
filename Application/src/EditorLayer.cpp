@@ -188,22 +188,32 @@ namespace Engine
             }*/
 
            
-            
+            switch (algo)
+            {
+            case 0:
                 MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
-            
+                break;
+            case 1:
+                /* polygonise the texture with surface nets*/
 
-            /* polygonise the texture with dual contouring */
-            /*
+                break;
+            case 2:
+                /* polygonise the texture with dual contouring */
+                /*
                 DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
                 Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
-            */
+                */
+                break;
+            case 3:
+                /* polygonise the texture with improved marching cubes */
+                /*
+                MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
+                Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
+                */
+                break;
 
-            /* polygonise the texture with improved marching cubes */
-            
-                //MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
-                //Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
-            
+            }
 
             /*if(SUCCEEDED(hr))
             {
@@ -519,6 +529,29 @@ namespace Engine
                     ImGui::EndCombo();
                 }
                 ImGui::End();
+            }
+
+            ImGui::Spacing();
+            const char* algos[] = { "Marching Cubes", "Surface Nets", "Dual Contouring" };
+            static const char* currentAlgo = nullptr;
+
+            if (ImGui::BeginCombo("Isosurface Algorithms", currentAlgo)) // The second parameter is the label previewed before opening the combo.
+            {
+                for (int n = 0; n < IM_ARRAYSIZE(algos); ++n)
+                {
+                    const bool isSelected = (currentAlgo == algos[n]); // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(algos[n], isSelected))
+                    {
+                        currentAlgo = algos[n];
+                    }
+                    if (isSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::End();
             }
 
             //PROFILING - The profile window

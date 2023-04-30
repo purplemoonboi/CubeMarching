@@ -71,7 +71,7 @@ namespace Engine
 		bool UpdateTexture = true;
 
 		bool Smooth = false;
-
+		UINT8 algo = 0;
 	private:
 		Editor::SceneHierarchyPanel SceneHierarchy;
 
