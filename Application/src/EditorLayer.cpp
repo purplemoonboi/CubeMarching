@@ -77,22 +77,19 @@ namespace Engine
         PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
 
     	MarchingCubes->Init(csApi, api->GetMemoryManager());
-    	Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
-				MarchingCubes->GetIndices(), "MarchingTerrain", Transform(0, 0, 0));
+        DualContouring->Init(csApi, api->GetMemoryManager());
 
-        /* polygonise the texture with marching cubes */
-
-    	
-    	/*DualContouring->Init(csApi, api->GetMemoryManager());
-           Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
-               
-       /* RadixSort->Init(csApi, api->GetMemoryManager());
-        RadixSort->SortChunk(VoxelSettings);*/
-
-    	//MarchingCubesHP->Init(csApi, api->GetMemoryManager());
-
+        /* RadixSort->Init(csApi, api->GetMemoryManager());
+		RadixSort->SortChunk(VoxelSettings);*/
+        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
+
+
+    	Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
+				MarchingCubes->GetIndices(), "Voxel", Transform(0, 0, 0));
+
+        /*   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
+               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
 
         Renderer3D::CreateMesh("Brush", Transform(0, 0, 0, 0,0,0), 1);
 
@@ -116,35 +113,32 @@ namespace Engine
         if(IsViewportFocused)
         {
             
-                const auto camera = Scene->GetSceneCamera();
+            const auto camera = Scene->GetSceneCamera();
 
-                if (Input::IsKeyPressed(KEY_E))
-                {
-                    camera->Ascend(deltaTime);
-                }
-                if (Input::IsKeyPressed(KEY_Q))
-                {
-                    camera->Ascend(-deltaTime);
-                }
-                if (Input::IsKeyPressed(KEY_W))
-                {
-                    camera->Walk(deltaTime);
-                }
-                if (Input::IsKeyPressed(KEY_S))
-                {
-                    camera->Walk(-deltaTime);
-                }
-                if (Input::IsKeyPressed(KEY_A))
-                {
-                    camera->Strafe(-deltaTime);
-                }
-                if (Input::IsKeyPressed(KEY_D))
-                {
-                    camera->Strafe(deltaTime);
-                }
-
-
-            
+            if (Input::IsKeyPressed(KEY_E))
+            {
+                camera->Ascend(deltaTime);
+            }
+            if (Input::IsKeyPressed(KEY_Q))
+            {
+                camera->Ascend(-deltaTime);
+            }
+            if (Input::IsKeyPressed(KEY_W))
+            {
+                camera->Walk(deltaTime);
+            }
+            if (Input::IsKeyPressed(KEY_S))
+            {
+                camera->Walk(-deltaTime);
+            }
+            if (Input::IsKeyPressed(KEY_A))
+            {
+                camera->Strafe(-deltaTime);
+            }
+            if (Input::IsKeyPressed(KEY_D))
+            {
+                camera->Strafe(deltaTime);
+            }
 
             // Update Texture
             if (RightMButton)
@@ -157,11 +151,8 @@ namespace Engine
             {
                 CsgOperationSettings.IsMouseDown = 0;
             }
-     
 
         }
-
-
 
         Scene->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
 
@@ -176,7 +167,6 @@ namespace Engine
         if(UpdateVoxels)
         {
             
-            /* polygonise the texture with marching cubes */
            /* HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
             if (!SUCCEEDED(hr))
             {
@@ -188,11 +178,12 @@ namespace Engine
             }*/
 
            
-            switch (algo)
+            switch (Algorithm)
             {
             case 0:
                 MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-                Renderer3D::SetBuffer("MarchingTerrain", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
+                Renderer3D::SetBuffer("Voxel", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
+
                 break;
             case 1:
                 /* polygonise the texture with surface nets*/
@@ -200,10 +191,9 @@ namespace Engine
                 break;
             case 2:
                 /* polygonise the texture with dual contouring */
-                /*
                 DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
-                Renderer3D::SetBuffer("DualTerrain", DualContouring->GetVertices(), DualContouring->GetIndices());
-                */
+                Renderer3D::SetBuffer("Voxel", DualContouring->GetVertices(), DualContouring->GetIndices());
+
                 break;
             case 3:
                 /* polygonise the texture with improved marching cubes */
@@ -214,6 +204,8 @@ namespace Engine
                 break;
 
             }
+
+
 
             /*if(SUCCEEDED(hr))
             {
@@ -259,7 +251,7 @@ namespace Engine
 
     void EditorLayer::OnImGuiRender()
     {
-        {
+        
             // If we removed all the options we are showcasing, this demo would become:
             //     void ShowExampleAppDockSpace()
             //     {
@@ -438,7 +430,32 @@ namespace Engine
 
 
                 ImGui::Begin("Voxel Settings");
+
                 ImGui::Spacing();
+
+                const char* algos[] = { "Marching Cubes", "Surface Nets", "Dual Contouring" };
+                static const char* currentAlgo = algos[0];
+
+                if (ImGui::BeginCombo("Isosurface Algorithms", currentAlgo)) // The second parameter is the label previewed before opening the combo.
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(algos); ++n)
+                    {
+                        const bool isSelected = (currentAlgo == algos[n]); // You can store your selection however you want, outside or inside your objects
+                        if (ImGui::Selectable(algos[n], isSelected))
+                        {
+                            currentAlgo = algos[n];
+                            Algorithm = n;
+                            UpdateVoxels = true;
+                        }
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::Spacing();
+
                 if (ImGui::DragFloat("IsoValue", &isoVal, 0.02f, -1.0f, 1.0f))
                     UpdateVoxels = true;
 
@@ -529,30 +546,12 @@ namespace Engine
                     ImGui::EndCombo();
                 }
                 ImGui::End();
+
             }
 
             ImGui::Spacing();
-            const char* algos[] = { "Marching Cubes", "Surface Nets", "Dual Contouring" };
-            static const char* currentAlgo = nullptr;
 
-            if (ImGui::BeginCombo("Isosurface Algorithms", currentAlgo)) // The second parameter is the label previewed before opening the combo.
-            {
-                for (int n = 0; n < IM_ARRAYSIZE(algos); ++n)
-                {
-                    const bool isSelected = (currentAlgo == algos[n]); // You can store your selection however you want, outside or inside your objects
-                    if (ImGui::Selectable(algos[n], isSelected))
-                    {
-                        currentAlgo = algos[n];
-                    }
-                    if (isSelected)
-                    {
-                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::End();
-            }
+
 
             //PROFILING - The profile window
             {
@@ -604,7 +603,7 @@ namespace Engine
 
             //END DOCKSPACE
             ImGui::End();
-        }
+        
 
         ImGui::Render();
     }

@@ -114,6 +114,170 @@ float Remap(float x, float clx, float cmx, float nlx, float nmx)
     return nlx + (x - clx) * (nmx - nlx) / (cmx - clx);
 }
 
+Vertex SurfaceNets(float3 coord)
+{
+    Vertex v = (Vertex) 0;
+    
+    int3 cornerCoords[8];
+    cornerCoords[0] = coord + int3(0, 0, 0);
+    cornerCoords[1] = coord + int3(1, 0, 0);
+    cornerCoords[2] = coord + int3(1, 0, 1);
+    cornerCoords[3] = coord + int3(0, 0, 1);
+    cornerCoords[4] = coord + int3(0, 1, 0);
+    cornerCoords[5] = coord + int3(1, 1, 0);
+    cornerCoords[6] = coord + int3(1, 1, 1);
+    cornerCoords[7] = coord + int3(0, 1, 1);
+    
+  
+    /* for surface nets algo */
+    float3 p = (float3) 0;
+    float3 averageTang = (float3) 0;
+    float3 averageNorm = (float3) 0;
+    float4 pointAccum = (float4) 0;
+    
+    for (uint i = 0; i < 12; i++)
+    {
+        /* fetch indices for the corners of the voxel */
+        int c1 = cornerIndexAFromEdge[i];
+        int c2 = cornerIndexBFromEdge[i];
+        
+        
+        float3 p1 = cornerCoords[c1];
+        float3 p2 = cornerCoords[c2];
+        
+        float g1 = DensityTexture[p1];
+        float g2 = DensityTexture[p2];
+        
+        int m1 = (g1 > 0) ? 1 : 0;
+        int m2 = (g2 > 0) ? 1 : 0;
+        
+        
+        /* if there is a sign change */
+        if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
+        {
+
+            float t = (IsoLevel - DensityTexture[p1]) / (DensityTexture[p2] - DensityTexture[p1]);
+            p = p1 + t * (p2 - p1);
+            float3 n = CalculateNormal(p);
+            float3 tang = float3(n.x, n.y, n.z);
+            
+            pointAccum.x += p.x;
+            pointAccum.y += p.y;
+            pointAccum.z += p.z;
+            pointAccum.w += 1.0f;
+            
+            averageNorm += n;
+            averageTang += tang;
+
+        }
+    }
+ 
+    averageNorm = normalize(averageNorm / pointAccum.w);
+    averageTang = normalize(averageTang / pointAccum.w);
+   
+    float3 solvedPosition = float3(pointAccum.x, pointAccum.y, pointAccum.z) / pointAccum.w;
+  
+    v.position = solvedPosition.xyz;
+    v.normal = averageNorm;
+    v.tangent = averageTang;
+    v.configuration = 1;
+    
+    return v;
+}
+
+Vertex DualContouring(float3 coord)
+{
+    Vertex v = (Vertex) 0;
+    
+    int3 cornerCoords[8];
+    cornerCoords[0] = coord + int3(0, 0, 0);
+    cornerCoords[1] = coord + int3(1, 0, 0);
+    cornerCoords[2] = coord + int3(1, 0, 1);
+    cornerCoords[3] = coord + int3(0, 0, 1);
+    cornerCoords[4] = coord + int3(0, 1, 0);
+    cornerCoords[5] = coord + int3(1, 1, 0);
+    cornerCoords[6] = coord + int3(1, 1, 1);
+    cornerCoords[7] = coord + int3(0, 1, 1);
+    
+    int MAX_EDGE = 6;
+    float ATA[6] = { 0, 0, 0, 0, 0, 0 };
+    float4 pointaccum = (float4) 0;
+    float3 Atb = (float3) 0;
+    float3 averageNormal = (float3) 0;
+    float btb = (float) 0;
+    float edgeCount = 0;
+    
+    /* for surface nets algo */
+    float3 p = (float3) 0;
+    float3 averageTang = (float3) 0;
+    
+    
+    for (uint i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
+    {
+        /* fetch indices for the corners of the voxel */
+        int c1 = cornerIndexAFromEdge[i];
+        int c2 = cornerIndexBFromEdge[i];
+        
+        
+        float3 p1 = cornerCoords[c1];
+        float3 p2 = cornerCoords[c2];
+        
+        float g1 = DensityTexture[p1];
+        float g2 = DensityTexture[p2];
+        
+        int m1 = (g1 > 0) ? 1 : 0;
+        int m2 = (g2 > 0) ? 1 : 0;
+        
+        
+        /* if there is a sign change */
+        if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
+        {
+
+            float t = (IsoLevel - DensityTexture[p1]) / (DensityTexture[p2] - DensityTexture[p1]);
+            float3 p = p1 + t * (p2 - p1);
+            float3 n = CalculateNormal(p);
+            float3 tang = float3(n.x, n.y, n.z);
+            
+            //p.xyz /= Resolution;
+
+            QEFAdd(n, p, ATA, Atb, pointaccum, btb);
+            
+            averageNormal += n;
+            averageTang += tang;
+            edgeCount++;
+
+        }
+    }
+
+    
+    averageNormal = normalize(averageNormal / edgeCount);
+    averageTang = normalize(averageTang / edgeCount);
+    
+   
+    float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
+    float3 solvedPosition = com.xyz;
+    
+    float error = SolveQEF(ATA, Atb, com.xyz, solvedPosition);
+    
+    float3 minimum = cornerCoords[0];
+    float3 maximum = cornerCoords[0] + float3(1, 1, 1);
+
+    /* sometimes the position generated spawns the vertex outside the voxel */
+    /* if this happens place the vertex at the centre of mass */    
+    if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
+    solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
+    {
+        solvedPosition.xyz = com.xyz;
+    }
+    
+    v.position = solvedPosition.xyz;
+    v.normal = averageNormal;
+    v.tangent = averageTang;
+    v.configuration = 1;
+    
+    return v;
+}
+
 [numthreads(8, 8, 8)]
 void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
 {
@@ -166,82 +330,8 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         return;
     }
      
-    int MAX_EDGE = 6;
-    float ATA[6] = { 0, 0, 0, 0, 0, 0 };
-    float4 pointaccum = (float4) 0;
-    float3 Atb = (float3) 0;
-    float3 averageNormal = (float3) 0;
-    float btb = (float) 0;
-    float edgeCount = 0;
-    
-    /* for surface nets algo */
-    float3 p = (float3) 0;
-    float3 averageTang = (float3) 0;
-    
-    
-    for (i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
-    {
-        /* fetch indices for the corners of the voxel */
-        int c1 = cornerIndexAFromEdge[i];
-        int c2 = cornerIndexBFromEdge[i];
-        
-        
-        float3 p1 = cornerCoords[c1];
-        float3 p2 = cornerCoords[c2];
-        
-        float g1 = DensityTexture[p1];
-        float g2 = DensityTexture[p2];
-        
-        int m1 = (g1 > 0) ? 1 : 0;
-        int m2 = (g2 > 0) ? 1 : 0;
-        
-        
-        /* if there is a sign change */
-        if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
-        {
-
-            float t = (IsoLevel - DensityTexture[p1]) / (DensityTexture[p2] - DensityTexture[p1]);
-
-            float3 p = p1 + t * (p2 - p1);
-            float3 n = CalculateNormal(p);
-            float3 tang = float3(n.x, n.y, n.z);
-            
-
-            QEFAdd(n, p, ATA, Atb, pointaccum, btb);
-            averageNormal += n;
-            averageTang += tang;
-            edgeCount++;
-
-        }
-    }
-
-    
-    averageNormal = normalize(averageNormal / edgeCount);
-    averageTang = normalize(averageTang / edgeCount);
-    
    
-    float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
-    float3 solvedPosition = com.xyz;
-    
-    float error = SolveQEF(ATA, Atb, com.xyz, solvedPosition);
-    
-    float3 minimum = cornerCoords[0];
-    float3 maximum = cornerCoords[0] + float3(1, 1, 1);
-
-    /* sometimes the position generated spawns the vertex outside the voxel */
-    /* if this happens place the vertex at the centre of mass */    
-    if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
-    solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
-    {
-        solvedPosition.xyz = com.xyz;
-    }
-
-    Vertex vertex = (Vertex) 0;
-
-    vertex.position = solvedPosition.xyz;
-    vertex.normal = averageNormal;
-    vertex.tangent = averageTang;
-    vertex.configuration = 1;
+    Vertex vertex = DualContouring(coord);
     
     Vertices[index] = vertex;
     

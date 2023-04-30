@@ -5,8 +5,11 @@
 //#include "glm/gtx/quaternion.hpp"
 
 #include <string>
-
+#include "Framework/Core/Core.h"
+#include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Camera/MainCamera.h"
+#include "Framework/Renderer/Engine/Mesh.h"
+#include "Framework/Renderer/Textures/Texture.h"
 
 namespace Engine
 {
@@ -67,6 +70,15 @@ namespace Engine
 
 		CameraComponent() = default;
 		CameraComponent(const CameraComponent&) = default;
+	};
+
+	struct MeshComponent
+	{
+		MeshComponent() = default;
+		
+
+		bool WireFrame = false;
+		MeshGeometry* Mesh;
 	};
 
 	//Forward Declarations

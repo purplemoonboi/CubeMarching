@@ -377,6 +377,10 @@ namespace Engine
 		return RenderData.OpaqueRenderItems[index];
 	}
 
+	void Renderer3D::CreateOctreeDebugFrame(const std::vector<Vertex>& nodePositions)
+	{
+	}
+
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{
 		auto api = RenderInstruction::GetApiPtr();

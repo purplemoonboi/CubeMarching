@@ -156,7 +156,7 @@ namespace Engine
 		// whilst in use on the GPU.
 		if(terrain != nullptr)
 		{
-			//...check the buffer sizes align. Note they always should unless we have
+			//...check the buffer sizes align. Note, they always should unless we have
 			//requested to regenerate the buffer.
 			const UINT32 vCount = terrain->Geometry->VertexBuffer->GetCount();
 			if (CurrentFrameResource->QueryTerrainBuffer(vCount))
@@ -316,7 +316,7 @@ namespace Engine
 		for (auto& renderItem : renderItems)
 		{
 
-			if(renderItem->Geometry->GetName() != "DualTerrain" && renderItem->Geometry->GetName() != "MarchingTerrain")
+			if(renderItem->Geometry->GetName() != "Voxel")
 			{
 				const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(renderItem);
 				const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());

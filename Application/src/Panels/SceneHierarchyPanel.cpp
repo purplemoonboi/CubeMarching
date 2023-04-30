@@ -387,5 +387,15 @@ namespace Editor
 			ImGui::ColorEdit4("Colour", col);
 		});
 
+		DrawComponent<Engine::MeshComponent>("Mesh Component", entity, [](auto& component)
+		{
+				const char* name = component.Mesh->GetName().c_str();
+				ImGui::Text("Name", name);
+
+				bool wire = component.WireFrame;
+				ImGui::Checkbox("WireFrame", &wire);
+
+
+		});
 	}
 }
