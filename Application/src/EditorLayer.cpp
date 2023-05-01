@@ -34,6 +34,7 @@ namespace Engine
         RadixSort = CreateScope<class Radix>();
     	//DualContourSPO   = CreateScope < class DualContouringSPO >();
 
+
     }
 
     EditorLayer::~EditorLayer()
@@ -71,30 +72,38 @@ namespace Engine
         ComputeInstruction::Init(api->GetGraphicsContext());
         const auto csApi = ComputeInstruction::GetComputeApi();
 
-        RenderInstruction::ResetGraphicsCommandList();
+        RenderInstruction::OnBeginResourceCreation();
+
+        DensityTexture = Texture::Create(nullptr, VoxelTextureWidth, VoxelTextureHeight, VoxelTextureWidth, TextureFormat::R_FLOAT_32);
+
+        RenderInstruction::OnEndResourceCreation();
+
+        RenderInstruction::OnBeginResourceCreation();
 
         PerlinCompute->Init(csApi, api->GetMemoryManager());
-        PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
+        PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings, DensityTexture.get());
 
     	MarchingCubes->Init(csApi, api->GetMemoryManager());
         DualContouring->Init(csApi, api->GetMemoryManager());
 
-        /* RadixSort->Init(csApi, api->GetMemoryManager());
-		RadixSort->SortChunk(VoxelSettings);*/
+        /*
+			RadixSort->Init(csApi, api->GetMemoryManager());
+				RadixSort->SortChunk(VoxelSettings);
+		*/
+
         //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
+    	Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "Voxel", Transform(0, 0, 0));
 
-    	Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(),
-				MarchingCubes->GetIndices(), "Voxel", Transform(0, 0, 0));
-
-        /*   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-               DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));*/
+        /*
+         *   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
+         *     DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
+		 */
 
         Renderer3D::CreateMesh("Brush", Transform(0, 0, 0, 0,0,0), 1);
 
-        RenderInstruction::ExecGraphicsCommandList();
-
+        RenderInstruction::OnEndResourceCreation();
 
         MainCamera* mc = Scene->GetSceneCamera();
         mc->SetPosition({0, 0, 0});
@@ -159,12 +168,12 @@ namespace Engine
         if (UpdateTexture)
         {
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings);
+            PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings, DensityTexture.get());
             UpdateTexture = false;
             UpdateVoxels = true;
         }
 
-        if(UpdateVoxels)
+        if(UpdateVoxels && !UpdateTexture)
         {
             
            /* HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
@@ -181,7 +190,7 @@ namespace Engine
             switch (Algorithm)
             {
             case 0:
-                MarchingCubes->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+                MarchingCubes->Dispatch(VoxelSettings, DensityTexture.get());
                 Renderer3D::SetBuffer("Voxel", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
 
                 break;
@@ -191,7 +200,7 @@ namespace Engine
                 break;
             case 2:
                 /* polygonise the texture with dual contouring */
-                DualContouring->Dispatch(VoxelSettings, PerlinCompute->GetTexture());
+                DualContouring->Dispatch(VoxelSettings, DensityTexture.get());
                 Renderer3D::SetBuffer("Voxel", DualContouring->GetVertices(), DualContouring->GetIndices());
 
                 break;
@@ -225,7 +234,7 @@ namespace Engine
 
         }
 
-        auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
+        auto rt = RenderInstruction::GetApiPtr()->GetSceneTexture();
 
         if(ViewportSize.x > 0 && ViewportSize.x < 8196 && ViewportSize.y > 0 && ViewportSize.y < 8196)
         {
@@ -257,14 +266,12 @@ namespace Engine
             //     {
             //         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
             //     }
-           
 
             static bool dockspace_open = true;
             static bool opt_fullscreen = true;
             static bool opt_padding = true;
             static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-			
             // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
             // because it would be confusing to have two docking targets within each others.
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
@@ -456,15 +463,37 @@ namespace Engine
                 }
                 ImGui::Spacing();
 
+                const char* res[] = { "16x16x16", "32x32x32", "64x64x64", "128x128x128" };
+                constexpr INT32 resi[] = { 16, 32, 64, 128 };
+                static const char* currentRes = res[0];
+
+                if (ImGui::BeginCombo("Terrain Resolution", currentRes)) 
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(res); ++n)
+                    {
+                        const bool isSelected = (currentRes == res[n]); 
+                        if (ImGui::Selectable(res[n], isSelected))
+                        {
+                            currentRes = res[n];
+                            VoxelSettings.Resolution = resi[n];
+                            PerlinSettings.TextureWidth = VoxelSettings.Resolution + 1;
+                            PerlinSettings.TextureHeight = VoxelSettings.Resolution + 1;
+                            UpdateTexture = true;
+                        }
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();  
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::Spacing();
+
                 if (ImGui::DragFloat("IsoValue", &isoVal, 0.02f, -1.0f, 1.0f))
                     UpdateVoxels = true;
 
                 ImGui::Spacing();
-                if (ImGui::DragInt("Resolution", &resolution, 0.1f, 2.0f, 64.0f))
-                    UpdateVoxels = true;
-
-                ImGui::Spacing();
-                if (ImGui::Checkbox("UseBinarySearch", &useBinarySearch))
+                if (ImGui::DragInt("Voxel Scale", &resolution, 0.1f, 2.0f, 64.0f))
                     UpdateVoxels = true;
 
                 ImGui::Spacing();
@@ -555,22 +584,14 @@ namespace Engine
 
             //PROFILING - The profile window
             {
-                ImGui::Begin("Marching Cubes");
-                ImGui::Text("Settings:");
+                ImGui::Begin("Terrain Statistics");
+                ImGui::Text("Mesh Statistics:");
                 auto stats = Renderer3D::GetProfileData();
-                ImGui::Text("Vert Count : %d", stats.MCPolyCount);
-                ImGui::Text("Tri  Count : %d", stats.MCTriCount);
+                ImGui::Text("Vert Count : %d", stats.VertexCount);
+                ImGui::Text("Tri  Count : %d", stats.TriCount);
                 ImGui::End();
             }
-            {
-                ImGui::Begin("Dual Contouring");
-                ImGui::Text("Settings:");
-                auto stats = Renderer3D::GetProfileData();
-                ImGui::Text("Vert Count : %d", stats.DCPolyCount);
-                ImGui::Text("Tri  Count : %d", stats.DCTriCount);
-                ImGui::End();
-            }
-
+         
             //VIEWPORT - This is where you would want to draw scene gizmos
             {
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -589,7 +610,7 @@ namespace Engine
                 }
 
                 
-                auto rt = RenderInstruction::GetApiPtr()->GetRenderTextureAlbedo();
+                auto rt = RenderInstruction::GetApiPtr()->GetSceneTexture();
                 ImGui::Image((ImTextureID)rt->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,0}, {1,1});
 
 

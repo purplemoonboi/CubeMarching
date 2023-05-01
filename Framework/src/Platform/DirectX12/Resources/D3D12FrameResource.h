@@ -22,9 +22,11 @@ namespace Engine
         bool QueryTerrainBuffer(UINT elementCount);
         void UpdateVoxelBuffer(const D3D12Context* context, UINT elementCount);
 
+        ComPtr<ID3D12GraphicsCommandList> GraphicsCommandList;
+
         // We cannot reset the allocator until the GPU is done processing the commands.
         // So each frame needs their own allocator.
-        ComPtr<ID3D12CommandAllocator> CmdListAlloc;
+        ComPtr<ID3D12CommandAllocator> CommandAlloc;
 
 		// We cannot update a cbuffer until the GPU is done processing the commands
 		// that reference it.  So each frame needs their own cbuffers.

@@ -29,8 +29,8 @@ namespace Engine
 		virtual ~FrameBuffer() = default;
 		virtual const FrameBufferSpecifications& GetSpecifications() const = 0;
 		virtual void Init(GraphicsContext* context) = 0;
-		virtual void Bind() = 0;
-		virtual void UnBind() = 0;
+		virtual void Bind(void* args) = 0;
+		virtual void UnBind(void* args) = 0;
 		virtual void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) = 0;
 		virtual void RebuildFrameBuffer(FrameBufferSpecifications& fbSpecs) = 0;
 		virtual UINT64 GetFrameBuffer() const = 0;

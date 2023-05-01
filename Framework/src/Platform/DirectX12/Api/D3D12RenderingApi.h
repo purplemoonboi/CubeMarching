@@ -22,11 +22,6 @@ namespace Engine
 	{
 	public:
 
-		
-
-	public:
-
-
 		virtual ~D3D12RenderingApi() ;
 
 		void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) override;
@@ -74,7 +69,7 @@ namespace Engine
 
 		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
 
-		[[nodiscard]] RenderTarget* GetRenderTextureAlbedo() const override { return RenderTarget.get(); }
+		[[nodiscard]] RenderTarget* GetSceneTexture() const override { return RenderTarget.get(); }
 
 	private:
 
@@ -82,9 +77,12 @@ namespace Engine
 
 		// Buffer for uploading shader constants.
 		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
+
 		// All of our frame resources.
 		std::vector<ScopePointer<D3D12FrameResource>> FrameResources;
 		UINT32 CurrentFrameResourceIndex = 0;
+		// Keeps track of the current frame resource in flight.
+		D3D12FrameResource* CurrentFrameResource = nullptr;
 
 
 		// A pointer to the graphics context
@@ -94,13 +92,11 @@ namespace Engine
 		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
 		// Custom render buffer
 		ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
-		// Core root signature
-		//ScopePointer<D3D12RootSignature> RootSignature = nullptr;
+		
 		// A unique pointer to the Api's memory allocator class.
 		ScopePointer<D3D12MemoryManager> D3D12MemoryManager = nullptr;
 
-		// Keeps track of the current frame resource in flight.
-		D3D12FrameResource* CurrentFrameResource = nullptr;
+		
 
 	};
 

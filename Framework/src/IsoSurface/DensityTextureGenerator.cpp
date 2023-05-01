@@ -38,7 +38,12 @@ namespace Engine
 
 	}
 
-	void DensityTextureGenerator::PerlinFBM(const PerlinNoiseSettings& noiseSettings, const CSGOperationSettings& csgSettings)
+	void DensityTextureGenerator::PerlinFBM
+	(
+		const PerlinNoiseSettings& noiseSettings, 
+		const CSGOperationSettings& csgSettings, 
+		Texture* volume
+	)
 	{
 
 		ComputeContext->ResetComputeCommandList(PerlinFBMPso.get());
@@ -70,7 +75,7 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(1, 1, &csgSettings.CsgOperation, 6);
 
 
-		auto const resource = dynamic_cast<D3D12Texture*>(ScalarTexture.get());
+		auto const resource = dynamic_cast<D3D12Texture*>(volume);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, resource->GpuHandleUav);
 
 		ComputeContext->CommandList->ResourceBarrier(1,
@@ -78,9 +83,9 @@ namespace Engine
 				D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		ComputeContext->CommandList->Dispatch(
-			VoxelTextureWidth, 
-			VoxelTextureHeight, 
-			VoxelTextureWidth
+			noiseSettings.TextureWidth, 
+			noiseSettings.TextureHeight, 
+			noiseSettings.TextureWidth
 		);
 
 		ComputeContext->CommandList->ResourceBarrier(1,
@@ -93,11 +98,7 @@ namespace Engine
 	}
 
 	void DensityTextureGenerator::Smooth(const CSGOperationSettings& settings)
-	{
-
-		
-	}
-
+	{}
 
 	void DensityTextureGenerator::BuildComputeRootSignature()
 	{
@@ -156,7 +157,7 @@ namespace Engine
 	void DensityTextureGenerator::BuildResource()
 	{
 
-		for (INT32 i = 0; i < VoxelTextureWidth; ++i)
+		/*for (INT32 i = 0; i < VoxelTextureWidth; ++i)
 			for (INT32 j = 0; j < VoxelTextureHeight; ++j)
 				for (INT32 k = 0; k < VoxelTextureWidth; ++k)
 					RawTexture.push_back(0);
@@ -168,17 +169,7 @@ namespace Engine
 			VoxelTextureHeight,
 			VoxelTextureWidth,
 			TextureFormat::R_FLOAT_32
-		);
-
-		SecondaryScalarTexture = Texture::Create
-		(
-			RawTexture.data(),
-			VoxelTextureWidth,
-			VoxelTextureHeight,
-			VoxelTextureWidth,
-			TextureFormat::R_FLOAT_32
-		);
-
+		);*/
 	}
 
 

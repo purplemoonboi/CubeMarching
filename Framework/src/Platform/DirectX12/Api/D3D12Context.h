@@ -6,7 +6,7 @@ using Microsoft::WRL::ComPtr;
 
 namespace Engine
 {
-	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
+	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 3;
 
 
 	class D3D12Context : public GraphicsContext
@@ -46,9 +46,9 @@ namespace Engine
 		ComPtr<ID3D12Device>				Device;
 		ComPtr<IDXGISwapChain>				SwapChain;
 		ComPtr<IDXGIFactory4>				DXGIFactory;
-		ComPtr<ID3D12GraphicsCommandList>	GraphicsCmdList;
+		ComPtr<ID3D12GraphicsCommandList>	ResourceCommandList;
 		ComPtr<ID3D12CommandQueue>			CommandQueue;
-		ComPtr<ID3D12CommandAllocator>		Allocator;
+		ComPtr<ID3D12CommandAllocator>		ResourceAlloc;
 		ComPtr<ID3D12Fence>					Fence;
 
 		ComPtr<ID3D12RootSignature> RootSignature;

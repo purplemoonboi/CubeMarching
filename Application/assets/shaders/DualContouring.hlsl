@@ -32,7 +32,7 @@ Texture3D<float> DensityTexture : register(t0);
 RWStructuredBuffer<Vertex> Vertices : register(u0);
 RWStructuredBuffer<Triangle> TriangleBuffer : register(u1);
 
-RWStructuredBuffer<int> VoxelMaterialBuffer : register(u2);
+RWStructuredBuffer<int> Indices : register(u2);
 
 
 float SampleDensity(int3 coord)
@@ -238,7 +238,7 @@ Vertex DualContouring(float3 coord)
             float3 n = CalculateNormal(p);
             float3 tang = float3(n.x, n.y, n.z);
             
-            //p.xyz /= Resolution;
+            p.xyz /= Resolution;
 
             QEFAdd(n, p, ATA, Atb, pointaccum, btb);
             
@@ -262,6 +262,8 @@ Vertex DualContouring(float3 coord)
     float3 minimum = cornerCoords[0];
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
 
+    
+    
     /* sometimes the position generated spawns the vertex outside the voxel */
     /* if this happens place the vertex at the centre of mass */    
     if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
@@ -269,6 +271,8 @@ Vertex DualContouring(float3 coord)
     {
         solvedPosition.xyz = com.xyz;
     }
+    solvedPosition.xyz *= Resolution;
+    
     
     v.position = solvedPosition.xyz;
     v.normal = averageNormal;
@@ -316,7 +320,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         }
     }
     
-    VoxelMaterialBuffer[index] = cubeConfiguration;
+    Indices[index] = cubeConfiguration;
     
     /* voxel is outwith iso threshold */
     if (cubeConfiguration == 0 || cubeConfiguration == 255)
@@ -337,3 +341,79 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     
 }
 
+#include "ComputeUtils.hlsli"
+#define BLOCK_SIZE 512
+#define RIGHT 0
+#define FORWARD 1
+#define UP 2
+
+
+
+groupshared uint lIndices[BLOCK_SIZE];
+groupshared float3 lVertices[BLOCK_SIZE];
+
+float3 InterpolatePoint(float3 c0, float3 c1, inout float t)
+{
+    float3 p = (float3) 0;
+    float g1 = DensityTexture[c0];
+    float g2 = DensityTexture[c1];
+    
+        
+    if (g1 < IsoLevel && g2 > IsoLevel)
+    {
+        t = (IsoLevel - g1) / (g2 - g1);
+        p = c0 + t * (c1 - c0);
+    }
+    if (g1 > IsoLevel && g2 < IsoLevel)
+    {
+        t = (IsoLevel - g2) / (g1 - g2);
+        p = c0 + t * (c1 - c0);
+    }
+    
+    return p;
+}
+
+[numthreads(BLOCK_SIZE, 1, 1)]
+void GeneratePoints(uint gId : SV_GroupIndex, uint3 dId : SV_DispatchThreadID)
+{
+    
+    //...An improved version of dual contouring/surface nets
+
+    
+    lVertices[gId] = (float3) 0;
+    lIndices[gId] = -1;
+ 
+    GroupMemoryBarrierWithGroupSync();
+    
+    uint conf = 0;
+    uint r = Resolution;
+    
+    float z = (float) dId.x % r;
+    float y = ((float) dId.x / r) % r;
+    float x = (float) dId.x / (r * r);
+    
+    float3 p = float3(x, y, z);
+
+    int3 corners[8];
+    corners[0] = p + int3(0, 0, 0);
+    corners[1] = p + int3(1, 0, 0);
+    corners[2] = p + int3(1, 0, 1);
+    corners[3] = p + int3(0, 0, 1);
+    corners[4] = p + int3(0, 1, 0);
+    corners[5] = p + int3(1, 1, 0);
+    corners[6] = p + int3(1, 1, 1);
+    corners[7] = p + int3(0, 1, 1);
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (DensityTexture[corners[i]] > IsoLevel)
+        {
+            conf |= (1 << i);
+        }
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+    
+    
+    
+}

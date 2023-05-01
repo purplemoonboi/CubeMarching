@@ -47,34 +47,36 @@ namespace Engine
 
 	}
 
-	void D3D12FrameBuffer::Bind()
+	void D3D12FrameBuffer::Bind(void* args)
 	{
-		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
-		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(Context->GraphicsCmdList, "The 'graphics command list' has failed...");
+		auto* commandList = static_cast<ID3D12GraphicsCommandList*>(args);
+
+		CORE_ASSERT(commandList, "The 'graphics command list' has failed...");
 
 		// Indicate there will be a transition made to the resource.
-		Context->GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
 			CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
 
 	
-		Context->GraphicsCmdList->RSSetViewports(1, &ScreenViewport);
-		Context->GraphicsCmdList->RSSetScissorRects(1, &ScissorRect);
+		commandList->RSSetViewports(1, &ScreenViewport);
+		commandList->RSSetScissorRects(1, &ScissorRect);
 
-		Context->GraphicsCmdList->OMSetRenderTargets(1, 
+		commandList->OMSetRenderTargets(1,
 			&CD3DX12_CPU_DESCRIPTOR_HANDLE(Context->RtvHeap->GetCPUDescriptorHandleForHeapStart(), BackBufferIndex, RtvDescriptorSize),
 			true, &Context->DsvHeap->GetCPUDescriptorHandleForHeapStart()
 		);
 
 	}
 
-	void D3D12FrameBuffer::UnBind()
+	void D3D12FrameBuffer::UnBind(void* args)
 	{
-		
-		Context->GraphicsCmdList->ResourceBarrier
+		auto* commandList = static_cast<ID3D12GraphicsCommandList*>(args);
+		CORE_ASSERT(commandList, "The 'graphics command list' has failed...");
+
+		commandList->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -90,14 +92,14 @@ namespace Engine
 	{
 		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(Context->GraphicsCmdList, "The 'graphics command list' has failed...");
+		CORE_ASSERT(Context->ResourceCommandList, "The 'graphics command list' has failed...");
 
 		FrameBufferSpecs = specifications;
 
 		// Flush before changing any resources.
 		Context->FlushCommandQueue();
 
-		const HRESULT resetResult = Context->GraphicsCmdList->Reset(Context->Allocator.Get(), nullptr);
+		const HRESULT resetResult = Context->ResourceCommandList->Reset(Context->ResourceAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(resetResult);
 
 		// Release the previous resources we will be recreating.
@@ -196,7 +198,7 @@ namespace Engine
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		Context->GraphicsCmdList->ResourceBarrier
+		Context->ResourceCommandList->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -208,10 +210,10 @@ namespace Engine
 		);
 
 		// Execute the resize commands.
-		const HRESULT closeResult = Context->GraphicsCmdList->Close();
+		const HRESULT closeResult = Context->ResourceCommandList->Close();
 		THROW_ON_FAILURE(closeResult);
 
-		ID3D12CommandList* cmdsLists[] = { Context->GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdsLists[] = { Context->ResourceCommandList.Get() };
 		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.

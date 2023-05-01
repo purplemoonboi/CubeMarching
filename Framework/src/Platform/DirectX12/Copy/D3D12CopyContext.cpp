@@ -51,7 +51,7 @@ namespace Engine
 
 		CmdList->SetName(L"Copy List");
 		Queue->SetName(L"Copy Queue");
-		Allocator->SetName(L"Copy Allocator");
+		Allocator->SetName(L"Copy ResourceAlloc");
 		
 
 	}

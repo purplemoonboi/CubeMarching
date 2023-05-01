@@ -97,6 +97,12 @@ namespace Engine
 		return ResourceSrv.ptr;
 	}
 
+	void D3D12RenderTarget::Destroy()
+	{
+		GpuResource.Reset();
+		
+	}
+
 	void D3D12RenderTarget::Copy(void* src)
 	{
 	}

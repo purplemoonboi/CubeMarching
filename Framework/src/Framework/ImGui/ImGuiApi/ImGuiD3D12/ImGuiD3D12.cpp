@@ -48,30 +48,35 @@ namespace Engine
 		);
 
 		//Create the command allocator 
-		const HRESULT cmdQueueAllocResult = context->Device->CreateCommandAllocator
+		HRESULT hr = context->Device->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(ImGuiAlloc.GetAddressOf())
 		);
-		THROW_ON_FAILURE(cmdQueueAllocResult);
+		THROW_ON_FAILURE(hr);
 
 		//Create the direct command queue
-		const HRESULT cmdListResult = context->Device->CreateCommandList
+		hr = context->Device->CreateCommandList
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			ImGuiAlloc.Get(),
 			nullptr,
-			IID_PPV_ARGS(ImGuiCmdList.GetAddressOf())
+			IID_PPV_ARGS(ImGuiCommandList.GetAddressOf())
 		);
-		THROW_ON_FAILURE(cmdListResult);
+		THROW_ON_FAILURE(hr);
 
-		const HRESULT hh = ImGuiCmdList->Close();
-		THROW_ON_FAILURE(hh);
+		hr = ImGuiCommandList->Close();
+		THROW_ON_FAILURE(hr);
 	}
 
 	void ImGuiD3D12::OnRenderImpl()
 	{
+		HRESULT hr = ImGuiAlloc->Reset();
+		THROW_ON_FAILURE(hr);
+		hr = ImGuiCommandList->Reset(ImGuiAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(hr);
+
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
@@ -89,34 +94,37 @@ namespace Engine
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2(app->GetWindow().GetWidth(), app->GetWindow().GetHeight());
 
-		frameBuffer->Bind();
+		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
+		ImGuiCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), context->GraphicsCmdList.Get());
+
+		frameBuffer->Bind(ImGuiCommandList.Get());
+
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), ImGuiCommandList.Get());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault(nullptr, context->GraphicsCmdList.Get());
+			ImGui::RenderPlatformWindowsDefault(nullptr, ImGuiCommandList.Get());
 		}
 
-		frameBuffer->UnBind();
+		frameBuffer->UnBind(ImGuiCommandList.Get());
 
 
-		const HRESULT closeResult = context->GraphicsCmdList->Close();
-		THROW_ON_FAILURE(closeResult);
+		HRESULT hr = ImGuiCommandList->Close();
+		THROW_ON_FAILURE(hr);
 
-		ID3D12CommandList* cmdList[] = { context->GraphicsCmdList.Get() };
+		ID3D12CommandList* cmdList[] = { ImGuiCommandList.Get() };
 		context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		const HRESULT presentResult = context->SwapChain->Present(0, 0);
-		THROW_ON_FAILURE(presentResult);
+		hr = context->SwapChain->Present(0, 0);
+		THROW_ON_FAILURE(hr);
 
 		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
 		api->GetCurrentFrameResource()->Fence = ++context->SyncCounter;
 
-		const HRESULT signalResult = context->CommandQueue->Signal(context->Fence.Get(),
-			api->GetCurrentFrameResource()->Fence);
-		THROW_ON_FAILURE(signalResult);
+		hr = context->CommandQueue->Signal(context->Fence.Get(), api->GetCurrentFrameResource()->Fence);
+		THROW_ON_FAILURE(hr);
 	}
 
 	void ImGuiD3D12::CleanUp()

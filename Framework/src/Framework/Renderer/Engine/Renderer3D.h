@@ -59,12 +59,13 @@ namespace Engine
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
-		static void CreateVoxelTerrain(std::vector<Vertex> vertices, std::vector<UINT16> indices, const std::string& meshTag, Transform transform);
+		static void CreateVoxelTerrain(const std::vector<Vertex>& vertices, std::vector<UINT16>& indices, const std::string& meshTag, Transform transform);
+
+		static void DeleteVoxelTerrain(const std::string& tag);
 
 		static void CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType);
 
 		static void SetBuffer(const std::string& renderItemTag, const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);
-		static void SetTerrainBuffer(const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);
 
 		static RenderItem* GetRenderItem(UINT16 index);
 
@@ -72,13 +73,9 @@ namespace Engine
 
 		struct VoxelWorldRenderingStats
 		{
-			UINT32 MCDrawCalls = 0;
-			UINT32 MCTriCount = 0;
-			UINT32 MCPolyCount = 0;
-
-			UINT32 DCDrawCalls = 0;
-			UINT32 DCTriCount = 0;
-			UINT32 DCPolyCount = 0;
+			UINT32 TriCount = 0;
+			UINT32 VertexCount = 0;
+			float HausdorffDist = 0.0f;
 
 			//TODO: Implement this properly!
 			UINT32 GetTotalVertexCount() { return 0; }

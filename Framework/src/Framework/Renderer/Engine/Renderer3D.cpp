@@ -274,8 +274,8 @@ namespace Engine
 
 	void Renderer3D::CreateVoxelTerrain
 	(
-		std::vector<Vertex> vertices,
-		std::vector<UINT16> indices,
+		const std::vector<Vertex>& vertices,
+		std::vector<UINT16>& indices,
 		const std::string& meshTag,
 		Transform transform
 	)
@@ -288,15 +288,15 @@ namespace Engine
 				ScopePointer<MeshGeometry> mesh = CreateScope<MeshGeometry>(meshTag);
 
 				mesh->VertexBuffer = VertexBuffer::Create(
-					vertices.data(),
-					sizeof(Vertex) * vertices.size(),
-					vertices.size(),
+					nullptr,
+					sizeof(Vertex) * 1,
+					1,
 					false);
 
 				mesh->IndexBuffer = IndexBuffer::Create(
-					indices.data(),
-					sizeof(UINT16) * indices.size(),
-					indices.size());
+					nullptr,
+					sizeof(UINT16) * 1,
+					0);
 
 				SubGeometry drawArgs = { (UINT)mesh->IndexBuffer->GetCount(), 0, 0 };
 				mesh->DrawArgs.emplace(meshTag + "_Args", drawArgs);
@@ -320,6 +320,10 @@ namespace Engine
 		}
 	}
 
+	void Renderer3D::DeleteVoxelTerrain(const std::string& tag)
+	{}
+
+
 	void Renderer3D::CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType)
 	{
 
@@ -335,6 +339,7 @@ namespace Engine
 				CreateSphere(0.4,const_cast<std::string&>(meshTag));
 			}
 			break;
+			
 		}
 
 		ScopePointer<RenderItem> renderItem = RenderItem::Create
@@ -359,6 +364,12 @@ namespace Engine
 		{
 			if(RenderData.OpaqueRenderItems[i]->Geometry->GetName()==renderItemTag)
 			{
+				if(renderItemTag=="Voxel")
+				{
+					VoxelStats.TriCount = vertices.size() * 3;
+					VoxelStats.VertexCount = vertices.size();
+				}
+
 				const auto ri = RenderData.OpaqueRenderItems[i];
 				ri->NumFramesDirty++;
 				const auto item = RenderData.Geometries.at(renderItemTag).get();
@@ -369,8 +380,6 @@ namespace Engine
 		}
 	}
 
-	void Renderer3D::SetTerrainBuffer(const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices)
-	{}
 
 	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
 	{

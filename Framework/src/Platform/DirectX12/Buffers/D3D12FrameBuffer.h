@@ -26,14 +26,15 @@ namespace Engine
 
 		void Init(GraphicsContext* context) override;
 
-		void Bind() override;
-		void UnBind() override;
+		void Bind(void* args) override;
+		void UnBind(void* args) override;
 		void RebuildFrameBuffer(FrameBufferSpecifications& specifications) override;
 
 
 		void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) override;
 
 		void SetBackBufferIndex(INT32 value) { BackBufferIndex = value; }
+
 
 		[[nodiscard]] const FrameBufferSpecifications& GetSpecifications() const override { return FrameBufferSpecs; }
 		[[nodiscard]] const D3D12_VIEWPORT& GetViewport() const { return ScreenViewport; }
@@ -63,7 +64,6 @@ namespace Engine
 		 */
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
-
 
 
 		// @brief - A structure describing the buffer which we render to.

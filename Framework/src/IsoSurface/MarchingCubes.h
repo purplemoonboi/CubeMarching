@@ -48,7 +48,7 @@ namespace Engine
 
 		[[nodiscard]] const std::vector<Vertex>& GetVertices() const { return Vertices; }
 
-		[[nodiscard]] const std::vector<UINT16>& GetIndices() const { return Indices; }
+		[[nodiscard]] std::vector<UINT16>& GetIndices() { return Indices; }
 
 	private:
 		ID3D12Device* Device;

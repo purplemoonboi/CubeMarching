@@ -30,7 +30,7 @@ namespace Engine
 		TextureDimension GetTextureDimension() override;
 		TextureFormat GetTextureFormat() override;
 		UINT64 GetTexture() override;
-
+		void Destroy() override;
 		void Copy(void* src) override;
 
 		INT32 Width;

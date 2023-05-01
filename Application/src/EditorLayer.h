@@ -66,6 +66,7 @@ namespace Engine
 		ScopePointer<MarchingCubesHP> MarchingCubesHP;
 		ScopePointer<Radix> RadixSort;
 		//ScopePointer<DualContouringSPO> DualContourSPO;
+		ScopePointer<Texture> DensityTexture;
 
 		bool UpdateVoxels = false;
 		bool UpdateTexture = true;

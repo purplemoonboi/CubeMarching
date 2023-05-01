@@ -44,6 +44,9 @@ namespace Engine
 
 		void LoadFromFile(const std::wstring& fileName, const std::string& name) override;
 
+		void Destroy() override;
+
+
 		UINT64 GetWidth() override;
 		UINT32 GetHeight() override;
 		UINT16 GetDepth() override;

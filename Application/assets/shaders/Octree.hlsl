@@ -1,19 +1,25 @@
-#include "GPUDataStructures.hlsli"
+#include "ComputeUtils.hlsli"
 
-#define OCTREE_MAX_DEPTH 4 // Levels [0 - 3]
 
-struct Node 
+struct Node
 {
-  uint childPtr;
-  uint leaf;
-  uint count;
+    /*
+    *   From MSB...
+    *   First 15-bits   : Child Pointer
+    *   Next  1-bit     : Far Pointer 
+    *   Next  8-bits    : Valid Mask
+    *   Last  8-bits    : Leaf Mask
+    */
+    uint Header;
+    
+    /*
+    *   From MSB...
+    *   First 24-bits   : Contour Pointer
+    *   Last 8-bitd     : Contour Mask
+    */
+    uint ContourData;
 };
 
-struct Voxel
-{
-    float3 position;
-    uint index;
-};
 
 cbuffer VoxelWorldSettings : register(b0)
 {
@@ -26,51 +32,34 @@ cbuffer VoxelWorldSettings : register(b0)
     int UseTexture;
 }
 
-RWStructuredBuffer<Node> Root : register(u0);// Contains all leaves.
-
-
-
-
-
-RWStructuredBuffer<Voxel> VertexBuffer :register(u1);
-
+RWStructuredBuffer<Node> Octree : register(u0);
+RWStructuredBuffer<float3> VertexBuffer :register(u1);
 Texture3D<float> DensityTexture : register(t0);
-StructuredBuffer<int> TriangleTable : register(t1);
 
-[numthreads(8,8,8)]
-void ExtractIsosurface(
-         uint3 gId : SV_GroupID,
-            uint3 gtId : SV_GroupThreadID,
-                uint3 dtId : SV_DispatchThreadID,
-                   uint gIdx : SV_GroupIndex
-)
+#define BLOCK_SIZE 512
+#define OCTREE_MAX_DEPTH 4 // Levels [0 - 3]
+
+
+[numthreads(BLOCK_SIZE,1,1)]
+void BuildOctree(uint3 dId : SV_DispatchThreadID, uint gIdx : SV_GroupIndex)
 {
 
-    int3 coord = dtId; // +int3(ChunkCoord);
-
-    int3 cornerCoords[8];
-    cornerCoords[0] = coord + int3(0, 0, 0);
-    cornerCoords[1] = coord + int3(1, 0, 0);
-    cornerCoords[2] = coord + int3(1, 0, 1);
-    cornerCoords[3] = coord + int3(0, 0, 1);
-    cornerCoords[4] = coord + int3(0, 1, 0);
-    cornerCoords[5] = coord + int3(1, 1, 0);
-    cornerCoords[6] = coord + int3(1, 1, 1);
-    cornerCoords[7] = coord + int3(0, 1, 1);
-
-    int cubeConfiguration = 0;
-    for (int i = 0; i < 8; i++)
-    {
-
-        if (DensityTexture[cornerCoords[i]] > IsoLevel)
-        {
-            cubeConfiguration |= (1 << i);
-        }
-    }
+    uint r = Resolution;
     
-    if (cubeConfiguration == 0 || cubeConfiguration == 255)
-        return;
-	
+    float z = (float)  dId.x % r;
+    float y = ((float) dId.x / r) % r;
+    float x = (float)  dId.x / (r * r);
     
+    uint Morton = Morton3D(x, y, z, Resolution);    
     
+    uint ContourPointer = 0xffffff00;
+    uint ContourMask    = ~ContourPointer;
+    
+    uint ChildPointer   = 0x000e0000;
+    uint FarPointer     = 0x00010000;
+    uint ValidMask      = 0x0000ff00;
+    uint LeafMask       = 0x000000ff;
+    
+    Node vn = (Node) 0;
+
 }

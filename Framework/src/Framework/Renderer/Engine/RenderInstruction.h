@@ -42,12 +42,12 @@ namespace Engine
 			RendererApiPtr->BindStaticGeoPass(pso, renderItems);
 		}
 
-		static void ResetGraphicsCommandList()
+		static void OnBeginResourceCreation()
 		{
 			RendererApiPtr->PreInit();
 		}
 
-		static void ExecGraphicsCommandList()
+		static void OnEndResourceCreation()
 		{
 			RendererApiPtr->PostInit();
 		}

@@ -25,7 +25,6 @@ namespace Engine
 
 		// Reserve memory and copy the vertices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
-		CopyMemory(Blob->GetBufferPointer(), 0, size);
 		
 		// Create the GPU vertex buffer
 		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
@@ -44,8 +43,12 @@ namespace Engine
 	{
 		// Reserve memory and copy the vertices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
-		// Copy data into buffer
-		CopyMemory(Blob->GetBufferPointer(), vertices, size);
+
+		if(vertices != nullptr)
+		{
+			// Copy data into buffer
+			CopyMemory(Blob->GetBufferPointer(), vertices, size);
+		}
 
 		// Create the GPU vertex buffer
 		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
@@ -154,7 +157,11 @@ namespace Engine
 
 		// Reserve memory and copy the indices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
-		CopyMemory(Blob->GetBufferPointer(), indices, size);
+
+		if(indexCount > 0)
+		{
+			CopyMemory(Blob->GetBufferPointer(), indices, size);
+		}
 
 		// Create the GPU vertex buffer
 		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer

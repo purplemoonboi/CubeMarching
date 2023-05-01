@@ -86,6 +86,8 @@ namespace Engine
 			const std::string& name
 		) = 0;
 
+		virtual void Destroy() = 0;
+
 		virtual UINT64 GetWidth() = 0;
 		virtual UINT32 GetHeight() = 0;
 		virtual UINT16 GetDepth() = 0;

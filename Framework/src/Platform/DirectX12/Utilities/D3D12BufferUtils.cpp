@@ -51,57 +51,54 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(uploadResult);
 
-		// Give a desc of the data we want to copy
-		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = initData;
-		subResourceData.RowPitch = byteSize;
-		subResourceData.SlicePitch = subResourceData.RowPitch;
+		if(initData != nullptr)
+		{
+			// Give a desc of the data we want to copy
+			D3D12_SUBRESOURCE_DATA subResourceData = {};
+			subResourceData.pData = initData;
+			subResourceData.RowPitch = byteSize;
+			subResourceData.SlicePitch = subResourceData.RowPitch;
 
-		// Schedule to copy the data to the default buffer resource.
-		// Make instruction to copy CPU buffer into intermediate upload heap
-		// buffer.
-		GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
+			// Schedule to copy the data to the default buffer resource.
+			// Make instruction to copy CPU buffer into intermediate upload heap
+			// buffer.
+			GraphicsCmdList->ResourceBarrier
 			(
-				defaultBuffer.Get(),
-				D3D12_RESOURCE_STATE_COMMON,
-				D3D12_RESOURCE_STATE_COPY_DEST
-			)
-		);
-
-		// Copy the data into the upload heap
-		UpdateSubresources<1>
-			(
-				GraphicsCmdList,
-				defaultBuffer.Get(),
-				uploadBuffer.Get(),
-				0,
-				0,
 				1,
-				&subResourceData
-				);
+				&CD3DX12_RESOURCE_BARRIER::Transition
+				(
+					defaultBuffer.Get(),
+					D3D12_RESOURCE_STATE_COMMON,
+					D3D12_RESOURCE_STATE_COPY_DEST
+				)
+			);
 
-		// Add the instruction to transition back to read 
-		GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
+			// Copy the data into the upload heap
+			UpdateSubresources<1>
+				(
+					GraphicsCmdList,
+					defaultBuffer.Get(),
+					uploadBuffer.Get(),
+					0,
+					0,
+					1,
+					&subResourceData
+					);
+
+			// Add the instruction to transition back to read 
+			GraphicsCmdList->ResourceBarrier
 			(
-				defaultBuffer.Get(),
-				D3D12_RESOURCE_STATE_COPY_DEST,
-				D3D12_RESOURCE_STATE_GENERIC_READ
-			)
-		);
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition
+				(
+					defaultBuffer.Get(),
+					D3D12_RESOURCE_STATE_COPY_DEST,
+					D3D12_RESOURCE_STATE_GENERIC_READ
+				)
+			);
 
-		const HRESULT deviceHr = Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceHr);
+		}
 
-		// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
-		//			  because the cmd list has NOT executed the copy.
-		//
-		//			  The buffer can be released after the caller knows the copy has been made.
 		return defaultBuffer;
 	}
 
@@ -118,16 +115,7 @@ namespace Engine
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		std::vector<INT8> rawData(0);
-		if(initData == nullptr)
-		{
-			rawData.reserve(width * height * depth);
-			for (INT32 i = 0; i < width; ++i)
-				for (INT32 j = 0; j < height; ++j)
-					for (INT32 k = 0; k < depth; ++k)
-						rawData.push_back(0);
-		}
-
+		
 		ComPtr<ID3D12Resource> defaultBuffer;
 		D3D12_RESOURCE_DESC texDesc{};
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
@@ -179,59 +167,57 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(uploadResult);
 
-		// Give a desc of the data we want to copy
-		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = (initData != nullptr) ? initData : rawData.data();
-		subResourceData.RowPitch = width * sizeof(float);
-		subResourceData.SlicePitch = subResourceData.RowPitch * height;
+		//...if there is any desired data for initialisation...
+		if(initData != nullptr)
+		{
+			//TODO: Again this needs to addressed properly...
+			UINT64 bytes = (format == DXGI_FORMAT_R32_FLOAT) ? sizeof(float) : sizeof(INT8);
+			// Give a desc of the data we want to copy
+			D3D12_SUBRESOURCE_DATA subResourceData = {};
+			subResourceData.pData = initData;
+			subResourceData.RowPitch = width * bytes;
+			subResourceData.SlicePitch = subResourceData.RowPitch * height;
 
-
-		// Schedule to copy the data to the default buffer resource.
-		// Make instruction to copy CPU buffer into intermediate upload heap
-		// buffer.
-		GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
+			// Schedule to copy the data to the default buffer resource.
+			// Make instruction to copy CPU buffer into intermediate upload heap
+			// buffer.
+			GraphicsCmdList->ResourceBarrier
 			(
-				defaultBuffer.Get(),
-				D3D12_RESOURCE_STATE_COMMON,
-				D3D12_RESOURCE_STATE_COPY_DEST
-			)
-		);
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition
+				(
+					defaultBuffer.Get(),
+					D3D12_RESOURCE_STATE_COMMON,
+					D3D12_RESOURCE_STATE_COPY_DEST
+				)
+			);
 
 
-		// Copy the data into the upload heap
-		UpdateSubresources
-		(
-			GraphicsCmdList,
-			defaultBuffer.Get(),
-			uploadBuffer.Get(),
-			0,
-			0,
-			numOfResources,
-			&subResourceData
-		);
-
-		// Add the instruction to transition back to read 
-		GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
+			// Copy the data into the upload heap
+			UpdateSubresources
 			(
+				GraphicsCmdList,
 				defaultBuffer.Get(),
-				D3D12_RESOURCE_STATE_COPY_DEST,
-				D3D12_RESOURCE_STATE_COMMON
-			)
-		);
+				uploadBuffer.Get(),
+				0,
+				0,
+				numOfResources,
+				&subResourceData
+			);
 
-		const HRESULT deviceHr = Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceHr);
+			// Add the instruction to transition back to read 
+			GraphicsCmdList->ResourceBarrier
+			(
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition
+				(
+					defaultBuffer.Get(),
+					D3D12_RESOURCE_STATE_COPY_DEST,
+					D3D12_RESOURCE_STATE_COMMON
+				)
+			);
 
-		// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
-		//			  because the cmd list has NOT executed the copy.
-		//
-		//			  The buffer can be released after the caller knows the copy has been made.
+		}
 		return defaultBuffer;
 	}
 
@@ -248,19 +234,7 @@ namespace Engine
 		/**
 		 * make a wee circle if no data has been passed 
 		 */
-		std::vector<UINT32> rawData(0);
-		if (initData == nullptr)
-		{
-			rawData.reserve(width * height);
-			for (INT32 i = 0; i < width; ++i)
-			{
-				for (INT32 j = 0; j < height; ++j)
-				{
-					//
-					rawData.push_back(255U << 24 | 255U << 16 | 0U << 8 | 255U);
-				}
-			}
-		}
+		
 		ComPtr<ID3D12Resource> defaultBuffer;
 
 		D3D12_RESOURCE_DESC texDesc{};
@@ -301,60 +275,65 @@ namespace Engine
 		);
 		THROW_ON_FAILURE(uploadResult);
 
-		// Give a desc of the data we want to copy
-		D3D12_SUBRESOURCE_DATA subResourceData = {};
-		subResourceData.pData = (initData != nullptr) ? initData : rawData.data();
-		subResourceData.RowPitch = width * sizeof(UINT32);
-		subResourceData.SlicePitch = height;// subResourceData.RowPitch* height;
+		if(initData != nullptr)
+		{
+			// Give a desc of the data we want to copy
+			D3D12_SUBRESOURCE_DATA subResourceData = {};
+			subResourceData.pData = initData;
+			subResourceData.RowPitch = width * sizeof(UINT32);
+			subResourceData.SlicePitch = height;// subResourceData.RowPitch* height;
 
-		const UINT32 numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
+			const UINT32 numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
 
 
-		// Schedule to copy the data to the default buffer resource.
-		// Make instruction to copy CPU buffer into intermediate upload heap
-		// buffer.
-		GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
+			// Schedule to copy the data to the default buffer resource.
+			// Make instruction to copy CPU buffer into intermediate upload heap
+			// buffer.
+			GraphicsCmdList->ResourceBarrier
 			(
-				defaultBuffer.Get(),
-				D3D12_RESOURCE_STATE_COMMON,
-				D3D12_RESOURCE_STATE_COPY_DEST
-			)
-		);
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition
+				(
+					defaultBuffer.Get(),
+					D3D12_RESOURCE_STATE_COMMON,
+					D3D12_RESOURCE_STATE_COPY_DEST
+				)
+			);
 
-		// Copy the data into the upload heap
-		UpdateSubresources
-		(
-			GraphicsCmdList,
-			defaultBuffer.Get(),
-			uploadBuffer.Get(),
-			0,
-			0,
-			numOfResources,
-			&subResourceData
-		);
-
-		// Add the instruction to transition back to read 
-		GraphicsCmdList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
+			// Copy the data into the upload heap
+			UpdateSubresources
 			(
+				GraphicsCmdList,
 				defaultBuffer.Get(),
-				D3D12_RESOURCE_STATE_COPY_DEST,
-				D3D12_RESOURCE_STATE_GENERIC_READ
-			)
-		);
+				uploadBuffer.Get(),
+				0,
+				0,
+				numOfResources,
+				&subResourceData
+			);
 
-		const HRESULT deviceRemovedReason = Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReason);
+			// Add the instruction to transition back to read 
+			GraphicsCmdList->ResourceBarrier
+			(
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition
+				(
+					defaultBuffer.Get(),
+					D3D12_RESOURCE_STATE_COPY_DEST,
+					D3D12_RESOURCE_STATE_GENERIC_READ
+				)
+			);
 
-		// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
-		//			  because the cmd list has NOT executed the copy.
-		//
-		//			  The buffer can be released after the caller knows the copy has been made.
+			const HRESULT deviceRemovedReason = Device->GetDeviceRemovedReason();
+			THROW_ON_FAILURE(deviceRemovedReason);
+
+			// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
+			//			  because the cmd list has NOT executed the copy.
+			//
+			//			  The buffer can be released after the caller knows the copy has been made.
+		}
+
+		
 		return defaultBuffer;
 	}
 

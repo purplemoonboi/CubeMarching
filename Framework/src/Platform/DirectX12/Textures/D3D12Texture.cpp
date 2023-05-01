@@ -199,6 +199,14 @@ namespace Engine
 		D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
+	void D3D12Texture::Destroy()
+	{
+		GpuResource.Reset();
+		GpuResource = nullptr;
+		UploadBuffer.Reset();
+		UploadBuffer = nullptr;
+	}
+
 	UINT64 D3D12Texture::GetWidth()
 	{
 		return Width;

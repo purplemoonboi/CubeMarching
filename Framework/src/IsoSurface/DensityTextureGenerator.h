@@ -64,14 +64,14 @@ namespace Engine
 
 		void Init(ComputeApi* context, MemoryManager* memManager);
 
-		void PerlinFBM(const PerlinNoiseSettings& noiseSettings, const CSGOperationSettings& csgSettings);
+		void PerlinFBM(const PerlinNoiseSettings& noiseSettings, const CSGOperationSettings& csgSettings, Texture* volume);
 
 		void Smooth(const CSGOperationSettings& settings);
 
 		[[nodiscard]] Texture* GetTexture() const { return ResultTexture; }
 
-		[[nodiscard]] const std::vector<float>& GetRawTexture() const { return RawTexture; }
 
+		void Create(const PerlinNoiseSettings& settings);
 	private:
 		D3D12ComputeApi* ComputeContext = nullptr;
 		D3D12MemoryManager* MemManager = nullptr;
@@ -88,10 +88,8 @@ namespace Engine
 
 		Texture* ResultTexture = nullptr;
 		ScopePointer<Texture> ScalarTexture;
-		ScopePointer<Texture> SecondaryScalarTexture;
 
 
-		std::vector<float> RawTexture;
 
 		void BuildComputeRootSignature();
 

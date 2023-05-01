@@ -11,11 +11,11 @@ unsigned int ExpandBits(unsigned int v)
 
 // Calculates a 30-bit Morton code for the
 // given 3D point located within the unit cube [0,1].
-unsigned int Morton3D(float x, float y, float z)
+unsigned int Morton3D(float x, float y, float z, float r)
 {
-    x = min(max(x * 32.0f, 0.0f), 31.0f);
-    y = min(max(y * 32.0f, 0.0f), 31.0f);
-    z = min(max(z * 32.0f, 0.0f), 31.0f);
+    x = min(max(x * r, 0.0f), r - 1.0f);
+    y = min(max(y * r, 0.0f), r - 1.0f);
+    z = min(max(z * r, 0.0f), r - 1.0f);
     uint xx = ExpandBits((uint) x);
     uint yy = ExpandBits((uint) y);
     uint zz = ExpandBits((uint) z);
@@ -30,5 +30,10 @@ float3 IndexTo3DPoint(uint i, uint w, uint h, uint d)
     
     float3 p = float3(x, y, z);
     return p;
+}
+
+uint PointToIndex(float3 p, uint r)
+{
+    return p.z * r * r + p.y * r + p.x;
 }
 

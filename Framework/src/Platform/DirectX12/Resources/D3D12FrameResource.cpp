@@ -20,15 +20,28 @@ namespace Engine
 	{
 		const auto d3d12Context = dynamic_cast<D3D12Context*>(graphicsContext);
 
+		
 		/**
-		 * Create a command allocator for this resource
+		 * Create a command allocator for this resource.
 		 */
-		const HRESULT cmdAllocResult = d3d12Context->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(CmdListAlloc.GetAddressOf()));
-		THROW_ON_FAILURE(cmdAllocResult);
+		HRESULT hr = d3d12Context->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+			IID_PPV_ARGS(CommandAlloc.GetAddressOf()));
+		THROW_ON_FAILURE(hr);
 
+		/**
+		 * Create a graphics command list for this resource.
+		 */
+		hr = d3d12Context->Device->CreateCommandList(0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			CommandAlloc.Get(),
+			nullptr,
+			IID_PPV_ARGS(GraphicsCommandList.GetAddressOf()));
+		THROW_ON_FAILURE(hr);
 
-		CmdListAlloc->Reset();
+		/*hr = CommandAlloc->Reset();
+		THROW_ON_FAILURE(hr);*/
+		hr = GraphicsCommandList->Close();
+		THROW_ON_FAILURE(hr);
 
 		/**
 		 * Create buffers for this resource

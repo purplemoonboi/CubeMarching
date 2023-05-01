@@ -28,7 +28,7 @@ namespace Engine
 		{
 			const HRESULT hr = DirectX::CreateDDSTextureFromFile12(
 				Context->Device.Get(), 
-				Context->GraphicsCmdList.Get(), 
+				Context->ResourceCommandList.Get(), 
 				fileName.c_str(),
 				resource, uploadHeap
 			);
