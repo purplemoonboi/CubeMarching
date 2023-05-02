@@ -28,23 +28,8 @@ cbuffer cbPerObject : register(b0)
     uint gObjPad2;
 };
 
-cbuffer cbMaterial : register(b1)
-{
-    float4 gDiffuseAlbedo;
-    float3 gFresnelR0;
-    float gRoughness;
-    float4x4 gMatTransform;
-    int DiffuseMapIndex;
-    int NormalMapIndex;
-    int RoughMapIndex;
-    int AoMapIndex;
-    int HeighMapIndex;
-    uint gWire;
-    uint2 Pad;
-};
-
 // Constant data that varies per material.
-cbuffer cbPass : register(b2)
+cbuffer cbPass : register(b1)
 {
     float4x4 gView;
     float4x4 gInvView;
@@ -52,6 +37,7 @@ cbuffer cbPass : register(b2)
     float4x4 gInvProj;
     float4x4 gViewProj;
     float4x4 gInvViewProj;
+    float4x4 gShadowTransform;
     float3 gEyePosW;
     float cbPerObjectPad1;
     float2 gRenderTargetSize;
@@ -65,12 +51,12 @@ cbuffer cbPass : register(b2)
 };
 
 // space 0
-Texture2D gTextureMaps[6]               : register(t0);
-//TextureCube gCubeMap : register(t0);
-
+TextureCube gCubeMap : register(t0);
+Texture2D gShadowMap : register(t1);
+Texture2D gTextureMaps[6]               : register(t2);
 
 // space 1
-
+StructuredBuffer<MaterialData> gMaterials   : register(t0, space1);
 
 SamplerState PointWrapSampler           : register(s0);
 SamplerState PointClampSampler          : register(s1);
@@ -78,6 +64,7 @@ SamplerState LinearWrapSampler          : register(s2);
 SamplerState LinearClampSampler         : register(s3);
 SamplerState AnisotropicWrapSampler     : register(s4);
 SamplerState AnisotropicClampSampler    : register(s5);
+SamplerComparisonState ShadowSampler    : register(s6);
 
 float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, float3 tangentW)
 {

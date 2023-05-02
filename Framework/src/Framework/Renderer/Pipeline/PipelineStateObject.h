@@ -26,17 +26,23 @@ namespace Engine
 		virtual ~PipelineStateObject() = default;
 
 
-		static ScopePointer<PipelineStateObject> Create
+		static ScopePointer<PipelineStateObject> CreateSkyPso
 		(
 			GraphicsContext* graphicsContext,
-			const std::string& vertexShader,
-			const std::string& pixelShader,
-			const BufferLayout& layout,
-			FillMode fillMode = FillMode::Opaque
+			Shader* vertexShader,
+			Shader* pixelShader
+		);
+
+		static ScopePointer<PipelineStateObject> CreateShadowPso
+		(
+			GraphicsContext* graphicsContext,
+			Shader* vertexShader,
+			Shader* pixelShader,
+			const BufferLayout& layout
 		);
 
 
-		static ScopePointer<PipelineStateObject> Create
+		static ScopePointer<PipelineStateObject> CreatePso
 		(
 			GraphicsContext* graphicsContext,
 			Shader* vertexShader,
@@ -46,7 +52,7 @@ namespace Engine
 		);
 
 
-		static ScopePointer<PipelineStateObject> Create
+		static ScopePointer<PipelineStateObject> CreateComputePso
 		(
 			ComputeApi* computeContext,
 			Shader* computeShader,

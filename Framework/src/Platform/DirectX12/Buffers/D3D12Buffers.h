@@ -10,6 +10,7 @@
 
 namespace Engine
 {
+	class RenderTarget;
 	struct WorldSettings;
 
 	// Using namespace
@@ -124,7 +125,7 @@ namespace Engine
 	};
 
 
-	class D3D12ResourceBuffer //: public ResourceBuffer
+	class D3D12ResourceBuffer 
 	{
 	public:
 
@@ -139,26 +140,25 @@ namespace Engine
 		~D3D12ResourceBuffer()  = default;
 
 
-		//void RegisterRenderItem();
-
 		void UpdatePassBuffer(
 			D3D12FrameResource* resource,
 			const WorldSettings& settings,
 			const MainCamera& camera, 
-			const float deltaTime, 
-			const float elapsedTime, 
+			float deltaTime, 
+			float elapsedTime, 
 			bool wireframe
 		) ;
+		void UpdateShadowTransforms(float deltaTime, WorldSettings& settings);
+		void UpdateShadowPassBuffer(float deltaTime, D3D12FrameResource* frameResource, WorldSettings& settings, RenderTarget* shadowMap);
+
 
 		void UpdateVoxelTerrain(D3D12FrameResource* resource, RenderItem* terrain);
-
-		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems) ;
-
-		void UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials) ;
-
 		void UpdateVoxelTerrainBuffer(D3D12FrameResource* resource, RenderItem* terrain, const std::vector<Vertex>& vertices);
 
-		const INT32 GetCount() const ;
+		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems) ;
+		void UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials) ;
+
+		INT32 GetCount() const ;
 
 		INT32 IsosurfaceVertexCount = 0;
 
@@ -167,6 +167,9 @@ namespace Engine
 
 		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.
 		PassConstants MainPassConstantBuffer;
+
+		// @brief - Shadow pass buffer
+		PassConstants ShadowPassConstantBuffer;
 
 		INT32 ObjectCount = 0;
 

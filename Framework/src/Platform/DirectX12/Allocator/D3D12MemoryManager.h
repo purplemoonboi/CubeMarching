@@ -49,8 +49,8 @@ namespace Engine
 
 		[[nodiscard]] const ImGuiHandles* GetImGuiHandles() const { return &ImGuiHandles; }
 
-		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetConstantBufferViewCpu() const;
-		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetConstantBufferViewGpu() const;
+		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetConstantBufferHandle() const;
+		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetConstantBufferGpuHandle() const;
 
 		[[nodiscard]] UINT GetPassBufferOffset() const { return PassBufferOffsetSize; }
 

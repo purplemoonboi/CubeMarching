@@ -28,7 +28,7 @@ namespace Engine
 
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
 
-		void BindDepthPass() override;
+		void BindDepthPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
 
 		void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain) override;
 
@@ -51,7 +51,7 @@ namespace Engine
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
 			RenderItem* terrain,
-			const WorldSettings& settings,
+			WorldSettings& settings,
 			const MainCamera& camera,
 			float deltaTime,
 			float elapsedTime,
@@ -92,6 +92,8 @@ namespace Engine
 		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
 		// Custom render buffer
 		ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
+
+		ScopePointer<D3D12RenderTarget> ShadowMap = nullptr;
 		
 		// A unique pointer to the Api's memory allocator class.
 		ScopePointer<D3D12MemoryManager> D3D12MemoryManager = nullptr;

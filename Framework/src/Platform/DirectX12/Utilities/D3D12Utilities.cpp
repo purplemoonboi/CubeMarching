@@ -2,7 +2,7 @@
 #include "Framework/Core/Core.h"
 #include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
-
+#include "Platform/DirectX12/_D3D12ConstantExpressions/D3D12ConstantExpressions.h"
 
 namespace Engine
 {
@@ -21,20 +21,20 @@ namespace Engine
 		const D3D12_RENDER_TARGET_VIEW_DESC* desc
 	)
 	{
-		auto start = Context->RtvHeap->GetCPUDescriptorHandleForHeapStart();
-		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(start, 2, Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		D3D12_CLEAR_VALUE clearVal = {};
-		clearVal.Color[0] = DirectX::Colors::SandyBrown[0];
-		clearVal.Color[1] = DirectX::Colors::SandyBrown[1];
-		clearVal.Color[2] = DirectX::Colors::SandyBrown[2];
-		clearVal.Color[3] = DirectX::Colors::SandyBrown[3];
-		clearVal.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		
-		Context->Device->CreateRenderTargetView(resource, nullptr, handle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceRemovedReason);
-		return handle;
+		const auto start = Context->RtvHeap->GetCPUDescriptorHandleForHeapStart();
+		if(Context->ValidRtvDescriptors < RTV_HEAP_DESC_COUNT)
+		{
+			const auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(start, ++Context->ValidRtvDescriptors, Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+			
+			Context->Device->CreateRenderTargetView(resource, nullptr, handle);
+			const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+			THROW_ON_FAILURE(deviceRemovedReason);
+			return handle;
+
+		}
+
+		return {};
 	}
 
 	HRESULT D3D12Utils::RefreshRenderTargetView(
@@ -46,6 +46,42 @@ namespace Engine
 		Context->Device->CreateRenderTargetView(resource, desc, cpuHandle);
 		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
 		return deviceRemovedReason;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE D3D12Utils::CreateDepthStencilView(ID3D12Resource* resource)
+	{
+		const auto start = Context->DsvHeap->GetCPUDescriptorHandleForHeapStart();
+
+		if(Context->ValidDsvDescriptors < DSV_HEAP_DESC_COUNT)
+		{
+			const auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(start, ++Context->ValidDsvDescriptors, Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV));
+
+			// Create DSV to resource so we can render to the shadow map.
+			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+			dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+			dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			dsvDesc.Texture2D.MipSlice = 0;
+			Context->Device->CreateDepthStencilView(resource, &dsvDesc, handle);
+			return handle;
+		}
+
+		return {};
+	}
+
+	HRESULT D3D12Utils::RefreshDepthStencilView
+	(
+		ID3D12Resource* resource, 
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
+	)
+	{
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		dsvDesc.Texture2D.MipSlice = 0;
+		Context->Device->CreateDepthStencilView(resource, &dsvDesc, cpuHandle);
+		return S_OK;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Utils::CreateShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, ID3D12Resource* resource)

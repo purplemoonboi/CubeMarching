@@ -283,8 +283,8 @@ namespace Engine
 
 	void DualContouring::BuildDualContourPipelineStates()
 	{
-		GenerateVerticesPso = PipelineStateObject::Create(ComputeContext, GenerateVerticesShader.get(), RootSignature);
-		GenerateTrianglePso = PipelineStateObject::Create(ComputeContext, GenerateTriangleShader.get(), RootSignature);
+		GenerateVerticesPso = PipelineStateObject::CreateComputePso(ComputeContext, GenerateVerticesShader.get(), RootSignature);
+		GenerateTrianglePso = PipelineStateObject::CreateComputePso(ComputeContext, GenerateTriangleShader.get(), RootSignature);
 
 	}
 

@@ -79,14 +79,38 @@ namespace Engine
 	{
 		const auto api = RenderInstruction::GetApiPtr();
 
+		D3D_SHADER_MACRO alphaTestDefines[] =
+		{
+			"ALPHA_TEST", "1",
+			NULL, NULL
+		};
+
 		/** build and compile shaders */
 		auto vS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "VS", "vs_5_1");
 		auto pS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "PS", "ps_5_1");
 		auto pTS = Shader::Create(L"assets\\shaders\\TerrainPS.hlsl", "PS", "ps_5_1");
 
-		RenderData.ShaderLibrary.Add("vs", std::move(vS));
-		RenderData.ShaderLibrary.Add("ps", std::move(pS));
-		RenderData.ShaderLibrary.Add("tps", std::move(pTS));
+		auto vSh = Shader::Create(L"assets\\shaders\\Shadows.hlsl", "VS", "vs_5_1");
+		auto pSh = Shader::Create(L"assets\\shaders\\Shadows.hlsl", "PS", "ps_5_1");
+		auto pShAl = Shader::Create(L"assets\\shaders\\Shadows.hlsl", "PS", "ps_5_1", alphaTestDefines);
+
+		auto vSd = Shader::Create(L"assets\\shaders\\ShadowDebug.hlsl","VS", "vs_5_1");
+		auto pSd = Shader::Create(L"assets\\shaders\\ShadowDebug.hlsl","PS", "ps_5_1");
+
+		auto vSk = Shader::Create(L"assets\\shaders\\Sky.hlsl","VS", "vs_5_1");
+		auto pSk = Shader::Create(L"assets\\shaders\\Sky.hlsl","PS", "ps_5_1");
+
+
+		RenderData.ShaderLibrary.Add("vDefault", std::move(vS));
+		RenderData.ShaderLibrary.Add("pAlbedo", std::move(pS));
+		RenderData.ShaderLibrary.Add("pTerrain", std::move(pTS));
+		RenderData.ShaderLibrary.Add("vShadow", std::move(vSh));
+		RenderData.ShaderLibrary.Add("pShadow", std::move(pSh));
+		RenderData.ShaderLibrary.Add("paShadow", std::move(pShAl));
+		RenderData.ShaderLibrary.Add("vdShadow", std::move(vSd));
+		RenderData.ShaderLibrary.Add("pdShadow", std::move(pSd));
+		RenderData.ShaderLibrary.Add("vSky", std::move(vSk));
+		RenderData.ShaderLibrary.Add("pSky", std::move(pSk));
 
 		const BufferLayout layout =
 		{
@@ -96,33 +120,62 @@ namespace Engine
 			{"TEXCOORD",	ShaderDataType::Float2, 32, 3},
 		};
 
+		const BufferLayout shadowLayout =
+		{
+			{"POSITION",	ShaderDataType::Float3, 0,  0},
+			{"TEXCOORD",	ShaderDataType::Float2, 12, 1},
+		};
+
 		BuildTextures();
 		BuildMaterials();
 
 		/** build the pipeline state objects */
-		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
+		RenderData.PSOs.emplace("Opaque", PipelineStateObject::CreatePso
 		(
 			api->GetGraphicsContext(),
-			RenderData.ShaderLibrary.GetShader("vs"),
-			RenderData.ShaderLibrary.GetShader("ps"),
+			RenderData.ShaderLibrary.GetShader("vDefault"),
+			RenderData.ShaderLibrary.GetShader("pAlbedo"),
 			layout,
 			FillMode::Opaque
 		));
 
-		RenderData.PSOs.emplace("Terrain", PipelineStateObject::Create
+		RenderData.PSOs.emplace("Terrain", PipelineStateObject::CreatePso
 		(
 			api->GetGraphicsContext(),
-			RenderData.ShaderLibrary.GetShader("vs"),
-			RenderData.ShaderLibrary.GetShader("tps"),
+			RenderData.ShaderLibrary.GetShader("vDefault"),
+			RenderData.ShaderLibrary.GetShader("pTerrain"),
 			layout,
 			FillMode::Opaque
 		));
 
-		RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
+		RenderData.PSOs.emplace("Shadow", PipelineStateObject::CreateShadowPso
 		(
 			api->GetGraphicsContext(),
-			RenderData.ShaderLibrary.GetShader("vs"),
-			RenderData.ShaderLibrary.GetShader("ps"),
+			RenderData.ShaderLibrary.GetShader("vShadow"),
+			RenderData.ShaderLibrary.GetShader("pShadow"),
+			shadowLayout)
+		);
+
+		RenderData.PSOs.emplace("ShadowDebug", PipelineStateObject::CreateShadowPso
+		(
+			api->GetGraphicsContext(),
+			RenderData.ShaderLibrary.GetShader("vdShadow"),
+			RenderData.ShaderLibrary.GetShader("pdShadow"),
+			shadowLayout
+		));
+
+		RenderData.PSOs.emplace("Sky", PipelineStateObject::CreateSkyPso
+		(
+			api->GetGraphicsContext(),
+			RenderData.ShaderLibrary.GetShader("vSky"),
+			RenderData.ShaderLibrary.GetShader("pSky")
+		));
+
+		RenderData.PSOs.emplace("Wire", PipelineStateObject::CreatePso
+		(
+			api->GetGraphicsContext(),
+			RenderData.ShaderLibrary.GetShader("vDefault"),
+			RenderData.ShaderLibrary.GetShader("pAlbedo"),
 			layout,
 			FillMode::WireFrame
 		));
@@ -163,7 +216,7 @@ namespace Engine
 	void Renderer3D::Shutdown()
 	{}
 
-	void Renderer3D::BeginScene(const MainCamera& cam, const WorldSettings& settings, const float deltaTime, bool wireframe, const float elapsedTime)
+	void Renderer3D::BeginScene(const MainCamera& cam, WorldSettings& settings, const float deltaTime, bool wireframe, const float elapsedTime)
 	{
 		
 		/*
@@ -185,8 +238,11 @@ namespace Engine
 
 		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
 		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
+		auto* spso = RenderData.PSOs["Shadow"].get();
 
-		RenderInstruction::BindTerrainPass(tpso, RenderData.Terrain.get());
+		RenderInstruction::BindShadowPass(spso, RenderData.OpaqueRenderItems);
+
+		//RenderInstruction::BindTerrainPass(tpso, RenderData.Terrain.get());
 
 		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}

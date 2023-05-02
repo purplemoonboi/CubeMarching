@@ -43,7 +43,8 @@ namespace Engine
 		DsvDescriptorSize = Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 		RtvDescriptorSize = Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-		
+		Context->ValidRtvDescriptors = 2;
+		Context->ValidDsvDescriptors = 1;
 
 	}
 

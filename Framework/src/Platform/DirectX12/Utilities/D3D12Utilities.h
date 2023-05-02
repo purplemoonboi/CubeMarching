@@ -16,6 +16,10 @@ namespace Engine
 		static D3D12_CPU_DESCRIPTOR_HANDLE CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc);
 		static HRESULT RefreshRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc,D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
 
+		static D3D12_CPU_DESCRIPTOR_HANDLE CreateDepthStencilView(ID3D12Resource* resource);
+		static HRESULT RefreshDepthStencilView(ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
+
+
 		static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, ID3D12Resource* resource);
 		static D3D12_GPU_DESCRIPTOR_HANDLE CreateShaderResourceView(
 			const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, 

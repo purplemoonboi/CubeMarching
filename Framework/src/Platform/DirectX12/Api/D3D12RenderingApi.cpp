@@ -60,17 +60,19 @@ namespace Engine
 
 		std::vector<INT8> bytes;
 		bytes.insert(bytes.begin(), viewportWidth * viewportHeight, 0);
-		RenderTarget = CreateScope<D3D12RenderTarget>(bytes.data(), viewportWidth, viewportHeight);
+		RenderTarget = CreateScope<D3D12RenderTarget>(bytes.data(), viewportWidth, viewportHeight, TextureFormat::RGBA_UINT_UNORM);
 
-		constexpr UINT32 maxObjCount = 16;
-		constexpr UINT32 maxMatCount = 16;
+		ShadowMap = CreateScope<D3D12RenderTarget>(nullptr, 2048, 2048);
+
+		constexpr UINT32 maxObjCount = 12;
+		constexpr UINT32 maxMatCount = 12;
 
 		for (int i = 0; i < NUMBER_OF_FRAME_RESOURCES; ++i)
 		{
 			FrameResources.push_back(CreateScope<D3D12FrameResource>
 			(
 				Context,
-				1,
+				2,
 				maxMatCount,
 				maxObjCount,
 				1
@@ -127,7 +129,7 @@ namespace Engine
 	void D3D12RenderingApi::PreRender(
 		const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
 		RenderItem* terrain,
-		const WorldSettings& settings,
+		WorldSettings& settings,
 		const MainCamera& camera,
 		float deltaTime,
 		float elapsedTime,
@@ -169,12 +171,9 @@ namespace Engine
 				UploadBuffer->UpdateVoxelTerrain(CurrentFrameResource, terrain);
 			}
 		}
-		
-		
-				
-		
-
 		// Update constant buffers for each render item and material
+		UploadBuffer->UpdateShadowTransforms(deltaTime, settings);
+		UploadBuffer->UpdateShadowPassBuffer(deltaTime, CurrentFrameResource, settings, ShadowMap.get());
 		UploadBuffer->UpdateObjectBuffers(CurrentFrameResource, items);
 		UploadBuffer->UpdateMaterialBuffers(CurrentFrameResource, materials);
 		UploadBuffer->UpdatePassBuffer(CurrentFrameResource, settings, camera, deltaTime, elapsedTime, wireframe);
@@ -221,46 +220,55 @@ namespace Engine
 		const HRESULT cmdListBeginRender = CurrentFrameResource->GraphicsCommandList->Reset(CurrentFrameResource->CommandAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(cmdListBeginRender);
 
-		//RenderTarget->Bind(Context);
 
-		CurrentFrameResource->GraphicsCommandList->RSSetViewports(1, &RenderTarget->Viewport);
-		CurrentFrameResource->GraphicsCommandList->RSSetScissorRects(1, &RenderTarget->Rect);
-
-		// Change offscreen texture to be used as a a render target output.
-		CurrentFrameResource->GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
-			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-
-		/* Bind the shader root signature */
+			/* Bind the shader root signature */
 		CurrentFrameResource->GraphicsCommandList->SetGraphicsRootSignature(Context->RootSignature.Get());
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { D3D12MemoryManager->GetShaderResourceDescHeap() };
 		CurrentFrameResource->GraphicsCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-		// Specify the buffers we are going to render to.
-		CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv,
-			true, &FrameBuffer->GetDepthStencilViewCpu());
-		
-
-		// Clear the back buffer and depth buffer.
-		CurrentFrameResource->GraphicsCommandList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
-		CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
-		CurrentFrameResource->GraphicsCommandList->SetGraphicsRootConstantBufferView(2, passBufferAddress);
-
 		// We can bind all textures in the scene - we declared 'n' amount of descriptors in the root signature.
 		CurrentFrameResource->GraphicsCommandList->SetGraphicsRootDescriptorTable(3,
 			D3D12MemoryManager->GetShaderResourceDescHeap()->GetGPUDescriptorHandleForHeapStart());
-
 
 	}
 
 	void D3D12RenderingApi::PostRender()
 	{}
 
-	void D3D12RenderingApi::BindDepthPass()
+	void D3D12RenderingApi::BindDepthPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 	{
+		CurrentFrameResource->GraphicsCommandList->RSSetViewports(1, &ShadowMap->Viewport);
+		CurrentFrameResource->GraphicsCommandList->RSSetScissorRects(1, &ShadowMap->Rect);
+
+		// Change to DEPTH_WRITE.
+		CurrentFrameResource->GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(ShadowMap->GpuResource.Get(),
+			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+
+		const UINT size = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
+
+		// Clear the back buffer and depth buffer.
+		CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(ShadowMap->ResourceCpuDsv,
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		// Set null render target because we are only going to draw to
+		// depth buffer.  Setting a null render target will disable color writes.
+		// Note the active PSO also must specify a render target count of 0.
+		CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(0, nullptr, false, &ShadowMap->ResourceCpuDsv);
+
+		// Bind the pass constant buffer for the shadow map pass.
+		auto passCB = CurrentFrameResource->PassBuffer->Resource();
+		D3D12_GPU_VIRTUAL_ADDRESS passCBAddress = passCB->GetGPUVirtualAddress() + 1 * size;
+		CurrentFrameResource->GraphicsCommandList->SetGraphicsRootConstantBufferView(1, passCBAddress);
+
+		auto d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
+		CurrentFrameResource->GraphicsCommandList->SetPipelineState(d3d12Pso->GetPipelineState());
+
+		BindStaticGeoPass(nullptr, renderItems);
+
+		// Change back to GENERIC_READ so we can read the texture in a shader.
+			CurrentFrameResource->GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(ShadowMap->GpuResource.Get(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ));
 	}
 
 	void D3D12RenderingApi::BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
@@ -307,37 +315,64 @@ namespace Engine
 
 	void D3D12RenderingApi::BindStaticGeoPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 	{
-		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		CurrentFrameResource->GraphicsCommandList->SetPipelineState(dx12Pso->GetPipelineState());
-		
-		
+
+		if(pso != nullptr)
+		{
+			const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
+			CurrentFrameResource->GraphicsCommandList->SetPipelineState(dx12Pso->GetPipelineState());
+
+			CurrentFrameResource->GraphicsCommandList->RSSetViewports(1, &RenderTarget->Viewport);
+			CurrentFrameResource->GraphicsCommandList->RSSetScissorRects(1, &RenderTarget->Rect);
+
+			// Change offscreen texture to be used as a a render target output.
+			CurrentFrameResource->GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
+				D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+
+			// Specify the buffers we are going to render to.
+			CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(1, &RenderTarget->ResourceCpuRtv,
+				true, &FrameBuffer->GetDepthStencilViewCpu());
+
+			// Clear the back buffer and depth buffer.
+			CurrentFrameResource->GraphicsCommandList->ClearRenderTargetView(RenderTarget->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
+			CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+			const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = CurrentFrameResource->PassBuffer->Resource()->GetGPUVirtualAddress();
+			CurrentFrameResource->GraphicsCommandList->SetGraphicsRootConstantBufferView(1, passBufferAddress);
+
+		}
+
 		// For each render item...
 		for (auto& renderItem : renderItems)
 		{
+			const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(renderItem);
+			const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
+			const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
-			if(renderItem->Geometry->GetName() != "Voxel")
+			CurrentFrameResource->GraphicsCommandList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
+			CurrentFrameResource->GraphicsCommandList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
+			CurrentFrameResource->GraphicsCommandList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
+
+			const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
+
+			ID3D12Resource* objectConstantBuffer = CurrentFrameResource->ConstantBuffer->Resource();
+
+			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
+
+			CurrentFrameResource->GraphicsCommandList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+
+			if (renderItem->Geometry->GetName() == "VoxelTerrain")
 			{
-				const auto renderItemDerived = dynamic_cast<D3D12RenderItem*>(renderItem);
-				const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
-				const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
-
-				CurrentFrameResource->GraphicsCommandList->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
-				CurrentFrameResource->GraphicsCommandList->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
-				CurrentFrameResource->GraphicsCommandList->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
-
-				const UINT objConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
-				const UINT matConstBufferByteSize = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
-
-				ID3D12Resource* objectConstantBuffer = CurrentFrameResource->ConstantBuffer->Resource();
-				ID3D12Resource* materialConstantBuffer = CurrentFrameResource->MaterialBuffer->Resource();
-
-				const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
-				const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetMaterialIndex() * matConstBufferByteSize;
-
-				CurrentFrameResource->GraphicsCommandList->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
-				CurrentFrameResource->GraphicsCommandList->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
-
-
+				CurrentFrameResource->GraphicsCommandList->DrawInstanced
+				(
+					renderItem->Geometry->VertexBuffer->GetCount(),
+					1,
+					renderItem->StartIndexLocation,
+					renderItem->BaseVertexLocation
+				);
+			}
+			else
+			{
 				CurrentFrameResource->GraphicsCommandList->DrawIndexedInstanced
 				(
 					renderItem->Geometry->IndexBuffer->GetCount(),
@@ -346,23 +381,16 @@ namespace Engine
 					renderItem->BaseVertexLocation,
 					0
 				);
-
 			}
-
-			
-			
 
 		}
 
-		// Change offscreen texture to be used as a a render target output.
-		CurrentFrameResource->GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
-
-
-			//RenderTarget->UnBind(Context);
-
-		const HRESULT deviceHr = Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceHr);
+		if (pso != nullptr)
+		{
+			// Change offscreen texture to be used as a a render target output.
+			CurrentFrameResource->GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(RenderTarget->GpuResource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+		}
 
 	}
 

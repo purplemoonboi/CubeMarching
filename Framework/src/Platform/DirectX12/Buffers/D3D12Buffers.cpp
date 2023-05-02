@@ -12,6 +12,8 @@
 
 #include <ppl.h>
 
+#include "Framework/Renderer/Textures/RenderTarget.h"
+
 namespace Engine
 {
 	using namespace DirectX;
@@ -269,7 +271,7 @@ namespace Engine
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferHandle());
 				handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
@@ -290,7 +292,7 @@ namespace Engine
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
-				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferHandle());
 				handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
@@ -307,7 +309,7 @@ namespace Engine
 
 			const UINT32 heapIndex = memoryManager->GetPassBufferOffset() + frameIndex;
 
-			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferHandle());
 			handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
 
 			D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
@@ -351,8 +353,8 @@ namespace Engine
 		MainPassConstantBuffer.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
 		MainPassConstantBuffer.NearZ = 1.0f;
 		MainPassConstantBuffer.FarZ = 1000.0f;
-		MainPassConstantBuffer.AmbientLight = { settings.SunColour[0], settings.SunColour[1], settings.SunColour[2], settings.SunColour[3] };
-		MainPassConstantBuffer.Lights[0].Direction = { settings.SunDirection[0], settings.SunDirection[1], settings.SunDirection[2] };
+		MainPassConstantBuffer.AmbientLight = { settings.SunColour.x, settings.SunColour.y, settings.SunColour.z, settings.SunColour.w };
+		MainPassConstantBuffer.Lights[0].Direction = { settings.SunDirection.x, settings.SunDirection.y, settings.SunDirection.z };
 		MainPassConstantBuffer.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
 		MainPassConstantBuffer.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 		MainPassConstantBuffer.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
@@ -363,6 +365,86 @@ namespace Engine
 
 		const auto currentPassCB = resource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
+	}
+
+	void D3D12ResourceBuffer::UpdateShadowTransforms
+	(
+		float deltaTime, 
+		WorldSettings& settings
+	)
+	{
+		// Update sun rotation (user controlled for now)
+		XMMATRIX R = XMMatrixRotationY(settings.SunRotationAngle);
+		XMVECTOR lightDir = XMLoadFloat3(&settings.SunDirection);
+		lightDir = XMVector3TransformNormal(lightDir, R);
+		XMStoreFloat3(&settings.SunDirection, lightDir);
+
+		CXMVECTOR lightPos = -2.0f * settings.SceneBounds.Radius * lightDir;
+		CXMVECTOR targetPos = XMLoadFloat3(&settings.SceneBounds.Center);
+		CXMVECTOR lightUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		CXMMATRIX lightView = XMMatrixLookAtLH(lightPos, targetPos, lightUp);
+
+		XMStoreFloat3(&settings.SunPosition, lightPos);
+
+		// Transform bounding sphere to light space.
+		XMFLOAT3 sphereCenterLS;
+		XMStoreFloat3(&sphereCenterLS, XMVector3TransformCoord(targetPos, lightView));
+
+		// Ortho frustum in light space encloses scene.
+		float l = sphereCenterLS.x - settings.SceneBounds.Radius;
+		float b = sphereCenterLS.y - settings.SceneBounds.Radius;
+		float n = sphereCenterLS.z - settings.SceneBounds.Radius;
+		float r = sphereCenterLS.x + settings.SceneBounds.Radius;
+		float t = sphereCenterLS.y + settings.SceneBounds.Radius;
+		float f = sphereCenterLS.z + settings.SceneBounds.Radius;
+
+		settings.SunNear = n;
+		settings.SunFar  = f;
+		XMMATRIX lightProj = XMMatrixOrthographicOffCenterLH(l, r, b, t, n, f);
+
+		// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
+		XMMATRIX T(
+			0.5f, 0.0f, 0.0f, 0.0f,
+			0.0f, -0.5f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.5f, 0.5f, 0.0f, 1.0f);
+
+		XMMATRIX S = lightView * lightProj * T;
+		XMStoreFloat4x4(&settings.SunView, lightView);
+		XMStoreFloat4x4(&settings.SunProjection, lightProj);
+		XMStoreFloat4x4(&settings.SunShadowTransform, S);
+	}
+
+	void D3D12ResourceBuffer::UpdateShadowPassBuffer(float deltaTime, D3D12FrameResource* frameResource, WorldSettings& settings, RenderTarget* shadowMap)
+	{
+
+
+		XMMATRIX view = XMLoadFloat4x4(&settings.SunView);
+		XMMATRIX proj = XMLoadFloat4x4(&settings.SunProjection);
+
+		XMMATRIX viewProj = XMMatrixMultiply(view, proj);
+		XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(view), view);
+		XMMATRIX invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
+		XMMATRIX invViewProj = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
+
+		UINT w = shadowMap->GetWidth();
+		UINT h = shadowMap->GetHeight();
+
+		XMStoreFloat4x4(&ShadowPassConstantBuffer.View, XMMatrixTranspose(view));
+		XMStoreFloat4x4(&ShadowPassConstantBuffer.InvView, XMMatrixTranspose(invView));
+		XMStoreFloat4x4(&ShadowPassConstantBuffer.Proj, XMMatrixTranspose(proj));
+		XMStoreFloat4x4(&ShadowPassConstantBuffer.InvProj, XMMatrixTranspose(invProj));
+		XMStoreFloat4x4(&ShadowPassConstantBuffer.ViewProj, XMMatrixTranspose(viewProj));
+		XMStoreFloat4x4(&ShadowPassConstantBuffer.InvViewProj, XMMatrixTranspose(invViewProj));
+		ShadowPassConstantBuffer.EyePosW = settings.SunPosition;
+		ShadowPassConstantBuffer.RenderTargetSize = XMFLOAT2((float)w, (float)h);
+		ShadowPassConstantBuffer.InvRenderTargetSize = XMFLOAT2(1.0f / w, 1.0f / h);
+		ShadowPassConstantBuffer.NearZ = settings.SunNear;
+		ShadowPassConstantBuffer.FarZ = settings.SunFar;
+
+		auto currPassCB = frameResource->PassBuffer.get();
+		currPassCB->CopyData(1, ShadowPassConstantBuffer);
+
 	}
 
 	void D3D12ResourceBuffer::UpdateVoxelTerrain(D3D12FrameResource* resource, RenderItem* terrain)
@@ -484,7 +566,7 @@ namespace Engine
 	}
 
 
-	const INT32 D3D12ResourceBuffer::GetCount() const
+	INT32 D3D12ResourceBuffer::GetCount() const
 	{
 
 		return IsosurfaceVertexCount;

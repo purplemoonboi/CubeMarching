@@ -273,7 +273,7 @@ namespace Engine
 	{
 		// Resource 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-		rtvHeapDesc.NumDescriptors = SWAP_CHAIN_BUFFER_COUNT + 1;
+		rtvHeapDesc.NumDescriptors = SWAP_CHAIN_BUFFER_COUNT + RTV_HEAP_DESC_COUNT;
 		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		rtvHeapDesc.NodeMask = 0;
@@ -286,7 +286,7 @@ namespace Engine
 
 		// Depth stencil
 		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-		dsvHeapDesc.NumDescriptors = 1;
+		dsvHeapDesc.NumDescriptors = DSV_HEAP_DESC_COUNT;
 		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		dsvHeapDesc.NodeMask = 0;
@@ -303,22 +303,27 @@ namespace Engine
 	bool D3D12Context::CreateRootSignature()
 	{
 		CD3DX12_DESCRIPTOR_RANGE textureTable0;
-		textureTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0); // register t0
+		textureTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0); // register t0...t1
+
+		CD3DX12_DESCRIPTOR_RANGE textureTable1;
+		textureTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 2, 0); // register t2
+
 
 		// Root parameter can be a table, root descriptor or root constants.
-		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
 
 		slotRootParameter[0].InitAsConstantBufferView(0);// register b0
 		slotRootParameter[1].InitAsConstantBufferView(1);// register b1
-		slotRootParameter[2].InitAsConstantBufferView(2);// register b2
+		slotRootParameter[2].InitAsShaderResourceView(0, 1);
 		slotRootParameter[3].InitAsDescriptorTable(1, &textureTable0, D3D12_SHADER_VISIBILITY_PIXEL);
+		slotRootParameter[4].InitAsDescriptorTable(1, &textureTable1, D3D12_SHADER_VISIBILITY_PIXEL);
 
 		const auto samplers = GetStaticSamplers();
 
 		// A root signature is an array of root parameters.
 		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
 		(
-			4, slotRootParameter,
+			5, slotRootParameter,
 			samplers.size(), samplers.data(),
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		);
@@ -388,7 +393,7 @@ namespace Engine
 	}
 
 
-	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> D3D12Context::GetStaticSamplers()
+	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> D3D12Context::GetStaticSamplers()
 	{
 		// Applications usually only need a handful of samplers.  So just define them all up front
 	// and keep them available as part of the root signature.  
@@ -439,10 +444,21 @@ namespace Engine
 			0.0f,                              // mipLODBias
 			8);                                // maxAnisotropy
 
+		const CD3DX12_STATIC_SAMPLER_DESC shadow(
+			6, // shaderRegister
+			D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressW
+			0.0f,                               // mipLODBias
+			16,                                 // maxAnisotropy
+			D3D12_COMPARISON_FUNC_LESS_EQUAL,
+			D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK);
+
 		return {
 			pointWrap, pointClamp,
 			linearWrap, linearClamp,
-			anisotropicWrap, anisotropicClamp };
+			anisotropicWrap, anisotropicClamp, shadow };
 	}
 
 

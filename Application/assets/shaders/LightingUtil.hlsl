@@ -17,12 +17,23 @@ struct Light
     float Pad;
 };
 
+struct MaterialData
+{
+    float4 DiffuseAlbedo;
+    float3 FresnelR0;
+    float Roughness;
+    float4x4 MatTransform;
+    uint DiffuseMapIndex;
+    uint NormalMapIndex;
+    uint MatPad1;
+    uint MatPad2;
+};
+
 struct Material
 {
     float4 DiffuseAlbedo;
     float3 FresnelR0;
     float Shininess;
-
 };
 
 //  Material                F0   (Linear)       F0    (sRGB)

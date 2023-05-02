@@ -398,14 +398,14 @@ namespace Engine
 
 
                 ImGui::End();
-                Settings.SunDirection[0] = dir[0];
-                Settings.SunDirection[1] = dir[1];
-                Settings.SunDirection[2] = dir[2];
+                Settings.SunDirection.x = dir[0];
+                Settings.SunDirection.y = dir[1];
+                Settings.SunDirection.z = dir[2];
 
-                Settings.SunColour[0] = amb[0];
-                Settings.SunColour[1] = amb[1];
-                Settings.SunColour[2] = amb[2];
-                Settings.SunColour[3] = amb[3];
+                Settings.SunColour.x = amb[0];
+                Settings.SunColour.y = amb[1];
+                Settings.SunColour.z = amb[2];
+                Settings.SunColour.w = amb[3];
 
             }
 

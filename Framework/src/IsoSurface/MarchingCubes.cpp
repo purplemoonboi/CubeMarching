@@ -242,7 +242,7 @@ namespace Engine
 
 	void MarchingCubes::BuildPso()
 	{
-		ComputeState = PipelineStateObject::Create(ComputeContext, ComputeShader.get(), ComputeRootSignature);
+		ComputeState = PipelineStateObject::CreateComputePso(ComputeContext, ComputeShader.get(), ComputeRootSignature);
 	}
 
 	#include "Framework/Maths/Perlin.h"

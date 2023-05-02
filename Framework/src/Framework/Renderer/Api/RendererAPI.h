@@ -38,7 +38,7 @@ namespace Engine
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
-		virtual void BindDepthPass() = 0;
+		virtual void BindDepthPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
 
 		virtual void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain) = 0;
 
@@ -61,7 +61,7 @@ namespace Engine
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
 			RenderItem* terrain,
-			const WorldSettings& settings,
+			WorldSettings& settings,
 			const MainCamera& camera,
 			float deltaTime,
 			float elapsedTime,

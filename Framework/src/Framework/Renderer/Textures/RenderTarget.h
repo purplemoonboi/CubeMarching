@@ -17,6 +17,13 @@ namespace Engine
 			TextureFormat format = TextureFormat::RGBA_UINT_UNORM
 		);
 
+		static ScopePointer<RenderTarget> CreateShadowRT
+		(
+			const void* initData,
+			UINT32 width,
+			UINT32 height
+		);
+
 		virtual void Bind(GraphicsContext* context) = 0;
 		virtual void UnBind(GraphicsContext* context) = 0;
 		virtual void OnResize(INT32 width, INT32 height) = 0;

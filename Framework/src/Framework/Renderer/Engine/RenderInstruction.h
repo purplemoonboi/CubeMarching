@@ -32,6 +32,11 @@ namespace Engine
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
+		static void BindShadowPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
+		{
+			RendererApiPtr->BindDepthPass(pso, renderItems);
+		}
+
 		static void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
 		{
 			RendererApiPtr->BindTerrainPass(pso, terrain);
@@ -62,7 +67,7 @@ namespace Engine
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
 			RenderItem* terrain,
 			const MainCamera& camera,
-			const WorldSettings& settings,
+			WorldSettings& settings,
 			float deltaTime,
 			float elapsedTime,
 			bool wireframe

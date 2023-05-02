@@ -24,12 +24,17 @@ namespace Engine
 		D3D12PipelineStateObject
 		(
 			GraphicsContext* graphicsContext,
-			const std::string& vertexShader,
-			const std::string& pixelShader,
-			const BufferLayout& layout,
-			FillMode fillMode
+			Shader* vertexShader,
+			Shader* pixelShader
 		);
 
+		D3D12PipelineStateObject
+		(
+			GraphicsContext* graphicsContext,
+			Shader* vertexShader,
+			Shader* pixelShader,
+			const BufferLayout& layout
+		);
 
 		D3D12PipelineStateObject
 		(

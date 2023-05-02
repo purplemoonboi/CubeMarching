@@ -18,7 +18,8 @@ namespace Engine
 		MipLevels(1),
 		Format(static_cast<DXGI_FORMAT>(format)),
 		RawData(static_cast<BYTE*>(const_cast<void*>(data))),
-		Dimension(D3D12_SRV_DIMENSION_TEXTURE2D)
+		Dimension(D3D12_SRV_DIMENSION_TEXTURE2D),
+		RType(RenderTargetType::Default)
 	{
 
 		GpuResource = D3D12BufferUtils::CreateRenderTexture(Width, Height, Format);
@@ -33,6 +34,42 @@ namespace Engine
 		ResourceSrv = D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get(), ResourceCpuSrv);
 
 		ResourceCpuRtv = D3D12Utils::CreateRenderTargetView(GpuResource.Get(), nullptr);
+
+		Viewport.TopLeftX = 0;
+		Viewport.TopLeftY = 0;
+		Viewport.Width = static_cast<float>(Width);
+		Viewport.Height = static_cast<float>(Height);
+		Viewport.MinDepth = 0.0f;
+		Viewport.MaxDepth = 1.0f;
+
+		Rect = { 0, 0, (INT)Width, (INT)Height };
+	}
+
+	D3D12RenderTarget::D3D12RenderTarget(const void* data, UINT32 width, UINT32 height)
+		:
+		Width(width),
+		Height(height),
+		Depth(1),
+		MipLevels(1),
+		Format(DXGI_FORMAT_R24_UNORM_X8_TYPELESS),
+		RawData(static_cast<BYTE*>(const_cast<void*>(data))),
+		Dimension(D3D12_SRV_DIMENSION_TEXTURE2D),
+		RType(RenderTargetType::ShadowMap)
+	{
+		GpuResource = D3D12BufferUtils::CreateShadowMap(Width, Height);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = Format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.PlaneSlice = 0;
+
+		ResourceSrv = D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get(), ResourceCpuSrv);
+
+		ResourceCpuDsv = D3D12Utils::CreateDepthStencilView(GpuResource.Get());
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
@@ -119,7 +156,15 @@ namespace Engine
 		srvDesc.Texture2D.MipLevels = 1;
 
 		D3D12Utils::RefreshShaderResourceViews(srvDesc, GpuResource.Get(), ResourceCpuSrv);
-		D3D12Utils::RefreshRenderTargetView(GpuResource.Get(), nullptr, ResourceCpuRtv);
+
+		if(RType == RenderTargetType::Default)
+		{
+			D3D12Utils::RefreshRenderTargetView(GpuResource.Get(), nullptr, ResourceCpuRtv);
+		}
+		if(RType == RenderTargetType::ShadowMap)
+		{
+			D3D12Utils::RefreshDepthStencilView(GpuResource.Get(), ResourceCpuDsv);
+		}
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;

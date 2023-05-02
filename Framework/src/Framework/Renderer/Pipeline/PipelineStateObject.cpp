@@ -5,13 +5,11 @@
 
 namespace Engine
 {
-	ScopePointer<PipelineStateObject> PipelineStateObject::Create
+	ScopePointer<PipelineStateObject> PipelineStateObject::CreateSkyPso
 	(
 		GraphicsContext* graphicsContext,
-		const std::string& vertexShader,
-		const std::string& pixelShader,
-		const BufferLayout& layout,
-		FillMode fillMode 
+		Shader* vertexShader,
+		Shader* pixelShader
 	)
 	{
 
@@ -20,13 +18,31 @@ namespace Engine
 		case RendererAPI::Api::None:   CORE_ASSERT(false, "Not a recognised api!");              return nullptr;
 		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!");	 return nullptr;
 		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:   return CreateScope<D3D12PipelineStateObject>(graphicsContext, vertexShader, pixelShader, layout, fillMode);
+		case RendererAPI::Api::DX12:   return CreateScope<D3D12PipelineStateObject>(graphicsContext, vertexShader, pixelShader);
 		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!");     return nullptr;
 		}
 
 	}
 
-	ScopePointer<PipelineStateObject> PipelineStateObject::Create
+	ScopePointer<PipelineStateObject> PipelineStateObject::CreateShadowPso
+	(
+		GraphicsContext* graphicsContext,
+		Shader* vertexShader, Shader* pixelShader, 
+		const BufferLayout& layout
+	)
+	{
+
+		switch (Renderer::GetAPI())
+		{
+		case RendererAPI::Api::None:   CORE_ASSERT(false, "Not a recognised api!");              return nullptr;
+		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!");	 return nullptr;
+		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:   return CreateScope<D3D12PipelineStateObject>(graphicsContext, vertexShader, pixelShader, layout);
+		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!");     return nullptr;
+		}
+	}
+
+	ScopePointer<PipelineStateObject> PipelineStateObject::CreatePso
 	(
 		GraphicsContext* graphicsContext,
 		Shader* vertexShader, 
@@ -45,7 +61,7 @@ namespace Engine
 		}
 	}
 
-	ScopePointer<PipelineStateObject> PipelineStateObject::Create(ComputeApi* computeContext, Shader* computeShader, ComPtr<ID3D12RootSignature> rootSignature)
+	ScopePointer<PipelineStateObject> PipelineStateObject::CreateComputePso(ComputeApi* computeContext, Shader* computeShader, ComPtr<ID3D12RootSignature> rootSignature)
 	{
 		switch (Renderer::GetAPI())
 		{

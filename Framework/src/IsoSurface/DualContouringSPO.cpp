@@ -228,11 +228,11 @@ namespace Engine
 
 	void DualContouringSPO::BuildDualContourPipelineStates()
 	{
-		ComputeMaterialsPso = PipelineStateObject::Create(ComputeContext, ComputeMaterials.get(), RootSignature);
-		ComputeCornersPso	= PipelineStateObject::Create(ComputeContext, ComputeCorners.get(),   RootSignature);
-		ComputeAddLengthPso = PipelineStateObject::Create(ComputeContext, ComputeAddLength.get(), RootSignature);
-		ComputePositionsPso = PipelineStateObject::Create(ComputeContext, ComputePositions.get(), RootSignature);
-		ComputeVoxelsPso	= PipelineStateObject::Create(ComputeContext, ComputeVoxels.get(),	  RootSignature);
+		ComputeMaterialsPso = PipelineStateObject::CreateComputePso(ComputeContext, ComputeMaterials.get(), RootSignature);
+		ComputeCornersPso	= PipelineStateObject::CreateComputePso(ComputeContext, ComputeCorners.get(),   RootSignature);
+		ComputeAddLengthPso = PipelineStateObject::CreateComputePso(ComputeContext, ComputeAddLength.get(), RootSignature);
+		ComputePositionsPso = PipelineStateObject::CreateComputePso(ComputeContext, ComputePositions.get(), RootSignature);
+		ComputeVoxelsPso	= PipelineStateObject::CreateComputePso(ComputeContext, ComputeVoxels.get(),	  RootSignature);
 	}
 
 	void DualContouringSPO::CreateBuffers()

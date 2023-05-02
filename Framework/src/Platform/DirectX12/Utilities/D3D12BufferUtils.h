@@ -64,6 +64,7 @@ namespace Engine
 		);
 
 		static ComPtr<ID3D12Resource> CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format);
+		static ComPtr<ID3D12Resource> CreateShadowMap(INT32 width, INT32 height);
 
 		static ComPtr<ID3D12Resource> CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth);
 

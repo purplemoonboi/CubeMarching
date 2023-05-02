@@ -31,7 +31,7 @@ namespace Engine
 			"cs_5_0"
 		};
 		GenerateVerticesCS = Shader::Create(genVerts.FilePath, genVerts.EntryPoint, genVerts.ShaderModel);
-		GenerateVerticesPso = PipelineStateObject::Create(ComputeContext, GenerateVerticesCS.get(), RootSignature);
+		GenerateVerticesPso = PipelineStateObject::CreateComputePso(ComputeContext, GenerateVerticesCS.get(), RootSignature);
 
 		const ShaderArgs genIndices =
 		{
@@ -40,7 +40,7 @@ namespace Engine
 			"cs_5_0"
 		};
 		GenerateIndicesCS = Shader::Create(genIndices.FilePath, genIndices.EntryPoint, genIndices.ShaderModel);
-		GenerateIndicesPso = PipelineStateObject::Create(ComputeContext, GenerateIndicesCS.get(), RootSignature);
+		GenerateIndicesPso = PipelineStateObject::CreateComputePso(ComputeContext, GenerateIndicesCS.get(), RootSignature);
 
 		const ShaderArgs genTriangles =
 		{
@@ -49,7 +49,7 @@ namespace Engine
 			"cs_5_0"
 		};
 		GenerateTrianglesCS = Shader::Create(genTriangles.FilePath, genTriangles.EntryPoint, genTriangles.ShaderModel);
-		GenerateTrianglesPso = PipelineStateObject::Create(ComputeContext, GenerateTrianglesCS.get(), RootSignature);
+		GenerateTrianglesPso = PipelineStateObject::CreateComputePso(ComputeContext, GenerateTrianglesCS.get(), RootSignature);
 
 		const ShaderArgs initHashTable =
 		{
@@ -58,7 +58,7 @@ namespace Engine
 			"cs_5_0"
 		};
 		InitHashTableCS = Shader::Create(initHashTable.FilePath, initHashTable.EntryPoint, initHashTable.ShaderModel);
-		InitHashTablePso = PipelineStateObject::Create(ComputeContext, InitHashTableCS.get(), RootSignature);
+		InitHashTablePso = PipelineStateObject::CreateComputePso(ComputeContext, InitHashTableCS.get(), RootSignature);
 
 
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();

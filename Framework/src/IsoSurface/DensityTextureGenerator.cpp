@@ -155,8 +155,8 @@ namespace Engine
 	void DensityTextureGenerator::BuildPipelineState()
 	{
 
-		PerlinFBMPso = PipelineStateObject::Create(ComputeContext, PerlinShader.get(), DensityRootSignature);
-		SmoothPso = PipelineStateObject::Create(ComputeContext, SmoothShader.get(), DensityRootSignature);
+		PerlinFBMPso = PipelineStateObject::CreateComputePso(ComputeContext, PerlinShader.get(), DensityRootSignature);
+		SmoothPso = PipelineStateObject::CreateComputePso(ComputeContext, SmoothShader.get(), DensityRootSignature);
 	}
 
 	void DensityTextureGenerator::BuildResource()

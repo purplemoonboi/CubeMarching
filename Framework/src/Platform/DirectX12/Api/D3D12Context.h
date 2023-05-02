@@ -55,8 +55,10 @@ namespace Engine
 
 		// @brief Heap descriptor for resources
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;
+		INT32 ValidRtvDescriptors = 0;
 		// @brief Heap descriptor for depth-stencil resource
 		ComPtr<ID3D12DescriptorHeap> DsvHeap;
+		INT32 ValidDsvDescriptors = 0;
 
 		[[nodiscard]] UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
 		[[nodiscard]] bool GetMsaaState() const { return MsaaState; }
@@ -64,7 +66,7 @@ namespace Engine
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 SyncCounter;
 
-		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> GetStaticSamplers();
 
 
 

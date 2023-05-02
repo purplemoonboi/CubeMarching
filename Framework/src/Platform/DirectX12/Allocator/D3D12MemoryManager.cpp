@@ -112,12 +112,12 @@ namespace Engine
 		};
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE D3D12MemoryManager::GetConstantBufferViewCpu() const
+	D3D12_CPU_DESCRIPTOR_HANDLE D3D12MemoryManager::GetConstantBufferHandle() const
 	{
 		return CbvHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
-	D3D12_GPU_DESCRIPTOR_HANDLE D3D12MemoryManager::GetConstantBufferViewGpu() const
+	D3D12_GPU_DESCRIPTOR_HANDLE D3D12MemoryManager::GetConstantBufferGpuHandle() const
 	{
 		return CbvHeap->GetGPUDescriptorHandleForHeapStart();
 	}

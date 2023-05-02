@@ -10,9 +10,19 @@ namespace Engine
 
 	class D3D12RenderTarget : public RenderTarget
 	{
+	private:
+		enum class RenderTargetType : INT8
+		{
+			Default = 0x00,
+			ShadowMap = 0x01,
+			Stencil = 0x02,
+			Other = 0x03
+		};
+
 	public:
 
-		D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, TextureFormat format = TextureFormat::RGBA_UINT_UNORM);
+		D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, TextureFormat format);
+		D3D12RenderTarget(const void* data, UINT32 width, UINT32 height);
 
 		void LoadFromFile
 		(
@@ -33,6 +43,8 @@ namespace Engine
 		void Destroy() override;
 		void Copy(void* src) override;
 
+
+		RenderTargetType RType;
 		INT32 Width;
 		INT32 Height;
 		UINT16 Depth = 0;
@@ -50,6 +62,7 @@ namespace Engine
 		CD3DX12_GPU_DESCRIPTOR_HANDLE ResourceSrv;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuSrv;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuRtv;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuDsv;
 
 		INT32 SrvIndex = -1;
 
