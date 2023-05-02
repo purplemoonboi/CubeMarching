@@ -167,6 +167,17 @@ namespace Engine
 
         if (UpdateTexture)
         {
+           /* if(PerlinSettings.TextureWidth > DensityTexture->GetWidth() || 
+                PerlinSettings.TextureHeight > DensityTexture->GetHeight())
+            {
+                DensityTexture->Destroy();
+                DensityTexture->Create(0, 
+                    PerlinSettings.TextureWidth, 
+                    PerlinSettings.TextureHeight, 
+                    PerlinSettings.TextureWidth, 
+                    TextureFormat::R_FLOAT_32);
+            }*/
+
             PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
             PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings, DensityTexture.get());
             UpdateTexture = false;

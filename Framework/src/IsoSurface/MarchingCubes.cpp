@@ -88,8 +88,8 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootShaderResourceView(2, TriangulationTable->GetGPUVirtualAddress());
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, OutputVertexUavGpu);
 
-		UINT groupXZ = ChunkWidth / 8;
-		UINT groupY = ChunkHeight / 8;
+		UINT groupXZ = texture->GetWidth() - 1/ 8;
+		UINT groupY = texture->GetHeight() - 1/ 8;
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 

@@ -45,6 +45,11 @@ namespace Engine
 		Texture* volume
 	)
 	{
+		if(noiseSettings.TextureWidth > volume->GetWidth() || noiseSettings.TextureHeight > volume->GetHeight())
+		{
+			volume->Destroy();
+		}
+
 
 		ComputeContext->ResetComputeCommandList(PerlinFBMPso.get());
 

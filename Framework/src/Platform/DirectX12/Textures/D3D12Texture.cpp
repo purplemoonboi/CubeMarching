@@ -235,7 +235,7 @@ namespace Engine
 		/**
 		 * Add a copy command to the copy context.
 		 * @note - copying does not happen immediately, ensure the copy
-		 *		   is in scope
+		 *		   is in scope of the command list
 		 */
 		D3D12CopyContext::CopyTexture(_src, GpuResource.Get(), 0, 0, 0);
 

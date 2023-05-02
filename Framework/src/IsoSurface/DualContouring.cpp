@@ -63,8 +63,8 @@ namespace Engine
 		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		UINT groupXZ = ChunkWidth/8;
-		UINT groupY =  ChunkHeight/8;
+		UINT groupXZ = texture->GetWidth() - 1/8;
+		UINT groupY =  texture->GetHeight() - 1/8;
 
 		/* first pass - compute the vertex positions of each voxel*/
 		const auto tex = dynamic_cast<D3D12Texture*>(texture);
@@ -111,7 +111,10 @@ namespace Engine
 		gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		ComputeContext->CommandList->Dispatch(ChunkWidth, ChunkWidth, ChunkWidth);
+		UINT groupXZb = texture->GetWidth() - 1;
+		UINT groupYb = texture->GetHeight() - 1;
+
+		ComputeContext->CommandList->Dispatch(groupXZb, groupYb, groupXZb);
 
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(TriangleBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
