@@ -7,3 +7,6 @@
 [submodule "Framework/vendor/yaml-cpp"]
 	path = Framework/vendor/yaml-cpp
 	url = https://github.com/purplemoonboi/yaml-cpp.git
+[submodule "Framework/vendor/ImGui"]
+	path = Framework/vendor/ImGui
+	url = https://github.com/purplemoonboi/imgui.git
