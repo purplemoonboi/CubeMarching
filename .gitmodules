@@ -1,9 +1,6 @@
 [submodule "Framework/vendor/spdlog"]
 	path = Framework/vendor/spdlog
 	url = https://github.com/purplemoonboi/spdlog.git
-[submodule "Framework/vendor/ImGui"]
-	path = Framework/vendor/ImGui
-	url = https://github.com/ocornut/imgui.git
 [submodule "Framework/vendor/ImGuizmo"]
 	path = Framework/vendor/ImGuizmo
 	url = https://github.com/purplemoonboi/ImGuizmo.git
