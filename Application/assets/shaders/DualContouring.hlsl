@@ -26,6 +26,9 @@ cbuffer cbSettings : register(b0)
     float3 ChunkCoord;
     int Resolution;
     int UseTexture;
+    int UseGradient;
+    int UseTangent;
+    float Alpha;
 };
 
 Texture3D<float> DensityTexture : register(t0);
@@ -199,12 +202,12 @@ Vertex DualContouring(float3 coord)
     cornerCoords[6] = coord + int3(1, 1, 1);
     cornerCoords[7] = coord + int3(0, 1, 1);
     
-    int MAX_EDGE = 6;
-    float ATA[6] = { 0, 0, 0, 0, 0, 0 };
+    //int MAX_EDGE = 6;
+    //float ATA[6] = { 0, 0, 0, 0, 0, 0 };
     float4 pointaccum = (float4) 0;
-    float3 Atb = (float3) 0;
+    //float3 Atb = (float3) 0;
     float3 averageNormal = (float3) 0;
-    float btb = (float) 0;
+    //float btb = (float) 0;
     float edgeCount = 0;
     
     /* for surface nets algo */
@@ -212,7 +215,7 @@ Vertex DualContouring(float3 coord)
     float3 averageTang = (float3) 0;
     
     
-    for (uint i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
+    for (uint i = 0; i < 12 /*&& edgeCount < MAX_EDGE*/; i++)
     {
         /* fetch indices for the corners of the voxel */
         int c1 = cornerIndexAFromEdge[i];
@@ -238,9 +241,9 @@ Vertex DualContouring(float3 coord)
             float3 n = CalculateNormal(p);
             float3 tang = float3(n.x, n.y, n.z);
             
-            p.xyz /= Resolution;
+            //p.xyz /= Resolution;
 
-            QEFAdd(n, p, ATA, Atb, pointaccum, btb);
+            //QEFAdd(n, p, ATA, Atb, pointaccum, btb);
             
             averageNormal += n;
             averageTang += tang;
@@ -255,9 +258,9 @@ Vertex DualContouring(float3 coord)
     
    
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
-    float3 solvedPosition = com.xyz;
+    //float3 solvedPosition = com.xyz;
     
-    float error = SolveQEF(ATA, Atb, com.xyz, solvedPosition);
+    //float error = SolveQEF(ATA, Atb, com.xyz, solvedPosition);
     
     float3 minimum = cornerCoords[0];
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
@@ -266,15 +269,15 @@ Vertex DualContouring(float3 coord)
     
     /* sometimes the position generated spawns the vertex outside the voxel */
     /* if this happens place the vertex at the centre of mass */    
-    if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
-    solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
-    {
-        solvedPosition.xyz = com.xyz;
-    }
-    solvedPosition.xyz *= Resolution;
+    //if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
+    //solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
+    //{
+    //    solvedPosition.xyz = com.xyz;
+    //}
+    //solvedPosition.xyz *= Resolution;
     
     
-    v.position = solvedPosition.xyz;
+    v.position = com.xyz;
     v.normal = averageNormal;
     v.tangent = averageTang;
     v.configuration = 1;

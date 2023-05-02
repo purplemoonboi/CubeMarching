@@ -512,6 +512,35 @@ namespace Engine
                     UpdateVoxels = true;
 
                 ImGui::Spacing();
+
+                static bool useGradient = false;
+                static float alpha = 0.5f;
+                static bool useTangential = false;
+                if(currentAlgo == algos[0])
+                {
+                    if(ImGui::Checkbox("Use Gradient Transform", &useGradient))
+                    {
+                        VoxelSettings.UseGradient = (VoxelSettings.UseGradient == 1) ? 0 : 1;
+                        VoxelSettings.UseTangent = 0;
+                        UpdateVoxels = true;
+                    }
+                    if (ImGui::DragFloat("Gradient Alpha", &alpha, 0.001f, 0.001f, 1.0f))
+                    {
+                        VoxelSettings.Alpha = alpha;
+                        UpdateVoxels = true;
+                    }
+
+
+                    if (ImGui::Checkbox("Use Tangential Transform", &useTangential))
+                    {
+                        VoxelSettings.UseGradient = 0;
+                        VoxelSettings.UseTangent = (VoxelSettings.UseTangent == 1) ? 0 : 1;
+                        UpdateVoxels = true;
+                    }
+
+                }
+
+                ImGui::Spacing();
                 ImGui::Checkbox("Wireframe", &wireframe);
 
 

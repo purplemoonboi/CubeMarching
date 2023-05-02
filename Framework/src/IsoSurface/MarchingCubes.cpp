@@ -12,7 +12,7 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
-#include <pix3.h>
+//#include <pix3.h>
 
 namespace Engine
 {
@@ -56,8 +56,8 @@ namespace Engine
 	{
 		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->Device.Get());
 
-		PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"MarchingCubes - List");
-		PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"MarchingCubes - Queue");
+		//PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"MarchingCubes - List");
+		//PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"MarchingCubes - Queue");
 
 
 		ComputeContext->ResetComputeCommandList(ComputeState.get());
@@ -81,6 +81,9 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.ChunkCoord.z, 6);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Resolution, 7);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseTexture, 8);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseGradient, 9);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.UseTangent, 10);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &worldSettings.Alpha, 11);
 
 		auto const d3d12Texture = dynamic_cast<D3D12Texture*>(texture);
 
@@ -182,8 +185,8 @@ namespace Engine
 				Indices.push_back(++index);
 			}
 		}
-		PIXEndEvent(ComputeContext->CommandList.Get());
-		PIXEndEvent(ComputeContext->Queue.Get());
+		//PIXEndEvent(ComputeContext->CommandList.Get());
+		//PIXEndEvent(ComputeContext->Queue.Get());
 	}
 
 
@@ -200,7 +203,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-		slotRootParameter[0].InitAsConstants(9, 0);					// world settings view
+		slotRootParameter[0].InitAsConstants(12, 0);					// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &table0);		// density texture buffer 
 		slotRootParameter[2].InitAsShaderResourceView(1);			// tri table texture 
 		slotRootParameter[3].InitAsDescriptorTable(1, &table2);		// output buffer 
