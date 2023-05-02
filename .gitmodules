@@ -7,6 +7,8 @@
 [submodule "Framework/vendor/yaml-cpp"]
 	path = Framework/vendor/yaml-cpp
 	url = https://github.com/purplemoonboi/yaml-cpp.git
+	ignore = dirty
 [submodule "Framework/vendor/ImGui"]
 	path = Framework/vendor/ImGui
 	url = https://github.com/purplemoonboi/imgui.git
+	ignore = dirty

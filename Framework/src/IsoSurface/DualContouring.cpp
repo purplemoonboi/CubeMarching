@@ -8,6 +8,8 @@
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include <pix3.h>
+
+
 namespace Engine
 {
 	void DualContouring::Init(ComputeApi* compute, MemoryManager* memManger)
