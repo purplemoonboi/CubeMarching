@@ -29,6 +29,7 @@ cbuffer cbSettings : register(b0)
     int UseGradient;
     int UseTangent;
     float Alpha;
+    int UseSurfaceNets;
 };
 
 Texture3D<float> DensityTexture : register(t0);
@@ -202,12 +203,12 @@ Vertex DualContouring(float3 coord)
     cornerCoords[6] = coord + int3(1, 1, 1);
     cornerCoords[7] = coord + int3(0, 1, 1);
     
-    //int MAX_EDGE = 6;
-    //float ATA[6] = { 0, 0, 0, 0, 0, 0 };
+    int MAX_EDGE = 6;
+    float ATA[6] = { 0, 0, 0, 0, 0, 0 };
     float4 pointaccum = (float4) 0;
-    //float3 Atb = (float3) 0;
+    float3 Atb = (float3) 0;
     float3 averageNormal = (float3) 0;
-    //float btb = (float) 0;
+    float btb = (float) 0;
     float edgeCount = 0;
     
     /* for surface nets algo */
@@ -215,66 +216,51 @@ Vertex DualContouring(float3 coord)
     float3 averageTang = (float3) 0;
     
     
-    for (uint i = 0; i < 12 /*&& edgeCount < MAX_EDGE*/; i++)
+    for (uint i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
     {
         /* fetch indices for the corners of the voxel */
         int c1 = cornerIndexAFromEdge[i];
         int c2 = cornerIndexBFromEdge[i];
         
-        
         float3 p1 = cornerCoords[c1];
         float3 p2 = cornerCoords[c2];
-        
         float g1 = DensityTexture[p1];
         float g2 = DensityTexture[p2];
-        
         int m1 = (g1 > 0) ? 1 : 0;
         int m2 = (g2 > 0) ? 1 : 0;
-        
         
         /* if there is a sign change */
         if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
         {
-
             float t = (IsoLevel - DensityTexture[p1]) / (DensityTexture[p2] - DensityTexture[p1]);
             float3 p = p1 + t * (p2 - p1);
             float3 n = CalculateNormal(p);
             float3 tang = float3(n.x, n.y, n.z);
-            
-            //p.xyz /= Resolution;
-
-            //QEFAdd(n, p, ATA, Atb, pointaccum, btb);
-            
+            QEFAdd(n, p, ATA, Atb, pointaccum, btb);
             averageNormal += n;
             averageTang += tang;
             edgeCount++;
-
         }
     }
 
-    
     averageNormal = normalize(averageNormal / edgeCount);
     averageTang = normalize(averageTang / edgeCount);
     
-   
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
-    //float3 solvedPosition = com.xyz;
-    
-    //float error = SolveQEF(ATA, Atb, com.xyz, solvedPosition);
-    
+    float3 solvedPosition = com.xyz;
+    float error = SolveQEF(ATA, Atb, com.xyz, solvedPosition);
     float3 minimum = cornerCoords[0];
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
 
-    
-    
     /* sometimes the position generated spawns the vertex outside the voxel */
     /* if this happens place the vertex at the centre of mass */    
-    //if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
-    //solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
-    //{
-    //    solvedPosition.xyz = com.xyz;
-    //}
-    //solvedPosition.xyz *= Resolution;
+    if (solvedPosition.x < minimum.x || solvedPosition.y < minimum.y || solvedPosition.z < minimum.z ||
+    solvedPosition.x > maximum.x || solvedPosition.y > maximum.y || solvedPosition.z > maximum.z)
+    {
+        solvedPosition.xyz = com.xyz;
+    }
+    solvedPosition.xyz /= TextureSize-1;
+    solvedPosition.xyz *= Resolution;
     
     
     v.position = com.xyz;
@@ -290,8 +276,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
 {
     uint index = ((id.z * Resolution ) * Resolution ) + (id.y * Resolution ) + id.x;
     
-    
-    if (id.x >= TextureSize - 1 || id.y >= TextureSize - 1 || id.z >= TextureSize - 1)
+    if (id.x >= Resolution || id.y >= Resolution || id.z >= Resolution)
     {
         Vertex vertex = (Vertex) 0;
         vertex.position = (float3) 0;
@@ -301,7 +286,6 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         return;
     }
 
-    
     int3 coord = id;// + int3(ChunkCoord);
 
     int3 cornerCoords[8];
@@ -336,9 +320,16 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         
         return;
     }
-     
-   
-    Vertex vertex = DualContouring(coord);
+    
+    Vertex vertex = (Vertex) 0;
+    if(UseSurfaceNets == 0)
+    {
+        vertex = DualContouring(coord);
+    }
+    else
+    {
+        vertex = SurfaceNets(coord);
+    }
     
     Vertices[index] = vertex;
     
@@ -346,11 +337,6 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
 
 #include "ComputeUtils.hlsli"
 #define BLOCK_SIZE 512
-#define RIGHT 0
-#define FORWARD 1
-#define UP 2
-
-
 
 groupshared uint lIndices[BLOCK_SIZE];
 groupshared float3 lVertices[BLOCK_SIZE];

@@ -219,7 +219,7 @@ Vertex createVertex(int3 c0, int3 c1)
     }
     if (UseTangent == 1)
     {
-        TangentialTransformation(c0, c1, vertex);
+        //TangentialTransformation(c0, c1, vertex);
     }
 
     vertex.position = vertex.position / (TextureSize - 1);

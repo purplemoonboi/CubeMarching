@@ -81,6 +81,7 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 3, &ccoord, 4);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.Resolution, 7);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.UseTexture, 8);
+		ComputeContext->CommandList->SetComputeRoot32BitConstants(0, 1, &settings.SurfaceNets, 12);
 
 
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, tex->GpuHandleSrv);
@@ -241,7 +242,7 @@ namespace Engine
 
 		// Root parameter can be a table, root descriptor or root constants.
 		CD3DX12_ROOT_PARAMETER slotRootParameter[5];
-		slotRootParameter[0].InitAsConstants(9, 0);							// world settings view
+		slotRootParameter[0].InitAsConstants(13, 0);							// world settings view
 		slotRootParameter[1].InitAsDescriptorTable(1, &textureSlot);		// texture 
 		slotRootParameter[2].InitAsDescriptorTable(1, &vertexSlot);			// vertex buffer
 		slotRootParameter[3].InitAsDescriptorTable(1, &triangleSlot);		// triangle buffer

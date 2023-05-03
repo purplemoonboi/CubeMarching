@@ -187,7 +187,7 @@ namespace Engine
         if(UpdateVoxels && !UpdateTexture)
         {
             
-           /* HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
+            HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
             if (!SUCCEEDED(hr))
             {
                 CORE_ERROR("GPU capture failed...")
@@ -195,7 +195,7 @@ namespace Engine
             else
             {
                 CORE_TRACE("Beginning GPU capture...");
-            }*/
+            }
 
            
             switch (Algorithm)
@@ -227,7 +227,7 @@ namespace Engine
 
 
 
-            /*if(SUCCEEDED(hr))
+            if(SUCCEEDED(hr))
             {
                 hr = PIXEndCapture(FALSE);
 				if(!SUCCEEDED(hr))
@@ -239,7 +239,7 @@ namespace Engine
                     CORE_TRACE("Ending GPU capture...");
 
                 }
-            }*/
+            }
 
             UpdateVoxels = false;
 

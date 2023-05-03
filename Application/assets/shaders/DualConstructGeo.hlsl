@@ -13,6 +13,12 @@ struct Triangle
     Vertex vertexC;
 };
 
+struct TableData
+{
+    int key;
+    float3 value;
+};
+
 cbuffer cbSettings : register(b0)
 {
     float IsoLevel;
@@ -28,12 +34,12 @@ Texture3D<float> DensityTexture : register(t0);
 RWStructuredBuffer<Vertex> Vertices : register(u0);
 RWStructuredBuffer<Triangle> TriangleBuffer : register(u1);
 
-RWStructuredBuffer<int> VoxelMaterialBuffer : register(u2);
+RWStructuredBuffer<int> EdgeTable : register(u2);
 
 [numthreads(1, 1, 1)]
 void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThreadID)
 {
-
+    
    /*   
     * @brief - In this pass, we check each in parallel for a sign change.
     *          For a sign change along an edge, we connect the voxels adjacent

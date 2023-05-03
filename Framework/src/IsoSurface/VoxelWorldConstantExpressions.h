@@ -104,6 +104,7 @@ namespace Engine
 		INT32 UseGradient = 0;
 		INT32 UseTangent = 0;
 		float Alpha = 0.5f;
+		INT32 SurfaceNets = 0;
 	};
 
 

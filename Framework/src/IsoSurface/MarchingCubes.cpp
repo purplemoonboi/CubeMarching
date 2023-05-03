@@ -12,7 +12,7 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
-//#include <pix3.h>
+#include <pix3.h>
 
 namespace Engine
 {
@@ -52,7 +52,7 @@ namespace Engine
 
 	}
 
-	void MarchingCubes::Dispatch(VoxelWorldSettings const& worldSettings, Texture* texture)
+	void MarchingCubes::Dispatch(const VoxelWorldSettings& worldSettings, Texture* texture)
 	{
 		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->Device.Get());
 
