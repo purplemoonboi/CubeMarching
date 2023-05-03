@@ -217,10 +217,10 @@ namespace Engine
                 break;
             case 3:
                 /* polygonise the texture with improved marching cubes */
-                /*
-                MarchingCubesHP->Polygonise(VoxelSettings, PerlinCompute->GetTexture());
+                
+                MarchingCubesHP->Polygonise(VoxelSettings, DensityTexture.get());
                 Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
-                */
+                
                 break;
 
             }

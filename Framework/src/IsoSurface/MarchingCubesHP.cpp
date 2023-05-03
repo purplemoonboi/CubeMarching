@@ -221,7 +221,7 @@ namespace Engine
 			RawIndexBuffer.push_back(faceData[i].I2);
 		}
 		FaceReadBackBuffer->Unmap(0, nullptr);
-
+		*/
 		INT32 masks;
 		const HRESULT vdMap = VertexReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&counterData));
 		THROW_ON_FAILURE(vdMap);
@@ -232,7 +232,7 @@ namespace Engine
 			v.TexCoords.x = vertexData[i].WorldIndex;
 			RawVertexBuffer.push_back(v);
 		}
-		VertexReadBackBuffer->Unmap(0, nullptr);*/
+		VertexReadBackBuffer->Unmap(0, nullptr);
 
 
 		const HRESULT cMap  = VertexIndicesReadBack->Map(0, nullptr, reinterpret_cast<void**>(&counterData));
