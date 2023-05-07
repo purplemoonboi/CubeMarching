@@ -263,7 +263,7 @@ Vertex DualContouring(float3 coord)
     solvedPosition.xyz *= Resolution;
     
     
-    v.position = com.xyz;
+    v.position = solvedPosition.xyz;
     v.normal = averageNormal;
     v.tangent = averageTang;
     v.configuration = 1;

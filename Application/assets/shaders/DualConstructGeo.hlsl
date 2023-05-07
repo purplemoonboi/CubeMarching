@@ -34,7 +34,7 @@ Texture3D<float> DensityTexture : register(t0);
 RWStructuredBuffer<Vertex> Vertices : register(u0);
 RWStructuredBuffer<Triangle> TriangleBuffer : register(u1);
 
-RWStructuredBuffer<int> EdgeTable : register(u2);
+RWStructuredBuffer<TableData> EdgeTable : register(u2);
 
 [numthreads(1, 1, 1)]
 void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThreadID)
@@ -49,7 +49,10 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     *   
     */
     
-    
+    //if (id.x >= Resolution || id.y >= Resolution || id.z >= Resolution)
+    //{
+    //    return;
+    //}
     
     int3 right = id + int3(1, 0, 0);
     int3 up = id + int3(0, 1, 0);
@@ -58,7 +61,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
 
     
     /* we only want to check three times per voxel starting from the corner */
-    int3 coord = id; //+ int3(ChunkCoord);
+    int3 coord = id + int3(ChunkCoord);
 
    
     Triangle tri = (Triangle) 0;
@@ -88,8 +91,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     
     uint right_of_and_behind_y = (((id.z - 1) * Resolution) * Resolution) + (id.y * Resolution) + id.x;
     
-     if(forward.z < Resolution)
-     {
+     
         /* check the z-axis */
         if (DensityTexture[coord] > IsoLevel && DensityTexture[forward] < IsoLevel)
         {
@@ -146,11 +148,10 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
                 TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
             }
         }
-     }
+     
     
     
-    if(right.x < Resolution)
-    {
+    
          /* check the x-axes */
         if (DensityTexture[coord] > IsoLevel && DensityTexture[right] < IsoLevel)
         {
@@ -208,11 +209,10 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
                 TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
             }
         }
-    }
+    
    
 
-    if(up.y < Resolution)
-    {
+    
         /* check the y-axis */
     
         if (DensityTexture[coord] > IsoLevel && DensityTexture[up] < IsoLevel)
@@ -272,7 +272,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
                 TriangleBuffer[TriangleBuffer.IncrementCounter()] = tri;
             }
         }
-    }
+    
     
 
 }

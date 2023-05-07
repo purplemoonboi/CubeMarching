@@ -40,7 +40,8 @@ namespace Engine
 
 		void BuildDualContourPipelineStates();
 		ScopePointer<PipelineStateObject> GenerateVerticesPso;
-		ScopePointer<Shader> GenerateVerticesShader;
+		ScopePointer<Shader> GenerateVerticesDualContourShader;
+		ScopePointer<Shader> GenerateVerticesSurfNets;
 
 		ScopePointer<PipelineStateObject> GenerateTrianglePso;
 		ScopePointer<Shader> GenerateTriangleShader;

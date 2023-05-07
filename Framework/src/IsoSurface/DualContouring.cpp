@@ -27,7 +27,15 @@ namespace Engine
 			"GenerateVertices",
 			"cs_5_0"
 		};
-		GenerateVerticesShader = Shader::Create(argsGVs.FilePath, argsGVs.EntryPoint, argsGVs.ShaderModel);
+		GenerateVerticesDualContourShader = Shader::Create(argsGVs.FilePath, argsGVs.EntryPoint, argsGVs.ShaderModel);
+
+		const ShaderArgs snArgs =
+		{
+			L"assets\\shaders\\SurfaceNets.hlsl",
+			"GenerateVertices",
+			"cs_5_0"
+		};
+		GenerateVerticesSurfNets = Shader::Create(snArgs.FilePath, snArgs.EntryPoint, snArgs.ShaderModel);
 
 		const ShaderArgs argsTs =
 		{
@@ -286,7 +294,7 @@ namespace Engine
 
 	void DualContouring::BuildDualContourPipelineStates()
 	{
-		GenerateVerticesPso = PipelineStateObject::Create(ComputeContext, GenerateVerticesShader.get(), RootSignature);
+		GenerateVerticesPso = PipelineStateObject::Create(ComputeContext, GenerateVerticesDualContourShader.get(), RootSignature);
 		GenerateTrianglePso = PipelineStateObject::Create(ComputeContext, GenerateTriangleShader.get(), RootSignature);
 
 	}
@@ -316,20 +324,17 @@ namespace Engine
 		VertexBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VertexBuffer.Get(), 
 			VertexCounterBuffer.Get());
 
-		/* create the material buffer */
+		/* create the look up buffer */
 		uavDesc.Buffer.StructureByteStride = sizeof(INT32);
 		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
 		const UINT64 matBufferWidth = DualContourNumberOfElements * sizeof(INT32);
 
-		VoxelMaterialBuffer = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
-		VoxelMatReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
+		VoxelLookUpTable = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
+		VoxelLookUpTableReadBack = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
 
-		VoxelMatCounterBuffer = D3D12BufferUtils::CreateCounterResource(true, true);
-		VoxelMatCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(4);
-		D3D12BufferUtils::CreateUploadBuffer(VoxelMatCounterUpload, 4);
 
-		VoxelMatBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelMaterialBuffer.Get(),
-			VoxelMatCounterBuffer.Get());
+		VoxelMatBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelLookUpTable.Get(),
+			nullptr);
 
 		/* create the buffer to hold the triangles */
 
