@@ -41,7 +41,6 @@ namespace Engine
 		void BuildDualContourPipelineStates();
 		ScopePointer<PipelineStateObject> GenerateVerticesPso;
 		ScopePointer<Shader> GenerateVerticesDualContourShader;
-		ScopePointer<Shader> GenerateVerticesSurfNets;
 
 		ScopePointer<PipelineStateObject> GenerateTrianglePso;
 		ScopePointer<Shader> GenerateTriangleShader;
@@ -60,12 +59,10 @@ namespace Engine
 		/**
 		 * @brief A buffer for holding the materials
 		 */
-		ComPtr<ID3D12Resource> VoxelMaterialBuffer;
-		ComPtr<ID3D12Resource> VoxelMatReadBackBuffer;
-		ComPtr<ID3D12Resource> VoxelMatCounterBuffer;
-		ComPtr<ID3D12Resource> VoxelMatCounterUpload;
-		ComPtr<ID3D12Resource> VoxelMatCounterReadBack;
-		D3D12_GPU_DESCRIPTOR_HANDLE VoxelMatBufferUav;
+		ComPtr<ID3D12Resource> VoxelLookUpTable;
+		ComPtr<ID3D12Resource> VoxelLookUpReadBack;
+
+		D3D12_GPU_DESCRIPTOR_HANDLE VoxelLookUpTableUav;
 
 		/**
 		 * @brief A buffer for storing the density values

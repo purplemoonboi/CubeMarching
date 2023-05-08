@@ -170,6 +170,10 @@ namespace Engine
 		 * stage data for rendering
 		 * here we execute any copies for apis which rely on manual control of syncing data
 		 */
+		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
+		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
+
+
 		RenderInstruction::PreRender
 		(
 			RenderData.OpaqueRenderItems,
@@ -183,9 +187,7 @@ namespace Engine
 		);
 
 
-		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
-		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
-
+		
 		RenderInstruction::BindTerrainPass(tpso, RenderData.Terrain.get());
 
 		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);

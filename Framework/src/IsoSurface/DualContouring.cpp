@@ -29,17 +29,9 @@ namespace Engine
 		};
 		GenerateVerticesDualContourShader = Shader::Create(argsGVs.FilePath, argsGVs.EntryPoint, argsGVs.ShaderModel);
 
-		const ShaderArgs snArgs =
-		{
-			L"assets\\shaders\\SurfaceNets.hlsl",
-			"GenerateVertices",
-			"cs_5_0"
-		};
-		GenerateVerticesSurfNets = Shader::Create(snArgs.FilePath, snArgs.EntryPoint, snArgs.ShaderModel);
-
 		const ShaderArgs argsTs =
 		{
-			L"assets\\shaders\\DualConstructGeo.hlsl",
+			L"assets\\shaders\\DualContouring.hlsl",
 			"GenerateTriangle",
 			"cs_5_0"
 		};
@@ -73,8 +65,8 @@ namespace Engine
 		auto gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateVerticesPso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		UINT groupXZ = texture->GetWidth() - 1/8;
-		UINT groupY =  texture->GetHeight() - 1/8;
+		UINT groupXZ = (texture->GetWidth() - 1)  /8;
+		UINT groupY =  (texture->GetHeight() - 1) /8;
 
 		/* first pass - compute the vertex positions of each voxel*/
 		const auto tex = dynamic_cast<D3D12Texture*>(texture);
@@ -95,7 +87,7 @@ namespace Engine
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(1, tex->GpuHandleSrv);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(2, VertexBufferUav);
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(3, TriangleBufferUav);
-		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelMatBufferUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelLookUpTableUav);
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
@@ -122,8 +114,8 @@ namespace Engine
 		gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
 
-		UINT groupXZb = texture->GetWidth() - 1;
-		UINT groupYb = texture->GetHeight() - 1;
+		UINT groupXZb = (texture->GetWidth() - 1);
+		UINT groupYb  = (texture->GetHeight() - 1);
 
 		ComputeContext->CommandList->Dispatch(groupXZb, groupYb, groupXZb);
 
@@ -330,10 +322,10 @@ namespace Engine
 		const UINT64 matBufferWidth = DualContourNumberOfElements * sizeof(INT32);
 
 		VoxelLookUpTable = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
-		VoxelLookUpTableReadBack = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
+		VoxelLookUpReadBack = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
 
 
-		VoxelMatBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelLookUpTable.Get(),
+		VoxelLookUpTableUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelLookUpTable.Get(),
 			nullptr);
 
 		/* create the buffer to hold the triangles */

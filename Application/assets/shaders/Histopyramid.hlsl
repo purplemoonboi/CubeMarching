@@ -123,7 +123,7 @@ void GenerateLBVH(
     float y = ((float) gId  /  Resolution) % Resolution;
     float x =  (float) gId  / (Resolution  * Resolution);
     
-    uint morton = Morton3D(x,y,z);
+    uint morton = Morton3D(x,y,z, Resolution);
     
     //...now we can check the bits and split them 
     //...accordingly.

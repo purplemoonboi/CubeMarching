@@ -18,11 +18,11 @@ float4 PS(VertexOut pin) : SV_TARGET
     float4 ambient = (float4) 0;
     float4 directLight = (float4) 0;
     
-    //if (gWire != 0)
-    //{
-    //    litColor = float4(0, 0, 0, 1);
-    //}
-    //else
+    if (gWire != 0)
+    {
+        litColor = float4(0, 0, 0, 1);
+    }
+    else
     {
         // Interpolating normal can unnormalize it, so renormalize it.
         pin.NormalW = normalize(pin.NormalW);
@@ -59,26 +59,18 @@ float4 PS(VertexOut pin) : SV_TARGET
         half3 blendWeights = pow(abs(pin.NormalW), 4);
         
         float3 blendedNormal = xnDiff * blendWeights.x + ynDiff * blendWeights.y + znDiff * blendWeights.z;
-
             
         blendWeights /= (blendWeights.x + blendWeights.y + blendWeights.z);
             
         mat.DiffuseAlbedo = xDiff * blendWeights.x + yDiff * blendWeights.y + zDiff * blendWeights.z;
-        
             
         ambient = gAmbientLight * xDiff * blendWeights.x + yDiff * blendWeights.y + zDiff * blendWeights.z;
 
-        
-        
         directLight = ComputeLighting(gLights, mat, pin.PosW, blendedNormal, toEyeW, shadowFactor);
             
         litColor = ambient + directLight;
     }
-    
-    if (gWire != 0)
-    {
-        litColor = float4(0, 0, 0, 1);
-    }
+
     
     return litColor;
 }
