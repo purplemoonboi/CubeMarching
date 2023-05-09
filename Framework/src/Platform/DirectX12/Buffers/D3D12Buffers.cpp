@@ -192,7 +192,10 @@ namespace Engine
 			const HRESULT hr = D3DCreateBlob(count*sizeof(UINT16), &Blob);
 			THROW_ON_FAILURE(hr);
 		}
-		CopyMemory(Blob->GetBufferPointer(), data, count);
+		if(Count != 0)
+		{
+			CopyMemory(Blob->GetBufferPointer(), data, count);
+		}
 		Count = count;
 	}
 
@@ -365,49 +368,27 @@ namespace Engine
 		currentPassCB->CopyData(0, MainPassConstantBuffer);
 	}
 
-	void D3D12ResourceBuffer::UpdateVoxelTerrain(D3D12FrameResource* resource, RenderItem* terrain)
+	void D3D12ResourceBuffer::UpdateVoxelTerrain(
+		D3D12FrameResource* resource, RenderItem* terrain)
 	{
 		const auto voxelBuffer = resource->TerrainBuffer.get();
 		const auto d3d12RenderItem = dynamic_cast<D3D12RenderItem*>(terrain);
-		const auto vCount = terrain->Geometry->VertexBuffer->GetCount();
-		auto vertexBuffer = dynamic_cast<D3D12VertexBuffer*>(terrain->Geometry->VertexBuffer.get());
 
+		auto vCount = terrain->Geometry->VertexBuffer->GetCount();
+		const Vertex* vertex = (const Vertex*)terrain->Geometry->VertexBuffer->GetData();
 
 		if(vCount != 0)
 		{
-			
-			const Vertex* vertices = static_cast<Vertex*>(const_cast<void*>(vertexBuffer->GetData()));
 			IsosurfaceVertexCount = vCount;
 
-			/*if(vCount > 32*32*32)
-			{
-
-				concurrency::parallel_for(0,  IsosurfaceVertexCount - 1, [this, &vertices, &voxelBuffer](int i)
-				{
-						Vertex vertex;
-						vertex.Position		= vertices[i].Position;
-						vertex.Normal		= vertices[i].Normal;
-						vertex.Tangent		= vertices[i].Tangent;
-						vertex.TexCoords	= vertices[i].TexCoords;
-						voxelBuffer->CopyData(i, vertex);
-				});
-			}
-			
-			else
-			*/
 			{
 				for (INT32 i = 0; i < vCount; ++i)
 				{
-					Vertex vertex;
-					vertex.Position = vertices[i].Position;
-					vertex.Normal = vertices[i].Normal;
-					vertex.Tangent = vertices[i].Tangent;
-					vertex.TexCoords = vertices[i].TexCoords;
-					voxelBuffer->CopyData(i, vertex);
+					voxelBuffer->CopyData(i, vertex[i]);
 				}
 			}
 			
-			d3d12RenderItem->Geometry->VertexBuffer->SetBuffer(resource->TerrainBuffer->Resource());
+			d3d12RenderItem->Geometry->VertexBuffer->SetBuffer(voxelBuffer->Resource());
 		}
 	}
 

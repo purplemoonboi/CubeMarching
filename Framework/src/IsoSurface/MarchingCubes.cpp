@@ -41,12 +41,7 @@ namespace Engine
 		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
-		Vertex vert = {};
-		Vertices.reserve(VoxelWorldElementCount);
-		Vertices.insert(Vertices.begin(), VoxelWorldElementCount, vert);
-
-		Indices.reserve(VoxelWorldElementCount);
-		Indices.insert(Indices.begin(), VoxelWorldElementCount, 0);
+		
 
 		
 
@@ -114,6 +109,14 @@ namespace Engine
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CounterResource.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
+
+		ComputeContext->FlushComputeQueue(&FenceValue);
+
+		if (TriData != nullptr)
+			TriCount = *TriData;
+
+		ComputeContext->ResetComputeCommandList(nullptr);
+
 		const INT32 rawData[1] = { 0 };
 		D3D12_SUBRESOURCE_DATA subResourceData = {};
 		subResourceData.pData = rawData;
@@ -139,52 +142,8 @@ namespace Engine
 
 		ComputeContext->FlushComputeQueue(&FenceValue);
 
-		INT32* atomicCount = nullptr;
-
-		const HRESULT deviceHr = ComputeContext->Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(deviceHr);
-
-		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&atomicCount));
-		THROW_ON_FAILURE(countMapResult);
-
-		INT32 triCount = *atomicCount;
-		CounterReadback->Unmap(0, nullptr);
-
-
-		Triangle* data;
-		const HRESULT mappingResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&data));
-		THROW_ON_FAILURE(mappingResult);
-
-		RawTriBuffer.clear();
-		RawTriBuffer.reserve(triCount);
-
-		McData.TriangleCount = triCount;
-
-		for(INT32 i = 0; i < triCount; ++i)
-		{
-			RawTriBuffer.push_back(data[i]);
-		}
-		ReadBackBuffer->Unmap(0, nullptr);
-
-		/* store the vertices and indices */
-		if(!RawTriBuffer.empty())
-		{
-			Vertices.clear();
-			Vertices.resize(0);
-			Indices.clear();
-			Indices.resize(0);
-
-			UINT16 index = 0;
-			for (auto& tri : RawTriBuffer)
-			{
-				Vertices.push_back(tri.VertexC);
-				Indices.push_back(++index);
-				Vertices.push_back(tri.VertexB);
-				Indices.push_back(++index);
-				Vertices.push_back(tri.VertexA);
-				Indices.push_back(++index);
-			}
-		}
+	
+		
 		//PIXEndEvent(ComputeContext->CommandList.Get());
 		//PIXEndEvent(ComputeContext->Queue.Get());
 	}
@@ -280,6 +239,10 @@ namespace Engine
 
 		/* create the counter upload buffer */
 		D3D12BufferUtils::CreateUploadBuffer(CounterUpload, 4);
+
+		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&TriData));
+		THROW_ON_FAILURE(countMapResult);
+
 	}
 
 
@@ -293,6 +256,8 @@ namespace Engine
 			bufferWidth,
 			UploadTriangulationTable
 		);
+		const HRESULT mappingResult = ReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&RawTriangleBuffer));
+		THROW_ON_FAILURE(mappingResult);
 	}
 
 }

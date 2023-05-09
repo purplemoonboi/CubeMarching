@@ -119,7 +119,7 @@ namespace Engine
 	void MainCamera::Pitch(float y)
 	{
 		// Make each pixel correspond to a quarter of a degree.
-		float ry =  AngularSpeed * y - PreviousCoords.y;
+		float ry = AngularSpeed * y - PreviousCoords.y;
 		const float dy = XMConvertToRadians(ry);
 
 		XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&Right), dy);

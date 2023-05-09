@@ -85,6 +85,8 @@ namespace Engine
 
 		float CurrentMouseX = 0;
 		float CurrentMouseY = 0;
+		float LastMouseX = 0.f;
+		float LastMouseY = 0.f;
 		float MouseDownX = 0;
 		float MouseDownY = 0;
 

@@ -23,11 +23,8 @@ namespace Engine
 
 		void Dispatch(const VoxelWorldSettings& settings, Texture* texture);
 
-		[[nodiscard]] ScopePointer<MeshGeometry>& GetTerrainMesh() { return TerrainMesh; }
-
-		[[nodiscard]] const std::vector<Vertex>& GetVertices() const { return Vertices; }
-
-		[[nodiscard]] const std::vector<UINT16>& GetIndices() const { return Indices; }
+		[[nodiscard]] void* GetVertices() const { return RawTriBuffer; }
+		[[nodiscard]] UINT32 GetVertexCount() const { return TriangleCount * 3; }
 
 	private:
 		D3D12ComputeApi* ComputeContext = nullptr;
@@ -79,12 +76,9 @@ namespace Engine
 		 * @brief Containers for raw readback
 		 */
 
-		std::vector<DualContourTriangle> RawVoxelBuffer;
-		void CreateVertexBuffers();
-		ScopePointer<MeshGeometry> TerrainMesh;
-		std::vector<Vertex> Vertices;
-		std::vector<UINT16> Indices;
-
+		DualContourTriangle* RawTriBuffer = nullptr;
+		UINT32* CountData = nullptr;
+		UINT32 TriangleCount = 0;
 
 		void ResetCounters();
 	};

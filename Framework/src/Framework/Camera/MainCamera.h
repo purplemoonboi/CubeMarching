@@ -133,7 +133,7 @@ namespace Engine
 
 		float AspectRatio;
 		float Speed = 10.0f;
-		float AngularSpeed = 1.0f;
+		float AngularSpeed = 1;
 
 		// Camera coordinate system with coordinates relative to world space.
 		XMFLOAT3 Position = { 0.0f, 0.0f, 0.0f };

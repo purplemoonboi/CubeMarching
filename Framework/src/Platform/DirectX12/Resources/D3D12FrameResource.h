@@ -6,6 +6,7 @@
 
 #include "Platform/DirectX12/Buffers/D3D12UploadBuffer.h"
 #include "MathHelper.h"
+#include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
 namespace Engine
 {
@@ -34,6 +35,7 @@ namespace Engine
         ScopePointer<D3D12UploadBuffer<MaterialConstants>> MaterialBuffer = nullptr;
 		ScopePointer<D3D12UploadBuffer<ObjectConstant>> ConstantBuffer = nullptr;
         ScopePointer<D3D12UploadBuffer<Vertex>> TerrainBuffer = nullptr;
+        ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
 
 		// Fence value to mark commands up to this fence point.  This lets us
 		// check if these frame resources are still in use by the GPU.

@@ -9,6 +9,7 @@
 
 namespace Engine
 {
+	struct Vertex;
 	class Texture;
 
 	struct Transform
@@ -59,8 +60,6 @@ namespace Engine
 		std::string args = "";
 		bool HasBeenUpdated = false;
 	};
-
-
 
 
 }

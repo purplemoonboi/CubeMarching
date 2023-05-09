@@ -126,7 +126,7 @@ void LocalSort(
         
         GroupMemoryBarrierWithGroupSync();
 
-        //...perform a prefix sum...
+        //...prefix sum...
         [unroll(int(log2(BLOCK_SIZE)))]
         for (uint t = 1; t < BLOCK_SIZE; t <<= 1)//... for t = 1 ... log2(N), t = 2^t
         {

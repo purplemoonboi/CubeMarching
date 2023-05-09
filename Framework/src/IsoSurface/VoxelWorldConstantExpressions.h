@@ -13,14 +13,6 @@ namespace Engine
 		DirectX::XMFLOAT2 TexCoords = { 0.f, 0.f };		//8
 	};
 
-	struct DualContourVertex
-	{
-		DirectX::XMFLOAT3 Position = { 0.f, 0.f, 0.f }; //12
-		DirectX::XMFLOAT3 Normal = { 0.f, 0.f, 0.f };	//12
-		DirectX::XMFLOAT3 Tangent = { 0.f, 0.f, 0.f };	//12
-		INT32 configuration;
-	};
-
 	struct GPUVoxel
 	{
 		DirectX::XMFLOAT3 position;
@@ -37,9 +29,9 @@ namespace Engine
 
 	struct DualContourTriangle
 	{
-		DualContourVertex VertexA;
-		DualContourVertex VertexB;
-		DualContourVertex VertexC;
+		Vertex VertexA;
+		Vertex VertexB;
+		Vertex VertexC;
 	};
 
 	struct DensityPrimitive
@@ -85,7 +77,7 @@ namespace Engine
 	 * @note  size-of-world-dimensions { minus '1' because the vertex is generated within the cell } 
 	 */
 	constexpr UINT64 DualContourNumberOfElements = (ChunkWidth) * (ChunkHeight) * (ChunkWidth);
-	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(DualContourVertex);
+	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(Vertex);
 
 	constexpr UINT64 DualContourTriangleNumberOfElements = ((ChunkWidth) * (ChunkWidth) * (ChunkWidth) / 8) * 12;
 	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(DualContourTriangle);
@@ -96,7 +88,7 @@ namespace Engine
 	{
 		float IsoValue = 0.0;
 		INT32 TextureSize = VoxelTextureWidth;
-		INT32 UseBinarySearch = 1;//Toggle for alternating between QEF and Binary Search
+		INT32 UseBinarySearch = 1;
 		INT32 NumOfPointsPerAxis = VoxelTextureWidth;
 		DirectX::XMFLOAT3 ChunkCoord = { 0.f, 0.f, 0.f };
 		INT32 Resolution = ChunkWidth;

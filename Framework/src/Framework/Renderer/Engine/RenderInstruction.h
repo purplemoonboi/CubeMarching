@@ -3,7 +3,6 @@
 
 namespace Engine
 {
-	
 
 
 	class RenderInstruction

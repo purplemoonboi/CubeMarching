@@ -94,7 +94,7 @@ namespace Engine
         //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
         //DualContourSPO->Init(csApi, api->GetMemoryManager());
 
-    	Renderer3D::CreateVoxelTerrain(MarchingCubes->GetVertices(), MarchingCubes->GetIndices(), "Voxel", Transform(0, 0, 0));
+    	Renderer3D::CreateVoxelTerrain("Voxel", Transform(0, 0, 0));
 
         /*
          *   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
@@ -202,24 +202,32 @@ namespace Engine
             {
             case 0:
                 MarchingCubes->Dispatch(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("Voxel", MarchingCubes->GetVertices(), MarchingCubes->GetIndices());
+                Renderer3D::SetBuffer("Voxel", (Vertex*)MarchingCubes->GetVertices(), MarchingCubes->GetVertexCount(), nullptr, 0);
 
                 break;
             case 1:
                 /* polygonise the texture with surface nets*/
-
+                ///
+                VoxelSettings.SurfaceNets = 1;
+                ///
+                DualContouring->Dispatch(VoxelSettings, DensityTexture.get());
+                Renderer3D::SetBuffer("Voxel", (Vertex*)DualContouring->GetVertices(), DualContouring->GetVertexCount(), nullptr, 0);
                 break;
             case 2:
                 /* polygonise the texture with dual contouring */
+                /* polygonise the texture with surface nets*/
+                ///
+                VoxelSettings.SurfaceNets = 0;
+                ///
                 DualContouring->Dispatch(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("Voxel", DualContouring->GetVertices(), DualContouring->GetIndices());
+                Renderer3D::SetBuffer("Voxel", (Vertex*)DualContouring->GetVertices(), DualContouring->GetVertexCount(), nullptr, 0);
 
                 break;
             case 3:
                 /* polygonise the texture with improved marching cubes */
                 
                 MarchingCubesHP->Polygonise(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("MarchingTerrain", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
+                Renderer3D::SetBuffer("Voxel", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
                 
                 break;
 
@@ -474,8 +482,8 @@ namespace Engine
                 }
                 ImGui::Spacing();
 
-                const char* res[] = { "16x16x16", "32x32x32", "64x64x64", "128x128x128" };
-                constexpr INT32 resi[] = { 16, 32, 64, 128 };
+                const char* res[] = { "16x16x16", "32x32x32", "64x64x64" };
+                constexpr INT32 resi[] = { 16, 32, 64 };
                 static const char* currentRes = res[0];
 
                 if (ImGui::BeginCombo("Terrain Resolution", currentRes)) 
@@ -715,10 +723,12 @@ namespace Engine
         if (~(mEvent.GetMouseButton() & MK_LBUTTON) != 0)
         {
             LeftMButton = false;
+           
         }
         if (~(mEvent.GetMouseButton() & MK_RBUTTON) != 0)
         {
             RightMButton = false;
+           
         }
         return false;
     }
@@ -733,7 +743,7 @@ namespace Engine
         {
             auto camera = Scene->GetSceneCamera();
             camera->Pitch(CurrentMouseY);
-            camera->RotateY(CurrentMouseX);
+        	camera->RotateY(CurrentMouseX);
         }
    
 

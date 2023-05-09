@@ -38,10 +38,10 @@ namespace Engine
 
 		void ResetComputeCommandList(PipelineStateObject* state) override;
 
-		void ExecuteComputeCommandList(UINT64* voxelWorldSyncValue) override;
-		void FlushComputeQueue(UINT64* voxelWorldSyncValue) override;
-		void Wait(UINT64* voxelWorldSyncValue) override;
-		void GlobalSignal(UINT64* gpuSync) override;
+		void ExecuteComputeCommandList(UINT64* fence) override;
+		void FlushComputeQueue(UINT64* fence) override;
+		void Wait(UINT64* fence) override;
+		void GlobalSignal(UINT64* fence) override;
 		D3D12Context* Context = nullptr;
 
 		std::array<ScopePointer<D3D12ComputeFrameResource>, NUMBER_OF_CS_FRAMES_IN_FLIGHT> CsFrameResources;

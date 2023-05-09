@@ -1,12 +1,13 @@
 /* Simple QEF lib */
 #include "QEF.hlsli"
+#include "PerlinNoise.hlsli"
 
 struct Vertex
 {
     float3 position;
     float3 normal;
     float3 tangent;
-    int configuration;
+    int2 configuration;
 };
 
 struct Triangle
@@ -28,7 +29,7 @@ cbuffer cbSettings : register(b0)
     int UseGradient;
     int UseTangent;
     float Alpha;
-    int SurfaceNets;
+    int UseSurfaceNets;
 };
 
 Texture3D<float> DensityTexture : register(t0);
@@ -41,9 +42,23 @@ RWStructuredBuffer<int> VoxelMaterialBuffer : register(u2);
 
 float SampleDensity(int3 coord)
 {
-    //coord = max(0, min(coord, TextureSize));
-    return DensityTexture.Load(float4(coord, 0));
+    float n = 0.0f;
+    if(UseTexture == 1)
+    {
+        n = DensityTexture.Load(float4(coord, 0));
+    }
+    else
+    {
+        float f = 0.01f;
+        float g = 3.0f;
+        for (int i = 0; i < 3; i++)
+        {
+            n += snoise(coord * f);
+            f *= g;
+        }
+    }
     
+    return n;
 }
 
 float3 CalculateNormal(int3 coord)
@@ -72,63 +87,8 @@ static const uint cornerIndexAFromEdge[12] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 
 static const uint cornerIndexBFromEdge[12] = { 1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7 };
 
 
-
-[numthreads(8, 8, 8)]
-void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
+void DualContouring(inout Vertex v, int3 cornerCoords[8])
 {
-    uint index = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + id.x;
-    
-    
-    
-    if (id.x >= TextureSize - 1 || id.y >= TextureSize - 1 || id.z >= TextureSize - 1)
-    {
-        Vertex vertex = (Vertex) 0;
-        vertex.position = float3(100, 0, 0);
-        vertex.normal = id;
-        vertex.tangent = id;
-        vertex.configuration = -1;
-        Vertices[index] = vertex;
-        return;
-    }
-
-    
-    int3 coord = id; // + int3(ChunkCoord);
-
-    int3 cornerCoords[8];
-    cornerCoords[0] = coord + int3(0, 0, 0);
-    cornerCoords[1] = coord + int3(1, 0, 0);
-    cornerCoords[2] = coord + int3(1, 0, 1);
-    cornerCoords[3] = coord + int3(0, 0, 1);
-    cornerCoords[4] = coord + int3(0, 1, 0);
-    cornerCoords[5] = coord + int3(1, 1, 0);
-    cornerCoords[6] = coord + int3(1, 1, 1);
-    cornerCoords[7] = coord + int3(0, 1, 1);
-
-    int cubeConfiguration = 0;
-    for (int i = 0; i < 8; i++)
-    {
-        if (DensityTexture[cornerCoords[i]] < IsoValue)
-        {
-            cubeConfiguration |= (1 << i);
-        }
-    }
-    
-    VoxelMaterialBuffer[index] = cubeConfiguration;
-    
-    /* voxel is outwith iso threshold */
-    if (cubeConfiguration == 0 || cubeConfiguration == 255)
-    {
-        Vertex vertex = (Vertex) 0;
-        vertex.position = float3(0, 0, 0);
-        vertex.normal = id;
-        vertex.tangent = id;
-        
-        vertex.configuration = -1;
-        Vertices[index] = vertex;
-        
-        return;
-    }
-     
     int MAX_EDGE = 6;
     float ATA[6] = { 0, 0, 0, 0, 0, 0 };
     float4 pointaccum = (float4) 0;
@@ -138,9 +98,8 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     float edgeCount = 0;
     
     /* for surface nets algo */
-    float3 avgPosition = (float3) 0;
     
-    for (i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
+    for (uint i = 0; i < 12 && edgeCount < MAX_EDGE; i++)
     {
         /* fetch indices for the corners of the voxel */
         int c1 = cornerIndexAFromEdge[i];
@@ -166,11 +125,10 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
             p2 = cornerCoords[c2];
             
             float t = (IsoValue - s0) / (s1 - s0);
+            
+            
             float3 p = p1 + t * (p2 - p1);
-            
             float3 n = CalculateNormal(p);
-            avgPosition += p;
-            
             QEFAdd(n, p, ATA, Atb, pointaccum, btb);
             averageNormal += n;
             edgeCount++;
@@ -178,7 +136,6 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         }
     }
 
-    avgPosition /= edgeCount;
     
     averageNormal = normalize(averageNormal / edgeCount);
     float3 com = float3(pointaccum.x, pointaccum.y, pointaccum.z) / pointaccum.w;
@@ -188,6 +145,7 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
     float3 minimum = cornerCoords[0];
     float3 maximum = cornerCoords[0] + float3(1, 1, 1);
 
+    
     /* sometimes the position generated spawns the vertex outside the voxel */
     /* if this happens place the vertex at the centre of mass */
     
@@ -197,27 +155,149 @@ void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadI
         solvedPosition.xyz = com.xyz;
     }
     
-    Vertex vertex = (Vertex) 0;
+    solvedPosition /= (TextureSize - 1);
+    solvedPosition *= Resolution;
+    
+    v.position = solvedPosition;
+    v.normal = averageNormal;
+    v.tangent = float3(1,0, 0);
+    v.configuration.x = 1;
+}
+
+
+void SurfaceNets(inout Vertex v, int3 cornerCoords[8])
+{
+    
+    float4 avgPoint = (float4) 0;
+    float3 averageNormal = (float3) 0;
+    float edgeCount = 0;
+    
+    for (uint i = 0; i < 12; i++)
+    {
+        /* fetch indices for the corners of the voxel */
+        int c1 = cornerIndexAFromEdge[i];
+        int c2 = cornerIndexBFromEdge[i];
+        
+        /* check the bit at this corner */
+        float3 p1 = cornerCoords[c1];
+        float3 p2 = cornerCoords[c2];
+        
+        float s0 = DensityTexture[p1];
+        float s1 = DensityTexture[p2];
+        
+
+        
+        int m1 = (s0 > 0) ? 1 : 0;
+        int m2 = (s1 > 0) ? 1 : 0;
+        
+        /* if there is a sign change */
+        if (!((m1 == 0 && m2 == 0) || (m1 == 1 && m2 == 1)))
+        {
+            /* ...calculate the intersecting vertex along the edge */
+            p1 = cornerCoords[c1];
+            p2 = cornerCoords[c2];
+            
+            float t = (IsoValue - s0) / (s1 - s0);
+
+         
+            
+            float3 p = p1 + t * (p2 - p1);
+            float3 n = CalculateNormal(p);
+            avgPoint += float4(p.xyz, 1);
+            averageNormal += n;
+            edgeCount++;
+            
+        }
+    }
+
+    
+    averageNormal = normalize(averageNormal / edgeCount);
+    float3 solvedPosition = float3(avgPoint.x, avgPoint.y, avgPoint.z) / avgPoint.w;
+    
+    float3 minimum = cornerCoords[0];
+    float3 maximum = cornerCoords[0] + float3(1, 1, 1);
     
     solvedPosition = solvedPosition / (TextureSize - 1);
     solvedPosition *= Resolution;
     
-    vertex.position = avgPosition;
-    vertex.normal = averageNormal;
-    vertex.tangent = id;
+    v.position = solvedPosition;
+    v.normal = averageNormal;
+    v.tangent = float3(1, 0, 0);
+    v.configuration.x = 1;
+}
+
+
+[numthreads(8, 8, 8)]
+void GenerateVertices(int3 id : SV_DispatchThreadID, int3 gtid : SV_GroupThreadID)
+{
+    uint index = ((id.z * Resolution) * Resolution) + (id.y * Resolution) + id.x;
     
-    vertex.configuration = 1;
     
+    Vertex vertex = (Vertex) 0;
+    
+    if (id.x >= TextureSize - 1 || id.y >= TextureSize - 1 || id.z >= TextureSize - 1)
+    {
+        vertex.position = float3(100, 0, 0);
+        vertex.normal = id;
+        vertex.tangent = id;
+        vertex.configuration.x = -1;
+        Vertices[index] = vertex;
+        return;
+    }
+
+    
+    int3 coord = id + int3(ChunkCoord);
+
+    int3 cornerCoords[8];
+    cornerCoords[0] = coord + int3(0, 0, 0);
+    cornerCoords[1] = coord + int3(1, 0, 0);
+    cornerCoords[2] = coord + int3(1, 0, 1);
+    cornerCoords[3] = coord + int3(0, 0, 1);
+    cornerCoords[4] = coord + int3(0, 1, 0);
+    cornerCoords[5] = coord + int3(1, 1, 0);
+    cornerCoords[6] = coord + int3(1, 1, 1);
+    cornerCoords[7] = coord + int3(0, 1, 1);
+
+    int cubeConfiguration = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        if (DensityTexture[cornerCoords[i]] < IsoValue)
+        {
+            cubeConfiguration |= (1 << i);
+        }
+    }
+    
+    VoxelMaterialBuffer[index] = cubeConfiguration;
+    
+    /* voxel is outwith iso threshold */
+    if (cubeConfiguration == 0 || cubeConfiguration == 255)
+    {
+        vertex.position = float3(0, 0, 0);
+        vertex.normal = id;
+        vertex.tangent = id;
+        vertex.configuration.x = -1;
+        Vertices[index] = vertex;
+        return;
+    }
+    
+    if(UseSurfaceNets == 1)
+    {
+        SurfaceNets(vertex, cornerCoords);
+    }
+    else
+    {
+        DualContouring(vertex, cornerCoords);
+    }
+
     Vertices[index] = vertex;
-    
 }
 
 bool QueryDistance(Vertex a, Vertex b, uint r)
 {
     bool valid = false;
     
-    //...1.0f - The min distance between voxel midpoints.
-    float err = 1.0f + 1.0f;
+    //... len of two voxel midpoints + voxel dimension
+    float err = 1.0f + 2.0f;
     if (length(b.position - a.position) <= err || length(a.position - b.position) <= err)
     {
         valid = true;
@@ -297,13 +377,13 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] > 0 && DensityTexture[forward] < 0)
     {
         /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[pxyz].configuration == 1 &&
-            Vertices[left_z].configuration == 1 &&
-            Vertices[left_and_below_z].configuration == 1)
+        if (Vertices[pxyz].configuration.x == 1 &&
+            Vertices[left_z].configuration.x == 1 &&
+            Vertices[left_and_below_z].configuration.x == 1)
         {
-            tri.vertexA = Vertices[pxyz];
+            tri.vertexC = Vertices[pxyz];
             tri.vertexB = Vertices[left_z];
-            tri.vertexC = Vertices[left_and_below_z];
+            tri.vertexA = Vertices[left_and_below_z];
             
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) && 
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) && 
@@ -313,14 +393,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             }
         }
         
-        if (Vertices[pxyz].configuration == 1 &&
-            Vertices[left_and_below_z].configuration == 1 &&
-            Vertices[below_pxyz].configuration == 1)
+        if (Vertices[pxyz].configuration.x == 1 &&
+            Vertices[left_and_below_z].configuration.x == 1 &&
+            Vertices[below_pxyz].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[pxyz];
+            tri.vertexC = Vertices[pxyz];
             tri.vertexB = Vertices[left_and_below_z];
-            tri.vertexC = Vertices[below_pxyz];
+            tri.vertexA = Vertices[below_pxyz];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -335,14 +415,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] < 0 && DensityTexture[forward] > 0)
     {
         /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[left_and_below_z].configuration == 1 &&
-            Vertices[left_z].configuration == 1 &&
-            Vertices[pxyz].configuration == 1)
+        if (Vertices[left_and_below_z].configuration.x == 1 &&
+            Vertices[left_z].configuration.x == 1 &&
+            Vertices[pxyz].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[left_and_below_z];
+            tri.vertexC = Vertices[left_and_below_z];
             tri.vertexB = Vertices[left_z];
-            tri.vertexC = Vertices[pxyz];
+            tri.vertexA = Vertices[pxyz];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -352,14 +432,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             }
         }
         
-        if (Vertices[left_and_below_z].configuration == 1 &&
-            Vertices[pxyz].configuration == 1 &&
-            Vertices[below_pxyz].configuration == 1)
+        if (Vertices[left_and_below_z].configuration.x == 1 &&
+            Vertices[pxyz].configuration.x == 1 &&
+            Vertices[below_pxyz].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[left_and_below_z];
+            tri.vertexC = Vertices[left_and_below_z];
             tri.vertexB = Vertices[pxyz];
-            tri.vertexC = Vertices[below_pxyz];
+            tri.vertexA = Vertices[below_pxyz];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -375,14 +455,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] > 0 && DensityTexture[right] < 0)
     {
         /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[right_of_x].configuration == 1 &&
-            Vertices[pxyz].configuration == 1 &&
-            Vertices[below_pxyz].configuration == 1)
+        if (Vertices[right_of_x].configuration.x == 1 &&
+            Vertices[pxyz].configuration.x == 1 &&
+            Vertices[below_pxyz].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[right_of_x];
+            tri.vertexC = Vertices[right_of_x];
             tri.vertexB = Vertices[pxyz];
-            tri.vertexC = Vertices[below_pxyz];
+            tri.vertexA = Vertices[below_pxyz];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -393,14 +473,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
         }
         
         
-        if (Vertices[right_of_x].configuration == 1 &&
-            Vertices[below_pxyz].configuration == 1 &&
-            Vertices[right_of_and_below_x].configuration == 1)
+        if (Vertices[right_of_x].configuration.x == 1 &&
+            Vertices[below_pxyz].configuration.x == 1 &&
+            Vertices[right_of_and_below_x].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[right_of_x];
+            tri.vertexC = Vertices[right_of_x];
             tri.vertexB = Vertices[below_pxyz];
-            tri.vertexC = Vertices[right_of_and_below_x];
+            tri.vertexA = Vertices[right_of_and_below_x];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -414,14 +494,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] < 0 && DensityTexture[right] > 0)
     {
          /* ...sweep around the pxyz axes and append the vertices */
-        if (Vertices[below_pxyz].configuration == 1 &&
-            Vertices[pxyz].configuration == 1 &&
-            Vertices[right_of_x].configuration == 1)
+        if (Vertices[below_pxyz].configuration.x == 1 &&
+            Vertices[pxyz].configuration.x == 1 &&
+            Vertices[right_of_x].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[below_pxyz];
+            tri.vertexC = Vertices[below_pxyz];
             tri.vertexB = Vertices[pxyz];
-            tri.vertexC = Vertices[right_of_x];
+            tri.vertexA = Vertices[right_of_x];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -431,14 +511,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             }
         }
         
-        if (Vertices[below_pxyz].configuration == 1 &&
-            Vertices[right_of_x].configuration == 1 &&
-            Vertices[right_of_and_below_x].configuration == 1)
+        if (Vertices[below_pxyz].configuration.x == 1 &&
+            Vertices[right_of_x].configuration.x == 1 &&
+            Vertices[right_of_and_below_x].configuration.x == 1)
         {
         
-            tri.vertexA = Vertices[below_pxyz];
+            tri.vertexC = Vertices[below_pxyz];
             tri.vertexB = Vertices[right_of_x];
-            tri.vertexC = Vertices[right_of_and_below_x];
+            tri.vertexA = Vertices[right_of_and_below_x];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -454,15 +534,15 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     if (DensityTexture[coord] > 0 && DensityTexture[up] < 0)
     {
         
-        if (Vertices[pxyz].configuration == 1 &&
-            Vertices[right_of_x].configuration == 1 &&
-            Vertices[left_and_behind_Y].configuration == 1)
+        if (Vertices[pxyz].configuration.x == 1 &&
+            Vertices[right_of_x].configuration.x == 1 &&
+            Vertices[left_and_behind_Y].configuration.x == 1)
         {
         
         
-            tri.vertexA = Vertices[pxyz];
+            tri.vertexC = Vertices[pxyz];
             tri.vertexB = Vertices[right_of_x];
-            tri.vertexC = Vertices[left_and_behind_Y];
+            tri.vertexA = Vertices[left_and_behind_Y];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -472,14 +552,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             }
         }
        
-        if (Vertices[pxyz].configuration == 1 &&
-            Vertices[left_and_behind_Y].configuration == 1 &&
-            Vertices[left_z].configuration == 1)
+        if (Vertices[pxyz].configuration.x == 1 &&
+            Vertices[left_and_behind_Y].configuration.x == 1 &&
+            Vertices[left_z].configuration.x == 1)
         {
        
-            tri.vertexA = Vertices[pxyz];
+            tri.vertexC = Vertices[pxyz];
             tri.vertexB = Vertices[left_and_behind_Y];
-            tri.vertexC = Vertices[left_z];
+            tri.vertexA = Vertices[left_z];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -495,13 +575,13 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     {
         /* ...sweep around the pxyz axes and append the vertices */
         
-        if (Vertices[pxyz].configuration == 1 &&
-            Vertices[left_of_y].configuration == 1 &&
-            Vertices[left_and_behind_Y].configuration == 1)
+        if (Vertices[pxyz].configuration.x == 1 &&
+            Vertices[left_of_y].configuration.x == 1 &&
+            Vertices[left_and_behind_Y].configuration.x == 1)
         {
-            tri.vertexA = Vertices[pxyz];
+            tri.vertexC = Vertices[pxyz];
             tri.vertexB = Vertices[left_of_y];
-            tri.vertexC = Vertices[left_and_behind_Y];
+            tri.vertexA = Vertices[left_and_behind_Y];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&
@@ -511,14 +591,14 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
             }
         }
        
-        if (Vertices[pxyz].configuration == 1 &&
-            Vertices[left_and_behind_Y].configuration == 1 &&
-            Vertices[behind_y].configuration == 1)
+        if (Vertices[pxyz].configuration.x == 1 &&
+            Vertices[left_and_behind_Y].configuration.x == 1 &&
+            Vertices[behind_y].configuration.x == 1)
         {
 
-            tri.vertexA = Vertices[pxyz];
+            tri.vertexC = Vertices[pxyz];
             tri.vertexB = Vertices[left_and_behind_Y];
-            tri.vertexC = Vertices[behind_y];
+            tri.vertexA = Vertices[behind_y];
         
             if (QueryDistance(tri.vertexA, tri.vertexB, Resolution) &&
                 QueryDistance(tri.vertexB, tri.vertexC, Resolution) &&

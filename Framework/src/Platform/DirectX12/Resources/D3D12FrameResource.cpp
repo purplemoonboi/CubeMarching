@@ -50,6 +50,8 @@ namespace Engine
 		MaterialBuffer  = CreateScope<D3D12UploadBuffer<MaterialConstants>>(d3d12Context, materialBufferCount, true);
 		ConstantBuffer	= CreateScope<D3D12UploadBuffer<ObjectConstant>>(d3d12Context, objectCount, true);
 		TerrainBuffer   = CreateScope<D3D12UploadBuffer<Vertex>>(d3d12Context,voxelBufferElementCount, false);
+
+		//RenderTarget = CreateScope<D3D12RenderTarget>(nullptr, 1920, 1080);
 	}
 
 	void D3D12FrameResource::UpdateVoxelBuffer(const D3D12Context*context, UINT elementCount)

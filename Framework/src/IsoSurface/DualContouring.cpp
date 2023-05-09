@@ -17,7 +17,6 @@ namespace Engine
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(compute);
 		MemManager = dynamic_cast<D3D12MemoryManager*>(memManger);
 
-
 		/**
 		 * load and compile the shader passes
 		 */
@@ -37,16 +36,9 @@ namespace Engine
 		};
 		GenerateTriangleShader = Shader::Create(argsTs.FilePath, argsTs.EntryPoint, argsTs.ShaderModel);
 
-		
 		BuildRootSignature();
 		BuildDualContourPipelineStates();
 		CreateBuffers();
-
-		Vertices.reserve(VoxelWorldElementCount);
-		Vertex vert = {};
-		Vertices.insert(Vertices.begin(), VoxelWorldElementCount, vert);
-		Indices.reserve(VoxelWorldElementCount);
-		Indices.insert(Indices.begin(), VoxelWorldElementCount, 0);
 
 	}
 
@@ -91,22 +83,6 @@ namespace Engine
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-		ComputeContext->CommandList->CopyResource(VertexBackBuffer.Get(), VertexBuffer.Get());
-
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
-			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounterBuffer.Get(),
-			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
-
-		ComputeContext->CommandList->CopyResource(VertexCounterReadBack.Get(), VertexCounterBuffer.Get());
-
-		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounterBuffer.Get(),
-			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 
 		/* second pass - generating triangles */
@@ -139,88 +115,11 @@ namespace Engine
 		/* flush the instructions */
 		ComputeContext->FlushComputeQueue(&FenceValue);
 
-		/* map counter values and cache before instructed counter resets */
-		//INT32* vcountData = nullptr;
-		//INT32 vcounter = 0;
-		//const HRESULT vcounterHR = VertexCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&vcountData));
-		//THROW_ON_FAILURE(vcounterHR);
-		//vcounter = *vcountData;
-		//VertexCounterReadBack->Unmap(0, nullptr);
-
-		UINT64* countData = nullptr;
-		UINT64 counter = 0;
-
-		const HRESULT counterHR = TriangleCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&countData));
-		THROW_ON_FAILURE(counterHR);
-
-		const HRESULT hh = ComputeContext->Context->Device->GetDeviceRemovedReason();
-		THROW_ON_FAILURE(hh);
-
-		counter = *countData;
-
-		TriangleCounterReadBack->Unmap(0, nullptr);
+		if (CountData != nullptr)
+			TriangleCount = *CountData;
 
 		ResetCounters();
 
-		/**
-		 * read vertices
-		 */
-		/*DualContourVertex* rawVerts = nullptr;
-
-		const HRESULT vertHR = VertexBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&rawVerts));
-		THROW_ON_FAILURE(vertHR);
-		std::vector<DualContourVertex> vertices;
-
-		for (INT32 i = 0; i < DualContourNumberOfElements; ++i)
-		{
-			vertices.push_back(rawVerts[i]);
-		}
-		VertexBackBuffer->Unmap(0, nullptr);*/
-
-		/**
-		 * read triangles 
-		 */
-		DualContourTriangle* rawTris = nullptr;
-
-		const HRESULT triHR = TriangleReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&rawTris));
-		THROW_ON_FAILURE(triHR);
-
-		RawVoxelBuffer.clear();
-
-		for (INT32 i = 0; i < counter; ++i)
-		{
-			RawVoxelBuffer.push_back(rawTris[i]);
-		}
-		TriangleReadBackBuffer->Unmap(0, nullptr);
-
-		if (!RawVoxelBuffer.empty())
-		{
-			Vertices.clear();
-			Indices.clear();
-
-			UINT16 index = 0;
-			for (auto& tri : RawVoxelBuffer)
-			{
-				Vertex vertex;
-				vertex.Position = tri.VertexC.Position;
-				vertex.Normal = tri.VertexC.Normal;
-				vertex.Tangent = tri.VertexC.Tangent;
-				Vertices.push_back(vertex);
-				Indices.push_back(++index);
-
-				vertex.Position = tri.VertexB.Position;
-				vertex.Normal = tri.VertexB.Normal;
-				vertex.Tangent = tri.VertexB.Tangent;
-				Vertices.push_back(vertex);
-				Indices.push_back(++index);
-
-				vertex.Position = tri.VertexA.Position;
-				vertex.Normal = tri.VertexA.Normal;
-				vertex.Tangent = tri.VertexA.Tangent;
-				Vertices.push_back(vertex);
-				Indices.push_back(++index);
-			}
-		}
 
 		PIXEndEvent(ComputeContext->CommandList.Get());
 		PIXEndEvent(ComputeContext->Queue.Get());
@@ -302,9 +201,9 @@ namespace Engine
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 		/* create the vertex buffer */
-		uavDesc.Buffer.StructureByteStride = sizeof(DualContourVertex);
+		uavDesc.Buffer.StructureByteStride = sizeof(Vertex);
 		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
-		const UINT64 vertBufferWidth = DualContourNumberOfElements * sizeof(DualContourVertex);
+		const UINT64 vertBufferWidth = DualContourNumberOfElements * sizeof(Vertex);
 
 		VertexBuffer = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
 		VertexBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
@@ -343,6 +242,12 @@ namespace Engine
 
 		TriangleBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, TriangleBuffer.Get(), TriangleCounterBuffer.Get());
 
+		const HRESULT triHR = TriangleReadBackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&RawTriBuffer));
+		THROW_ON_FAILURE(triHR);
+
+		const HRESULT counterHR = TriangleCounterReadBack->Map(0, nullptr, reinterpret_cast<void**>(&CountData));
+		THROW_ON_FAILURE(counterHR);
+
 	}
 
 	
@@ -350,28 +255,6 @@ namespace Engine
 	void DualContouring::ResetCounters()
 	{
 		ComputeContext->ResetComputeCommandList(nullptr);
-
-		//const INT32 rawDataA[1] = { 0 };
-		//D3D12_SUBRESOURCE_DATA subResourceDataA = {};
-		//subResourceDataA.pData = rawDataA;
-		//subResourceDataA.RowPitch = sizeof(INT32);
-		//subResourceDataA.SlicePitch = subResourceDataA.RowPitch;
-
-		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		//	TriangleCounterBuffer.Get(),
-		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-		//	D3D12_RESOURCE_STATE_COPY_DEST
-		//));
-
-		//// Copy the data into the upload heap
-		//UpdateSubresources(ComputeContext->CommandList.Get(), VertexCounterBuffer.Get(), VertexCounterUpload.Get(), 0, 0, 1, &subResourceDataA);
-
-		//// Add the instruction to transition back to read 
-		//ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-		//	TriangleCounterBuffer.Get(),
-		//	D3D12_RESOURCE_STATE_COPY_DEST,
-		//	D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-		//));
 
 		const INT32 rawData[1] = { 0 };
 		D3D12_SUBRESOURCE_DATA subResourceData = {};

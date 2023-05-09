@@ -44,11 +44,12 @@ namespace Engine
 			Texture* texture
 		);
 
-		[[nodiscard]] const std::vector<Triangle>& GetTriangleBuffer() const { return RawTriBuffer; }
 
-		[[nodiscard]] const std::vector<Vertex>& GetVertices() const { return Vertices; }
+		[[nodiscard]] const void* GetVertices() const { return RawTriangleBuffer; }
 
-		[[nodiscard]] std::vector<UINT16>& GetIndices() { return Indices; }
+		[[nodiscard]] UINT32 GetVertexCount() const { return TriCount * 3; }
+
+		[[nodiscard]] UINT16* GetIndices() const { return Indices; }
 
 	private:
 		ID3D12Device* Device;
@@ -60,7 +61,6 @@ namespace Engine
 
 		ScopePointer<Shader> ComputeShader;
 
-		std::vector<Triangle> RawTriBuffer;
 
 		Data McData;
 
@@ -89,8 +89,13 @@ namespace Engine
 		ComPtr<ID3D12Resource> UploadTriangulationTable;
 		D3D12_GPU_DESCRIPTOR_HANDLE TriBufferSrv;
 
-		std::vector<Vertex> Vertices;
-		std::vector<UINT16> Indices;
+		Triangle* RawTriangleBuffer = nullptr;
+		UINT16* Indices = nullptr;
+		UINT32* TriData = nullptr;
+		UINT32 TriCount = 0;
+
+		/*std::vector<Vertex> Vertices;
+		std::vector<UINT16> Indices;*/
 
 	};
 

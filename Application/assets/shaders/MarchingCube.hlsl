@@ -282,9 +282,9 @@ void GenerateChunk(int3 id : SV_DispatchThreadID)
 
         Triangle tri = (Triangle) 0;
         
-        tri.vertexA = createVertex(cornerCoords[a0], cornerCoords[a1]);
+        tri.vertexC = createVertex(cornerCoords[a0], cornerCoords[a1]);
         tri.vertexB = createVertex(cornerCoords[b0], cornerCoords[b1]);
-        tri.vertexC = createVertex(cornerCoords[c0], cornerCoords[c1]);
+        tri.vertexA = createVertex(cornerCoords[c0], cornerCoords[c1]);
 
         triangles[triangles.IncrementCounter()] = tri;
     }

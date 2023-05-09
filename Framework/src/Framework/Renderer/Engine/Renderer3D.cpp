@@ -237,11 +237,6 @@ namespace Engine
 
 	void Renderer3D::BuildTextures()
 	{
-		/*auto texture = Texture::Create(L"assets\\textures\\crate\\WoodCrate02.dds", "Crate");
-		RenderData.Textures.push_back(texture.get());
-		RenderData.TextureLibrary.Add("Crate", std::move(texture));*/
-
-
 		/**
 		 *	moss
 		 */
@@ -253,11 +248,6 @@ namespace Engine
 		RenderData.Textures.push_back(mossNormal.get());
 		RenderData.TextureLibrary.Add("MossNormal", std::move(mossNormal));
 
-		//auto mossRough = Texture::Create(L"assets\\textures\\moss\\Moss_roughness.dds", "MossRough");
-		//RenderData.Textures.push_back(mossRough.get());
-		//RenderData.TextureLibrary.Add("MossRough", std::move(mossRough));
-
-
 		///**
 		// *  rock
 		// */
@@ -268,16 +258,10 @@ namespace Engine
 		auto rockNormal = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_normal.dds", "RockNormal");
 		RenderData.Textures.push_back(rockNormal.get());
 		RenderData.TextureLibrary.Add("RockNormal", std::move(rockNormal));
-
-		//auto rockRough = Texture::Create(L"assets\\textures\\rock\\RocksLayered02_roughness.dds", "RockRough");
-		//RenderData.Textures.push_back(rockRough.get());
-		//RenderData.TextureLibrary.Add("RockRough", std::move(rockRough));
 	}
 
 	void Renderer3D::CreateVoxelTerrain
 	(
-		const std::vector<Vertex>& vertices,
-		std::vector<UINT16>& indices,
 		const std::string& meshTag,
 		Transform transform
 	)
@@ -286,7 +270,6 @@ namespace Engine
 		{
 			if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
 			{
-
 				ScopePointer<MeshGeometry> mesh = CreateScope<MeshGeometry>(meshTag);
 
 				mesh->VertexBuffer = VertexBuffer::Create(
@@ -303,21 +286,17 @@ namespace Engine
 				SubGeometry drawArgs = { (UINT)mesh->IndexBuffer->GetCount(), 0, 0 };
 				mesh->DrawArgs.emplace(meshTag + "_Args", drawArgs);
 
+
+				RenderData.Terrain = RenderItem::Create(mesh.get(),
+					RenderData.MaterialLibrary.Get("Terrain"),
+					meshTag + "_Args",
+					RenderData.OpaqueRenderItems.size(),
+					transform);
 				RenderData.Geometries.emplace(meshTag, std::move(mesh));
 
-				const INT32 constCbvOffset = RenderData.OpaqueRenderItems.size();
-
-				RenderData.Terrain = RenderItem::Create
-				(
-					RenderData.Geometries[meshTag].get(),
-					RenderData.MaterialLibrary.Get("Terrain"),
-					meshTag+"_Args",
-					constCbvOffset,
-					transform
-				);
-
 				RenderData.OpaqueRenderItems.push_back(RenderData.Terrain.get());
-				//RenderData.RenderItems.push_back(std::move(RenderData.Terrain));
+
+				
 			}
 		}
 	}
@@ -373,7 +352,7 @@ namespace Engine
 				}
 
 				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty++;
+				ri->NumFramesDirty+=NUMBER_OF_FRAME_RESOURCES;
 				const auto item = RenderData.Geometries.at(renderItemTag).get();
 				item->VertexBuffer->SetData(vertices.data(), vertices.size() * sizeof(Vertex), vertices.size());
 				item->IndexBuffer->SetData(indices.data(), vertices.size());
@@ -382,15 +361,31 @@ namespace Engine
 		}
 	}
 
+	void Renderer3D::SetBuffer(const std::string& renderItemTag, Vertex* vertices, UINT vCount, UINT16* indices, UINT iCount)
+	{
+		for (INT32 i = 0; i < RenderData.OpaqueRenderItems.size(); ++i)
+		{
+			if (RenderData.OpaqueRenderItems[i]->Geometry->GetName() == renderItemTag)
+			{
+				const auto ri = RenderData.OpaqueRenderItems[i];
+				ri->NumFramesDirty+=NUMBER_OF_FRAME_RESOURCES;
+				const auto item = RenderData.Geometries.at(renderItemTag).get();
+				item->VertexBuffer->SetData(vertices, vCount * sizeof(Vertex), vCount);
+				item->IndexBuffer->SetData(indices, iCount);
+				break;
+			}
+		}
+	}
+
+	
+
 
 	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
 	{
 		return RenderData.OpaqueRenderItems[index];
 	}
 
-	void Renderer3D::CreateOctreeDebugFrame(const std::vector<Vertex>& nodePositions)
-	{
-	}
+
 
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{

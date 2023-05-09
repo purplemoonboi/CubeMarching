@@ -88,7 +88,7 @@ namespace Engine
 
 		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
 		// This may happen if the application is launched through the PIX UI. 
-		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+		/*if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
 			CORE_TRACE("Injecting WinPixCapturer.dll...")
 			const wchar_t* path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
@@ -102,8 +102,8 @@ namespace Engine
 			{
 				CORE_WARNING("PIX Capturer Invalid!");
 			}
-		}
-		else
+		}*/
+		//else
 		{
 			CORE_WARNING("Failed to inject WinPixCapturer.dll")
 		}

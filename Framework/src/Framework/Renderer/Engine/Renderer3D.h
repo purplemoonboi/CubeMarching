@@ -59,7 +59,7 @@ namespace Engine
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
-		static void CreateVoxelTerrain(const std::vector<Vertex>& vertices, std::vector<UINT16>& indices, const std::string& meshTag, Transform transform);
+		static void CreateVoxelTerrain(const std::string& meshTag, Transform transform);
 
 		static void DeleteVoxelTerrain(const std::string& tag);
 
@@ -67,9 +67,12 @@ namespace Engine
 
 		static void SetBuffer(const std::string& renderItemTag, const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);
 
+		static void SetBuffer(const std::string& renderItemTag, Vertex* vertices, UINT vCount, UINT16* indices, UINT iCount);
+
+		static void SetTerrainBuffer(UINT64* id, Vertex* vertices, UINT32 vCount, UINT16* indices, UINT32 iCount);
+
 		static RenderItem* GetRenderItem(UINT16 index);
 
-		static void CreateOctreeDebugFrame(const std::vector<Vertex>& nodePositions);
 
 		struct VoxelWorldRenderingStats
 		{

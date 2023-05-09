@@ -157,10 +157,9 @@ namespace Engine
 		{
 			//...check the buffer sizes align. Note, they always should unless we have
 			//requested to regenerate the buffer.
-			const UINT32 vCount = terrain->Geometry->VertexBuffer->GetCount();
-			if (CurrentFrameResource->QueryTerrainBuffer(vCount))
+			if (CurrentFrameResource->QueryTerrainBuffer(terrain->Geometry->VertexBuffer->GetCount()))
 			{
-				CurrentFrameResource->UpdateVoxelBuffer(Context, vCount);
+				CurrentFrameResource->UpdateVoxelBuffer(Context, terrain->Geometry->VertexBuffer->GetCount());
 			}
 
 			if (terrain->NumFramesDirty > 0)
@@ -169,10 +168,6 @@ namespace Engine
 				UploadBuffer->UpdateVoxelTerrain(CurrentFrameResource, terrain);
 			}
 		}
-		
-		
-				
-		
 
 		// Update constant buffers for each render item and material
 		UploadBuffer->UpdateObjectBuffers(CurrentFrameResource, items);
