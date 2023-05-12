@@ -15,7 +15,7 @@ namespace Engine
 	void DualContouring::Init(ComputeApi* compute, MemoryManager* memManger)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(compute);
-		MemManager = dynamic_cast<D3D12MemoryManager*>(memManger);
+		MemManager = dynamic_cast<D3D12HeapManager*>(memManger);
 
 		/**
 		 * load and compile the shader passes

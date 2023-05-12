@@ -10,7 +10,7 @@ namespace Engine
 	struct ShaderArgs;
 	class MemoryManager;
 	class D3D12ReadBackBuffer;
-	class D3D12MemoryManager;
+	class D3D12HeapManager;
 	class D3D12PipelineStateObject;
 	class D3D12Shader;
 	class Shader;
@@ -74,7 +74,7 @@ namespace Engine
 		void Create(const PerlinNoiseSettings& settings);
 	private:
 		D3D12ComputeApi* ComputeContext = nullptr;
-		D3D12MemoryManager* MemManager = nullptr;
+		D3D12HeapManager* MemManager = nullptr;
 
 		ComPtr<ID3D12RootSignature> DensityRootSignature;
 

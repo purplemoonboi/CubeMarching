@@ -8,7 +8,7 @@ namespace Engine
 	void Radix::Init(ComputeApi* context, MemoryManager* memManager)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
-		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
+		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
 
 		BuildRootSignature();
 		BuildResources();

@@ -16,7 +16,7 @@ namespace Engine
 	using Microsoft::WRL::ComPtr;
 
 	class D3D12Context;
-	class D3D12MemoryManager;
+	class D3D12HeapManager;
 
 	// @brief The buffer event system is exclusive for modern APIs such as Direct X12 and Vulkan.
 	//	      Because it is the programmer's responsibility for ensuring safe allocation and deallocation
@@ -131,7 +131,7 @@ namespace Engine
 		D3D12ResourceBuffer
 		(
 			ID3D12Device* device,
-			D3D12MemoryManager* memoryManager,
+			D3D12HeapManager* memoryManager,
 			const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
 			UINT renderItemsCount
 		);

@@ -266,39 +266,41 @@ namespace Engine
 		Transform transform
 	)
 	{
-		if (RenderData.OpaqueRenderItems.size() < 20)
-		{
-			if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
-			{
-				ScopePointer<MeshGeometry> mesh = CreateScope<MeshGeometry>(meshTag);
 
-				mesh->VertexBuffer = VertexBuffer::Create(
-					nullptr,
-					sizeof(Vertex) * 1,
-					1,
-					false);
+		//if (RenderData.OpaqueRenderItems.size() < 20)
+		//{
+		//	if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
+		//	{
+		//		ScopePointer<MeshGeometry> mesh = CreateScope<MeshGeometry>(meshTag);
 
-				mesh->IndexBuffer = IndexBuffer::Create(
-					nullptr,
-					sizeof(UINT16) * 1,
-					0);
+		//		mesh->VertexBuffer = VertexBuffer::Create(
+		//			nullptr,
+		//			sizeof(Vertex) * 1,
+		//			1,
+		//			false);
 
-				SubGeometry drawArgs = { (UINT)mesh->IndexBuffer->GetCount(), 0, 0 };
-				mesh->DrawArgs.emplace(meshTag + "_Args", drawArgs);
+		//		mesh->IndexBuffer = IndexBuffer::Create(
+		//			nullptr,
+		//			sizeof(UINT16) * 1,
+		//			0);
+
+		//		SubGeometry drawArgs = { (UINT)mesh->IndexBuffer->GetCount(), 0, 0 };
+		//		mesh->DrawArgs.emplace(meshTag + "_Args", drawArgs);
 
 
-				RenderData.Terrain = RenderItem::Create(mesh.get(),
-					RenderData.MaterialLibrary.Get("Terrain"),
-					meshTag + "_Args",
-					RenderData.OpaqueRenderItems.size(),
-					transform);
-				RenderData.Geometries.emplace(meshTag, std::move(mesh));
+		//		RenderData.Terrain = RenderItem::Create(mesh.get(),
+		//			RenderData.MaterialLibrary.Get("Terrain"),
+		//			meshTag + "_Args",
+		//			RenderData.OpaqueRenderItems.size(),
+		//			transform);
+		//		RenderData.Geometries.emplace(meshTag, std::move(mesh));
 
-				RenderData.OpaqueRenderItems.push_back(RenderData.Terrain.get());
+		//		RenderData.OpaqueRenderItems.push_back(RenderData.Terrain.get());
 
-				
-			}
-		}
+		//		
+		//	}
+		//}
+
 	}
 
 	void Renderer3D::DeleteVoxelTerrain(const std::string& tag)

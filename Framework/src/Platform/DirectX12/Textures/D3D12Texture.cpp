@@ -2,7 +2,7 @@
 
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 

@@ -3,7 +3,7 @@
 #include "Framework/Maths/Perlin.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 
 namespace Engine
 {
@@ -11,7 +11,7 @@ namespace Engine
 	void DensityTextureGenerator::Init(ComputeApi* context, MemoryManager* memManager)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
-		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
+		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
 
 		ShaderArgs args =
 		{

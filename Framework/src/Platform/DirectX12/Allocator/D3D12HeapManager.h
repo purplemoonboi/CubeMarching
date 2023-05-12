@@ -1,5 +1,4 @@
 #pragma once
-#include "Framework/Renderer/Memory/MemoryManager.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
 
@@ -8,7 +7,7 @@ namespace Engine
 
 	class D3D12Context;
 
-	class D3D12MemoryManager : public MemoryManager
+	class D3D12HeapManager 
 	{
 		struct Handles
 		{
@@ -25,21 +24,15 @@ namespace Engine
 
 	public:
 
-		D3D12MemoryManager(ID3D12Device* device);
-		~D3D12MemoryManager();
+		D3D12HeapManager(ID3D12Device* device);
+		~D3D12HeapManager();
 
-		void Allocate(UINT64 ptr, UINT64 memSize)	override;
-
-		void Deallocate(UINT64 ptr, UINT64 memSize) override;
-
-		HRESULT InitialiseCbvHeap(ID3D12Device* device, UINT64 frameResourcesCount, UINT64 maxObjectCount);
-
-		HRESULT InitialiseSrvUavHeap(ID3D12Device* device, UINT64 size);
+		HRESULT Init(UINT framesInFlight, UINT maxObjectCount);
 
 		Handles GetResourceHandle(INT32 offset = 1);
 
 
-		[[nodiscard]] UINT GetDescriptorIncrimentSize() const { return CbvDescriptorSize; }
+		[[nodiscard]] UINT GetDescriptorIncrimentSize() const { return CbvSrvUavDescriptorSize; }
 
 		[[nodiscard]] ID3D12DescriptorHeap* GetConstantBufferDescHeap() const { return CbvHeap.Get(); }
 
@@ -55,15 +48,20 @@ namespace Engine
 		[[nodiscard]] UINT GetPassBufferOffset() const { return PassBufferOffsetSize; }
 
 	private:
+
+		ID3D12Device* pDevice;
+
+
 		bool IsInitialised = false;
 		ComPtr<ID3D12DescriptorHeap> CbvHeap = nullptr;
 		ComPtr<ID3D12DescriptorHeap> SrvUavHeap = nullptr;
 
 
 		Handles ResourceHandles;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE NullHandle;
 		ImGuiHandles ImGuiHandles;
 
-		UINT CbvDescriptorSize;
+		UINT CbvSrvUavDescriptorSize;
 		UINT PassBufferOffsetSize;
 
 		UINT SrvUavDescriptorSize;

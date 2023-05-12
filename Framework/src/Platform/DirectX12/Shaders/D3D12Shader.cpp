@@ -60,16 +60,12 @@ namespace Engine
 
 	void D3D12Shader::SetMat4(std::string&& name, const DirectX::XMFLOAT4X4& matrix)
 	{
-
-
-
 	}
 
 	const std::string& D3D12Shader::GetName() const
 	{
 		return Name;
 	}
-
 
 	ComPtr<ID3DBlob> D3D12Shader::CompileShader
 	(

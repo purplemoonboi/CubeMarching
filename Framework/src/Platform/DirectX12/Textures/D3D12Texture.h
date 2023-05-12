@@ -7,7 +7,7 @@
 
 namespace Engine
 {
-	class D3D12MemoryManager;
+	class D3D12HeapManager;
 	using Microsoft::WRL::ComPtr;
 
 

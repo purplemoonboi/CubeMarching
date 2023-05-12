@@ -6,13 +6,15 @@
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
-#include <pix3.h>
+#ifdef USE_PIX
+#include<pix3.h>
+#endif
 
 namespace Engine
 {
@@ -22,7 +24,7 @@ namespace Engine
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 
-		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
+		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
 
 		ShaderArgs args =
 		{

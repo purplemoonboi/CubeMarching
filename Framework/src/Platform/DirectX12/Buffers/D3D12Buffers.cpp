@@ -6,7 +6,7 @@
 #include "Framework/Core/Time/DeltaTime.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Buffers/D3D12UploadBuffer.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
@@ -246,7 +246,7 @@ namespace Engine
 	D3D12ResourceBuffer::D3D12ResourceBuffer
 	(
 		ID3D12Device* device,
-		D3D12MemoryManager* memoryManager,
+		D3D12HeapManager* memoryManager,
 		const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
 		UINT renderItemsCount
 	)

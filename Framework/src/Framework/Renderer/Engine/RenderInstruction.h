@@ -33,12 +33,12 @@ namespace Engine
 
 		static void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
 		{
-			RendererApiPtr->BindTerrainPass(pso, terrain);
+			RendererApiPtr->DrawTerrainGeometry(pso, terrain);
 		}
 
 		static void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 		{
-			RendererApiPtr->BindStaticGeoPass(pso, renderItems);
+			RendererApiPtr->DrawSceneStaticGeometry(pso, renderItems);
 		}
 
 		static void OnBeginResourceCreation()

@@ -34,7 +34,7 @@ namespace Engine
 		auto const* api = dynamic_cast<D3D12RenderingApi*>(RenderInstruction::GetApiPtr());
 		auto const* context = dynamic_cast<D3D12Context*>(api->GetGraphicsContext());
 		auto const* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
-		auto const* memoryManager = dynamic_cast<D3D12MemoryManager*>(api->GetMemoryManager());
+		auto const* memoryManager = dynamic_cast<D3D12HeapManager*>(api->GetMemoryManager());
 
 		ImGui_ImplWin32_Init(context->GetHwnd());
 		ImGui_ImplDX12_Init
@@ -85,7 +85,7 @@ namespace Engine
 	void ImGuiD3D12::EndRenderImpl()
 	{
 		auto const* api = dynamic_cast<D3D12RenderingApi*>(RenderInstruction::GetApiPtr());
-		auto const* memoryManager = dynamic_cast<D3D12MemoryManager*>(api->GetMemoryManager());
+		auto const* memoryManager = dynamic_cast<D3D12HeapManager*>(api->GetMemoryManager());
 
 		auto* context = dynamic_cast<D3D12Context*>(api->GetGraphicsContext());
 		auto* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
@@ -98,7 +98,7 @@ namespace Engine
 		ImGuiCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 
-		frameBuffer->Bind(ImGuiCommandList.Get());
+		//frameBuffer->Bind(ImGuiCommandList.Get());
 
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), ImGuiCommandList.Get());
 
@@ -108,7 +108,7 @@ namespace Engine
 			ImGui::RenderPlatformWindowsDefault(nullptr, ImGuiCommandList.Get());
 		}
 
-		frameBuffer->UnBind(ImGuiCommandList.Get());
+		//frameBuffer->UnBind(ImGuiCommandList.Get());
 
 
 		HRESULT hr = ImGuiCommandList->Close();

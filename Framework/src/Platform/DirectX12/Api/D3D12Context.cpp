@@ -6,8 +6,9 @@
 #include <filesystem>
 #include <shlobj.h>
 
-#define USE_PIX
+#ifdef USE_PIX
 #include <pix3.h>
+#endif
 
 static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 {
@@ -85,10 +86,10 @@ namespace Engine
 
 	void D3D12Context::Init()
 	{
-
+#ifdef USE_PIX
 		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
 		// This may happen if the application is launched through the PIX UI. 
-		/*if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
+		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
 		{
 			CORE_TRACE("Injecting WinPixCapturer.dll...")
 			const wchar_t* path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
@@ -102,11 +103,12 @@ namespace Engine
 			{
 				CORE_WARNING("PIX Capturer Invalid!");
 			}
-		}*/
-		//else
+		}
+		else
 		{
 			CORE_WARNING("Failed to inject WinPixCapturer.dll")
 		}
+#endif
 
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 		{
@@ -300,59 +302,7 @@ namespace Engine
 		return true;
 	}
 
-	bool D3D12Context::CreateRootSignature()
-	{
-		CD3DX12_DESCRIPTOR_RANGE textureTable0;
-		textureTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0); // register t0
-
-		// Root parameter can be a table, root descriptor or root constants.
-		CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-
-		slotRootParameter[0].InitAsConstantBufferView(0);// register b0
-		slotRootParameter[1].InitAsConstantBufferView(1);// register b1
-		slotRootParameter[2].InitAsConstantBufferView(2);// register b2
-		slotRootParameter[3].InitAsDescriptorTable(1, &textureTable0, D3D12_SHADER_VISIBILITY_PIXEL);
-
-		const auto samplers = GetStaticSamplers();
-
-		// A root signature is an array of root parameters.
-		CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc
-		(
-			4, slotRootParameter,
-			samplers.size(), samplers.data(),
-			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-		);
-
-		// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
-		ComPtr<ID3DBlob> serializedRootSig = nullptr;
-		ComPtr<ID3DBlob> errorBlob = nullptr;
-		HRESULT hr = D3D12SerializeRootSignature
-		(
-			&rootSigDesc,
-			D3D_ROOT_SIGNATURE_VERSION_1,
-			serializedRootSig.GetAddressOf(),
-			errorBlob.GetAddressOf()
-		);
-
-		if (errorBlob != nullptr)
-		{
-			::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-		}
-		THROW_ON_FAILURE(hr);
-
-		THROW_ON_FAILURE
-		(
-			Device->CreateRootSignature
-			(
-				0,
-				serializedRootSig->GetBufferPointer(),
-				serializedRootSig->GetBufferSize(),
-				IID_PPV_ARGS(&RootSignature)
-			)
-		);
-
-		return true;
-	}
+	
 
 
 	bool D3D12Context::CreateSwapChain()
@@ -388,62 +338,6 @@ namespace Engine
 	}
 
 
-	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> D3D12Context::GetStaticSamplers()
-	{
-		// Applications usually only need a handful of samplers.  So just define them all up front
-	// and keep them available as part of the root signature.  
-
-		const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
-			0, // shaderRegister
-			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
-
-		const CD3DX12_STATIC_SAMPLER_DESC pointClamp(
-			1, // shaderRegister
-			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
-
-		const CD3DX12_STATIC_SAMPLER_DESC linearWrap(
-			2, // shaderRegister
-			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
-
-		const CD3DX12_STATIC_SAMPLER_DESC linearClamp(
-			3, // shaderRegister
-			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
-
-		const CD3DX12_STATIC_SAMPLER_DESC anisotropicWrap(
-			4, // shaderRegister
-			D3D12_FILTER_ANISOTROPIC, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressW
-			0.0f,                             // mipLODBias
-			8);                               // maxAnisotropy
-
-		const CD3DX12_STATIC_SAMPLER_DESC anisotropicClamp(
-			5, // shaderRegister
-			D3D12_FILTER_ANISOTROPIC, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressW
-			0.0f,                              // mipLODBias
-			8);                                // maxAnisotropy
-
-		return {
-			pointWrap, pointClamp,
-			linearWrap, linearClamp,
-			anisotropicWrap, anisotropicClamp };
-	}
 
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }
