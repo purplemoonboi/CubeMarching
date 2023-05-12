@@ -63,8 +63,8 @@ namespace Engine
         PIXCaptureParams.TimingCaptureParameters.CaptureGpuTiming = TRUE;
         PIXCaptureParams.TimingCaptureParameters.CaptureHeapAllocEvents = TRUE;
         PIXCaptureParams.TimingCaptureParameters.CaptureCallstacks = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CapturePixMemEvents = TRUE;*/
-
+        PIXCaptureParams.TimingCaptureParameters.CapturePixMemEvents = TRUE;
+        */
 #endif
 
         const auto api = RenderInstruction::GetApiPtr();
@@ -186,7 +186,7 @@ namespace Engine
 
         if(UpdateVoxels && !UpdateTexture)
         {
-            
+#ifdef USE_PIX
             HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
             if (!SUCCEEDED(hr))
             {
@@ -196,7 +196,7 @@ namespace Engine
             {
                 CORE_TRACE("Beginning GPU capture...");
             }
-
+#endif
            
             switch (Algorithm)
             {
@@ -225,16 +225,14 @@ namespace Engine
                 break;
             case 3:
                 /* polygonise the texture with improved marching cubes */
-                
                 MarchingCubesHP->Polygonise(VoxelSettings, DensityTexture.get());
                 Renderer3D::SetBuffer("Voxel", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
-                
                 break;
 
             }
 
 
-
+#ifdef USE_PIX
             if(SUCCEEDED(hr))
             {
                 hr = PIXEndCapture(FALSE);
@@ -248,7 +246,7 @@ namespace Engine
 
                 }
             }
-
+#endif
             UpdateVoxels = false;
 
         }

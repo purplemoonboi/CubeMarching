@@ -5,13 +5,13 @@ namespace Engine
 {
 	class D3D12Context;
 
-	class D3D12MemoryManager;
+	class D3D12HeapManager;
 	
 
 	class D3D12Utils
 	{
 	public:
-		static void Init(D3D12MemoryManager* memManager, D3D12Context* context);
+		static void Init(D3D12HeapManager* memManager, D3D12Context* context);
 
 		static D3D12_CPU_DESCRIPTOR_HANDLE CreateRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc);
 		static HRESULT RefreshRenderTargetView(ID3D12Resource* resource, const D3D12_RENDER_TARGET_VIEW_DESC* desc,D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
@@ -38,6 +38,6 @@ namespace Engine
 
 	private:
 		static D3D12Context* Context;
-		static D3D12MemoryManager* MemoryManager;
+		static D3D12HeapManager* MemoryManager;
 	};
 }

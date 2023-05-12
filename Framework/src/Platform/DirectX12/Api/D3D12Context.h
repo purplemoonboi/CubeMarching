@@ -51,7 +51,7 @@ namespace Engine
 		ComPtr<ID3D12CommandAllocator>		ResourceAlloc;
 		ComPtr<ID3D12Fence>					Fence;
 
-		ComPtr<ID3D12RootSignature> RootSignature;
+		
 
 		// @brief Heap descriptor for resources
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;

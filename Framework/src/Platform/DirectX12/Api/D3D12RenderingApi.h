@@ -4,7 +4,7 @@
 #include "D3D12Context.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Resources/D3D12ResourceManager.h"
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
@@ -17,6 +17,7 @@ namespace Engine
 
 	struct ObjectConstant;
 
+	constexpr UINT GBufferTextureCount = 5;
 
 	class D3D12RenderingApi : public RendererAPI
 	{
@@ -30,18 +31,17 @@ namespace Engine
 
 		void BindDepthPass() override;
 
-		void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain) override;
+		void DrawTerrainGeometry(PipelineStateObject* pso, RenderItem* terrain) override;
 
-		void BindStaticGeoPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
+		void BindScenePass() override;
+		void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
 
 		void BindLightingPass() override;
 
 		void BindPostProcessingPass() override;
 
 		void Flush() override;
-
 		void PreInit() override;
-
 		void PostInit() override;
 
 		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override {}
@@ -60,20 +60,24 @@ namespace Engine
 
 		void PostRender() override;
 
+		void OnBeginRender() override;
+
+		void OnEndRender() override;
 
 		[[nodiscard]] GraphicsContext* GetGraphicsContext() const override { return Context; }
 
 		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return FrameBuffer.get(); };
 
-		[[nodiscard]] MemoryManager* GetMemoryManager() const override{ return D3D12MemoryManager.get(); }
 
 		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
 
-		[[nodiscard]] RenderTarget* GetSceneTexture() const override { return RenderTarget.get(); }
+		[[nodiscard]] RenderTarget* GetSceneTexture() const override { return RenderTargets[(INT8)RenderLayer::Albedo].get(); }
 
 	private:
 
-		ComPtr<ID3DBlob> TerrainBuffer;
+		
+
+		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
 		// Buffer for uploading shader constants.
 		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
@@ -81,22 +85,23 @@ namespace Engine
 		// All of our frame resources.
 		std::vector<ScopePointer<D3D12FrameResource>> FrameResources;
 		UINT32 CurrentFrameResourceIndex = 0;
+
 		// Keeps track of the current frame resource in flight.
 		D3D12FrameResource* CurrentFrameResource = nullptr;
 
+		// Defines shader inputs
+		ComPtr<ID3D12RootSignature> RootSignature;
 
 		// A pointer to the graphics context
 		D3D12Context* Context = nullptr;
-
 		// A unique pointer to the frame buffer
 		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
-		// Custom render buffer
-		ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
-		
+	
 		// A unique pointer to the Api's memory allocator class.
-		ScopePointer<D3D12MemoryManager> D3D12MemoryManager = nullptr;
+		ScopePointer<D3D12HeapManager> D3D12HeapManager = nullptr;
 
-		
+		std::array<ScopePointer<D3D12RenderTarget>, GBufferTextureCount> RenderTargets;
+		//std::array<ScopePointer<D3D12Shader>, GBufferTextureCount> CoreShaders;
 
 	};
 

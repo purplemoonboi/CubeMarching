@@ -9,13 +9,15 @@
 
 namespace Engine
 {
+	class D3D12Shader;
 	class ComputeApi;
 
-	class Shader;
-	class GraphicsContext;
+	
 	class D3D12Context;
 
 	using Microsoft::WRL::ComPtr;
+
+	
 	
 	class D3D12PipelineStateObject : public PipelineStateObject
 	{
@@ -23,20 +25,16 @@ namespace Engine
 
 		D3D12PipelineStateObject
 		(
-			GraphicsContext* graphicsContext,
-			const std::string& vertexShader,
-			const std::string& pixelShader,
-			const BufferLayout& layout,
-			FillMode fillMode
+			D3D12Context* graphicsContext,
+			const PipelineResourceDesc& args,
+			const PipelineDesc& desc
 		);
-
 
 		D3D12PipelineStateObject
 		(
-			GraphicsContext* graphicsContext,
-			Shader* vertexShader,
-			Shader* pixelShader,
-			const BufferLayout& layout,
+			D3D12Context* graphicsContext,
+			D3D12Shader* vertexShader,
+			D3D12Shader* pixelShader,
 			FillMode fillMode 
 		);
 
@@ -61,14 +59,20 @@ namespace Engine
 
 		[[nodiscard]] ComPtr<ID3D12PipelineState> GetComPtr() const { return Pso; }
 
-		
+		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+
 
 	private:
+		void InitialiseRoot(ID3D12Device* device, const PipelineResourceDesc& desc);
+
 		ComPtr<ID3D12PipelineState> Pso;
+		ComPtr<ID3D12RootSignature> RootSignature;
 
 		DXGI_FORMAT BackBufferFormat;
 		DXGI_FORMAT DepthBufferFormat;
 
+		// Array of shaders to define the pipeline
+		std::array<ScopePointer<D3D12Shader*>, 5> ShaderPipeline = { nullptr };
 	};
 }
 

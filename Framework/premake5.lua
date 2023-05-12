@@ -58,7 +58,7 @@ project "Framework"
 			{
 				"_CRT_SECURE_NO_WARNINGS",
 				"CM_WINDOWS_PLATFORM",
-				"USE_PIX",
+				--"USE_PIX",
 				"YAML_CPP_STATIC_DEFINE",
 				"PROFILE_BUILD"
 			}

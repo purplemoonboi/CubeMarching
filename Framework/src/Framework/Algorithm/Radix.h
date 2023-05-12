@@ -2,7 +2,7 @@
 #include <vector>
 #include <Platform/DirectX12/DirectX12.h>
 #include <Platform/DirectX12/Compute/D3D12ComputeApi.h>
-#include <Platform/DirectX12/Allocator/D3D12MemoryManager.h>
+#include <Platform/DirectX12/Allocator/D3D12HeapManager.h>
 
 #include "IsoSurface/VoxelWorldConstantExpressions.h"
 
@@ -26,7 +26,7 @@ namespace Engine
 
 	private:
 		D3D12ComputeApi* ComputeContext = nullptr;
-		D3D12MemoryManager* MemManager = nullptr;
+		D3D12HeapManager* MemManager = nullptr;
 		UINT64 FenceValue = 0;
 
 		ComPtr<ID3D12RootSignature> RootSignature;

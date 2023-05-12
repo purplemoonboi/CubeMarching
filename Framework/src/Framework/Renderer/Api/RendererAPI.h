@@ -30,6 +30,16 @@ namespace Engine
 			DX12 = 4,
 
 		};
+
+		enum class RenderLayer : INT8
+		{
+			None = -0x1,
+			Position = 0x0,
+			Normals = 0x1,
+			Albedo = 0x2,
+			Specular = 0x3,
+			Depth = 0x4
+		};
 	
 		
 	public:
@@ -40,13 +50,19 @@ namespace Engine
 
 		virtual void BindDepthPass() = 0;
 
-		virtual void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain) = 0;
 
-		virtual void BindStaticGeoPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
+
+		virtual void DrawTerrainGeometry(PipelineStateObject* pso, RenderItem* terrain) = 0;
+
+		virtual void BindScenePass() = 0;
+		virtual void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
+		virtual void UnBindScenePass() = 0;
 
 		virtual void BindLightingPass() = 0;
+		virtual void UnBindLightingPass() = 0;
 
 		virtual void BindPostProcessingPass() = 0;
+		virtual void UnBindPostProcessingPass() = 0;
 
 		virtual void PreInit() = 0;
 
@@ -56,6 +72,7 @@ namespace Engine
 
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
+		
 
 		virtual void PreRender
 		(
@@ -71,6 +88,9 @@ namespace Engine
 		virtual void PostRender() = 0;
 
 		virtual void Flush() = 0;
+
+		virtual void OnBeginRender() = 0;
+		virtual void OnEndRender() = 0;
 
 		static Api GetAPI() { return RenderingApi; }
 

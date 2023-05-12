@@ -1,16 +1,16 @@
 #include "D3D12Utilities.h"
 #include "Framework/Core/Core.h"
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 
 namespace Engine
 {
 	
-	D3D12MemoryManager* D3D12Utils::MemoryManager = nullptr;
+	D3D12HeapManager* D3D12Utils::MemoryManager = nullptr;
 	D3D12Context* D3D12Utils::Context = nullptr;
 
-	void D3D12Utils::Init(D3D12MemoryManager* memManager, D3D12Context* context)
+	void D3D12Utils::Init(D3D12HeapManager* memManager, D3D12Context* context)
 	{
 		Context = context;
 		MemoryManager = memManager;

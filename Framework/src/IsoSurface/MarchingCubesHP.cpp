@@ -1,6 +1,6 @@
 #include "MarchingCubesHP.h"
 
-#include "Platform/DirectX12/Allocator/D3D12MemoryManager.h"
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
@@ -18,7 +18,7 @@ namespace Engine
 	void MarchingCubesHP::Init(ComputeApi* context, MemoryManager* memManager)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
-		MemManager = dynamic_cast<D3D12MemoryManager*>(memManager);
+		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
 
 		BuildRootSignature();
 		BuildResources();

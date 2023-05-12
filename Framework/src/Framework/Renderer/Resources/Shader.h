@@ -52,6 +52,8 @@ namespace Engine
 
 		virtual const std::string& GetName() const = 0;
 
+		virtual ShaderType GetShaderType() const = 0;
+
 		static ScopePointer<Shader> Create(const std::string& filepath);
 
 		static ScopePointer<Shader> Create(std::string&& filepath);

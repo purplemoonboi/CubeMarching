@@ -38,7 +38,7 @@ project "Application"
 			defines
 			{
 				"CM_PLATFORM_WINDOWS",
-				"USE_PIX",
+				--"USE_PIX",
 				"PROFILE_BUILD"
 			}
 

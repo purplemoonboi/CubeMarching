@@ -19,7 +19,7 @@ namespace Engine
 	using Microsoft::WRL::ComPtr;
 
 	class D3D12ReadBackBuffer;
-	class D3D12MemoryManager;
+	class D3D12HeapManager;
 
 	class D3D12Texture;
 
@@ -54,7 +54,7 @@ namespace Engine
 	private:
 		ID3D12Device* Device;
 		D3D12ComputeApi* ComputeContext = nullptr;
-		D3D12MemoryManager* MemManager = nullptr;
+		D3D12HeapManager* MemManager = nullptr;
 
 		ComPtr<ID3D12RootSignature> ComputeRootSignature;
 		ScopePointer<PipelineStateObject> ComputeState;
