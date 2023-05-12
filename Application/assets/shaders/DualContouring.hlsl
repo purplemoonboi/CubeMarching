@@ -296,7 +296,6 @@ bool QueryDistance(Vertex a, Vertex b, uint r)
 {
     bool valid = false;
     
-    //... len of two voxel midpoints + voxel dimension
     float err = 1.0f + 2.0f;
     if (length(b.position - a.position) <= err || length(a.position - b.position) <= err)
     {
@@ -324,7 +323,7 @@ void GenerateTriangle(uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupThread
     *   ...we append the vertices in anti-clockwise order to build the 
     *   triangle.
     *
-    *   @note This is the naive approach and can be improved with Sparse octrees.
+    *   @note This can be improved with octrees.
     */
     
     int3 right = id + int3(1, 0, 0);

@@ -27,12 +27,6 @@ namespace Engine
 		Vertex VertexC;
 	};
 
-	struct DualContourTriangle
-	{
-		Vertex VertexA;
-		Vertex VertexB;
-		Vertex VertexC;
-	};
 
 	struct DensityPrimitive
 	{
@@ -80,7 +74,7 @@ namespace Engine
 	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(Vertex);
 
 	constexpr UINT64 DualContourTriangleNumberOfElements = ((ChunkWidth) * (ChunkWidth) * (ChunkWidth) / 8) * 12;
-	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(DualContourTriangle);
+	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(Triangle);
 
 	constexpr UINT64 DensityPrimitiveCount = 8;
 

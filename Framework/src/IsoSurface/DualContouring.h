@@ -76,7 +76,8 @@ namespace Engine
 		 * @brief Containers for raw readback
 		 */
 
-		DualContourTriangle* RawTriBuffer = nullptr;
+		Triangle* RawTriBuffer = nullptr;
+		std::vector<Triangle> CopyTriBuffer;
 		UINT32* CountData = nullptr;
 		UINT32 TriangleCount = 0;
 

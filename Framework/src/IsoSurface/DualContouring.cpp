@@ -95,6 +95,7 @@ namespace Engine
 
 		ComputeContext->CommandList->Dispatch(groupXZb, groupYb, groupXZb);
 
+
 		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(TriangleBuffer.Get(),
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
 
@@ -117,6 +118,8 @@ namespace Engine
 
 		if (CountData != nullptr)
 			TriangleCount = *CountData;
+
+		
 
 		ResetCounters();
 
@@ -229,7 +232,7 @@ namespace Engine
 
 		/* create the buffer to hold the triangles */
 
-		uavDesc.Buffer.StructureByteStride = sizeof(DualContourTriangle);
+		uavDesc.Buffer.StructureByteStride = sizeof(Triangle);
 		uavDesc.Buffer.NumElements = DualContourTriangleNumberOfElements;
 		const UINT64 triangleBufferWidth = DualContourTriangleBufferCapacity;
 
