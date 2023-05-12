@@ -285,7 +285,7 @@ namespace Engine
 		CurrentFrameResource->GraphicsCommandList->ClearRenderTargetView(RenderTargets[(INT8)RenderLayer::Albedo]->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
 		CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-		CurrentFrameResource->GraphicsCommandList->SetPipelineState(dx12Pso->GetPipelineState());
+		//CurrentFrameResource->GraphicsCommandList->SetPipelineState();
 
 	}
 

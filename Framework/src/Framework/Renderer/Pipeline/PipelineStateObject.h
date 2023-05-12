@@ -22,14 +22,21 @@ namespace Engine
 
 	enum class ResourceType : INT8
 	{
-		Buffer,// e.g A structured buffer
+		StructBuffer,// e.g A structured buffer
+		ConstBuffer,
 		Texture,// e.g A 2D texture
-		Constants// e.g A constant buffer of 32-bit values
+		Constants,// e.g A constant buffer of 32-bit values
+		TableConstBuffer,
+		TableResourceBuffer,
+		TableStructBuffer
 	};
 
 	struct PipelineInput
 	{
 		UINT8 Count=1;// some apis (DX12) allow you to initialise multiple inputs at once
+		UINT8 Register = 0;
+		UINT8 Space = 0;
+		UINT8 Flags =0;
 		ResourceType Type;
 	};
 
@@ -84,6 +91,7 @@ namespace Engine
 
 		static ScopePointer<PipelineStateObject> Create
 		(
+			GraphicsContext* graphicsContext,
 			const PipelineResourceDesc& args,
 			const PipelineDesc& desc
 		);

@@ -10,6 +10,16 @@ namespace Engine
 		FilePath(filePath)
 	{
 		BuildAndCompileShader(defines, entryPoint, target);
+		if (target[0] == 'v')
+			Type = ShaderType::VS;
+		if (target[0] == 'h')
+			Type = ShaderType::HS;
+		if (target[0] == 'd')
+			Type = ShaderType::DS;
+		if (target[0] == 'g')
+			Type = ShaderType::GS;
+		if (target[0] == 'p')
+			Type = ShaderType::PS;
 	}
 
 	D3D12Shader::D3D12Shader(std::wstring&& filePath, std::string&& entryPoint, std::string&& target, D3D_SHADER_MACRO* defines)
@@ -17,6 +27,16 @@ namespace Engine
 		FilePath(std::move(filePath))
 	{
 		BuildAndCompileShader(defines, std::move(entryPoint), std::move(target));
+		if (target[0] == 'v')
+			Type = ShaderType::VS;
+		if (target[0] == 'h')
+			Type = ShaderType::HS;
+		if (target[0] == 'd')
+			Type = ShaderType::DS;
+		if (target[0] == 'g')
+			Type = ShaderType::GS;
+		if (target[0] == 'p')
+			Type = ShaderType::PS;
 	}
 
 	void D3D12Shader::BuildAndCompileShader

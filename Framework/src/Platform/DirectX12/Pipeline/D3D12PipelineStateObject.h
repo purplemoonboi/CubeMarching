@@ -25,7 +25,8 @@ namespace Engine
 
 		D3D12PipelineStateObject
 		(
-			const PipelineInputDesc& args,
+			D3D12Context* graphicsContext,
+			const PipelineResourceDesc& args,
 			const PipelineDesc& desc
 		);
 
@@ -62,7 +63,7 @@ namespace Engine
 
 
 	private:
-		void InitialiseRoot(ID3D12Device* device, const PipelineInputDesc& desc);
+		void InitialiseRoot(ID3D12Device* device, const PipelineResourceDesc& desc);
 
 		ComPtr<ID3D12PipelineState> Pso;
 		ComPtr<ID3D12RootSignature> RootSignature;

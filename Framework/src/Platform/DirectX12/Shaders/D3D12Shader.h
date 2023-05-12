@@ -34,12 +34,15 @@ namespace Engine
 		// @brief Returns a com ptr object to the shader data.
 		const ComPtr<ID3DBlob>& GetComPointer() const { return ShaderData; }
 
+		ShaderType GetShaderType() const override { return Type; }
+
 		// @brief Returns a raw pointer to the shader data.
 		ID3DBlob* GetShader() const { return ShaderData.Get(); }
 
 		const std::string& GetName() const override;
 		
 	private:
+		ShaderType Type;
 		// @brief name of the shader, can be used to access from shader library
 		std::string Name;
 
