@@ -16,7 +16,8 @@ namespace Engine
 	void D3D12PipelineStateObject::InitialiseRoot(ID3D12Device* device, const PipelineResourceDesc& desc)
 	{
 
-		CD3DX12_ROOT_PARAMETER* rootParams = new CD3DX12_ROOT_PARAMETER[desc.RootArgCount];
+		auto* rootParams = new CD3DX12_ROOT_PARAMETER[desc.RootArgCount];
+
 		INT32 i = 0;
 		for (auto& rp : desc.Resources)
 		{

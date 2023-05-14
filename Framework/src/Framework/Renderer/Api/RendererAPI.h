@@ -38,7 +38,8 @@ namespace Engine
 			Normals = 0x1,
 			Albedo = 0x2,
 			Specular = 0x3,
-			Depth = 0x4
+			Depth = 0x4,
+			Lighting = 0x5,
 		};
 	
 		

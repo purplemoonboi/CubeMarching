@@ -20,7 +20,6 @@
 #include <imgui.h>
 #include <backends/imgui_impl_dx12.h>
 
-#include <DXProgrammableCapture.h>
 
 
 namespace Engine
@@ -266,11 +265,14 @@ namespace Engine
 		CurrentFrameResource->GraphicsCommandList->RSSetScissorRects(1, &RenderTargets[(INT8)RenderLayer::Depth]->Rect);
 
 		// Specify the buffers we are going to render to.
-		CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(1, &RenderTargets[(INT8)RenderLayer::Albedo]->ResourceCpuRtv,
+		CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(1, &RenderTargets[(INT8)RenderLayer::Depth]->ResourceCpuRtv,
 			true, &FrameBuffer->GetDepthStencilViewCpu());
+
 		// Clear the back buffer and depth buffer.
 		CurrentFrameResource->GraphicsCommandList->ClearRenderTargetView(RenderTargets[(INT8)RenderLayer::Depth]->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
 		CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		//CurrentFrameResource->GraphicsCommandList->SetPipelineState();
 	}
 
 	void D3D12RenderingApi::BindScenePass()
@@ -281,17 +283,28 @@ namespace Engine
 		// Specify the buffers we are going to render to.
 		CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(1, &RenderTargets[(INT8)RenderLayer::Albedo]->ResourceCpuRtv,
 			true, &FrameBuffer->GetDepthStencilViewCpu());
+
 		// Clear the back buffer and depth buffer.
 		CurrentFrameResource->GraphicsCommandList->ClearRenderTargetView(RenderTargets[(INT8)RenderLayer::Albedo]->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
 		CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 		//CurrentFrameResource->GraphicsCommandList->SetPipelineState();
-
 	}
 
 	void D3D12RenderingApi::BindLightingPass()
 	{
+		CurrentFrameResource->GraphicsCommandList->RSSetViewports(1, &RenderTargets[(INT8)RenderLayer::Lighting]->Viewport);
+		CurrentFrameResource->GraphicsCommandList->RSSetScissorRects(1, &RenderTargets[(INT8)RenderLayer::Lighting]->Rect);
 
+		// Specify the buffers we are going to render to.
+		CurrentFrameResource->GraphicsCommandList->OMSetRenderTargets(1, &RenderTargets[(INT8)RenderLayer::Lighting]->ResourceCpuRtv,
+			true, &FrameBuffer->GetDepthStencilViewCpu());
+
+		// Clear the back buffer and depth buffer.
+		CurrentFrameResource->GraphicsCommandList->ClearRenderTargetView(RenderTargets[(INT8)RenderLayer::Lighting]->ResourceCpuRtv, DirectX::Colors::LightBlue, 0, nullptr);
+		CurrentFrameResource->GraphicsCommandList->ClearDepthStencilView(FrameBuffer->GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+		//CurrentFrameResource->GraphicsCommandList->SetPipelineState();
 	}
 
 	void D3D12RenderingApi::BindPostProcessingPass()
