@@ -25,7 +25,7 @@ namespace Engine
 		 * Create a command allocator for this resource.
 		 */
 		HRESULT hr = d3d12Context->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(CommandAlloc.GetAddressOf()));
+			IID_PPV_ARGS(pCA.GetAddressOf()));
 		THROW_ON_FAILURE(hr);
 
 		/**
@@ -33,14 +33,14 @@ namespace Engine
 		 */
 		hr = d3d12Context->Device->CreateCommandList(0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			CommandAlloc.Get(),
+			pCA.Get(),
 			nullptr,
-			IID_PPV_ARGS(GraphicsCommandList.GetAddressOf()));
+			IID_PPV_ARGS(pGCL.GetAddressOf()));
 		THROW_ON_FAILURE(hr);
 
-		/*hr = CommandAlloc->Reset();
+		/*hr = pCA->Reset();
 		THROW_ON_FAILURE(hr);*/
-		hr = GraphicsCommandList->Close();
+		hr = pGCL->Close();
 		THROW_ON_FAILURE(hr);
 
 		/**

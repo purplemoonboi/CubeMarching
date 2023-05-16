@@ -23,22 +23,17 @@ namespace Engine
         bool QueryTerrainBuffer(UINT elementCount);
         void UpdateVoxelBuffer(const D3D12Context* context, UINT elementCount);
 
-        ComPtr<ID3D12GraphicsCommandList> GraphicsCommandList;
+        ComPtr<ID3D12GraphicsCommandList> pGCL;
 
-        // We cannot reset the allocator until the GPU is done processing the commands.
-        // So each frame needs their own allocator.
-        ComPtr<ID3D12CommandAllocator> CommandAlloc;
+        ComPtr<ID3D12CommandAllocator> pCA;
 
-		// We cannot update a cbuffer until the GPU is done processing the commands
-		// that reference it.  So each frame needs their own cbuffers.
+		
 		ScopePointer<D3D12UploadBuffer<PassConstants>> PassBuffer = nullptr;
         ScopePointer<D3D12UploadBuffer<MaterialConstants>> MaterialBuffer = nullptr;
 		ScopePointer<D3D12UploadBuffer<ObjectConstant>> ConstantBuffer = nullptr;
         ScopePointer<D3D12UploadBuffer<Vertex>> TerrainBuffer = nullptr;
         ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
 
-		// Fence value to mark commands up to this fence point.  This lets us
-		// check if these frame resources are still in use by the GPU.
 		UINT64 Fence = 0;
     };
 

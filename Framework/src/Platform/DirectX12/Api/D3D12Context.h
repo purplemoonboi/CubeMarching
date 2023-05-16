@@ -6,7 +6,7 @@ using Microsoft::WRL::ComPtr;
 
 namespace Engine
 {
-	constexpr INT32 NUMBER_OF_FRAME_RESOURCES = 1;
+	constexpr INT32 FRAMES_IN_FLIGHT = 1;
 
 
 	class D3D12Context : public GraphicsContext

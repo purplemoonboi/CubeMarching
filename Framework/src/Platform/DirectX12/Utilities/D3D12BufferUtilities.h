@@ -7,7 +7,7 @@ namespace Engine
 
 	using Microsoft::WRL::ComPtr;
 
-	class D3D12BufferUtils
+	class D3D12BufferUtilities
 	{
 	public:
 
@@ -58,7 +58,7 @@ namespace Engine
 			UINT32 width,
 			UINT32 height,
 			UINT16 mipLevels,
-			const void* initData,
+			const void* pData,
 			DXGI_FORMAT format,
 			ComPtr<ID3D12Resource>& uploadBuffer
 		);
@@ -78,11 +78,11 @@ namespace Engine
 
 		static void CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth);
 
-		static UINT CalculateConstantBufferByteSize(UINT byteSize);
+		static UINT CalculateBufferByteSize(UINT byteSize);
 
 
 	private:
 		static ID3D12Device* Device;
-		static ID3D12GraphicsCommandList* GraphicsCmdList;
+		static ID3D12GraphicsCommandList* pGCL;
 	};
 }

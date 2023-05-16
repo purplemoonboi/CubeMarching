@@ -44,7 +44,7 @@ namespace Engine
 
 		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, Material* material, const std::string& drawArgs, UINT constantBufferIndex, Transform transform);
 
-		INT32 NumFramesDirty = NUMBER_OF_FRAME_RESOURCES;
+		INT32 NumFramesDirty = FRAMES_IN_FLIGHT;
 		UINT ObjectConstantBufferIndex = -1;
 
 		// A raw pointer to geometry

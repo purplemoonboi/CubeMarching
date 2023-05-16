@@ -208,12 +208,12 @@ namespace Engine
 		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
 		const UINT64 vertBufferWidth = DualContourNumberOfElements * sizeof(Vertex);
 
-		VertexBuffer = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
-		VertexBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
+		VertexBuffer = D3D12BufferUtilities::CreateStructuredBuffer(vertBufferWidth, true, true);
+		VertexBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(vertBufferWidth);
 
-		VertexCounterBuffer = D3D12BufferUtils::CreateCounterResource(true, true);
-		VertexCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(4);
-		D3D12BufferUtils::CreateUploadBuffer(VertexCounterUpload, 4);
+		VertexCounterBuffer = D3D12BufferUtilities::CreateCounterResource(true, true);
+		VertexCounterReadBack = D3D12BufferUtilities::CreateReadBackBuffer(4);
+		D3D12BufferUtilities::CreateUploadBuffer(VertexCounterUpload, 4);
 
 		VertexBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VertexBuffer.Get(), 
 			VertexCounterBuffer.Get());
@@ -223,8 +223,8 @@ namespace Engine
 		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
 		const UINT64 matBufferWidth = DualContourNumberOfElements * sizeof(INT32);
 
-		VoxelLookUpTable = D3D12BufferUtils::CreateStructuredBuffer(vertBufferWidth, true, true);
-		VoxelLookUpReadBack = D3D12BufferUtils::CreateReadBackBuffer(vertBufferWidth);
+		VoxelLookUpTable = D3D12BufferUtilities::CreateStructuredBuffer(vertBufferWidth, true, true);
+		VoxelLookUpReadBack = D3D12BufferUtilities::CreateReadBackBuffer(vertBufferWidth);
 
 
 		VoxelLookUpTableUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelLookUpTable.Get(),
@@ -236,12 +236,12 @@ namespace Engine
 		uavDesc.Buffer.NumElements = DualContourTriangleNumberOfElements;
 		const UINT64 triangleBufferWidth = DualContourTriangleBufferCapacity;
 
-		TriangleBuffer = D3D12BufferUtils::CreateStructuredBuffer(triangleBufferWidth, true, true);
-		TriangleReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(triangleBufferWidth);
+		TriangleBuffer = D3D12BufferUtilities::CreateStructuredBuffer(triangleBufferWidth, true, true);
+		TriangleReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(triangleBufferWidth);
 
-		TriangleCounterBuffer = D3D12BufferUtils::CreateCounterResource(true, true);
-		TriangleCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(4);
-		D3D12BufferUtils::CreateUploadBuffer(TriangleCounterUpload, 4);
+		TriangleCounterBuffer = D3D12BufferUtilities::CreateCounterResource(true, true);
+		TriangleCounterReadBack = D3D12BufferUtilities::CreateReadBackBuffer(4);
+		D3D12BufferUtilities::CreateUploadBuffer(TriangleCounterUpload, 4);
 
 		TriangleBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, TriangleBuffer.Get(), TriangleCounterBuffer.Get());
 

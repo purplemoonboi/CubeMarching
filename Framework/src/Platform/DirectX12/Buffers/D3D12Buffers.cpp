@@ -27,7 +27,7 @@ namespace Engine
 		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
 		
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferUtilities::CreateDefaultBuffer
 		(
 			nullptr,
 			size,
@@ -51,7 +51,7 @@ namespace Engine
 		}
 
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferUtilities::CreateDefaultBuffer
 		(
 			vertices,
 			size,
@@ -164,7 +164,7 @@ namespace Engine
 		}
 
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtils::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferUtilities::CreateDefaultBuffer
 		(
 			indices, 
 			IndexBufferByteSize, 
@@ -255,7 +255,7 @@ namespace Engine
 
 		const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
-		const UINT64 constantBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
+		const UINT64 constantBufferSizeInBytes = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(ObjectConstant));
 
 		const UINT32 objectCount = renderItemsCount;
 
@@ -281,7 +281,7 @@ namespace Engine
 				device->CreateConstantBufferView(&cbvDesc, handle);
 			}
 
-			const UINT64 materialBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
+			const UINT64 materialBufferSizeInBytes = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(MaterialConstants));
 
 			const auto materialBuffer = currentResource->MaterialBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
@@ -303,7 +303,7 @@ namespace Engine
 				device->CreateConstantBufferView(&mbvDesc, handle);
 			}
 
-			const UINT64 passConstantBufferSizeInBytes = D3D12BufferUtils::CalculateConstantBufferByteSize(sizeof(PassConstants));
+			const UINT64 passConstantBufferSizeInBytes = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(PassConstants));
 			const auto passConstantBuffer = currentResource->PassBuffer->Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();

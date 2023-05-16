@@ -26,7 +26,7 @@ namespace Engine
 		void SetRoughnessTexIndex(INT32 index) override { RoughMapIndex = index; }
 		void SetDisplacementTexIndex(INT32 index) override { DiffuseMapIndex = index; }
 
-		INT32 DirtyFrameCount = NUMBER_OF_FRAME_RESOURCES;
+		INT32 DirtyFrameCount = FRAMES_IN_FLIGHT;
 		INT32 MaterialBufferIndex = -1;
 		INT32 DiffuseSrvHeapIndex = -1;
 		INT32 NormalSrvHeapIndex = -1;

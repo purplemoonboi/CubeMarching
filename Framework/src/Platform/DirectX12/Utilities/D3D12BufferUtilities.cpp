@@ -1,22 +1,22 @@
-#include "D3D12BufferUtils.h"
+#include "D3D12BufferUtilities.h"
 
 #include "Framework/Core/Log/Log.h"
 
 namespace Engine
 {
 
-	ID3D12Device* D3D12BufferUtils::Device = nullptr;
-	ID3D12GraphicsCommandList* D3D12BufferUtils::GraphicsCmdList = nullptr;
+	ID3D12Device* D3D12BufferUtilities::Device = nullptr;
+	ID3D12GraphicsCommandList* D3D12BufferUtilities::pGCL = nullptr;
 
-	void D3D12BufferUtils::Init(ID3D12Device* device, ID3D12GraphicsCommandList* graphicsCmdList)
+	void D3D12BufferUtilities::Init(ID3D12Device* device, ID3D12GraphicsCommandList* graphicsCmdList)
 	{
 		Device = device;
-		GraphicsCmdList = graphicsCmdList;
+		pGCL = graphicsCmdList;
 	}
 
 
 	// Upload buffer methods
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateDefaultBuffer
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateDefaultBuffer
 	(
 		const void* initData,
 		UINT64 byteSize,
@@ -62,7 +62,7 @@ namespace Engine
 			// Schedule to copy the data to the default buffer resource.
 			// Make instruction to copy CPU buffer into intermediate upload heap
 			// buffer.
-			GraphicsCmdList->ResourceBarrier
+			pGCL->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -76,7 +76,7 @@ namespace Engine
 			// Copy the data into the upload heap
 			UpdateSubresources<1>
 				(
-					GraphicsCmdList,
+					pGCL,
 					defaultBuffer.Get(),
 					uploadBuffer.Get(),
 					0,
@@ -86,7 +86,7 @@ namespace Engine
 					);
 
 			// Add the instruction to transition back to read 
-			GraphicsCmdList->ResourceBarrier
+			pGCL->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -104,7 +104,7 @@ namespace Engine
 
 
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateTexture3D
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateTexture3D
 	(
 		UINT32 width,
 		UINT32 height,
@@ -181,7 +181,7 @@ namespace Engine
 			// Schedule to copy the data to the default buffer resource.
 			// Make instruction to copy CPU buffer into intermediate upload heap
 			// buffer.
-			GraphicsCmdList->ResourceBarrier
+			pGCL->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -196,7 +196,7 @@ namespace Engine
 			// Copy the data into the upload heap
 			UpdateSubresources
 			(
-				GraphicsCmdList,
+				pGCL,
 				defaultBuffer.Get(),
 				uploadBuffer.Get(),
 				0,
@@ -206,7 +206,7 @@ namespace Engine
 			);
 
 			// Add the instruction to transition back to read 
-			GraphicsCmdList->ResourceBarrier
+			pGCL->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -221,12 +221,12 @@ namespace Engine
 		return defaultBuffer;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateTexture2D
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateTexture2D
 	(
 		UINT32 width,
 		UINT32 height,
 		UINT16 mipLevels,
-		const void* initData,
+		const void* pData,
 		DXGI_FORMAT format,
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
@@ -234,7 +234,7 @@ namespace Engine
 		/**
 		 * make a wee circle if no data has been passed 
 		 */
-		
+		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> defaultBuffer;
 
 		D3D12_RESOURCE_DESC texDesc{};
@@ -251,7 +251,7 @@ namespace Engine
 		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		//Create the committed resource
-		const HRESULT defaultResult = Device->CreateCommittedResource
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -260,11 +260,12 @@ namespace Engine
 			nullptr,
 			IID_PPV_ARGS(&defaultBuffer)
 		);
-		THROW_ON_FAILURE(defaultResult);
+		THROW_ON_FAILURE(hr);
 
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultBuffer.Get(),
 			0, texDesc.DepthOrArraySize * texDesc.MipLevels);
-		HRESULT uploadResult = Device->CreateCommittedResource
+
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -273,23 +274,19 @@ namespace Engine
 			nullptr,
 			IID_PPV_ARGS(uploadBuffer.GetAddressOf())
 		);
-		THROW_ON_FAILURE(uploadResult);
+		THROW_ON_FAILURE(hr);
 
-		if(initData != nullptr)
+		if(pData != nullptr)
 		{
 			// Give a desc of the data we want to copy
 			D3D12_SUBRESOURCE_DATA subResourceData = {};
-			subResourceData.pData = initData;
+			subResourceData.pData = pData;
 			subResourceData.RowPitch = width * sizeof(UINT32);
 			subResourceData.SlicePitch = height;// subResourceData.RowPitch* height;
 
 			const UINT32 numOfResources = texDesc.DepthOrArraySize * texDesc.MipLevels;
 
-
-			// Schedule to copy the data to the default buffer resource.
-			// Make instruction to copy CPU buffer into intermediate upload heap
-			// buffer.
-			GraphicsCmdList->ResourceBarrier
+			pGCL->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -300,10 +297,9 @@ namespace Engine
 				)
 			);
 
-			// Copy the data into the upload heap
 			UpdateSubresources
 			(
-				GraphicsCmdList,
+				pGCL,
 				defaultBuffer.Get(),
 				uploadBuffer.Get(),
 				0,
@@ -312,8 +308,7 @@ namespace Engine
 				&subResourceData
 			);
 
-			// Add the instruction to transition back to read 
-			GraphicsCmdList->ResourceBarrier
+			pGCL->ResourceBarrier
 			(
 				1,
 				&CD3DX12_RESOURCE_BARRIER::Transition
@@ -323,22 +318,16 @@ namespace Engine
 					D3D12_RESOURCE_STATE_GENERIC_READ
 				)
 			);
-
-			const HRESULT deviceRemovedReason = Device->GetDeviceRemovedReason();
-			THROW_ON_FAILURE(deviceRemovedReason);
-
-			// IMPORTANT: The upload buffer must be kept in scope after the above function calls. This is
-			//			  because the cmd list has NOT executed the copy.
-			//
-			//			  The buffer can be released after the caller knows the copy has been made.
 		}
-
 		
 		return defaultBuffer;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
 	{
+
+		HRESULT hr{ S_OK };
+
 		ComPtr<ID3D12Resource> resource = nullptr;
 
 		D3D12_RESOURCE_DESC texDesc;
@@ -355,7 +344,7 @@ namespace Engine
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-		const HRESULT hr = Device->CreateCommittedResource(
+		hr = Device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&texDesc,
@@ -368,14 +357,15 @@ namespace Engine
 		return resource;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
 	{
+		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> counterBuffer = nullptr;
 		constexpr UINT64 sizeInBytes = sizeof(UINT32);
 		const D3D12_RESOURCE_FLAGS flags = (allowWrite) ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		const D3D12_HEAP_FLAGS heapFlags = (allowShaderAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
 
-		const HRESULT counterResult = Device->CreateCommittedResource
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			heapFlags,
@@ -384,13 +374,14 @@ namespace Engine
 			nullptr,
 			IID_PPV_ARGS(&counterBuffer)
 		);
-		THROW_ON_FAILURE(counterResult);
+		THROW_ON_FAILURE(hr);
 		return counterBuffer;
 	}
 
-	void D3D12BufferUtils::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
+	void D3D12BufferUtilities::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
 	{
-		const HRESULT result = Device->CreateCommittedResource
+		HRESULT hr{ S_OK };
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -399,14 +390,15 @@ namespace Engine
 			nullptr,
 			IID_PPV_ARGS(resource.GetAddressOf())
 		);
-		THROW_ON_FAILURE(result);
+		THROW_ON_FAILURE(hr);
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackBuffer(UINT32 bufferWidth)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateReadBackBuffer(UINT32 bufferWidth)
 	{
+		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> readBackResource = nullptr;
 
-		const HRESULT readBackResult = Device->CreateCommittedResource
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 			D3D12_HEAP_FLAG_NONE,
@@ -421,7 +413,7 @@ namespace Engine
 		return readBackResource;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth)
 	{
 		ComPtr<ID3D12Resource> readBackResource = nullptr;
 
@@ -440,7 +432,7 @@ namespace Engine
 		return readBackResource;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateReadBackTex2D(DXGI_FORMAT format, INT32 width, INT32 height)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateReadBackTex2D(DXGI_FORMAT format, INT32 width, INT32 height)
 	{
 		ComPtr<ID3D12Resource> readBackResource = nullptr;
 
@@ -460,7 +452,7 @@ namespace Engine
 	}
 
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
 	{
 		
 		ComPtr<ID3D12Resource> buffer = nullptr;
@@ -484,27 +476,28 @@ namespace Engine
 		
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtils::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* resource, const void* data, bool allowWrite, bool allowAtomics)
+	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* resource, const void* data, bool allowWrite, bool allowAtomics)
 	{
+		HRESULT hr{ S_OK };
 
-		ComPtr<ID3D12Resource> buffer = nullptr;
+		ComPtr<ID3D12Resource> resource = nullptr;
 
 		const D3D12_RESOURCE_FLAGS bufferFlags = (allowWrite) ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		const D3D12_RESOURCE_STATES bufferState = (allowWrite) ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
 		const D3D12_HEAP_FLAGS heapFlags = (allowAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
 
-		const HRESULT result = Device->CreateCommittedResource
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			heapFlags,
 			&CD3DX12_RESOURCE_DESC::Buffer(bufferWidth, bufferFlags),
 			bufferState,
 			nullptr,
-			IID_PPV_ARGS(&buffer)
+			IID_PPV_ARGS(&resource)
 		);
-		THROW_ON_FAILURE(result);
+		THROW_ON_FAILURE(hr);
 
-		const HRESULT uploadResult = Device->CreateCommittedResource
+		hr = Device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -513,26 +506,26 @@ namespace Engine
 			nullptr,
 			IID_PPV_ARGS(&resource)
 		);
-		THROW_ON_FAILURE(uploadResult);
+		THROW_ON_FAILURE(hr);
 
 		D3D12_SUBRESOURCE_DATA srcData = {};
 		srcData.pData = data;
 		srcData.RowPitch = bufferWidth;
 		srcData.SlicePitch = srcData.RowPitch;
 
-		GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), bufferState,
+		pGCL->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), bufferState,
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
-		UpdateSubresources(GraphicsCmdList, buffer.Get(), resource, 0, 0, 1, &srcData);
+		UpdateSubresources(pGCL, resource.Get(), resource, 0, 0, 1, &srcData);
 
-		GraphicsCmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+		pGCL->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
 			bufferState));
 
-		return buffer;
+		return resource;
 
 	}
 
-	UINT D3D12BufferUtils::CalculateConstantBufferByteSize(UINT byteSize)
+	UINT D3D12BufferUtilities::CalculateBufferByteSize(UINT byteSize)
 	{
 		return (byteSize + 255) & ~255;
 	}

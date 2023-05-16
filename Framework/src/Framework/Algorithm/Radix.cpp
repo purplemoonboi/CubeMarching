@@ -254,22 +254,22 @@ namespace Engine
 	void Radix::BuildResources()
 	{
 		constexpr UINT64 mortonCapacity = VoxelWorldElementCount * sizeof(UINT32);
-		InputMortonCodes = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
-		SortedMortonCodes = D3D12BufferUtils::CreateStructuredBuffer(mortonCapacity, true, true);
+		InputMortonCodes = D3D12BufferUtilities::CreateStructuredBuffer(mortonCapacity, true, true);
+		SortedMortonCodes = D3D12BufferUtilities::CreateStructuredBuffer(mortonCapacity, true, true);
 
-		MortonReadBackBuffer = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
-		MortonReadBackBufferB = D3D12BufferUtils::CreateReadBackBuffer(mortonCapacity);
-		D3D12BufferUtils::CreateUploadBuffer(MortonUploadBuffer, mortonCapacity);
+		MortonReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(mortonCapacity);
+		MortonReadBackBufferB = D3D12BufferUtilities::CreateReadBackBuffer(mortonCapacity);
+		D3D12BufferUtilities::CreateUploadBuffer(MortonUploadBuffer, mortonCapacity);
 
 		constexpr UINT64 bucketsCapacity = (VoxelWorldElementCount) * sizeof(INT32);
-		GlobalBuckets = D3D12BufferUtils::CreateStructuredBuffer(bucketsCapacity, true, true);
-		GlobalBucketsReadBack = D3D12BufferUtils::CreateReadBackBuffer(bucketsCapacity);
-		D3D12BufferUtils::CreateUploadBuffer(GlobalBucketsUpload, bucketsCapacity);
+		GlobalBuckets = D3D12BufferUtilities::CreateStructuredBuffer(bucketsCapacity, true, true);
+		GlobalBucketsReadBack = D3D12BufferUtilities::CreateReadBackBuffer(bucketsCapacity);
+		D3D12BufferUtilities::CreateUploadBuffer(GlobalBucketsUpload, bucketsCapacity);
 
 		constexpr UINT64 capacity = sizeof(INT32);
-		CycleCounter = D3D12BufferUtils::CreateStructuredBuffer(capacity,true, true);
-		CycleCounterReadBack = D3D12BufferUtils::CreateReadBackBuffer(capacity);
-		D3D12BufferUtils::CreateUploadBuffer(CycleCounterUpload, capacity);
+		CycleCounter = D3D12BufferUtilities::CreateStructuredBuffer(capacity,true, true);
+		CycleCounterReadBack = D3D12BufferUtilities::CreateReadBackBuffer(capacity);
+		D3D12BufferUtilities::CreateUploadBuffer(CycleCounterUpload, capacity);
 	}
 
 

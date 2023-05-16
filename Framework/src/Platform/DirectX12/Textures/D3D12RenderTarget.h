@@ -42,14 +42,14 @@ namespace Engine
 
 		DXGI_FORMAT Format;
 
-		ComPtr<ID3D12Resource> GpuResource;
+		ComPtr<ID3D12Resource> pResource;
 		BYTE* RawData = nullptr;
 
 		D3D12_SRV_DIMENSION Dimension;
 
 		CD3DX12_GPU_DESCRIPTOR_HANDLE ResourceSrv;
 		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuSrv;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuRtv;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE pRTV;
 
 		INT32 SrvIndex = -1;
 

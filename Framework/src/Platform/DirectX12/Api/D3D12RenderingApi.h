@@ -69,7 +69,7 @@ namespace Engine
 		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return FrameBuffer.get(); };
 
 
-		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return CurrentFrameResource; }
+		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return Frames[FrameIndex].get(); }
 
 		[[nodiscard]] RenderTarget* GetSceneTexture() const override { return RenderTargets[(INT8)RenderLayer::Albedo].get(); }
 
@@ -83,11 +83,10 @@ namespace Engine
 		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
 
 		// All of our frame resources.
-		std::vector<ScopePointer<D3D12FrameResource>> FrameResources;
-		UINT32 CurrentFrameResourceIndex = 0;
+		std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT> Frames;
+		UINT32 FrameIndex = 0;
 
-		// Keeps track of the current frame resource in flight.
-		D3D12FrameResource* CurrentFrameResource = nullptr;
+		
 
 		// Defines shader inputs
 		ComPtr<ID3D12RootSignature> RootSignature;
@@ -98,7 +97,7 @@ namespace Engine
 		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
 	
 		// A unique pointer to the Api's memory allocator class.
-		ScopePointer<D3D12HeapManager> D3D12HeapManager = nullptr;
+		ScopePointer<D3D12HeapManager> HeapManager = nullptr;
 
 		std::array<ScopePointer<D3D12RenderTarget>, GBufferTextureCount> RenderTargets;
 		//std::array<ScopePointer<D3D12Shader>, GBufferTextureCount> CoreShaders;

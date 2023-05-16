@@ -1,7 +1,7 @@
 #include "D3D12RenderTarget.h"
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 namespace Engine
@@ -21,7 +21,7 @@ namespace Engine
 		Dimension(D3D12_SRV_DIMENSION_TEXTURE2D)
 	{
 
-		GpuResource = D3D12BufferUtils::CreateRenderTexture(Width, Height, Format);
+		pResource = D3D12BufferUtilities::CreateRenderTexture(Width, Height, Format);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -30,9 +30,9 @@ namespace Engine
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		ResourceSrv = D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get(), ResourceCpuSrv);
+		ResourceSrv = D3D12Utils::CreateShaderResourceView(srvDesc, pResource.Get(), ResourceCpuSrv);
 
-		ResourceCpuRtv = D3D12Utils::CreateRenderTargetView(GpuResource.Get(), nullptr);
+		pRTV = D3D12Utils::CreateRenderTargetView(pResource.Get(), nullptr);
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
@@ -99,7 +99,7 @@ namespace Engine
 
 	void D3D12RenderTarget::Destroy()
 	{
-		GpuResource.Reset();
+		pResource.Reset();
 		
 	}
 
@@ -108,9 +108,9 @@ namespace Engine
 	}
 	void D3D12RenderTarget::Regenerate()
 	{
-		GpuResource.Reset();
+		pResource.Reset();
 
-		GpuResource = D3D12BufferUtils::CreateRenderTexture(Width, Height, Format);
+		pResource = D3D12BufferUtilities::CreateRenderTexture(Width, Height, Format);
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -118,8 +118,8 @@ namespace Engine
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		D3D12Utils::RefreshShaderResourceViews(srvDesc, GpuResource.Get(), ResourceCpuSrv);
-		D3D12Utils::RefreshRenderTargetView(GpuResource.Get(), nullptr, ResourceCpuRtv);
+		D3D12Utils::RefreshShaderResourceViews(srvDesc, pResource.Get(), ResourceCpuSrv);
+		D3D12Utils::RefreshRenderTargetView(pResource.Get(), nullptr, pRTV);
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;

@@ -3,7 +3,7 @@
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 #include "Platform/DirectX12/Copy/D3D12CopyContext.h"
@@ -47,7 +47,7 @@ namespace Engine
 		if (MipLevels != 1)
 			MipLevels = 1;
 
-		GpuResource = D3D12BufferUtils::CreateTexture3D(
+		GpuResource = D3D12BufferUtilities::CreateTexture3D(
 			Width,
 			Height,
 			Depth,
@@ -99,7 +99,7 @@ namespace Engine
 			MipLevels = 1;
 
 
-		GpuResource = D3D12BufferUtils::CreateTexture2D(
+		GpuResource = D3D12BufferUtilities::CreateTexture2D(
 			Width,
 			Height,
 			MipLevels,

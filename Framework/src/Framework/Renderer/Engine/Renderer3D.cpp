@@ -354,7 +354,7 @@ namespace Engine
 				}
 
 				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty+=NUMBER_OF_FRAME_RESOURCES;
+				ri->NumFramesDirty+=FRAMES_IN_FLIGHT;
 				const auto item = RenderData.Geometries.at(renderItemTag).get();
 				item->VertexBuffer->SetData(vertices.data(), vertices.size() * sizeof(Vertex), vertices.size());
 				item->IndexBuffer->SetData(indices.data(), vertices.size());
@@ -370,7 +370,7 @@ namespace Engine
 			if (RenderData.OpaqueRenderItems[i]->Geometry->GetName() == renderItemTag)
 			{
 				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty+=NUMBER_OF_FRAME_RESOURCES;
+				ri->NumFramesDirty+=FRAMES_IN_FLIGHT;
 				const auto item = RenderData.Geometries.at(renderItemTag).get();
 				item->VertexBuffer->SetData(vertices, vCount * sizeof(Vertex), vCount);
 				item->IndexBuffer->SetData(indices, iCount);

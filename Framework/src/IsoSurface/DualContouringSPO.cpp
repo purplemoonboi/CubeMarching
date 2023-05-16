@@ -249,9 +249,9 @@ namespace Engine
 
 		/* create the voxel buffer */
 		const UINT64 bufferWidth = DualContourVoxelCapacity * sizeof(GPUVoxel);
-		VoxelBuffer						= D3D12BufferUtils::CreateStructuredBuffer(bufferWidth, true, true);
-		VoxelReadBackBuffer				= D3D12BufferUtils::CreateReadBackBuffer(bufferWidth);
-		VoxelCounterBuffer				= D3D12BufferUtils::CreateCounterResource(true, true);
+		VoxelBuffer						= D3D12BufferUtilities::CreateStructuredBuffer(bufferWidth, true, true);
+		VoxelReadBackBuffer				= D3D12BufferUtilities::CreateReadBackBuffer(bufferWidth);
+		VoxelCounterBuffer				= D3D12BufferUtilities::CreateCounterResource(true, true);
 		VoxelBufferUav					= D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelBuffer.Get(), VoxelCounterBuffer.Get());
 
 		/* create the buffer to hold the densities */
@@ -259,8 +259,8 @@ namespace Engine
 		uavDesc.Buffer.NumElements = VoxelWorldElementCount;
 		const UINT64 materialCapacity = VoxelWorldElementCount * sizeof(UINT32);
 
-		CornerMaterials					= D3D12BufferUtils::CreateStructuredBuffer(materialCapacity, true, true);
-		CornerMaterialsReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(materialCapacity);
+		CornerMaterials					= D3D12BufferUtilities::CreateStructuredBuffer(materialCapacity, true, true);
+		CornerMaterialsReadBackBuffer	= D3D12BufferUtilities::CreateReadBackBuffer(materialCapacity);
 		CornerMaterialsUav				= D3D12Utils::CreateUnorderedAccessView(uavDesc, CornerMaterials.Get());
 
 		/* update the stride size in bytes	&  recalculate the size of the buffer in bytes */
@@ -268,16 +268,16 @@ namespace Engine
 		uavDesc.Buffer.NumElements = VoxelWorldElementCount;
 		uavDesc.Buffer.StructureByteStride = sizeof(UINT32);
 
-		VoxelMaterialsBuffer			= D3D12BufferUtils::CreateStructuredBuffer(materialCapacity, true, true);
-		VoxelMaterialsReadBackBuffer	= D3D12BufferUtils::CreateReadBackBuffer(materialCapacity);
+		VoxelMaterialsBuffer			= D3D12BufferUtilities::CreateStructuredBuffer(materialCapacity, true, true);
+		VoxelMaterialsReadBackBuffer	= D3D12BufferUtilities::CreateReadBackBuffer(materialCapacity);
 		VoxelMaterialsUav				= D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelMaterialsBuffer.Get());
 
 		constexpr UINT64 cornerIndicesCapacity = VoxelWorldElementCount * sizeof(UINT32) * 3;
 		uavDesc.Buffer.NumElements = VoxelWorldElementCount;
 		uavDesc.Buffer.StructureByteStride = sizeof(UINT32);
 
-		CornerIndexesBuffer				= D3D12BufferUtils::CreateStructuredBuffer(cornerIndicesCapacity, true, true);
-		CornerIndexesReadBackBuffer		= D3D12BufferUtils::CreateReadBackBuffer(cornerIndicesCapacity);
+		CornerIndexesBuffer				= D3D12BufferUtilities::CreateStructuredBuffer(cornerIndicesCapacity, true, true);
+		CornerIndexesReadBackBuffer		= D3D12BufferUtilities::CreateReadBackBuffer(cornerIndicesCapacity);
 		CornerIndexesUav				= D3D12Utils::CreateUnorderedAccessView(uavDesc, CornerIndexesBuffer.Get());
 
 		/* update the stride size in bytes	&  recalculate the size of the buffer in bytes */
@@ -285,16 +285,16 @@ namespace Engine
 		uavDesc.Buffer.NumElements = DualContourVoxelCapacity;
 		uavDesc.Buffer.StructureByteStride = sizeof(float) * 3;
 
-		VoxelMinsBuffer					= D3D12BufferUtils::CreateStructuredBuffer(voxelMinsCapacity, true, true);
-		VoxelMinsReadBackBuffer			= D3D12BufferUtils::CreateReadBackBuffer(voxelMinsCapacity);
+		VoxelMinsBuffer					= D3D12BufferUtilities::CreateStructuredBuffer(voxelMinsCapacity, true, true);
+		VoxelMinsReadBackBuffer			= D3D12BufferUtilities::CreateReadBackBuffer(voxelMinsCapacity);
 		VoxelMinsUav					= D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelMinsBuffer.Get());
 
 		constexpr UINT64 densityBufferCapacity = sizeof(DensityPrimitive) * DensityPrimitiveCount;
 		uavDesc.Buffer.NumElements = DensityPrimitiveCount;
 		uavDesc.Buffer.StructureByteStride = sizeof(DensityPrimitive);
 
-		DensityPrimitivesBuffer			= D3D12BufferUtils::CreateStructuredBuffer(densityBufferCapacity, true, true);
-		DensityPrimitivesBackBuffer		= D3D12BufferUtils::CreateReadBackBuffer(densityBufferCapacity);
+		DensityPrimitivesBuffer			= D3D12BufferUtilities::CreateStructuredBuffer(densityBufferCapacity, true, true);
+		DensityPrimitivesBackBuffer		= D3D12BufferUtilities::CreateReadBackBuffer(densityBufferCapacity);
 		DensityPrimitivesUav			= D3D12Utils::CreateUnorderedAccessView(uavDesc, DensityPrimitivesBuffer.Get());
 
 		const UINT64 cornerBufferCapacity = sizeof(UINT32) * DualContourVoxelCapacity;
@@ -302,18 +302,18 @@ namespace Engine
 		uavDesc.Buffer.StructureByteStride = sizeof(UINT32);
 
 		/* build the corner count buffer and the final counter buffer  */
-		CornerCountBuffer				= D3D12BufferUtils::CreateStructuredBuffer(cornerBufferCapacity, true, true);
-		CornerCountCounterBuffer		= D3D12BufferUtils::CreateCounterResource(true, true);
-		CornerCountBackBuffer			= D3D12BufferUtils::CreateReadBackBuffer(cornerBufferCapacity);
+		CornerCountBuffer				= D3D12BufferUtilities::CreateStructuredBuffer(cornerBufferCapacity, true, true);
+		CornerCountCounterBuffer		= D3D12BufferUtilities::CreateCounterResource(true, true);
+		CornerCountBackBuffer			= D3D12BufferUtilities::CreateReadBackBuffer(cornerBufferCapacity);
 		CornerCountUav					= D3D12Utils::CreateUnorderedAccessView(uavDesc, CornerCountBuffer.Get(),CornerCountCounterBuffer.Get());
 
 		const UINT64 finalCountCapacity = sizeof(UINT32);
 		uavDesc.Buffer.NumElements = 1;
 		uavDesc.Buffer.StructureByteStride = sizeof(UINT32);
 
-		FinalCount						= D3D12BufferUtils::CreateStructuredBuffer(finalCountCapacity, true, true);
-		FinalCountCounterBuffer			= D3D12BufferUtils::CreateCounterResource(true, true);
-		FinalCountReadBackBuffer		= D3D12BufferUtils::CreateReadBackBuffer(finalCountCapacity);
+		FinalCount						= D3D12BufferUtilities::CreateStructuredBuffer(finalCountCapacity, true, true);
+		FinalCountCounterBuffer			= D3D12BufferUtilities::CreateCounterResource(true, true);
+		FinalCountReadBackBuffer		= D3D12BufferUtilities::CreateReadBackBuffer(finalCountCapacity);
 		FinalCountUav					= D3D12Utils::CreateUnorderedAccessView(uavDesc, FinalCount.Get(),FinalCountCounterBuffer.Get());
 
 	}
