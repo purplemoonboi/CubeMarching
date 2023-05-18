@@ -7,7 +7,7 @@
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
 
 
-namespace Engine
+namespace Foundation
 {
 
 	ScopePointer<Shader> Shader::Create(const std::string& filePath)

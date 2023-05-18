@@ -11,7 +11,7 @@
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-namespace Engine
+namespace Foundation
 {
 	Application* Application::SingletonInstance = nullptr;
 
@@ -31,7 +31,7 @@ namespace Engine
 		CORE_ASSERT(!SingletonInstance, "An application instance already exists!");
 		SingletonInstance = this;
 
-		Window = Win32Window(hInstance, MainWndProc, 1920, 1080, L"Engine");
+		Window = Win32Window(hInstance, MainWndProc, 1920, 1080, L"Foundation");
 		// Bind the applications on event function to capture application specific events.
 		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
 
@@ -337,7 +337,7 @@ namespace Engine
 			std::wstring fpsStr = std::to_wstring(fps);
 			std::wstring mspfStr = std::to_wstring(mspf);
 
-			std::wstring windowText = L"Engine fps: " + fpsStr +
+			std::wstring windowText = L"Foundation fps: " + fpsStr +
 				L"   mspf: " + mspfStr;
 
 			const auto wnd = static_cast<HWND>(Window.GetNativeWindow());

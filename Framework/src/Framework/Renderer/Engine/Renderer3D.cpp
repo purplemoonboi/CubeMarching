@@ -19,7 +19,7 @@
 
 #include "IsoSurface/MarchingCubes.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	Renderer3D::VoxelWorldRenderingStats Renderer3D::VoxelStats;

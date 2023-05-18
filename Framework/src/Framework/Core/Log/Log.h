@@ -5,7 +5,7 @@
 
 
 
-namespace Engine
+namespace Foundation
 {
 	class Log
 	{
@@ -61,16 +61,16 @@ if(FAILED(h)){throw CoreException(h, L#x, fN, __LINE__);}\
 
 
 /**Core log MACROS**/
-#define CORE_ERROR(...)   ::Engine::Log::GetCoreLog()->error(__VA_ARGS__);
-#define CORE_WARNING(...) ::Engine::Log::GetCoreLog()->warn(__VA_ARGS__);
-#define CORE_INFO(...)    ::Engine::Log::GetCoreLog()->info(__VA_ARGS__);
-#define CORE_TRACE(...)   ::Engine::Log::GetCoreLog()->trace(__VA_ARGS__);
+#define CORE_ERROR(...)   ::Foundation::Log::GetCoreLog()->error(__VA_ARGS__);
+#define CORE_WARNING(...) ::Foundation::Log::GetCoreLog()->warn(__VA_ARGS__);
+#define CORE_INFO(...)    ::Foundation::Log::GetCoreLog()->info(__VA_ARGS__);
+#define CORE_TRACE(...)   ::Foundation::Log::GetCoreLog()->trace(__VA_ARGS__);
 
 /**Client log MACROS**/
-#define APP_ERROR(...)   ::Engine::Log::GetClientLog()->error(__VA_ARGS__);
-#define APP_WARNING(...) ::Engine::Log::GetClientLog()->warn(__VA_ARGS__);
-#define APP_INFO(...)    ::Engine::Log::GetClientLog()->info(__VA_ARGS__);
-#define APP_TRACE(...)   ::Engine::Log::GetClientLog()->trace(__VA_ARGS__);
+#define APP_ERROR(...)   ::Foundation::Log::GetClientLog()->error(__VA_ARGS__);
+#define APP_WARNING(...) ::Foundation::Log::GetClientLog()->warn(__VA_ARGS__);
+#define APP_INFO(...)    ::Foundation::Log::GetClientLog()->info(__VA_ARGS__);
+#define APP_TRACE(...)   ::Foundation::Log::GetClientLog()->trace(__VA_ARGS__);
 
 
 // @brief Assertion checks - for debugging core code only, 			 

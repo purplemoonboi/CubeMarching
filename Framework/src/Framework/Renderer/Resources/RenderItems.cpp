@@ -6,12 +6,12 @@
 
 using namespace DirectX;
 
-namespace Engine
+namespace Foundation
 {
 	ScopePointer<RenderItem> RenderItem::Create
 	(
-		Engine::MeshGeometry* geometry,
-		Engine::Material* material,
+		Foundation::MeshGeometry* geometry,
+		Foundation::Material* material,
 		const std::string& drawArgs,
 		UINT constantBufferIndex,
 		Transform transform

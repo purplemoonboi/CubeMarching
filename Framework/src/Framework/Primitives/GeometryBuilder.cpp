@@ -10,7 +10,7 @@
 
 using namespace DirectX;
 
-namespace Engine
+namespace Foundation
 {
 	GeometryGenerator::MeshData GeometryGenerator::CreateBox(float width, float height, float depth, UINT32 numSubdivisions)
 	{

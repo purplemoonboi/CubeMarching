@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 
-namespace Engine
+namespace Foundation
 {
 
 	class D3D12Material : public Material

@@ -9,7 +9,7 @@
 #include <backends/imgui_impl_dx12.h>
 #include <backends/imgui_impl_win32.h>
 
-namespace Engine
+namespace Foundation
 {
 	void ImGuiD3D12::InitialiseImGui()
 	{

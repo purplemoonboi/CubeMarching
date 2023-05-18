@@ -10,7 +10,7 @@
 #include "Framework/Renderer/Memory/MemoryManager.h"
 #include "Framework/Renderer/Pipeline/PipelineStateObject.h"
 
-namespace Engine
+namespace Foundation
 {
 	class RenderTarget;
 	struct WorldSettings;

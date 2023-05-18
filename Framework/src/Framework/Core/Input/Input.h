@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Core/core.h"
 
-namespace Engine
+namespace Foundation
 {
 	struct Vector2
 	{

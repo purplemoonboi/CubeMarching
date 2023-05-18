@@ -3,7 +3,7 @@
 
 #include <cstddef>  // size_t
 
-namespace Engine
+namespace Foundation
 {
 
     /**

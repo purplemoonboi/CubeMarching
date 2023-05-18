@@ -3,7 +3,7 @@
 #include "Framework/Core/Events/Event.h"
 #include "Framework/Core/Time/DeltaTime.h"
 
-namespace Engine
+namespace Foundation
 {
 	class Layer
 	{

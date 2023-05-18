@@ -8,7 +8,7 @@ namespace Editor
 	class SceneHierarchyPanel;
 }
 
-namespace Engine
+namespace Foundation
 {
 	struct WorldSettings;
 	class MainCamera;

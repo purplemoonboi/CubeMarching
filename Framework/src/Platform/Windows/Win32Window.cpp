@@ -4,7 +4,7 @@
 
 #include "Framework/Core/Events/AppEvents.h"
 
-namespace Engine
+namespace Foundation
 {
 	Win32Window* Win32Window::WindowSPtr = nullptr;
 

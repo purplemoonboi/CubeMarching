@@ -5,7 +5,7 @@
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
 #include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	void DensityTextureGenerator::Init(ComputeApi* context, MemoryManager* memManager)

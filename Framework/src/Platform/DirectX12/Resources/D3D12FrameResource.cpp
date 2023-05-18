@@ -1,7 +1,7 @@
 #include "Framework/cmpch.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 
-namespace Engine
+namespace Foundation
 {
 	D3D12FrameResource::~D3D12FrameResource()
 	{

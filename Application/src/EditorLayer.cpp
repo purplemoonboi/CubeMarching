@@ -15,7 +15,7 @@
 #include "Isosurface/VoxelWorldConstantExpressions.h"
 
 //change
-namespace Engine
+namespace Foundation
 {
     EditorLayer::EditorLayer()
         :
@@ -58,13 +58,11 @@ namespace Engine
         GpuCaptureModule = PIXLoadLatestWinPixGpuCapturerLibrary();
         GpuTimingModule = PIXLoadLatestWinPixTimingCapturerLibrary();
 
-        PIXCaptureParams.GpuCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
-        /*PIXCaptureParams.TimingCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
+        PIXCaptureParams.GpuCaptureParameters.FileName = L"assets/pix/Test.wpix";
+        PIXCaptureParams.TimingCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
+        PIXCaptureParams.TimingCaptureParameters.CpuSamplesPerSecond = 4000;
         PIXCaptureParams.TimingCaptureParameters.CaptureGpuTiming = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CaptureHeapAllocEvents = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CaptureCallstacks = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CapturePixMemEvents = TRUE;
-        */
+        
 #endif
 
         const auto api = RenderInstruction::GetApiPtr();

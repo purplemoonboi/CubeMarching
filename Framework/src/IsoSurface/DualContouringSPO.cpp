@@ -5,7 +5,7 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Renderer/Engine/Mesh.h"
 
-namespace Engine
+namespace Foundation
 {
 	void DualContouringSPO::Init(ComputeApi* compute, MemoryManager* memManger)
 	{

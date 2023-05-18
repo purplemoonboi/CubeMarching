@@ -3,7 +3,7 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Engine
+namespace Foundation
 {
 	// Using namespace
 	using Microsoft::WRL::ComPtr;

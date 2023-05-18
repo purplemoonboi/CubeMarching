@@ -7,7 +7,7 @@
 
 #include "Platform/DirectX12/DirectX12.h"
 
-namespace Engine
+namespace Foundation
 {
 	class D3D12Shader;
 	class ComputeApi;

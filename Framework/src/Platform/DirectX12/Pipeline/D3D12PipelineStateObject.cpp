@@ -5,7 +5,7 @@
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	D3D12PipelineStateObject::~D3D12PipelineStateObject()

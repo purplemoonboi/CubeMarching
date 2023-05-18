@@ -6,7 +6,7 @@
 
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 
-namespace Engine
+namespace Foundation
 {
 	/*ScopePointer<FrameResource> FrameResource::Create(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount)
 	{

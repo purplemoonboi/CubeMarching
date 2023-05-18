@@ -40,7 +40,7 @@ static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 }
 
 
-namespace Engine
+namespace Foundation
 {
 
 

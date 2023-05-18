@@ -5,7 +5,7 @@
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Engine
+namespace Foundation
 {
 	class Win32Window : public Window
 	{
@@ -17,7 +17,7 @@ namespace Engine
 			WNDPROC wndProc,
 			INT32 width, 
 			INT32 height, 
-			const std::wstring& windowCaption = L"DX12 Engine"
+			const std::wstring& windowCaption = L"DX12 Foundation"
 		);
 
 
@@ -57,7 +57,7 @@ namespace Engine
 
 		// @brief Initialises new window parameters and registers the
 		//		  window to the system.
-		bool InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption = L"DX12 Engine");
+		bool InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption = L"DX12 Foundation");
 
 
 		// @brief Encapsulating window data.

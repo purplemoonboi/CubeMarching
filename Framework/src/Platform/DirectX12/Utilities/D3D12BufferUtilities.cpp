@@ -2,7 +2,7 @@
 
 #include "Framework/Core/Log/Log.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	ID3D12Device* D3D12BufferUtilities::Device = nullptr;
@@ -408,7 +408,7 @@ namespace Engine
 			IID_PPV_ARGS(&readBackResource)
 		);
 
-		THROW_ON_FAILURE(readBackResult);
+		THROW_ON_FAILURE(hr);
 
 		return readBackResource;
 	}

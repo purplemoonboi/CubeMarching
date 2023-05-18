@@ -3,7 +3,7 @@
 
 #include "ComputeApi.h"
 
-namespace Engine
+namespace Foundation
 {
 	class ComputeInstruction
 	{

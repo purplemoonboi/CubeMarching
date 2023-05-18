@@ -10,7 +10,7 @@
 
 #include "Loader/D3D12TextureLoader.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	D3D12Texture::~D3D12Texture()

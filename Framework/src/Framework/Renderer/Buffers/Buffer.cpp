@@ -6,7 +6,7 @@
 
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 
-namespace Engine
+namespace Foundation
 {
 	ScopePointer<VertexBuffer> VertexBuffer::Create(UINT size, UINT vertexCount)
 	{

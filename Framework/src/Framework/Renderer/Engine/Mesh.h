@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include "Framework/Renderer/Buffers/Buffer.h"
 
-namespace Engine
+namespace Foundation
 {
 	// Defines a sub-range of geometry in a MeshGeometry.  This is for when multiple
 	// geometries are stored in one vertex and index buffer.  It provides the offsets

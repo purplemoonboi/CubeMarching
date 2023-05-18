@@ -5,7 +5,7 @@
 #include "Framework/Core/Log/Log.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	D3D12ComputeFrameResource::D3D12ComputeFrameResource(ID3D12Device* device)
 	{

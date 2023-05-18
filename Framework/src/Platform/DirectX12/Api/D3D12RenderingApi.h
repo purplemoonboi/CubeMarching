@@ -9,7 +9,7 @@
 #include "Platform/DirectX12/Resources/D3D12ResourceManager.h"
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
-namespace Engine
+namespace Foundation
 {
 	class D3D12RootSignature;
 

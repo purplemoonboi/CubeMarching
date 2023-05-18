@@ -4,7 +4,7 @@
 #include "Scene.h"
 #include "Framework\Core\core.h"
 
-namespace Engine
+namespace Foundation
 {
 	class SceneSerializer
 	{

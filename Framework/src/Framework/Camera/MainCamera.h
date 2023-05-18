@@ -2,7 +2,7 @@
 #include <DirectXMath.h>
 #include "../FDLuna/MathHelper.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	using namespace DirectX;

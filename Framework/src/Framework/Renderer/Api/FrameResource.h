@@ -3,7 +3,7 @@
 #include "Framework/Renderer/Resources/Light.h"
 #include "Framework/Core/core.h"
 
-namespace Engine
+namespace Foundation
 {
 	// Simple vertex buffer
 	struct Vertex

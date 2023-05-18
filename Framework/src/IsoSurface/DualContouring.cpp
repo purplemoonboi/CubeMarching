@@ -10,7 +10,7 @@
 #include <pix3.h>
 
 
-namespace Engine
+namespace Foundation
 {
 	void DualContouring::Init(ComputeApi* compute, MemoryManager* memManger)
 	{

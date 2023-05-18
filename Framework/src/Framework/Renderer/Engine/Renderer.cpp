@@ -6,7 +6,7 @@
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Engine
+namespace Foundation
 {
 	RendererStatus Renderer::RenderStatus = RendererStatus::RUNNING;
 	ScopePointer<GraphicsContext> Renderer::Context = nullptr;

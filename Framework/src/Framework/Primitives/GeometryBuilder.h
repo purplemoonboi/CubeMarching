@@ -4,7 +4,7 @@
 #include <DirectXMath.h>
 #include <vector>
 
-namespace Engine
+namespace Foundation
 {
 	class GeometryGenerator
 	{

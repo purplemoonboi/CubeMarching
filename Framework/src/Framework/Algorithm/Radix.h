@@ -7,7 +7,7 @@
 #include "IsoSurface/VoxelWorldConstantExpressions.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	using Microsoft::WRL::ComPtr;
 

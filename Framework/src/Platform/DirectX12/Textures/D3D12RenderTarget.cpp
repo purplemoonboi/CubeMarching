@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
-namespace Engine
+namespace Foundation
 {
 	D3D12RenderTarget::D3D12RenderTarget(
 		const void* data, 

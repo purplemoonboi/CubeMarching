@@ -10,7 +10,7 @@
 
 
 
-namespace Engine
+namespace Foundation
 {
 
 	class D3D12Context;

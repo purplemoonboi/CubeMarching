@@ -3,7 +3,7 @@
 #include "EditorLayer.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	class EditorApplication : public Application
 	{

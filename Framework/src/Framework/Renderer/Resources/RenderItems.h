@@ -7,7 +7,7 @@
 #include "Framework/Core/core.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Engine
+namespace Foundation
 {
 	struct Vertex;
 	class Texture;

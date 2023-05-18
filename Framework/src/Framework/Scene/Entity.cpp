@@ -1,6 +1,6 @@
 #include "Entity.h"
 
-namespace Engine
+namespace Foundation
 {
 	Entity::Entity(entt::entity handle, class Scene* scene)
 		:

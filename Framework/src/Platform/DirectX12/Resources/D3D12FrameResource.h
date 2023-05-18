@@ -8,7 +8,7 @@
 #include "MathHelper.h"
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
-namespace Engine
+namespace Foundation
 {
     // Stores the resources needed for the CPU to build the command lists
 	// for a frame.  

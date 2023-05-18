@@ -8,7 +8,7 @@
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	class D3D12Texture;
 	using Microsoft::WRL::ComPtr;

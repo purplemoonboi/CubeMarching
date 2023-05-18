@@ -13,7 +13,7 @@
 
 #include <random>
 
-namespace Engine
+namespace Foundation
 {
 	void MarchingCubesHP::Init(ComputeApi* context, MemoryManager* memManager)
 	{

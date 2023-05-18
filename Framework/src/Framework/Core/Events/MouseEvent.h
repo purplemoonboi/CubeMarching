@@ -4,7 +4,7 @@
 #include "Event.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	class MouseMovedEvent : public Event
 	{

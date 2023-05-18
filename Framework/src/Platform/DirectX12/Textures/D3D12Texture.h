@@ -5,7 +5,7 @@
 #include <string>
 
 
-namespace Engine
+namespace Foundation
 {
 	class D3D12HeapManager;
 	using Microsoft::WRL::ComPtr;

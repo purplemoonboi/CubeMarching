@@ -4,7 +4,7 @@
 
 #include "Platform/DirectX12/Buffers/DX12VertexArray.h"
 
-namespace Engine
+namespace Foundation
 {
 	RefPointer<VertexArray> VertexArray::Create()
 	{

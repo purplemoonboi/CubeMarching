@@ -10,7 +10,7 @@
 #endif
 
 
-namespace Engine
+namespace Foundation
 {
 
 	enum class ShaderType

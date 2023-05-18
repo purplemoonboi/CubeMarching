@@ -12,7 +12,7 @@
 
 #include <ppl.h>
 
-namespace Engine
+namespace Foundation
 {
 	using namespace DirectX;
 

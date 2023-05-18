@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	
 	D3D12HeapManager* D3D12Utils::MemoryManager = nullptr;

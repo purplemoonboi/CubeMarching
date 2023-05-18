@@ -3,7 +3,7 @@
 #include "Framework/Core/Core.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	enum class EventType
 	{

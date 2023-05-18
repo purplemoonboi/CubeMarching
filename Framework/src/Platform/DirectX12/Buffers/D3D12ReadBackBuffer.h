@@ -3,7 +3,7 @@
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	using Microsoft::WRL::ComPtr;
 

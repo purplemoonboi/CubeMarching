@@ -4,7 +4,7 @@
 
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
-namespace Engine
+namespace Foundation
 {
 	ScopePointer<Material> Material::Create(std::string&& name)
 	{

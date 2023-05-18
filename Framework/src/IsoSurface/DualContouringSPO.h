@@ -6,7 +6,7 @@
 
 #include "IsoSurface/VoxelWorldConstantExpressions.h"
 
-namespace Engine
+namespace Foundation
 {
 	struct MeshGeometry;
 

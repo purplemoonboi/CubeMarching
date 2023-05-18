@@ -1,7 +1,7 @@
 #include "Framework/cmpch.h"
 #include "LayerStack.h"
 
-namespace Engine
+namespace Foundation
 {
 	LayerStack::~LayerStack()
 	{

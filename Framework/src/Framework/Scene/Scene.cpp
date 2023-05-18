@@ -6,7 +6,7 @@
 #include "Entity.h"
 #include "ScriptableEntity.h"
 
-namespace Engine
+namespace Foundation
 {
 	Scene::Scene(const std::string& name)
 	{

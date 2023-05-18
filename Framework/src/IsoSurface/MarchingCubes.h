@@ -14,7 +14,7 @@
 #include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	using Microsoft::WRL::ComPtr;
 

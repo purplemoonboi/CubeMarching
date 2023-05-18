@@ -2,7 +2,7 @@
 #include "Framework/cmpch.h"
 #include "Events/Event.h"
 
-namespace Engine
+namespace Foundation
 {
 	struct WindowProperties
 	{
@@ -13,7 +13,7 @@ namespace Engine
 
 		WindowProperties
 		(
-			const std::wstring& windowTitle = L"DX12 Engine",
+			const std::wstring& windowTitle = L"DX12 Foundation",
 			UINT32 windowWidth = 1920,
 			UINT32 windowHeight = 1080
 		)

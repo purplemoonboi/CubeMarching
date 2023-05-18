@@ -7,7 +7,7 @@
 
 #include "Framework/Renderer/Resources/Shader.h"
 
-namespace Engine
+namespace Foundation
 {
 	class ComputeApi;
 	class BufferLayout;

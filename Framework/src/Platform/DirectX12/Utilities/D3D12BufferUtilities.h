@@ -64,15 +64,8 @@ namespace Engine
 		);
 
 		static ComPtr<ID3D12Resource> CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format);
-
-		static ComPtr<ID3D12Resource> CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth);
-
-		ComPtr<ID3D12Resource> CreateReadBackTex2D(DXGI_FORMAT format, INT32 width, INT32 height);
-
 		static ComPtr<ID3D12Resource> CreateCounterResource(bool allowShaderAtomics, bool allowWrite = false);
-
 		static ComPtr<ID3D12Resource> CreateReadBackBuffer(UINT32 bufferWidth);
-
 		static ComPtr<ID3D12Resource> CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite = false, bool allowAtomics = false);
 		static ComPtr<ID3D12Resource> CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* uploadBuffer = nullptr, const void* data = nullptr, bool allowWrite = false, bool allowAtomics = false);
 

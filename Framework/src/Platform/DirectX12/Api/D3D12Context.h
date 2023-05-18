@@ -4,7 +4,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace Engine
+namespace Foundation
 {
 	constexpr INT32 FRAMES_IN_FLIGHT = 1;
 

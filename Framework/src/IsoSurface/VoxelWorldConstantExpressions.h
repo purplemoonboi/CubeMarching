@@ -4,7 +4,7 @@
 
 #include "Framework/Renderer/Api/FrameResource.h"
 
-namespace Engine
+namespace Foundation
 {
 	struct MarchingCubesVertex
 	{

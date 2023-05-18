@@ -6,7 +6,7 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include <array>
 
-namespace Engine
+namespace Foundation
 {
 
 	constexpr UINT NUMBER_OF_CS_FRAMES_IN_FLIGHT = 1;

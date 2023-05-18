@@ -22,7 +22,7 @@
 
 
 
-namespace Engine
+namespace Foundation
 {
 
 #define ENGINE_IMGUI_SUPPORT 1

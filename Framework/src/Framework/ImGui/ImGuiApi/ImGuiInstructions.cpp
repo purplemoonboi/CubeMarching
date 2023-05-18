@@ -1,7 +1,7 @@
 #include "ImGuiInstructions.h"
 #include "ImGuiD3D12/ImGuiD3D12.h"
 
-namespace Engine
+namespace Foundation
 {
 	ImGuiApi* ImGuiInstructions::ImGuiPtr = new ImGuiD3D12();
 

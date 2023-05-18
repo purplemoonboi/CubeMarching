@@ -2,7 +2,7 @@
 #include "Framework/Renderer/Api/RendererAPI.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 
-namespace Engine
+namespace Foundation
 {
 	std::unordered_map<TextureFormat, UINT64> TextureTypeSize::TypeSize = {};
 

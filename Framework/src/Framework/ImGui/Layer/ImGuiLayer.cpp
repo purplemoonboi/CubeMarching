@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include "Framework/ImGui/ImGuiApi/ImGuiInstructions.h"
 
-namespace Engine
+namespace Foundation
 {
 	ImGuiLayer::ImGuiLayer()
 		:

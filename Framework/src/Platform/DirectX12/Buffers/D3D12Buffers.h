@@ -8,7 +8,7 @@
 #include "../Resources/D3D12FrameResource.h"
 #include "../RenderItems/D3D12RenderItem.h"
 
-namespace Engine
+namespace Foundation
 {
 	struct WorldSettings;
 

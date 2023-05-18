@@ -1,7 +1,7 @@
 #pragma once
 #include "Platform/DirectX12/DirectX12.h"
 
-namespace Engine
+namespace Foundation
 {
 	class D3D12Context;
 	class D3D12VertexBuffer;

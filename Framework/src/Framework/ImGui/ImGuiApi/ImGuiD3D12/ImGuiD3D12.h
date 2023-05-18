@@ -2,7 +2,7 @@
 #include "Platform/DirectX12/DirectX12.h"
 #include "../ImGuiApi.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	using Microsoft::WRL::ComPtr;

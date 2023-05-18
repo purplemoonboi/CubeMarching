@@ -3,7 +3,7 @@
 #include "Framework/Camera/MainCamera.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	class DeltaTime;
 

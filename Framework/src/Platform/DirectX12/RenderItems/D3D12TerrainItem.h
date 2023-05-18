@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Renderer/Resources/RenderItems.h"
 
-namespace Engine
+namespace Foundation
 {
 	class D3D12TerrainItem : public TerrainItem
 	{

@@ -68,7 +68,7 @@ namespace YAML
 	};
 }
 
-namespace Engine
+namespace Foundation
 {
 	//YAML - Operator Overload: <<
 	YAML::Emitter& operator<<(YAML::Emitter& out, const DirectX::XMFLOAT3& vector)

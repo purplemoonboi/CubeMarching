@@ -11,7 +11,7 @@
 #include "Framework/Renderer/Engine/Mesh.h"
 #include "Framework/Renderer/Textures/Texture.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	struct TagComponent

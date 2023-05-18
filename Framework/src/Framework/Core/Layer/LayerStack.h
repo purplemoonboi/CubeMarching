@@ -2,7 +2,7 @@
 #include "Layer.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	// @brief The layer stack is a custom structure which stores the application's
 	//		  frontend layers.

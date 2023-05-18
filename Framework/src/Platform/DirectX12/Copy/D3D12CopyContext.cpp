@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	ComPtr<ID3D12CommandAllocator> D3D12CopyContext::Allocator = nullptr;

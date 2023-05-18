@@ -3,7 +3,7 @@
 
 #include "MathHelper.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	enum class AttenuationType

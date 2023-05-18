@@ -3,7 +3,7 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include <array>
 
-namespace Engine
+namespace Foundation
 {
 	void D3D12RootSignature::Initialise(D3D12Context* context)
 	{

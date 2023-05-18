@@ -2,7 +2,7 @@
 #include "Log.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	std::shared_ptr<spdlog::logger> Log::CoreLog;

@@ -1,6 +1,6 @@
 #include "D3D12Material.h"
 
-namespace Engine
+namespace Foundation
 {
 	D3D12Material::D3D12Material(std::string&& name)
 		:

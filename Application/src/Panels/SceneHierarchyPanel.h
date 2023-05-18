@@ -10,30 +10,30 @@ namespace Editor
 	{
 	public:
 		SceneHierarchyPanel() = default;
-		SceneHierarchyPanel(const Engine::RefPointer<Engine::Scene>& context);
+		SceneHierarchyPanel(const Foundation::RefPointer<Foundation::Scene>& context);
 
 		// @brief Set the current scene's context.
 		// @param[in] Takes a reference to a shared pointer to a scene object.
-		void SetContext(const Engine::RefPointer<Engine::Scene>& context);
+		void SetContext(const Foundation::RefPointer<Foundation::Scene>& context);
 
 		// @brief Renders all the ImGui panels.
 		void OnImGuiRender();
 
 	public:
-		Engine::Entity GetSelectedEntity() const { return SelectionContext; }
+		Foundation::Entity GetSelectedEntity() const { return SelectionContext; }
 
 	private:
 
 		// @brief Renders entity node in the scene's hierarchy panel.
 		// @param[in] Takes an Entity as the argument.
-		void DrawEntityNode(Engine::Entity entity);
+		void DrawEntityNode(Foundation::Entity entity);
 
 		// @brief Renders all the components currently tied to the entity.
 		// @param[in] Takes an Entity as the argument.
-		void DrawComponents(Engine::Entity selected_context);
+		void DrawComponents(Foundation::Entity selected_context);
 
 	private:
-		Engine::RefPointer<Engine::Scene> ActiveScene;
-		Engine::Entity SelectionContext;
+		Foundation::RefPointer<Foundation::Scene> ActiveScene;
+		Foundation::Entity SelectionContext;
 	};
 }

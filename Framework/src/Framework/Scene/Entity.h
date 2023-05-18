@@ -5,7 +5,7 @@
 
 #include "Framework/Core/Log/Log.h"
 
-namespace Engine
+namespace Foundation
 {
 	class Entity
 	{

@@ -4,7 +4,7 @@
 #include <Windows.h>
 
 
-namespace Engine
+namespace Foundation
 {
 	
 	bool Input::IsKeyPressed(INT32 keycode)

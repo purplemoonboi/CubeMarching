@@ -2,7 +2,7 @@
 #include "Framework/Core/Core.h"
 #include "Framework/Renderer/Buffers/Buffer.h"
 
-namespace Engine
+namespace Foundation
 {
 	class VertexArray
 	{

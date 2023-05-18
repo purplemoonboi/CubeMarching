@@ -2,7 +2,7 @@
 #include <intsafe.h>
 
 
-namespace Engine
+namespace Foundation
 {
 	class MemoryManager
 	{

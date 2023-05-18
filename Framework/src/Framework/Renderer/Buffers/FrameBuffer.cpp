@@ -5,7 +5,7 @@
 
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 
-namespace Engine
+namespace Foundation
 {
 	ScopePointer<FrameBuffer> FrameBuffer::Create(const FrameBufferSpecifications& fBufferSpecs)
 	{

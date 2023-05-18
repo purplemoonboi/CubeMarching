@@ -1,6 +1,6 @@
 #pragma once
 
-extern Engine::Application* Engine::CreateApplication(HINSTANCE hInstance, const std::wstring& appName);
+extern Foundation::Application* Foundation::CreateApplication(HINSTANCE hInstance, const std::wstring& appName);
 
 int WINAPI main
 (
@@ -11,7 +11,7 @@ int WINAPI main
 )
 {
 
-	auto app = Engine::CreateApplication(hInstance, L"DX12 Engine");
+	auto app = Foundation::CreateApplication(hInstance, L"DX12 Foundation");
 
 	app->Run();
 

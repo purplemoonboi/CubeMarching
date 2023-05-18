@@ -5,7 +5,7 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Core/Log/Log.h"
 
-namespace Engine
+namespace Foundation
 {
 	D3D12FrameBuffer::D3D12FrameBuffer(const D3D12FrameBuffer& other)
 		:

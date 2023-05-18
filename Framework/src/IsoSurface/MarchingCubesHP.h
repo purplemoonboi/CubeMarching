@@ -6,7 +6,7 @@
 
 #include "VoxelWorldConstantExpressions.h"
 
-namespace Engine
+namespace Foundation
 {
 	using Microsoft::WRL::ComPtr;
 

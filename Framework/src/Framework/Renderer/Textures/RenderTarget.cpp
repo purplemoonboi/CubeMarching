@@ -4,7 +4,7 @@
 
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
-namespace Engine
+namespace Foundation
 {
 	ScopePointer<RenderTarget> RenderTarget::Create(
 		const void* initData, 

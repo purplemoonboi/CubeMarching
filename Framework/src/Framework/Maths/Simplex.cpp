@@ -27,7 +27,7 @@
  * or copy at http://opensource.org/licenses/MIT)
  */
 
-namespace Engine
+namespace Foundation
 {
 
 

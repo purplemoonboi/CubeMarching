@@ -3,7 +3,7 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
-namespace Engine
+namespace Foundation
 {
 	void Radix::Init(ComputeApi* context, MemoryManager* memManager)
 	{

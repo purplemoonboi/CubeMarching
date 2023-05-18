@@ -7,7 +7,7 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 
-namespace Engine
+namespace Foundation
 {
 	ScopePointer<GraphicsContext> GraphicsContext::Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight)
 	{
