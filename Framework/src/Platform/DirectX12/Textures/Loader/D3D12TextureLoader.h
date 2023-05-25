@@ -27,8 +27,8 @@ namespace Foundation
 		)
 		{
 			const HRESULT hr = DirectX::CreateDDSTextureFromFile12(
-				Context->Device.Get(), 
-				Context->ResourceCommandList.Get(), 
+				Context->pDevice.Get(), 
+				Context->pGCL.Get(), 
 				fileName.c_str(),
 				resource, uploadHeap
 			);

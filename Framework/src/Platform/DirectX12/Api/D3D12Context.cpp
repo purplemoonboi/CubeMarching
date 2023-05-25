@@ -6,38 +6,6 @@
 #include <filesystem>
 #include <shlobj.h>
 
-#ifdef USE_PIX
-#include <pix3.h>
-#endif
-
-static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
-{
-	LPWSTR programFilesPath = nullptr;
-	SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
-
-	std::filesystem::path pixInstallationPath = programFilesPath;
-	pixInstallationPath /= "Microsoft PIX";
-
-	std::wstring newestVersionFound;
-
-	for (auto const& directory_entry : std::filesystem::directory_iterator(pixInstallationPath))
-	{
-		if (directory_entry.is_directory())
-		{
-			if (newestVersionFound.empty() || newestVersionFound < directory_entry.path().filename().c_str())
-			{
-				newestVersionFound = directory_entry.path().filename().c_str();
-			}
-		}
-	}
-
-	if (newestVersionFound.empty())
-	{
-		return L"EMPTY";
-	}
-
-	return pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll";
-}
 
 
 namespace Foundation
@@ -51,11 +19,11 @@ namespace Foundation
 		INT32 swapChainBufferHeight
 	)
 		:
-		WindowHandle(windowHandle),
-		SwapChainBufferWidth(swapChainBufferWidth),
-		SwapChainBufferHeight(swapChainBufferHeight)
+		pWindowHandle(windowHandle),
+		SwapChainWidth(swapChainBufferWidth),
+		SwapChainHeight(swapChainBufferHeight)
 	{
-		CORE_ASSERT(WindowHandle, "Window handle is null!");
+		CORE_ASSERT(pWindowHandle, "Window handle is null!");
 		D3D12Context::Init();
 	}
 
@@ -65,50 +33,24 @@ namespace Foundation
 
 	D3D12Context::~D3D12Context()
 	{
-		if (CommandQueue != nullptr)
+	
+		if (pSwapChain != nullptr)
 		{
-			CommandQueue.Reset();
-			CommandQueue = nullptr;
+			pSwapChain.Reset();
+			pSwapChain = nullptr;
 		}
-		if (SwapChain != nullptr)
+
+		if(pDevice != nullptr)
 		{
-			SwapChain.Reset();
-			SwapChain = nullptr;
+			pDevice.Reset();
+			pDevice = nullptr;
 		}
-		if(Device != nullptr)
-		{
-			Device.Reset();
-			Device = nullptr;
-		}
-		
 		
 	}
 
 	void D3D12Context::Init()
 	{
-#ifdef USE_PIX
-		// Check to see if a copy of WinPixGpuCapturer.dll has already been injected into the application.
-		// This may happen if the application is launched through the PIX UI. 
-		if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
-		{
-			CORE_TRACE("Injecting WinPixCapturer.dll...")
-			const wchar_t* path = GetLatestWinPixGpuCapturerPath_Cpp17().c_str();
-			if(path != L"EMPTY")
-			{
-				LoadLibrary(path);
-				GpuCaptureLib = PIXLoadLatestWinPixGpuCapturerLibrary();
-				GpuTimingLib  = PIXLoadLatestWinPixTimingCapturerLibrary();
-			}
-			else
-			{
-				CORE_WARNING("PIX Capturer Invalid!");
-			}
-		}
-		else
-		{
-			CORE_WARNING("Failed to inject WinPixCapturer.dll")
-		}
-#endif
+
 
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 		{
@@ -121,96 +63,75 @@ namespace Foundation
 		LogAdapters();
 		CreateCommandObjects();
 		CreateSwapChain();
-		CreateRtvAndDsvHeaps();
 
-		Device->SetName(L"GPU Device");
-		CommandQueue->SetName(L"Graphics Queue");
-		ResourceCommandList->SetName(L"Graphics List");
+		pDevice->SetName(L"GPU Device");
+		pQueue->SetName(L"Graphics Queue");
+		pGCL->SetName(L"Graphics List");
 		
 	}
 
 	void D3D12Context::FlushCommandQueue()
 	{
 		SyncCounter++;
+		HRESULT hr{ S_OK };
+		hr = pQueue->Signal(pFence.Get(), SyncCounter);
+		THROW_ON_FAILURE(hr);
 
-		const HRESULT signalResult = CommandQueue->Signal(Fence.Get(), SyncCounter);
-		THROW_ON_FAILURE(signalResult);
-
-		if (Fence->GetCompletedValue() < SyncCounter)
+		if (pFence->GetCompletedValue() < SyncCounter)
 		{
-			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Fence->SetEventOnCompletion(SyncCounter, eventHandle);
-			THROW_ON_FAILURE(eventCompletion);
-
-			WaitForSingleObject(eventHandle, INFINITE);
-			CloseHandle(eventHandle);
+			const HANDLE pEvent = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT pEventState = pFence->SetEventOnCompletion(SyncCounter, pEvent);
+			THROW_ON_FAILURE(pEventState);
+			WaitForSingleObject(pEvent, INFINITE);
+			CloseHandle(pEvent);
 		}
 	}
 
 
 	void D3D12Context::ExecuteGraphicsCommandList() const
 	{
-		ID3D12CommandList* cmdsLists[] = { ResourceCommandList.Get() };
-		CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		ID3D12CommandList* cmdsLists[] = { pGCL.Get() };
+		pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
 	void D3D12Context::SignalGPU() const
 	{
-		CommandQueue->Signal(Fence.Get(), SyncCounter);
+		pQueue->Signal(pFence.Get(), SyncCounter);
 	}
 
-	bool D3D12Context::CreateDevice()
+	void D3D12Context::CreateDevice()
 	{
+		HRESULT hr{ S_OK };
+
 #ifdef CM_DEBUG
 		ComPtr<ID3D12Debug>  DX12DebugController;
-		HRESULT debugResult = D3D12GetDebugInterface(IID_PPV_ARGS(&DX12DebugController));
+		hr = D3D12GetDebugInterface(IID_PPV_ARGS(&DX12DebugController));
 #endif
 
-
 		//Create the factory.
-		HRESULT dxgiFactoryResult = CreateDXGIFactory1(IID_PPV_ARGS(&DXGIFactory));
-
+		hr = CreateDXGIFactory1(IID_PPV_ARGS(&pDXGIFactory4));
+		THROW_ON_FAILURE(hr);
 
 		//Create the Device.
-		HRESULT hardwareResult = D3D12CreateDevice
-		(
-			nullptr,//Use dedicated GPU.
-			D3D_FEATURE_LEVEL_11_0,
-			IID_PPV_ARGS(&Device)
-		);
-
+		hr = D3D12CreateDevice(nullptr, /* Use dedicated GPU.*/ D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice));
 
 		//If we were unable to create a Device using our
 		//dedicated GPU, try to create one with the WARP
 		//Device.
-		if (FAILED(hardwareResult))
+		if (FAILED(hr))
 		{
 			ComPtr<IDXGIAdapter> warpAdapter;
-			HRESULT warpEnumResult = DXGIFactory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
-
-			HRESULT warpDeviceResult = D3D12CreateDevice
-			(
-				warpAdapter.Get(),
-				D3D_FEATURE_LEVEL_11_0,
-				IID_PPV_ARGS(&Device)
-			);
-
+			HRESULT warpEnumResult = pDXGIFactory4->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
+			HRESULT warpDeviceResult = D3D12CreateDevice(warpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice));
 		}
 
 		//Create the fence
-		THROW_ON_FAILURE(Device->CreateFence
-		(
-			0,
-			D3D12_FENCE_FLAG_NONE,
-			IID_PPV_ARGS(&Fence)
-		));
-
-
-		return true;
+		hr = pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence));
+		THROW_ON_FAILURE(hr);
 	}
 
 
-	bool D3D12Context::CreateCommandObjects()
+	void D3D12Context::CreateCommandObjects()
 	{
 		//Create the command queue description
 		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -218,38 +139,37 @@ namespace Foundation
 		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 
 		//Now we can create the command queue
-		HRESULT qDescResult = Device->CreateCommandQueue
+		HRESULT qDescResult = pDevice->CreateCommandQueue
 		(
 			&queueDesc,
-			IID_PPV_ARGS(&CommandQueue)
+			IID_PPV_ARGS(&pQueue)
 		);
 
 		//Create the command allocator 
-		HRESULT cmdQueueAllocResult = Device->CreateCommandAllocator
+		HRESULT cmdQueueAllocResult = pDevice->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(ResourceAlloc.GetAddressOf())
+			IID_PPV_ARGS(pCmdAlloc.GetAddressOf())
 		);
 
 		//Create the direct command queue
-		HRESULT cmdListResult = Device->CreateCommandList
+		HRESULT cmdListResult = pDevice->CreateCommandList
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			ResourceAlloc.Get(),
+			pCmdAlloc.Get(),
 			nullptr,
-			IID_PPV_ARGS(ResourceCommandList.GetAddressOf())
+			IID_PPV_ARGS(pGCL.GetAddressOf())
 		);
 
 		//Now close the list. When we first use the command list
 		//we'll need to reset it, for this to happen, the list must
 		//be in a closed state.
-		ResourceCommandList->Close();
+		pGCL->Close();
 
-		return true;
 	}
 
-	bool D3D12Context::CheckMSAAQualityAndCache()
+	void D3D12Context::CheckMSAAQualityAndCache()
 	{
 		D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQualityLevels;
 		msaaQualityLevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -257,7 +177,7 @@ namespace Foundation
 		msaaQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
 		msaaQualityLevels.NumQualityLevels = 0;
 
-		Device->CheckFeatureSupport
+		pDevice->CheckFeatureSupport
 		(
 			D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
 			&msaaQualityLevels,
@@ -267,21 +187,15 @@ namespace Foundation
 		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
 		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
 
-		return true;
 	}
 
-
-
-	
-
-
-	bool D3D12Context::CreateSwapChain()
+	void D3D12Context::CreateSwapChain()
 	{
-		SwapChain.Reset();
+		pSwapChain.Reset();
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc;
-		swapChainDesc.BufferDesc.Width = SwapChainBufferWidth;
-		swapChainDesc.BufferDesc.Height = SwapChainBufferHeight;
+		swapChainDesc.BufferDesc.Width = SwapChainWidth;
+		swapChainDesc.BufferDesc.Height = SwapChainHeight;
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -291,23 +205,13 @@ namespace Foundation
 		swapChainDesc.SampleDesc.Quality = MsaaState ? (MsaaQaulity - 1) : 0;
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferCount = SWAP_CHAIN_BUFFER_COUNT;
-		swapChainDesc.OutputWindow = WindowHandle;
+		swapChainDesc.OutputWindow = pWindowHandle;
 		swapChainDesc.Windowed = true;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-		THROW_ON_FAILURE(DXGIFactory->CreateSwapChain
-		(
-			CommandQueue.Get(),
-			&swapChainDesc,
-			SwapChain.GetAddressOf()
-		));
-
-
-		return true;
+		THROW_ON_FAILURE(pDXGIFactory4->CreateSwapChain(pQueue.Get(), &swapChainDesc, pSwapChain.GetAddressOf()));
 	}
-
-
 
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }
@@ -317,7 +221,7 @@ namespace Foundation
 		UINT i = 0;
 		IDXGIAdapter* adapter = nullptr;
 		std::vector<IDXGIAdapter*> adapterList;
-		while (DXGIFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND)
+		while (pDXGIFactory4->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND)
 		{
 			DXGI_ADAPTER_DESC desc;
 			adapter->GetDesc(&desc);

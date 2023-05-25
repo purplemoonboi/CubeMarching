@@ -79,16 +79,16 @@ namespace Foundation
 
 	void D3D12FrameBuffer::RebuildFrameBuffer(FrameBufferSpecifications& specifications)
 	{
-		CORE_ASSERT(Context->Device, "The 'D3D device' has failed...");
-		CORE_ASSERT(Context->SwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(Context->ResourceCommandList, "The 'graphics command list' has failed...");
+		CORE_ASSERT(Context->pDevice, "The 'D3D device' has failed...");
+		CORE_ASSERT(Context->pSwapChain, "The 'swap chain' has failed...");
+		CORE_ASSERT(Context->pGCL, "The 'graphics command list' has failed...");
 
 		FrameBufferSpecs = specifications;
 
 		// Flush before changing any resources.
 		Context->FlushCommandQueue();
 
-		const HRESULT resetResult = Context->ResourceCommandList->Reset(Context->ResourceAlloc.Get(), nullptr);
+		const HRESULT resetResult = Context->pGCL->Reset(Context->pCmdAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(resetResult);
 
 		// Release the previous resources we will be recreating.
@@ -101,7 +101,7 @@ namespace Foundation
 
 
 		// Resize the swap chain.
-		const HRESULT resizeResult = Context->SwapChain->ResizeBuffers
+		const HRESULT resizeResult = Context->pSwapChain->ResizeBuffers
 		(
 			SWAP_CHAIN_BUFFER_COUNT,
 			FrameBufferSpecs.Width, FrameBufferSpecs.Height,
@@ -120,16 +120,16 @@ namespace Foundation
 
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
 		{
-			Context->SwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
+			Context->pSwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
 
-			Context->Device->CreateRenderTargetView
+			Context->pDevice->CreateRenderTargetView
 			(
 				SwapChainBuffer[i].Get(),
 				nullptr,
 				RenderTargetHandles[i]
 			);
 			SwapChainBuffer->Get()->SetName(L"Swap Chain");
-			THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
+			THROW_ON_FAILURE(Context->pDevice->GetDeviceRemovedReason());
 			//rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
 
@@ -158,7 +158,7 @@ namespace Foundation
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
 
-		const HRESULT resourceResult = Context->Device->CreateCommittedResource
+		const HRESULT resourceResult = Context->pDevice->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -169,7 +169,7 @@ namespace Foundation
 		);
 		THROW_ON_FAILURE(resourceResult);
 
-		THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
+		THROW_ON_FAILURE(Context->pDevice->GetDeviceRemovedReason());
 
 		// Create descriptor to mip level 0 of entire resource using the format of the resource.
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -178,7 +178,7 @@ namespace Foundation
 		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		Context->Device->CreateDepthStencilView
+		Context->pDevice->CreateDepthStencilView
 		(
 			DepthStencilBuffer.Get(),
 			&dsvDesc,
@@ -187,7 +187,7 @@ namespace Foundation
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		Context->ResourceCommandList->ResourceBarrier
+		Context->pGCL->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -199,11 +199,11 @@ namespace Foundation
 		);
 
 		// Execute the resize commands.
-		const HRESULT closeResult = Context->ResourceCommandList->Close();
+		const HRESULT closeResult = Context->pGCL->Close();
 		THROW_ON_FAILURE(closeResult);
 
-		ID3D12CommandList* cmdsLists[] = { Context->ResourceCommandList.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		ID3D12CommandList* cmdsLists[] = { Context->pGCL.Get() };
+		Context->pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.
 		Context->FlushCommandQueue();

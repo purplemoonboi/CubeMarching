@@ -26,7 +26,7 @@ namespace Foundation
 				ElementByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(T));
 			}
 
-			const HRESULT uploadResult = graphicsContext->Device->CreateCommittedResource
+			const HRESULT uploadResult = graphicsContext->pDevice->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
@@ -86,7 +86,7 @@ namespace Foundation
 				ElementByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(T));
 			}
 
-			THROW_ON_FAILURE(context->Device->CreateCommittedResource
+			THROW_ON_FAILURE(context->pDevice->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,

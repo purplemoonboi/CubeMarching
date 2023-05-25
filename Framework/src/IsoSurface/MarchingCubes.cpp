@@ -12,19 +12,15 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
 
-#ifdef USE_PIX
-#include<pix3.h>
-#endif
-
 namespace Foundation
 {
 
 
-	void MarchingCubes::Init(ComputeApi* context, MemoryManager* memManager)
+	void MarchingCubes::Init(ComputeApi* context)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 
-		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
+		MemManager = ComputeContext->Context->GetHeapManager();
 
 		ShaderArgs args =
 		{
@@ -40,18 +36,14 @@ namespace Foundation
 		CreateOutputBuffer();
 		CreateTriangulationTableBuffer();
 
-		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		const HRESULT deviceRemovedReason = ComputeContext->Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
-
-		
-
-		
 
 	}
 
 	void MarchingCubes::Dispatch(const VoxelWorldSettings& worldSettings, Texture* texture)
 	{
-		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->Device.Get());
+		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->pDevice.Get());
 
 		//PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"MarchingCubes - List");
 		//PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"MarchingCubes - Queue");
@@ -193,7 +185,7 @@ namespace Foundation
 		}
 
 		THROW_ON_FAILURE(hr);
-		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),

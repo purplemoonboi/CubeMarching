@@ -24,16 +24,16 @@ namespace Foundation
 		/**
 		 * Create a command allocator for this resource.
 		 */
-		HRESULT hr = d3d12Context->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(pCA.GetAddressOf()));
+		HRESULT hr = d3d12Context->pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+			IID_PPV_ARGS(pCmdAlloc.GetAddressOf()));
 		THROW_ON_FAILURE(hr);
 
 		/**
 		 * Create a graphics command list for this resource.
 		 */
-		hr = d3d12Context->Device->CreateCommandList(0,
+		hr = d3d12Context->pDevice->CreateCommandList(0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			pCA.Get(),
+			pCmdAlloc.Get(),
 			nullptr,
 			IID_PPV_ARGS(pGCL.GetAddressOf()));
 		THROW_ON_FAILURE(hr);

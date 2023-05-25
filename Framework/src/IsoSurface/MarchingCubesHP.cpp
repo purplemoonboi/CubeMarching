@@ -61,7 +61,7 @@ namespace Foundation
 		InitHashTablePso = PipelineStateObject::Create(ComputeContext, InitHashTableCS.get(), RootSignature);
 
 
-		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		const HRESULT deviceRemovedReason = ComputeContext->Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
 		ComputeContext->ResetComputeCommandList(InitHashTablePso.get());
@@ -305,7 +305,7 @@ namespace Foundation
 		}
 
 		THROW_ON_FAILURE(hr);
-		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),

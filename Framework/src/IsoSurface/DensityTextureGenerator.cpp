@@ -33,7 +33,7 @@ namespace Foundation
 		BuildPipelineState();
 		BuildResource();
 
-		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		const HRESULT deviceRemovedReason = ComputeContext->Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
 	}
@@ -141,7 +141,7 @@ namespace Foundation
 		if (errorBlob != nullptr) { ::OutputDebugStringA((char*)errorBlob->GetBufferPointer()); }
 		THROW_ON_FAILURE(serialisedResult);
 
-		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),

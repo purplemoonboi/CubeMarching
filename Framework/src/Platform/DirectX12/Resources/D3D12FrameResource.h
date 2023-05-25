@@ -25,7 +25,7 @@ namespace Foundation
 
         ComPtr<ID3D12GraphicsCommandList> pGCL;
 
-        ComPtr<ID3D12CommandAllocator> pCA;
+        ComPtr<ID3D12CommandAllocator> pCmdAlloc;
 
 		
 		ScopePointer<D3D12UploadBuffer<PassConstants>> PassBuffer = nullptr;

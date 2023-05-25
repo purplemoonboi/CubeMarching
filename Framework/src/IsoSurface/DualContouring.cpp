@@ -7,7 +7,6 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-#include <pix3.h>
 
 
 namespace Foundation
@@ -45,10 +44,6 @@ namespace Foundation
 	void DualContouring::Dispatch(const VoxelWorldSettings& settings, Texture* texture)
 	{
 
-		//ComputeContext->Wait(&FenceValue);
-		PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"DualContouring - List");
-		PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"DualContouring - Queue");
-
 		ComputeContext->ResetComputeCommandList(GenerateVerticesPso.get());
 
 		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
@@ -82,8 +77,6 @@ namespace Foundation
 		ComputeContext->CommandList->SetComputeRootDescriptorTable(4, VoxelLookUpTableUav);
 
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
-
-
 
 		/* second pass - generating triangles */
 
@@ -119,13 +112,8 @@ namespace Foundation
 		if (CountData != nullptr)
 			TriangleCount = *CountData;
 
-		
-
+	
 		ResetCounters();
-
-
-		PIXEndEvent(ComputeContext->CommandList.Get());
-		PIXEndEvent(ComputeContext->Queue.Get());
 	}
 
 	void DualContouring::BuildRootSignature()
@@ -175,7 +163,7 @@ namespace Foundation
 		}
 
 		THROW_ON_FAILURE(serializedResult);
-		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),

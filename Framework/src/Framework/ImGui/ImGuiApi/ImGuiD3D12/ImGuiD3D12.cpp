@@ -39,7 +39,7 @@ namespace Foundation
 		ImGui_ImplWin32_Init(context->GetHwnd());
 		ImGui_ImplDX12_Init
 		(
-			context->Device.Get(),
+			context->pDevice.Get(),
 			3,
 			frameBuffer->GetBackBufferFormat(),
 			memoryManager->GetShaderResourceDescHeap(),
@@ -48,7 +48,7 @@ namespace Foundation
 		);
 
 		//Create the command allocator 
-		HRESULT hr = context->Device->CreateCommandAllocator
+		HRESULT hr = context->pDevice->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(ImGuiAlloc.GetAddressOf())
@@ -56,7 +56,7 @@ namespace Foundation
 		THROW_ON_FAILURE(hr);
 
 		//Create the direct command queue
-		hr = context->Device->CreateCommandList
+		hr = context->pDevice->CreateCommandList
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -115,15 +115,15 @@ namespace Foundation
 		THROW_ON_FAILURE(hr);
 
 		ID3D12CommandList* cmdList[] = { ImGuiCommandList.Get() };
-		context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+		context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		hr = context->SwapChain->Present(0, 0);
+		hr = context->pSwapChain->Present(0, 0);
 		THROW_ON_FAILURE(hr);
 
 		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
 		api->GetCurrentFrameResource()->Fence = ++context->SyncCounter;
 
-		hr = context->CommandQueue->Signal(context->Fence.Get(), api->GetCurrentFrameResource()->Fence);
+		hr = context->pQueue->Signal(context->pFence.pFence, api->GetCurrentFrameResource()->Fence);
 		THROW_ON_FAILURE(hr);
 	}
 

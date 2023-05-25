@@ -27,18 +27,18 @@ namespace Foundation
 		desc.Priority = 0;
 		desc.NodeMask = 0;
 
-		const HRESULT queueResult = Context->Device->CreateCommandQueue(
+		const HRESULT queueResult = Context->pDevice->CreateCommandQueue(
 			&desc,
 			IID_PPV_ARGS(Queue.GetAddressOf()));
 		THROW_ON_FAILURE(queueResult);
 
-		const HRESULT cmdAllocResult = Context->Device->CreateCommandAllocator(
+		const HRESULT cmdAllocResult = Context->pDevice->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_COPY,
 			IID_PPV_ARGS(Allocator.GetAddressOf()
 			));
 		THROW_ON_FAILURE(cmdAllocResult);
 
-		const HRESULT cmdListResult = Context->Device->CreateCommandList(
+		const HRESULT cmdListResult = Context->pDevice->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_COPY,
 			Allocator.Get(),
@@ -77,7 +77,7 @@ namespace Foundation
 
 		FenceValue = ++FenceValue;
 
-		const HRESULT signal = Queue->Signal(Context->Fence.Get(), FenceValue);
+		const HRESULT signal = Queue->Signal(Context->pFence.Get(), FenceValue);
 		THROW_ON_FAILURE(signal);
 	}
 

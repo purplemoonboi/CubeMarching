@@ -13,7 +13,7 @@ namespace Foundation
 	void DualContouringSPO::Init(ComputeApi* compute)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(compute);
-		MemManager = dynamic_cast<D3D12HeapManager*>(memManger);
+		MemManager = dynamic_cast<D3D12HeapManager*>(ComputeContext->Context->p);
 
 
 		/**
@@ -218,7 +218,7 @@ namespace Foundation
 		}
 
 		THROW_ON_FAILURE(serializedResult);
-		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),
@@ -326,9 +326,9 @@ namespace Foundation
 		if (RawVoxelBuffer.empty())
 			return;
 
-		const HRESULT allocResult = ComputeContext->Context->ResourceAlloc->Reset();
+		const HRESULT allocResult = ComputeContext->Context->pCmdAlloc->Reset();
 		THROW_ON_FAILURE(allocResult);
-		const HRESULT listResult = ComputeContext->Context->ResourceCommandList->Reset(ComputeContext->Context->ResourceAlloc.Get(), nullptr);
+		const HRESULT listResult = ComputeContext->Context->pGCL->Reset(ComputeContext->Context->pCmdAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(listResult);
 
 		std::vector<Vertex> vertices;
@@ -362,12 +362,12 @@ namespace Foundation
 		TerrainMesh->IndexBuffer = IndexBuffer::Create(indices.data(),
 			ibSizeInBytes, indices.size());
 
-		const HRESULT closeResult = ComputeContext->Context->ResourceCommandList->Close();
+		const HRESULT closeResult = ComputeContext->Context->pGCL->Close();
 		THROW_ON_FAILURE(closeResult);
 		ComputeContext->Context->ExecuteGraphicsCommandList();
 		ComputeContext->Context->FlushCommandQueue();
 
-		const HRESULT deviceRemovedReason = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		const HRESULT deviceRemovedReason = ComputeContext->Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 
 	}

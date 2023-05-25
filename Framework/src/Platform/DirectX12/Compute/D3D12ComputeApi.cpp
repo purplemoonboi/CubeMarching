@@ -35,7 +35,7 @@ namespace Foundation
 
 		FenceValue = 0;
 
-		const HRESULT fenceResult = Context->Device->CreateFence
+		const HRESULT fenceResult = Context->pDevice->CreateFence
 		(
 			0,
 			D3D12_FENCE_FLAG_NONE,
@@ -49,18 +49,18 @@ namespace Foundation
 		desc.Priority = 0;
 		desc.NodeMask = 0;
 
-		const HRESULT queueResult = Context->Device->CreateCommandQueue(
+		const HRESULT queueResult = Context->pDevice->CreateCommandQueue(
 			&desc,
 			IID_PPV_ARGS(Queue.GetAddressOf()));
 		THROW_ON_FAILURE(queueResult);
 
-		const HRESULT cmdAllocResult = Context->Device->CreateCommandAllocator(
+		const HRESULT cmdAllocResult = Context->pDevice->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_COMPUTE,
 			IID_PPV_ARGS(CommandAllocator.GetAddressOf()
 			));
 		THROW_ON_FAILURE(cmdAllocResult);
 
-		const HRESULT cmdListResult = Context->Device->CreateCommandList(
+		const HRESULT cmdListResult = Context->pDevice->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_COMPUTE,
 			CommandAllocator.Get(),
@@ -70,7 +70,7 @@ namespace Foundation
 
 		for(INT32 i = 0; i < NUMBER_OF_CS_FRAMES_IN_FLIGHT;++i)
 		{
-			CsFrameResources[i] = CreateScope<D3D12ComputeFrameResource>(Context->Device.Get());
+			CsFrameResources[i] = CreateScope<D3D12ComputeFrameResource>(Context->pDevice.Get());
 		}
 
 		const HRESULT closeResult = CommandList->Close();
@@ -94,7 +94,7 @@ namespace Foundation
 		if (Fence->GetCompletedValue() < CurrentCSFrameResource->Fence)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(CurrentCSFrameResource->Fence, eventHandle);
+			const HRESULT eventCompletion = Context->pFence->SetEventOnCompletion(CurrentCSFrameResource->Fence, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);

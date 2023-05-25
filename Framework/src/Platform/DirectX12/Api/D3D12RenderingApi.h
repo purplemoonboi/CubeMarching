@@ -67,7 +67,6 @@ namespace Foundation
 
 		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return FrameBuffer.get(); };
 
-
 		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return Frames[FrameIndex].get(); }
 
 		[[nodiscard]] RenderTarget* GetSceneTexture() const override { return RenderTargets[(INT8)RenderLayer::Albedo].get(); }
@@ -86,7 +85,6 @@ namespace Foundation
 		UINT32 FrameIndex = 0;
 
 		
-
 		// Defines shader inputs
 		ComPtr<ID3D12RootSignature> RootSignature;
 

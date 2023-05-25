@@ -23,7 +23,7 @@ namespace Foundation
 	)
 	{
 		auto start = Context->RtvHeap->GetCPUDescriptorHandleForHeapStart();
-		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(start, 2, Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(start, 2, Context->pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		D3D12_CLEAR_VALUE clearVal = {};
 		clearVal.Color[0] = DirectX::Colors::SandyBrown[0];
@@ -32,8 +32,8 @@ namespace Foundation
 		clearVal.Color[3] = DirectX::Colors::SandyBrown[3];
 		clearVal.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		
-		Context->Device->CreateRenderTargetView(resource, nullptr, handle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateRenderTargetView(resource, nullptr, handle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 		return handle;
 	}
@@ -44,16 +44,16 @@ namespace Foundation
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
 	)
 	{
-		Context->Device->CreateRenderTargetView(resource, desc, cpuHandle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateRenderTargetView(resource, desc, cpuHandle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		return deviceRemovedReason;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Utils::CreateShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, ID3D12Resource* resource)
 	{
 		const auto handles = MemoryManager->GetResourceHandle();
-		Context->Device->CreateShaderResourceView(resource, &desc, handles.CpuCurrentHandle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateShaderResourceView(resource, &desc, handles.CpuCurrentHandle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 		return handles.GpuCurrentHandle;
 	}
@@ -66,8 +66,8 @@ namespace Foundation
 	{
 		const auto handles = MemoryManager->GetResourceHandle();
 		cpuHandle = handles.CpuCurrentHandle;
-		Context->Device->CreateShaderResourceView(resource, &desc, handles.CpuCurrentHandle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateShaderResourceView(resource, &desc, handles.CpuCurrentHandle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 		return handles.GpuCurrentHandle;
 	}
@@ -78,16 +78,16 @@ namespace Foundation
 		CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle
 	)
 	{
-		Context->Device->CreateShaderResourceView(resource, &desc, cpuHandle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateShaderResourceView(resource, &desc, cpuHandle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		return deviceRemovedReason;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Utils::CreateUnorderedAccessView(const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc, ID3D12Resource* resource, ID3D12Resource* counterBuffer)
 	{
 		const auto handles = MemoryManager->GetResourceHandle();
-		Context->Device->CreateUnorderedAccessView(resource, counterBuffer, &desc, handles.CpuCurrentHandle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateUnorderedAccessView(resource, counterBuffer, &desc, handles.CpuCurrentHandle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 		return handles.GpuCurrentHandle;
 	}
@@ -99,8 +99,8 @@ namespace Foundation
 	{
 		const auto handles = MemoryManager->GetResourceHandle();
 		cpuHandle = handles.CpuCurrentHandle;
-		Context->Device->CreateUnorderedAccessView(resource, counterBuffer, &desc, handles.CpuCurrentHandle);
-		const HRESULT deviceRemovedReason = Context->Device->GetDeviceRemovedReason();
+		Context->pDevice->CreateUnorderedAccessView(resource, counterBuffer, &desc, handles.CpuCurrentHandle);
+		const HRESULT deviceRemovedReason = Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
 		return handles.GpuCurrentHandle;
 	}

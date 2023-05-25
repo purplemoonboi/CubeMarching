@@ -27,24 +27,24 @@ namespace Foundation
 
 #define ENGINE_IMGUI_SUPPORT 1
 
-	D3D12RenderingApi::~D3D12RenderingApi()
-	{
-	}
+	D3D12RenderingApi::~D3D12RenderingApi(){}
 
 	void D3D12RenderingApi::Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
 	{
+		HRESULT hr{ S_OK };
 		Context = dynamic_cast<D3D12Context*>(context);
 
-		HeapManager = CreateScope<class D3D12HeapManager>(Context->Device.Get());
-		const HRESULT heapResult = HeapManager->Init(FRAMES_IN_FLIGHT, 64);
-		THROW_ON_FAILURE(heapResult);
+		HeapManager = CreateScope<class D3D12HeapManager>(Context->pDevice.Get());
+		Context->SetHeapManager(HeapManager.get());
+
+		hr = HeapManager->Init(FRAMES_IN_FLIGHT, 64);
+		THROW_ON_FAILURE(hr);
 
 
 		D3D12TextureLoader::Init(Context);
-		D3D12BufferUtilities::Init(Context->Device.Get(), Context->ResourceCommandList.Get());
+		D3D12BufferUtilities::Init(Context->pDevice.Get(), Context->pGCL.Get());
 		D3D12Utils::Init(HeapManager.get(), Context);
 
-		D3D12CopyContext::Init(Context);
 
 		FrameBufferSpecifications fbs;
 		fbs.Width = viewportWidth;
@@ -66,13 +66,7 @@ namespace Foundation
 			Frames[i] = CreateScope<D3D12FrameResource>(Context, 1, 16, 64, 1);
 		}
 
-		UploadBuffer = CreateScope<D3D12ResourceBuffer>
-		(
-			Context->Device.Get(),
-			HeapManager.get(),
-			Frames,
-			2
-		);
+		UploadBuffer = CreateScope<D3D12ResourceBuffer>(Context->pDevice.Get(), HeapManager.get(), Frames, 2);
 
 	}
 
@@ -92,23 +86,19 @@ namespace Foundation
 
 	void D3D12RenderingApi::PreInit()
 	{
-		// Reset the command allocator
-		// Reset the command list
-		THROW_ON_FAILURE(Context->ResourceCommandList->Reset
-		(
-			Context->ResourceAlloc.Get(),
-			nullptr
-		));
+		HRESULT hr{ S_OK };
+		hr = Context->pGCL->Reset(Context->pCmdAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(hr);
 	}
 
 
 	void D3D12RenderingApi::PostInit()
 	{
 		// Execute the initialization commands.
-		HRESULT hr = Context->ResourceCommandList->Close();
+		HRESULT hr = Context->pGCL->Close();
 		THROW_ON_FAILURE(hr);
-		ID3D12CommandList* cmdsLists[] = { Context->ResourceCommandList.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		ID3D12CommandList* cmdsLists[] = { Context->pGCL.Get() };
+		Context->pCmdQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 		Context->FlushCommandQueue();
 	}
 
@@ -122,16 +112,17 @@ namespace Foundation
 		bool wireframe
 	)
 	{
+		HRESULT hr{ S_OK };
 
 		FrameIndex = (FrameIndex + 1) % FRAMES_IN_FLIGHT;
 
 		// Has the GPU finished processing the commands of the current frame resource
 		// If not, wait until the GPU has completed commands up to this fence point.
-		auto val = Context->Fence->GetCompletedValue();
+		auto val = Context->pFence->GetCompletedValue();
 		if (val < Frames[FrameIndex]->Fence)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(Frames[FrameIndex]->Fence, eventHandle);
+			const HRESULT eventCompletion = Context->pFence->SetEventOnCompletion(Frames[FrameIndex]->Fence, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
@@ -162,14 +153,14 @@ namespace Foundation
 
 		// If everything checks out prepare recording instructions under the
 		// current frame resource.
-		CORE_ASSERT(Context->Device, "Device lost");
+		CORE_ASSERT(Context->pDevice, "Device lost");
 		CORE_ASSERT(Frames[FrameIndex]->pGCL, "Invalid command list...");
-		CORE_ASSERT(Context->CommandQueue, "Command queue lost");
+		CORE_ASSERT(Context->pCmdQueue, "Invalid command queue...");
 
 		// Check for any scheduled buffer regenerations
-		HRESULT hr = Frames[FrameIndex]->pCA->Reset();
+		hr = Frames[FrameIndex]->pCmdAlloc->Reset();
 		THROW_ON_FAILURE(hr);
-		hr = Frames[FrameIndex]->pGCL->Reset(Frames[FrameIndex]->pCA.Get(), nullptr);
+		hr = Frames[FrameIndex]->pGCL->Reset(Frames[FrameIndex]->pCmdAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(hr);
 
 
@@ -181,20 +172,20 @@ namespace Foundation
 			}
 		}
 
-		const HRESULT closeResult = Frames[FrameIndex]->pGCL->Close();
-		THROW_ON_FAILURE(closeResult);
+		hr = Frames[FrameIndex]->pGCL->Close();
+		THROW_ON_FAILURE(hr);
 		ID3D12CommandList* cmdsLists[] = { Frames[FrameIndex]->pGCL.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		Context->pCmdQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		Frames[FrameIndex]->Fence = ++Context->SyncCounter;
 
-		const HRESULT signalResult = Context->CommandQueue->Signal(Context->Fence.Get(), Frames[FrameIndex]->Fence);
+		const HRESULT signalResult = Context->pCmdQueue->Signal(Context->pFence.Get(), Frames[FrameIndex]->Fence);
 		THROW_ON_FAILURE(signalResult);
 
-		if(Context->Fence->GetCompletedValue() < Frames[FrameIndex]->Fence)
+		if(Context->pFence->GetCompletedValue() < Frames[FrameIndex]->Fence)
 		{
 			const HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT eventCompletion = Context->Fence->SetEventOnCompletion(Frames[FrameIndex]->Fence, eventHandle);
+			const HRESULT eventCompletion = Context->pFence->SetEventOnCompletion(Frames[FrameIndex]->Fence, eventHandle);
 			THROW_ON_FAILURE(eventCompletion);
 			WaitForSingleObject(eventHandle, INFINITE);
 			CloseHandle(eventHandle);
@@ -212,8 +203,8 @@ namespace Foundation
 	void D3D12RenderingApi::OnBeginRender()
 	{
 		
-		THROW_ON_FAILURE(Frames[FrameIndex]->pCA->Reset());
-		THROW_ON_FAILURE(Frames[FrameIndex]->pGCL->Reset(Frames[FrameIndex]->pCA.Get(), nullptr));
+		THROW_ON_FAILURE(Frames[FrameIndex]->pCmdAlloc->Reset());
+		THROW_ON_FAILURE(Frames[FrameIndex]->pGCL->Reset(Frames[FrameIndex]->pCmdAlloc.Get(), nullptr));
 		 
 		CD3DX12_RESOURCE_BARRIER rtBarriers[4] = {  };
 
@@ -405,10 +396,10 @@ namespace Foundation
 		THROW_ON_FAILURE(closeResult);
 
 		ID3D12CommandList* cmdList[] = { Frames[FrameIndex]->pGCL.Get() };
-		Context->CommandQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+		Context->pCmdQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
 		Frames[FrameIndex]->Fence = ++Context->SyncCounter;
-		Context->CommandQueue->Signal(Context->Fence.Get(), Frames[FrameIndex]->Fence);
+		Context->pCmdQueue->Signal(Context->pFence.Get(), Frames[FrameIndex]->Fence);
 	}
 
 

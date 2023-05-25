@@ -106,7 +106,7 @@ namespace Foundation
 	{
 
 		CORE_ASSERT(context, "Failed to cast graphics context into DirectX 12 context...");
-		InitialiseRoot(context->Device.Get(), args);
+		InitialiseRoot(context->pDevice.Get(), args);
 
 		/** pso description */
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
@@ -170,7 +170,7 @@ namespace Foundation
 		psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 		HRESULT hr = S_OK;
-		hr = context->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
+		hr = context->pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
 		THROW_ON_FAILURE(hr);
 	}
 
@@ -240,7 +240,7 @@ namespace Foundation
 
 
 		HRESULT creationResult = S_OK;
-		creationResult  = graphicsContext->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
+		creationResult  = graphicsContext->pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
 		THROW_ON_FAILURE(creationResult);
 	}
 
@@ -266,7 +266,7 @@ namespace Foundation
 		};
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		const HRESULT csPipelineState = d3d12ComputeApi->Context->Device->CreateComputePipelineState
+		const HRESULT csPipelineState = d3d12ComputeApi->Context->pDevice->CreateComputePipelineState
 		(
 			&desc,
 			IID_PPV_ARGS(&Pso)
