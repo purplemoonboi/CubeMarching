@@ -24,8 +24,8 @@
 // Disable move semantics
 #ifndef DISABLE_MOVE
 #define DISABLE_MOVE(T)						\
-			explicit T((T)&&) = delete;		\
-			(T)& operator=((T)&&)=delete;	
+			explicit T(T&&) = delete;		\
+			(T)& operator=(T&&)=delete;	
 #endif
 
 

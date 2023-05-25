@@ -105,7 +105,6 @@ namespace Foundation
 			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
-			layout,
 			FillMode::Opaque
 		));
 
@@ -114,7 +113,6 @@ namespace Foundation
 			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("tps"),
-			layout,
 			FillMode::Opaque
 		));
 
@@ -123,7 +121,6 @@ namespace Foundation
 			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
-			layout,
 			FillMode::WireFrame
 		));
 

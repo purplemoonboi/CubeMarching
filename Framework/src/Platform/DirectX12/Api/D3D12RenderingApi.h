@@ -11,12 +11,25 @@
 namespace Foundation
 {
 	class D3D12RootSignature;
-
 	struct WorldSettings;
-
 	struct ObjectConstant;
 
 	constexpr UINT GBufferTextureCount = 5;
+
+	class D3D12RenderingPipelines
+	{
+	public:
+		D3D12RenderingPipelines() = default;
+		DISABLE_COPY_AND_MOVE(D3D12RenderingPipelines);
+
+		void Insert(const std::string& name, D3D12PipelineStateObject* pso);
+		void Remove(const std::string& name);
+
+	private:
+		std::unordered_map<std::string, D3D12PipelineStateObject*> pPipelines;
+
+	};
+
 
 	class D3D12RenderingApi : public RendererAPI
 	{
