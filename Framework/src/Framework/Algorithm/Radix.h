@@ -9,6 +9,7 @@
 
 namespace Foundation
 {
+	class MemoryManager;
 	using Microsoft::WRL::ComPtr;
 
 	class PipelineStateObject;
@@ -18,7 +19,7 @@ namespace Foundation
 	class Radix
 	{
 	public:
-		void Init(ComputeApi* context, MemoryManager* memManager);
+		void Init(ComputeApi* context);
 
 
 		void SortChunk(const VoxelWorldSettings& settings);

@@ -1,5 +1,6 @@
 #include "D3D12Utilities.h"
 #include "Framework/Core/Core.h"
+#include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 

@@ -36,9 +36,9 @@ cbuffer cbSettings : register(b0)
 Texture3D<float> DensityTexture : register(t0);
 StructuredBuffer<int> TriangleTable : register(t1);
 
-RWStructuredBuffer<Vertex> gVertexBuffer        : register(u0);
-RWStructuredBuffer<Face> gFaceBuffer            : register(u1);
-RWStructuredBuffer<int> gVertexCounter         : register(u2);
+RWStructuredBuffer<Vertex> gVertices        : register(u0);
+RWStructuredBuffer<Face> gFaces            : register(u1);
+RWStructuredBuffer<int> gIndices                : register(u2);
 RWStructuredBuffer<EdgeTableElement> gEdgeTable : register(u3);
 
 #define EMPTY 0xffffffff
@@ -292,9 +292,9 @@ void GenerateVertices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex,
         }
     }
     
-    gVertexCounter[(dId.x * 3)] = lSums[i];
-    gVertexCounter[(dId.x * 3)+1] = lSums[i + 1];
-    gVertexCounter[(dId.x * 3)+2] = lSums[i + 2];
+    gIndices[(dId.x * 3)] = lSums[i];
+    gIndices[(dId.x * 3)+1] = lSums[i + 1];
+    gIndices[(dId.x * 3)+2] = lSums[i + 2];
       
 }
 
@@ -314,7 +314,7 @@ void GenerateIndices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, 
     }
     else
     {
-        lSums[gId] = gVertexCounter[dId.x];
+        lSums[gId] = gIndices[dId.x];
     }
     GroupMemoryBarrierWithGroupSync();
     
@@ -348,7 +348,7 @@ void GenerateIndices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, 
     {
         if (bId.x > t)
         {
-            w.WorldIndex = gVertexCounter[bId.x - t];
+            w.WorldIndex = gIndices[bId.x - t];
             
             [unroll(BLOCK_SIZE)]
             for (uint j = 0; j < BLOCK_SIZE; j++)
@@ -368,7 +368,7 @@ void GenerateIndices(uint3 dId : SV_DispatchThreadID, uint gId : SV_GroupIndex, 
                 //...update this blocks highest index.
                 if(j == BLOCK_SIZE - 1)
                 {
-                    gVertexCounter[bId.x] = v.WorldIndex;
+                    gIndices[bId.x] = v.WorldIndex;
                 }
             }
         }

@@ -6,7 +6,6 @@
 #include "Framework/Core/Time/DeltaTime.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Buffers/D3D12UploadBuffer.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
@@ -266,14 +265,15 @@ namespace Foundation
 			const auto constantBuffer = currentResource->ConstantBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
 
-			for (UINT32 i = 0; i < objectCount; ++i)
+			UINT32 i{ 0 };
+			for (i = 0; i < objectCount; ++i)
 			{
 				constantBufferAddress += i * constantBufferSizeInBytes;
 
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
 				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
-				handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
+				handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 				cbvDesc.BufferLocation = constantBufferAddress;
@@ -286,7 +286,7 @@ namespace Foundation
 			const auto materialBuffer = currentResource->MaterialBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
 
-			for (UINT32 i = 0; i < objectCount; ++i)
+			for (i = 0; i < objectCount; ++i)
 			{
 
 				materialBufferAddress += i * materialBufferSizeInBytes;
@@ -294,7 +294,7 @@ namespace Foundation
 				const UINT32 heapIndex = frameIndex * objectCount + i;
 
 				auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
-				handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
+				handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
 
 				D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
 				mbvDesc.BufferLocation = materialBufferAddress;

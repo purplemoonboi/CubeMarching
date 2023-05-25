@@ -8,6 +8,9 @@
 #include "../Resources/D3D12FrameResource.h"
 #include "../RenderItems/D3D12RenderItem.h"
 
+#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
+
+
 namespace Foundation
 {
 	struct WorldSettings;
@@ -16,7 +19,6 @@ namespace Foundation
 	using Microsoft::WRL::ComPtr;
 
 	class D3D12Context;
-	class D3D12HeapManager;
 
 	// @brief The buffer event system is exclusive for modern APIs such as Direct X12 and Vulkan.
 	//	      Because it is the programmer's responsibility for ensuring safe allocation and deallocation
@@ -127,6 +129,7 @@ namespace Foundation
 	class D3D12ResourceBuffer //: public ResourceBuffer
 	{
 	public:
+
 
 		D3D12ResourceBuffer
 		(

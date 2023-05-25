@@ -2,7 +2,7 @@
 #include "../DirectX12.h"
 #include "Framework/Core/Log/Log.h"
 
-namespace Engine
+namespace Foundation
 {
 
 	using Microsoft::WRL::ComPtr;

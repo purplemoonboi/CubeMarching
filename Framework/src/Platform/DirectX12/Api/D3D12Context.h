@@ -6,6 +6,7 @@ using Microsoft::WRL::ComPtr;
 
 namespace Foundation
 {
+	class D3D12HeapManager;
 	constexpr INT32 FRAMES_IN_FLIGHT = 1;
 
 
@@ -53,10 +54,6 @@ namespace Foundation
 
 		
 
-		// @brief Heap descriptor for resources
-		ComPtr<ID3D12DescriptorHeap> RtvHeap;
-		// @brief Heap descriptor for depth-stencil resource
-		ComPtr<ID3D12DescriptorHeap> DsvHeap;
 
 		[[nodiscard]] UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
 		[[nodiscard]] bool GetMsaaState() const { return MsaaState; }
@@ -66,9 +63,10 @@ namespace Foundation
 
 		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
-
+		void SetHeapManager(D3D12HeapManager* manager) { pHeapManager = manager; }
 
 	private:
+		D3D12HeapManager* pHeapManager = nullptr;
 
 		// @brief Creates the command object responsible for recording commands to be sent to the
 		//		  GPU.
@@ -86,8 +84,6 @@ namespace Foundation
 		//
 		bool CreateRtvAndDsvHeaps();
 
-		//
-		bool CreateRootSignature();
 
 		// @brief Unsigned integer representing the supported multi sampling quality.
 		UINT32 MsaaQaulity = 0;

@@ -58,7 +58,7 @@ namespace Foundation
 	{
 	public:
 
-		void Init(ComputeApi* context, MemoryManager* memManager);
+		void Init(ComputeApi* context);
 
 		void Polygonise(const VoxelWorldSettings& worldSettings, Texture* texture);
 

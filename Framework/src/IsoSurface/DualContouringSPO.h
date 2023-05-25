@@ -17,7 +17,7 @@ namespace Foundation
 		
 	public:
 
-		void Init(ComputeApi* compute, MemoryManager* memManger);
+		void Init(ComputeApi* compute);
 
 		void Dispatch(const VoxelWorldSettings& settings, Texture* texture);
 

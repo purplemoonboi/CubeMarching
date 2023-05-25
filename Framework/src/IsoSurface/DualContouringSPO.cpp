@@ -1,4 +1,7 @@
 #include "DualContouringSPO.h"
+
+#include <Platform/DirectX12/Utilities/D3D12BufferUtilities.h>
+
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
@@ -7,7 +10,7 @@
 
 namespace Foundation
 {
-	void DualContouringSPO::Init(ComputeApi* compute, MemoryManager* memManger)
+	void DualContouringSPO::Init(ComputeApi* compute)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(compute);
 		MemManager = dynamic_cast<D3D12HeapManager*>(memManger);

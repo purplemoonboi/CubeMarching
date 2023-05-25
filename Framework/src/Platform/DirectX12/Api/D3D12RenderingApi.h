@@ -6,7 +6,6 @@
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 #include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
-#include "Platform/DirectX12/Resources/D3D12ResourceManager.h"
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
 namespace Foundation

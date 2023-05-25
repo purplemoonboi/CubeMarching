@@ -15,7 +15,7 @@
 
 namespace Foundation
 {
-	void MarchingCubesHP::Init(ComputeApi* context, MemoryManager* memManager)
+	void MarchingCubesHP::Init(ComputeApi* context)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
 		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);

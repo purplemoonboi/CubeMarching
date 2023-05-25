@@ -42,8 +42,7 @@ namespace Foundation
 		[[nodiscard]] ID3D12Resource* CurrentBackBuffer() const;
 		[[nodiscard]] UINT64 GetFrameBuffer() const override;
 		[[nodiscard]] INT32 GetBackBufferIndex() const { return BackBufferIndex; }
-		[[nodiscard]] UINT32 GetRtvDescSize() const { return RtvDescriptorSize; }
-		[[nodiscard]] UINT32 GetDsvDescSize() const { return DsvDescriptorSize; }
+		
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferViewCpu() const;
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilViewCpu() const;
 		[[nodiscard]] INT32 GetWidth() const override;
@@ -51,13 +50,10 @@ namespace Foundation
 		[[nodiscard]] DXGI_FORMAT GetBackBufferFormat() const { return BackBufferFormat; }
 		[[nodiscard]] DXGI_FORMAT GetDepthStencilFormat() const { return DepthStencilFormat; }
 
-		// @brief - Represents the size of the RTV descriptor heap.
-		UINT32 RtvDescriptorSize;
-		// @brief - Represents the size of the DSV descriptor heap.
-		UINT32 DsvDescriptorSize;
 
 
 	private:
+		ID3D12Device* pDevice = nullptr;
 
 		/**
 		 * @brief Main render target buffer.
@@ -65,6 +61,8 @@ namespace Foundation
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT];
 		ComPtr<ID3D12Resource>				DepthStencilBuffer;
 
+		CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTargetHandles[2] = {};
+		CD3DX12_CPU_DESCRIPTOR_HANDLE DepthStencilHandle = {};
 
 		// @brief - A structure describing the buffer which we render to.
 		D3D12_VIEWPORT ScreenViewport;

@@ -9,9 +9,7 @@ namespace Foundation
 {
 	D3D12FrameBuffer::D3D12FrameBuffer(const D3D12FrameBuffer& other)
 		:
-		BackBufferIndex(0),
-		RtvDescriptorSize(0),
-		DsvDescriptorSize(0)
+		BackBufferIndex(0)
 	{
 		FrameBufferSpecs = other.FrameBufferSpecs;
 		ScissorRect = other.ScissorRect;
@@ -21,12 +19,8 @@ namespace Foundation
 	D3D12FrameBuffer::D3D12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs)
 		:
 		FrameBufferSpecs(fBufferSpecs),
-		
-		BackBufferIndex(0),
-		RtvDescriptorSize(0),
-		DsvDescriptorSize(0)
+		BackBufferIndex(0)
 	{
-		
 		ScissorRect = {};
 		ScreenViewport = {};
 	}
@@ -40,11 +34,6 @@ namespace Foundation
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
 
-		DsvDescriptorSize = Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-		RtvDescriptorSize = Context->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-		
-
 	}
 
 	void D3D12FrameBuffer::Bind(void* args)
@@ -55,7 +44,7 @@ namespace Foundation
 
 		// Indicate there will be a transition made to the resource.
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			CurrentBackBuffer(),
+			SwapChainBuffer[BackBufferIndex].Get(),
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET
 		));
@@ -65,8 +54,8 @@ namespace Foundation
 		commandList->RSSetScissorRects(1, &ScissorRect);
 
 		commandList->OMSetRenderTargets(1,
-			&CD3DX12_CPU_DESCRIPTOR_HANDLE(Context->RtvHeap->GetCPUDescriptorHandleForHeapStart(), BackBufferIndex, RtvDescriptorSize),
-			true, &Context->DsvHeap->GetCPUDescriptorHandleForHeapStart()
+			&RenderTargetHandles[BackBufferIndex],
+			true, &DepthStencilHandle
 		);
 
 	}
@@ -124,7 +113,7 @@ namespace Foundation
 
 		BackBufferIndex = 0;
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(Context->RtvHeap->GetCPUDescriptorHandleForHeapStart());
+		//CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(Context->RtvHeap->GetCPUDescriptorHandleForHeapStart());
 
 		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 		
@@ -137,11 +126,11 @@ namespace Foundation
 			(
 				SwapChainBuffer[i].Get(),
 				nullptr,
-				rtvHeapHandle
+				RenderTargetHandles[i]
 			);
 			SwapChainBuffer->Get()->SetName(L"Swap Chain");
 			THROW_ON_FAILURE(Context->Device->GetDeviceRemovedReason());
-			rtvHeapHandle.Offset(1, RtvDescriptorSize);
+			//rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
 
 		// Create the depth/stencil buffer and view.
@@ -253,17 +242,21 @@ namespace Foundation
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetCurrentBackBufferViewCpu() const
 	{
-		return CD3DX12_CPU_DESCRIPTOR_HANDLE
+		return RenderTargetHandles[BackBufferIndex];
+
+		/*CD3DX12_CPU_DESCRIPTOR_HANDLE
 		(
 			Context->RtvHeap->GetCPUDescriptorHandleForHeapStart(),
 			BackBufferIndex,
 			RtvDescriptorSize
-		);
+		);*/
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetDepthStencilViewCpu() const
 	{
-		return Context->DsvHeap->GetCPUDescriptorHandleForHeapStart();
+		return DepthStencilHandle;
+
+		/*Context->DsvHeap->GetCPUDescriptorHandleForHeapStart();*/
 	}
 
 	INT32 D3D12FrameBuffer::GetWidth() const

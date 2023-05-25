@@ -63,7 +63,7 @@ namespace Foundation
 
 		for (i = 0; i < FRAMES_IN_FLIGHT; ++i)
 		{
-			Frames.push_back(CreateScope<D3D12FrameResource>(Context, 1, 16, 64, 1));
+			Frames[i] = CreateScope<D3D12FrameResource>(Context, 1, 16, 64, 1);
 		}
 
 		UploadBuffer = CreateScope<D3D12ResourceBuffer>
@@ -326,8 +326,8 @@ namespace Foundation
 			Frames[FrameIndex]->pGCL->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
 			Frames[FrameIndex]->pGCL->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
-			const UINT objConstBufferByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
-			const UINT matConstBufferByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
+			const UINT objConstBufferByteSize = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(ObjectConstant));
+			const UINT matConstBufferByteSize = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(MaterialConstants));
 
 			ID3D12Resource* objectConstantBuffer = Frames[FrameIndex]->ConstantBuffer->Resource();
 			ID3D12Resource* materialConstantBuffer = Frames[FrameIndex]->MaterialBuffer->Resource();
@@ -370,8 +370,8 @@ namespace Foundation
 			Frames[FrameIndex]->pGCL->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
 			Frames[FrameIndex]->pGCL->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
-			const UINT objConstBufferByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(ObjectConstant));
-			const UINT matConstBufferByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(MaterialConstants));
+			const UINT objConstBufferByteSize = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(ObjectConstant));
+			const UINT matConstBufferByteSize = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(MaterialConstants));
 
 			ID3D12Resource* objectConstantBuffer = Frames[FrameIndex]->ConstantBuffer->Resource();
 			ID3D12Resource* materialConstantBuffer = Frames[FrameIndex]->MaterialBuffer->Resource();

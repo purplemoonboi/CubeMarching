@@ -12,14 +12,13 @@ namespace Foundation
 {
 	using Microsoft::WRL::ComPtr;
 
-
 	class Texture;
 	class Shader;
 
 	class DualContouring
 	{
 	public:
-		void Init(ComputeApi* compute, MemoryManager* memManger);
+		void Init(ComputeApi* compute);
 
 		void Dispatch(const VoxelWorldSettings& settings, Texture* texture);
 
