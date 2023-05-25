@@ -25,6 +25,8 @@ namespace Foundation
 		void Insert(const std::string& name, D3D12PipelineStateObject* pso);
 		void Remove(const std::string& name);
 
+		D3D12PipelineStateObject* Get(const std::string& name) const { return pPipelines.at(name); }
+
 	private:
 		std::unordered_map<std::string, D3D12PipelineStateObject*> pPipelines;
 
