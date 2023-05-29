@@ -6,8 +6,6 @@
 #include <filesystem>
 #include <shlobj.h>
 
-#define USE_PIX
-#include <pix3.h>
 
 static std::wstring GetLatestWinPixGpuCapturerPath_Cpp17()
 {

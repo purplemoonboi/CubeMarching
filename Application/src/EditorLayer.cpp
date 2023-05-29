@@ -53,19 +53,6 @@ namespace Engine
 
     void EditorLayer::OnAttach()
     {
-#ifdef USE_PIX
-
-        GpuCaptureModule = PIXLoadLatestWinPixGpuCapturerLibrary();
-        GpuTimingModule = PIXLoadLatestWinPixTimingCapturerLibrary();
-
-        PIXCaptureParams.GpuCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
-        /*PIXCaptureParams.TimingCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
-        PIXCaptureParams.TimingCaptureParameters.CaptureGpuTiming = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CaptureHeapAllocEvents = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CaptureCallstacks = TRUE;
-        PIXCaptureParams.TimingCaptureParameters.CapturePixMemEvents = TRUE;*/
-
-#endif
 
         const auto api = RenderInstruction::GetApiPtr();
 
@@ -187,17 +174,7 @@ namespace Engine
         if(UpdateVoxels && !UpdateTexture)
         {
             
-            HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
-            if (!SUCCEEDED(hr))
-            {
-                CORE_ERROR("GPU capture failed...")
-            }
-            else
-            {
-                CORE_TRACE("Beginning GPU capture...");
-            }
-
-           
+          
             switch (Algorithm)
             {
             case 0:
@@ -231,22 +208,6 @@ namespace Engine
                 
                 break;
 
-            }
-
-
-
-            if(SUCCEEDED(hr))
-            {
-                hr = PIXEndCapture(FALSE);
-				if(!SUCCEEDED(hr))
-				{
-                    CORE_ERROR("Could not end GPU capture successfully...");
-				}
-                else
-                {
-                    CORE_TRACE("Ending GPU capture...");
-
-                }
             }
 
             UpdateVoxels = false;

@@ -12,7 +12,6 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
 
-#include <pix3.h>
 
 namespace Engine
 {
@@ -50,10 +49,6 @@ namespace Engine
 	void MarchingCubes::Dispatch(const VoxelWorldSettings& worldSettings, Texture* texture)
 	{
 		CORE_ASSERT("Device has been disconnected!",!ComputeContext->Context->Device.Get());
-
-		//PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"MarchingCubes - List");
-		//PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"MarchingCubes - Queue");
-
 
 		ComputeContext->ResetComputeCommandList(ComputeState.get());
 
@@ -142,10 +137,6 @@ namespace Engine
 
 		ComputeContext->FlushComputeQueue(&FenceValue);
 
-	
-		
-		//PIXEndEvent(ComputeContext->CommandList.Get());
-		//PIXEndEvent(ComputeContext->Queue.Get());
 	}
 
 

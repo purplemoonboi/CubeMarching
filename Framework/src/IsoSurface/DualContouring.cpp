@@ -7,7 +7,6 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-#include <pix3.h>
 
 
 namespace Engine
@@ -45,9 +44,7 @@ namespace Engine
 	void DualContouring::Dispatch(const VoxelWorldSettings& settings, Texture* texture)
 	{
 
-		//ComputeContext->Wait(&FenceValue);
-		PIXBeginEvent(ComputeContext->CommandList.Get(), 0xFF, L"DualContouring - List");
-		PIXBeginEvent(ComputeContext->Queue.Get(), 0xFF, L"DualContouring - Queue");
+
 
 		ComputeContext->ResetComputeCommandList(GenerateVerticesPso.get());
 
@@ -119,10 +116,6 @@ namespace Engine
 			TriangleCount = *CountData;
 
 		ResetCounters();
-
-
-		PIXEndEvent(ComputeContext->CommandList.Get());
-		PIXEndEvent(ComputeContext->Queue.Get());
 	}
 
 	void DualContouring::BuildRootSignature()
