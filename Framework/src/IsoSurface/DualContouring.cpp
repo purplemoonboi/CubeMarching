@@ -81,11 +81,29 @@ namespace Engine
 		ComputeContext->CommandList->Dispatch(groupXZ, groupY, groupXZ);
 
 
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		ComputeContext->CommandList->CopyResource(VertexBackBuffer.Get(), VertexBuffer.Get());
+
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounterBuffer.Get(),
+			D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		ComputeContext->CommandList->CopyResource(VertexCounterReadBack.Get(), VertexCounterBuffer.Get());
+
+		ComputeContext->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(VertexCounterBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		/* second pass - generating triangles */
 
 		gts = dynamic_cast<D3D12PipelineStateObject*>(GenerateTrianglePso.get());
 		ComputeContext->CommandList->SetPipelineState(gts->GetPipelineState());
+
+
 
 		UINT groupXZb = (texture->GetWidth() - 1);
 		UINT groupYb  = (texture->GetHeight() - 1);
