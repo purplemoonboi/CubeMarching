@@ -126,7 +126,7 @@ namespace Foundation
 	};
 
 
-	class D3D12ResourceBuffer //: public ResourceBuffer
+	class D3D12ResourceBuffer 
 	{
 	public:
 
@@ -135,7 +135,7 @@ namespace Foundation
 		(
 			ID3D12Device* device,
 			D3D12HeapManager* memoryManager,
-			const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
+			const std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT>& frameResources,
 			UINT renderItemsCount
 		);
 
@@ -161,15 +161,8 @@ namespace Foundation
 
 		void UpdateVoxelTerrainBuffer(D3D12FrameResource* resource, RenderItem* terrain, const std::vector<Vertex>& vertices);
 
-		const INT32 GetCount() const ;
-
-		INT32 IsosurfaceVertexCount = 0;
-
 	private:
-
-
-		// @brief - Main pass buffer for data such as camera data, time and additional matrix data.
-		PassConstants MainPassConstantBuffer;
+		PassConstants MainPassCB;
 
 		INT32 ObjectCount = 0;
 

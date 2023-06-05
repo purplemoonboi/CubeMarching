@@ -7,6 +7,7 @@
 
 namespace Foundation
 {
+
 	D3D12HeapManager::D3D12HeapManager(ID3D12Device* device)
 		:
 		pDevice(device)

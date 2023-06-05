@@ -92,7 +92,7 @@ namespace Foundation
 
 		Application* app = Application::Get();
 		ImGuiIO& io = ImGui::GetIO();
-		io.DisplaySize = ImVec2(app->GetWindow().GetWidth(), app->GetWindow().GetHeight());
+		io.DisplaySize = ImVec2(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight());
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
 		ImGuiCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -108,23 +108,23 @@ namespace Foundation
 			ImGui::RenderPlatformWindowsDefault(nullptr, ImGuiCommandList.Get());
 		}
 
-		//frameBuffer->UnBind(ImGuiCommandList.Get());
+		////frameBuffer->UnBind(ImGuiCommandList.Get());
 
 
-		HRESULT hr = ImGuiCommandList->Close();
-		THROW_ON_FAILURE(hr);
+		//HRESULT hr = ImGuiCommandList->Close();
+		//THROW_ON_FAILURE(hr);
 
-		ID3D12CommandList* cmdList[] = { ImGuiCommandList.Get() };
-		context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+		//ID3D12CommandList* cmdList[] = { ImGuiCommandList.Get() };
+		//context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		hr = context->pSwapChain->Present(0, 0);
-		THROW_ON_FAILURE(hr);
+		//hr = context->pSwapChain->Present(0, 0);
+		//THROW_ON_FAILURE(hr);
 
-		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
-		api->GetCurrentFrameResource()->Fence = ++context->SyncCounter;
+		//frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+		//api->GetCurrentFrameResource()->Fence = ++context->SyncCounter;
 
-		hr = context->pQueue->Signal(context->pFence.pFence, api->GetCurrentFrameResource()->Fence);
-		THROW_ON_FAILURE(hr);
+		//hr = context->pQueue->Signal(context->pFence.Get(), api->GetCurrentFrameResource()->Fence);
+		//THROW_ON_FAILURE(hr);
 	}
 
 	void ImGuiD3D12::CleanUp()

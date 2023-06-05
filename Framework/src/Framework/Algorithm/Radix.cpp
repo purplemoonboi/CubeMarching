@@ -1,6 +1,7 @@
 #include "Radix.h"
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 namespace Foundation
@@ -8,7 +9,7 @@ namespace Foundation
 	void Radix::Init(ComputeApi* context)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
-		MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
+		//MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
 
 		BuildRootSignature();
 		BuildResources();
@@ -230,7 +231,7 @@ namespace Foundation
 
 		ComputeContext->FlushComputeQueue(&FenceValue);
 
-		const HRESULT dr = ComputeContext->Context->Device->GetDeviceRemovedReason();
+		const HRESULT dr = ComputeContext->Context->pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(dr);
 
 		UINT32* data = nullptr;
@@ -254,22 +255,22 @@ namespace Foundation
 	void Radix::BuildResources()
 	{
 		constexpr UINT64 mortonCapacity = VoxelWorldElementCount * sizeof(UINT32);
-		InputMortonCodes = D3D12BufferUtilities::CreateStructuredBuffer(mortonCapacity, true, true);
-		SortedMortonCodes = D3D12BufferUtilities::CreateStructuredBuffer(mortonCapacity, true, true);
+		InputMortonCodes = D3D12BufferFactory::CreateStructuredBuffer(mortonCapacity, true, true);
+		SortedMortonCodes = D3D12BufferFactory::CreateStructuredBuffer(mortonCapacity, true, true);
 
-		MortonReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(mortonCapacity);
-		MortonReadBackBufferB = D3D12BufferUtilities::CreateReadBackBuffer(mortonCapacity);
-		D3D12BufferUtilities::CreateUploadBuffer(MortonUploadBuffer, mortonCapacity);
+		MortonReadBackBuffer = D3D12BufferFactory::CreateReadBackBuffer(mortonCapacity);
+		MortonReadBackBufferB = D3D12BufferFactory::CreateReadBackBuffer(mortonCapacity);
+		D3D12BufferFactory::CreateUploadBuffer(MortonUploadBuffer, mortonCapacity);
 
 		constexpr UINT64 bucketsCapacity = (VoxelWorldElementCount) * sizeof(INT32);
-		GlobalBuckets = D3D12BufferUtilities::CreateStructuredBuffer(bucketsCapacity, true, true);
-		GlobalBucketsReadBack = D3D12BufferUtilities::CreateReadBackBuffer(bucketsCapacity);
-		D3D12BufferUtilities::CreateUploadBuffer(GlobalBucketsUpload, bucketsCapacity);
+		GlobalBuckets = D3D12BufferFactory::CreateStructuredBuffer(bucketsCapacity, true, true);
+		GlobalBucketsReadBack = D3D12BufferFactory::CreateReadBackBuffer(bucketsCapacity);
+		D3D12BufferFactory::CreateUploadBuffer(GlobalBucketsUpload, bucketsCapacity);
 
 		constexpr UINT64 capacity = sizeof(INT32);
-		CycleCounter = D3D12BufferUtilities::CreateStructuredBuffer(capacity,true, true);
-		CycleCounterReadBack = D3D12BufferUtilities::CreateReadBackBuffer(capacity);
-		D3D12BufferUtilities::CreateUploadBuffer(CycleCounterUpload, capacity);
+		CycleCounter = D3D12BufferFactory::CreateStructuredBuffer(capacity,true, true);
+		CycleCounterReadBack = D3D12BufferFactory::CreateReadBackBuffer(capacity);
+		D3D12BufferFactory::CreateUploadBuffer(CycleCounterUpload, capacity);
 	}
 
 
@@ -287,14 +288,14 @@ namespace Foundation
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 
-		MortonCodeUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+		MortonCodeUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
 			InputMortonCodes.Get());
 
-		SortedMortonUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+		SortedMortonUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
 			SortedMortonCodes.Get());
 
 		uavDesc.Buffer.NumElements = (VoxelWorldElementCount / 512);
-		GlobalBucketsUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+		GlobalBucketsUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
 			GlobalBuckets.Get());
 
 
@@ -302,7 +303,7 @@ namespace Foundation
 		/** we only need one element for the counter buffer */
 		uavDesc.Buffer.StructureByteStride = sizeof(INT32);
 		uavDesc.Buffer.NumElements = 1;
-		CycleCounterUav = D3D12Utils::CreateUnorderedAccessView(uavDesc,
+		CycleCounterUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
 			CycleCounter.Get());
 
 	}
@@ -356,7 +357,7 @@ namespace Foundation
 		}
 
 		THROW_ON_FAILURE(hr);
-		const HRESULT rootSigResult = ComputeContext->Context->Device->CreateRootSignature
+		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),

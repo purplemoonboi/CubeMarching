@@ -8,7 +8,7 @@ namespace Foundation
 	class D3D12HeapManager;
 	
 
-	class D3D12Utils
+	class D3D12ResourceFactory
 	{
 	public:
 		static void Init(D3D12HeapManager* memManager, D3D12Context* context);
@@ -34,7 +34,6 @@ namespace Foundation
 			ID3D12Resource* resource, 
 			CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
 			ID3D12Resource* counterBuffer = nullptr);
-
 
 	private:
 		static D3D12Context* Context;

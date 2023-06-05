@@ -13,27 +13,13 @@ namespace Foundation
 	class D3D12Context : public GraphicsContext
 	{
 	public:
-		[[nodiscard]] HWND GetHwnd() const { return pWindowHandle; }
-
-	public://DEBUG LAYER
-		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
-		void LogAdapterOutputs(IDXGIAdapter* adapter);
-		void LogAdapters();
-
-		ComPtr<ID3D12Debug> DebugController;
-
-		HMODULE GpuCaptureLib;
-		HMODULE GpuTimingLib;
-
-	public:
-
 		D3D12Context(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
 		D3D12Context(const D3D12Context& other);
 	
 		~D3D12Context() override;
 
 		void Init() override;
-
+		void Clean() override;
 		void SwapBuffers() override{}
 		void FlushCommandQueue();
 		void ExecuteGraphicsCommandList() const;
@@ -53,12 +39,12 @@ namespace Foundation
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 SyncCounter;
 
-		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
-		void SetHeapManager(D3D12HeapManager* manager) { pHeapManager = manager; }
-		[[nodiscard]] D3D12HeapManager* GetHeapManager() const { return pHeapManager; }
+	public:/*...Getters...*/
+		[[nodiscard]] HWND GetHwnd() const { return pWindowHandle; }
+
+
 	private:
-		D3D12HeapManager* pHeapManager = nullptr;
 
 		// @brief Creates the command object responsible for recording commands to be sent to GPU.
 		void CreateCommandObjects();
@@ -79,6 +65,17 @@ namespace Foundation
 
 		D3D_DRIVER_TYPE DriverType = D3D_DRIVER_TYPE_HARDWARE;
 		HWND pWindowHandle;
+
+	public:/*...Debug layer...*/
+		void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+		void LogAdapterOutputs(IDXGIAdapter* adapter);
+		void LogAdapters();
+
+		ComPtr<ID3D12Debug> DebugController;
+
+		HMODULE GpuCaptureLib;
+		HMODULE GpuTimingLib;
+
 	};
 }
 

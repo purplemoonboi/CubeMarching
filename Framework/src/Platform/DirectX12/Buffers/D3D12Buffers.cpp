@@ -3,10 +3,9 @@
 #include "Framework/Core/Log/Log.h"
 #include "Framework/Scene/WorldSettings.h"
 
-#include "Framework/Core/Time/DeltaTime.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Buffers/D3D12UploadBuffer.h"
+#include "Platform/DirectX12/UploadBuffer/D3D12UploadBuffer.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
 #include <ppl.h>
@@ -26,7 +25,7 @@ namespace Foundation
 		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
 		
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtilities::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			nullptr,
 			size,
@@ -50,7 +49,7 @@ namespace Foundation
 		}
 
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtilities::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			vertices,
 			size,
@@ -163,7 +162,7 @@ namespace Foundation
 		}
 
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferUtilities::CreateDefaultBuffer
+		DefaultBuffer = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			indices, 
 			IndexBufferByteSize, 
@@ -246,7 +245,7 @@ namespace Foundation
 	(
 		ID3D12Device* device,
 		D3D12HeapManager* memoryManager,
-		const std::vector<ScopePointer<D3D12FrameResource>>& frameResources,
+		const std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT>& frameResources,
 		UINT renderItemsCount
 	)
 	{
@@ -254,13 +253,13 @@ namespace Foundation
 
 		const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
-		const UINT64 constantBufferSizeInBytes = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(ObjectConstant));
+		const UINT64 constantBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(ObjectConstant));
 
 		const UINT32 objectCount = renderItemsCount;
 
 		for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
 		{
-			const auto currentResource = frameResources[frameIndex].get();
+			auto currentResource = frameResources[frameIndex].get();
 
 			const auto constantBuffer = currentResource->ConstantBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
@@ -281,7 +280,7 @@ namespace Foundation
 				device->CreateConstantBufferView(&cbvDesc, handle);
 			}
 
-			const UINT64 materialBufferSizeInBytes = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(MaterialConstants));
+			const UINT64 materialBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(MaterialConstants));
 
 			const auto materialBuffer = currentResource->MaterialBuffer.get();
 			D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
@@ -303,7 +302,7 @@ namespace Foundation
 				device->CreateConstantBufferView(&mbvDesc, handle);
 			}
 
-			const UINT64 passConstantBufferSizeInBytes = D3D12BufferUtilities::CalculateBufferByteSize(sizeof(PassConstants));
+			const UINT64 passConstantBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(PassConstants));
 			const auto passConstantBuffer = currentResource->PassBuffer->Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
@@ -311,7 +310,7 @@ namespace Foundation
 			const UINT32 heapIndex = memoryManager->GetPassBufferOffset() + frameIndex;
 
 			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
-			handle.Offset(heapIndex, memoryManager->GetDescriptorIncrimentSize());
+			handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
 
 			D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
 			passCbDesc.BufferLocation = passConstantBufferAddress;
@@ -342,30 +341,30 @@ namespace Foundation
 		const XMMATRIX invProj		= XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
 		const XMMATRIX invViewProj  = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
 
-		XMStoreFloat4x4(&MainPassConstantBuffer.View,			XMMatrixTranspose(view));
-		XMStoreFloat4x4(&MainPassConstantBuffer.InvView,		XMMatrixTranspose(invView));
-		XMStoreFloat4x4(&MainPassConstantBuffer.Proj,			XMMatrixTranspose(proj));
-		XMStoreFloat4x4(&MainPassConstantBuffer.InvProj,		XMMatrixTranspose(invProj));
-		XMStoreFloat4x4(&MainPassConstantBuffer.ViewProj,		XMMatrixTranspose(viewProj));
-		XMStoreFloat4x4(&MainPassConstantBuffer.InvViewProj,	XMMatrixTranspose(invViewProj));
+		XMStoreFloat4x4(&MainPassCB.View,			XMMatrixTranspose(view));
+		XMStoreFloat4x4(&MainPassCB.InvView,		XMMatrixTranspose(invView));
+		XMStoreFloat4x4(&MainPassCB.Proj,			XMMatrixTranspose(proj));
+		XMStoreFloat4x4(&MainPassCB.InvProj,		XMMatrixTranspose(invProj));
+		XMStoreFloat4x4(&MainPassCB.ViewProj,		XMMatrixTranspose(viewProj));
+		XMStoreFloat4x4(&MainPassCB.InvViewProj,	XMMatrixTranspose(invViewProj));
 
-		MainPassConstantBuffer.EyePosW = camera.GetPosition();
-		MainPassConstantBuffer.RenderTargetSize	= XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
-		MainPassConstantBuffer.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
-		MainPassConstantBuffer.NearZ = 1.0f;
-		MainPassConstantBuffer.FarZ = 1000.0f;
-		MainPassConstantBuffer.AmbientLight = { settings.SunColour[0], settings.SunColour[1], settings.SunColour[2], settings.SunColour[3] };
-		MainPassConstantBuffer.Lights[0].Direction = { settings.SunDirection[0], settings.SunDirection[1], settings.SunDirection[2] };
-		MainPassConstantBuffer.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
-		MainPassConstantBuffer.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-		MainPassConstantBuffer.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
-		MainPassConstantBuffer.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-		MainPassConstantBuffer.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
-		MainPassConstantBuffer.TotalTime = elapsedTime;
-		MainPassConstantBuffer.DeltaTime = deltaTime;
+		MainPassCB.EyePosW = camera.GetPosition();
+		MainPassCB.RenderTargetSize	= XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
+		MainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
+		MainPassCB.NearZ = 1.0f;
+		MainPassCB.FarZ = 1000.0f;
+		MainPassCB.AmbientLight = { settings.SunColour[0], settings.SunColour[1], settings.SunColour[2], settings.SunColour[3] };
+		MainPassCB.Lights[0].Direction = { settings.SunDirection[0], settings.SunDirection[1], settings.SunDirection[2] };
+		MainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+		MainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
+		MainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
+		MainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
+		MainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
+		MainPassCB.TotalTime = elapsedTime;
+		MainPassCB.DeltaTime = deltaTime;
 
 		const auto currentPassCB = resource->PassBuffer.get();
-		currentPassCB->CopyData(0, MainPassConstantBuffer);
+		currentPassCB->CopyData(0, MainPassCB);
 	}
 
 	void D3D12ResourceBuffer::UpdateVoxelTerrain(
@@ -379,7 +378,6 @@ namespace Foundation
 
 		if(vCount != 0)
 		{
-			IsosurfaceVertexCount = vCount;
 
 			{
 				for (INT32 i = 0; i < vCount; ++i)
@@ -456,7 +454,6 @@ namespace Foundation
 	)
 	{
 		const INT32 vertexCount = static_cast<INT32>(vertices.size());
-		IsosurfaceVertexCount = vertexCount;
 		for(INT32 i = 0; i < vertexCount; ++i)
 		{
 			resource->TerrainBuffer->CopyData(i, vertices[i]);
@@ -464,12 +461,5 @@ namespace Foundation
 		//terrain->Geometry->VertexBuffer->SetData();
 	}
 
-
-	const INT32 D3D12ResourceBuffer::GetCount() const
-	{
-
-		return IsosurfaceVertexCount;
-
-	}
 
 }

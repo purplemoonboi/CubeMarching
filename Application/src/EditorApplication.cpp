@@ -5,7 +5,7 @@
 
 namespace Foundation
 {
-	class EditorApplication : public Application
+	class EditorApplication : public Foundation::Application
 	{
 	public:
 		EditorApplication(const EditorApplication&) = delete;
@@ -25,7 +25,7 @@ namespace Foundation
 		}
 	};
 
-	Application* CreateApplication(HINSTANCE hInstance, const std::wstring& appName)
+	Foundation::Application* CreateApplication(HINSTANCE hInstance, const std::wstring& appName)
 	{
 		return new EditorApplication(hInstance, appName);
 	}

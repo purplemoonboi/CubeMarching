@@ -1,10 +1,10 @@
 #pragma once
-#include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Renderer/Resources/Light.h"
-#include "Framework/Core/core.h"
 
 namespace Foundation
 {
+	using namespace DirectX;
+
 	// Simple vertex buffer
 	struct Vertex
 	{

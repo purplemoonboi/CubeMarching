@@ -1,4 +1,5 @@
 #pragma once
+#include "Framework/Core/Core.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 
@@ -24,9 +25,11 @@ namespace Foundation
 		};
 
 	public:
-
+		D3D12HeapManager() = default;
 		D3D12HeapManager(ID3D12Device* device);
+		DISABLE_COPY_AND_MOVE(D3D12HeapManager);
 		~D3D12HeapManager();
+
 
 		HRESULT Init(UINT framesInFlight, UINT maxObjectCount);
 
@@ -37,28 +40,37 @@ namespace Foundation
 		[[nodiscard]] UINT GetDsvDescSize()			const { return DsvDescriptorSize; }
 
 		[[nodiscard]] ID3D12DescriptorHeap* GetConstantBufferDescHeap() const { return CbvHeap.Get(); }
+		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetConstantBufferViewCpu() const;
+		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetConstantBufferViewGpu() const;
+
 		[[nodiscard]] ID3D12DescriptorHeap* GetShaderResourceDescHeap() const { return SrvUavHeap.Get(); }
+
+		[[nodiscard]] ID3D12DescriptorHeap* GetRenderTargetHeap()		const { return RtvHeap.Get(); }
+		[[nodiscard]] ID3D12DescriptorHeap* GetDepthStencilHeap()		const { return DsvHeap.Get(); }
 
 		[[nodiscard]] UINT64 GetCurrentHandleOffset() const { return HandleOffset; }
 
 		[[nodiscard]] const ImGuiHandles* GetImGuiHandles() const { return &ImGuiHandles; }
 
-		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetConstantBufferViewCpu() const;
-		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetConstantBufferViewGpu() const;
+
 
 		[[nodiscard]] UINT GetPassBufferOffset() const { return PassBufferOffsetSize; }
 
 	private:
-
-		ID3D12Device* pDevice;
-
 		HRESULT CreateRtvAndDsvHeaps();
 
+	private:
+
+		ID3D12Device* pDevice;
 		bool IsInitialised = false;
 
+
+
 		Handles ResourceHandles;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE NullHandle;
 		ImGuiHandles ImGuiHandles;
+
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE NullHandle;
 
 		UINT CbvSrvUavDescriptorSize;
 		// @brief - Represents the size of the RTV descriptor heap.
@@ -82,6 +94,7 @@ namespace Foundation
 
 		// @brief Heap descriptor for resources.
 		ComPtr<ID3D12DescriptorHeap> RtvHeap;
+
 		// @brief Heap descriptor for depth-stencil resource.
 		ComPtr<ID3D12DescriptorHeap> DsvHeap;
 	};

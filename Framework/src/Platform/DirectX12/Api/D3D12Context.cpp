@@ -70,6 +70,11 @@ namespace Foundation
 		
 	}
 
+	void D3D12Context::Clean()
+	{
+
+	}
+
 	void D3D12Context::FlushCommandQueue()
 	{
 		SyncCounter++;

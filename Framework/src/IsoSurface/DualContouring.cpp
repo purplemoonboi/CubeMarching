@@ -6,15 +6,16 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 
 namespace Foundation
 {
-	void DualContouring::Init(ComputeApi* compute, MemoryManager* memManger)
+	void DualContouring::Init(ComputeApi* compute)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(compute);
-		MemManager = dynamic_cast<D3D12HeapManager*>(memManger);
+		//MemManager = dynamic_cast<D3D12HeapManager*>(memManger);
 
 		/**
 		 * load and compile the shader passes
@@ -196,12 +197,12 @@ namespace Foundation
 		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
 		const UINT64 vertBufferWidth = DualContourNumberOfElements * sizeof(Vertex);
 
-		VertexBuffer = D3D12BufferUtilities::CreateStructuredBuffer(vertBufferWidth, true, true);
-		VertexBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(vertBufferWidth);
+		VertexBuffer = D3D12BufferFactory::CreateStructuredBuffer(vertBufferWidth, true, true);
+		VertexBackBuffer = D3D12BufferFactory::CreateReadBackBuffer(vertBufferWidth);
 
-		VertexCounterBuffer = D3D12BufferUtilities::CreateCounterResource(true, true);
-		VertexCounterReadBack = D3D12BufferUtilities::CreateReadBackBuffer(4);
-		D3D12BufferUtilities::CreateUploadBuffer(VertexCounterUpload, 4);
+		VertexCounterBuffer = D3D12BufferFactory::CreateCounterResource(true, true);
+		VertexCounterReadBack = D3D12BufferFactory::CreateReadBackBuffer(4);
+		D3D12BufferFactory::CreateUploadBuffer(VertexCounterUpload, 4);
 
 		VertexBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VertexBuffer.Get(), 
 			VertexCounterBuffer.Get());
@@ -211,8 +212,8 @@ namespace Foundation
 		uavDesc.Buffer.NumElements = DualContourNumberOfElements;
 		const UINT64 matBufferWidth = DualContourNumberOfElements * sizeof(INT32);
 
-		VoxelLookUpTable = D3D12BufferUtilities::CreateStructuredBuffer(vertBufferWidth, true, true);
-		VoxelLookUpReadBack = D3D12BufferUtilities::CreateReadBackBuffer(vertBufferWidth);
+		VoxelLookUpTable = D3D12BufferFactory::CreateStructuredBuffer(vertBufferWidth, true, true);
+		VoxelLookUpReadBack = D3D12BufferFactory::CreateReadBackBuffer(vertBufferWidth);
 
 
 		VoxelLookUpTableUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, VoxelLookUpTable.Get(),
@@ -224,12 +225,12 @@ namespace Foundation
 		uavDesc.Buffer.NumElements = DualContourTriangleNumberOfElements;
 		const UINT64 triangleBufferWidth = DualContourTriangleBufferCapacity;
 
-		TriangleBuffer = D3D12BufferUtilities::CreateStructuredBuffer(triangleBufferWidth, true, true);
-		TriangleReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(triangleBufferWidth);
+		TriangleBuffer = D3D12BufferFactory::CreateStructuredBuffer(triangleBufferWidth, true, true);
+		TriangleReadBackBuffer = D3D12BufferFactory::CreateReadBackBuffer(triangleBufferWidth);
 
-		TriangleCounterBuffer = D3D12BufferUtilities::CreateCounterResource(true, true);
-		TriangleCounterReadBack = D3D12BufferUtilities::CreateReadBackBuffer(4);
-		D3D12BufferUtilities::CreateUploadBuffer(TriangleCounterUpload, 4);
+		TriangleCounterBuffer = D3D12BufferFactory::CreateCounterResource(true, true);
+		TriangleCounterReadBack = D3D12BufferFactory::CreateReadBackBuffer(4);
+		D3D12BufferFactory::CreateUploadBuffer(TriangleCounterUpload, 4);
 
 		TriangleBufferUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, TriangleBuffer.Get(), TriangleCounterBuffer.Get());
 

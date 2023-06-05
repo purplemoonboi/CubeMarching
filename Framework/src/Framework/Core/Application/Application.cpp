@@ -13,7 +13,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 namespace Foundation
 {
-	Application* Application::SingletonInstance = nullptr;
+	Application* Application::pApp = nullptr;
 
 	
 	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -28,14 +28,14 @@ namespace Foundation
 		Log::Init();
 
 		//Check if an app instance exists
-		CORE_ASSERT(!SingletonInstance, "An application instance already exists!");
-		SingletonInstance = this;
+		CORE_ASSERT(!pApp, "An application instance already exists!");
+		pApp = this;
 
 		Window = Win32Window(hInstance, MainWndProc, 1920, 1080, L"Foundation");
 		// Bind the applications on event function to capture application specific events.
 		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
 
-		MouseData.Invoke = BIND_DELEGATE(Application::OnApplicationEvent);
+		EventBlob.Callback = BIND_DELEGATE(Application::OnApplicationEvent);
 
 		auto handle = static_cast<HWND>(Window.GetNativeWindow());
 		Renderer::Init(handle, 1920, 1080);
@@ -47,6 +47,7 @@ namespace Foundation
 
 	Application::~Application()
 	{
+		
 	}
 
 	void Application::OnApplicationEvent(Event& event)
@@ -83,29 +84,30 @@ namespace Foundation
 				AppTimer.Tick();
 
 				auto const rendererStatus = Renderer::RendererStatus();
-				if(rendererStatus != RendererStatus::INITIALISING ||
-					rendererStatus != RendererStatus::INVALIDATING_BUFFER)
+				if(
+					rendererStatus	!= RendererStatus::INITIALISING ||
+					rendererStatus	!= RendererStatus::INVALIDATING_BUFFER)
 				{
 					//Process any events...
 					Window.OnUpdate();
 
 
-					if (MouseData.MouseClicked > 0)
+					if (EventBlob.MouseClicked > 0)
 					{
-						MouseData.MouseClicked = 0;
-						MouseButtonPressedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-						MouseData.Invoke(me);
+						EventBlob.MouseClicked = 0;
+						MouseButtonPressedEvent me(EventBlob.Button, EventBlob.X, EventBlob.Y);
+						EventBlob.Callback(me);
 					}
-					if (MouseData.MouseReleased > 0)
+					if (EventBlob.MouseReleased > 0)
 					{
-						MouseButtonReleasedEvent me(MouseData.Button, MouseData.X, MouseData.Y);
-						MouseData.Invoke(me);
+						MouseButtonReleasedEvent me(EventBlob.Button, EventBlob.X, EventBlob.Y);
+						EventBlob.Callback(me);
 					}
-					if (MouseData.MouseMoved == 1)
+					if (EventBlob.MouseMoved == 1)
 					{
-						MouseData.MouseMoved = 0;
-						MouseMovedEvent mm(MouseData.X, MouseData.Y, MouseData.Button);
-						MouseData.Invoke(mm);
+						EventBlob.MouseMoved = 0;
+						MouseMovedEvent mm(EventBlob.X, EventBlob.Y, EventBlob.Button);
+						EventBlob.Callback(mm);
 					}
 					
 
@@ -113,7 +115,6 @@ namespace Foundation
 					{
 
 						UpdateTimer();
-
 
 						//Update each layer
 						for (Layer* layer : LayerStack)
@@ -270,11 +271,11 @@ namespace Foundation
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 			SetCapture(static_cast<HWND>(Window.GetNativeWindow()));
-			MouseData.MouseClicked = 1;
-			MouseData.MouseReleased = 0;
-			MouseData.X = GET_X_LPARAM(lParam);
-			MouseData.Y = GET_Y_LPARAM(lParam);
-			MouseData.Button = wParam;
+			EventBlob.MouseClicked = 1;
+			EventBlob.MouseReleased = 0;
+			EventBlob.X = GET_X_LPARAM(lParam);
+			EventBlob.Y = GET_Y_LPARAM(lParam);
+			EventBlob.Button = wParam;
 
 				return 0;
 		case WM_LBUTTONUP:
@@ -282,19 +283,19 @@ namespace Foundation
 		case WM_RBUTTONUP:
 			ReleaseCapture();
 
-			MouseData.MouseClicked = 0;
-			MouseData.MouseReleased = 1;
-			MouseData.X = GET_X_LPARAM(lParam);
-			MouseData.Y = GET_Y_LPARAM(lParam);
-			MouseData.Button = wParam;
+			EventBlob.MouseClicked = 0;
+			EventBlob.MouseReleased = 1;
+			EventBlob.X = GET_X_LPARAM(lParam);
+			EventBlob.Y = GET_Y_LPARAM(lParam);
+			EventBlob.Button = wParam;
 
 				return 0;
 		case WM_MOUSEMOVE:
 
-			MouseData.Button = wParam;
-			MouseData.X = GET_X_LPARAM(lParam);
-			MouseData.Y = GET_Y_LPARAM(lParam);
-			MouseData.MouseMoved = 1;
+			EventBlob.Button = wParam;
+			EventBlob.X = GET_X_LPARAM(lParam);
+			EventBlob.Y = GET_Y_LPARAM(lParam);
+			EventBlob.MouseMoved = 1;
 
 				return 0;
 		case WM_KEYDOWN:

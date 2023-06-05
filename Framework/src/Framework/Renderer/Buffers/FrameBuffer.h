@@ -28,11 +28,11 @@ namespace Foundation
 	public:
 		virtual ~FrameBuffer() = default;
 		virtual const FrameBufferSpecifications& GetSpecifications() const = 0;
-		virtual void Init(GraphicsContext* context) = 0;
+		virtual void Init(GraphicsContext* context, FrameBufferSpecifications& fbs) = 0;
 		virtual void Bind(void* args) = 0;
 		virtual void UnBind(void* args) = 0;
 		virtual void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) = 0;
-		virtual void RebuildFrameBuffer(FrameBufferSpecifications& fbSpecs) = 0;
+		virtual void OnResizeFrameBuffer(FrameBufferSpecifications& fbSpecs) = 0;
 		virtual UINT64 GetFrameBuffer() const = 0;
 		virtual INT32 GetWidth() const= 0;
 		virtual INT32 GetHeight() const = 0;

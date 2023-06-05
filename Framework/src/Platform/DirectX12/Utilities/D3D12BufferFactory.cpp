@@ -1,14 +1,14 @@
-#include "D3D12BufferUtilities.h"
+#include "D3D12BufferFactory.h"
 
 #include "Framework/Core/Log/Log.h"
 
 namespace Foundation
 {
 
-	ID3D12Device* D3D12BufferUtilities::Device = nullptr;
-	ID3D12GraphicsCommandList* D3D12BufferUtilities::pGCL = nullptr;
+	ID3D12Device* D3D12BufferFactory::Device = nullptr;
+	ID3D12GraphicsCommandList* D3D12BufferFactory::pGCL = nullptr;
 
-	void D3D12BufferUtilities::Init(ID3D12Device* device, ID3D12GraphicsCommandList* graphicsCmdList)
+	void D3D12BufferFactory::Init(ID3D12Device* device, ID3D12GraphicsCommandList* graphicsCmdList)
 	{
 		Device = device;
 		pGCL = graphicsCmdList;
@@ -16,7 +16,7 @@ namespace Foundation
 
 
 	// Upload buffer methods
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateDefaultBuffer
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateDefaultBuffer
 	(
 		const void* initData,
 		UINT64 byteSize,
@@ -104,7 +104,7 @@ namespace Foundation
 
 
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateTexture3D
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateTexture3D
 	(
 		UINT32 width,
 		UINT32 height,
@@ -221,7 +221,7 @@ namespace Foundation
 		return defaultBuffer;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateTexture2D
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateTexture2D
 	(
 		UINT32 width,
 		UINT32 height,
@@ -323,7 +323,7 @@ namespace Foundation
 		return defaultBuffer;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
 	{
 
 		HRESULT hr{ S_OK };
@@ -357,7 +357,7 @@ namespace Foundation
 		return resource;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
 	{
 		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> counterBuffer = nullptr;
@@ -378,7 +378,7 @@ namespace Foundation
 		return counterBuffer;
 	}
 
-	void D3D12BufferUtilities::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
+	void D3D12BufferFactory::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
 	{
 		HRESULT hr{ S_OK };
 		hr = Device->CreateCommittedResource
@@ -393,7 +393,7 @@ namespace Foundation
 		THROW_ON_FAILURE(hr);
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateReadBackBuffer(UINT32 bufferWidth)
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateReadBackBuffer(UINT32 bufferWidth)
 	{
 		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> readBackResource = nullptr;
@@ -413,46 +413,9 @@ namespace Foundation
 		return readBackResource;
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateReadBackTex3D(DXGI_FORMAT format, INT32 width, INT32 height, INT32 depth)
-	{
-		ComPtr<ID3D12Resource> readBackResource = nullptr;
+	
 
-		const HRESULT readBackResult = Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Tex3D(format, width, height, depth),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&readBackResource)
-		);
-
-		THROW_ON_FAILURE(readBackResult);
-
-		return readBackResource;
-	}
-
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateReadBackTex2D(DXGI_FORMAT format, INT32 width, INT32 height)
-	{
-		ComPtr<ID3D12Resource> readBackResource = nullptr;
-
-		const HRESULT readBackResult = Device->CreateCommittedResource
-		(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Tex2D(format, width, height),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&readBackResource)
-		);
-
-		THROW_ON_FAILURE(readBackResult);
-
-		return readBackResource;
-	}
-
-
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
 	{
 		
 		ComPtr<ID3D12Resource> buffer = nullptr;
@@ -476,7 +439,7 @@ namespace Foundation
 		
 	}
 
-	ComPtr<ID3D12Resource> D3D12BufferUtilities::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* resource, const void* data, bool allowWrite, bool allowAtomics)
+	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* upload, const void* data, bool allowWrite, bool allowAtomics)
 	{
 		HRESULT hr{ S_OK };
 
@@ -516,7 +479,7 @@ namespace Foundation
 		pGCL->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), bufferState,
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
-		UpdateSubresources(pGCL, resource.Get(), resource, 0, 0, 1, &srcData);
+		UpdateSubresources(pGCL, resource.Get(), upload, 0, 0, 1, &srcData);
 
 		pGCL->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
 			bufferState));
@@ -525,7 +488,7 @@ namespace Foundation
 
 	}
 
-	UINT D3D12BufferUtilities::CalculateBufferByteSize(UINT byteSize)
+	UINT D3D12BufferFactory::CalculateBufferByteSize(UINT byteSize)
 	{
 		return (byteSize + 255) & ~255;
 	}

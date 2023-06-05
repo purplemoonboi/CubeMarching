@@ -10,7 +10,7 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 
 namespace Foundation
 {
@@ -207,8 +207,8 @@ namespace Foundation
 	void MarchingCubes::CreateOutputBuffer()
 	{
 
-		OutputBuffer	= D3D12BufferUtilities::CreateStructuredBuffer(MarchingCubesVoxelBufferSize, true, true);
-		ReadBackBuffer	= D3D12BufferUtilities::CreateReadBackBuffer(MarchingCubesVoxelBufferSize);
+		OutputBuffer	= D3D12BufferFactory::CreateStructuredBuffer(MarchingCubesVoxelBufferSize, true, true);
+		ReadBackBuffer	= D3D12BufferFactory::CreateReadBackBuffer(MarchingCubesVoxelBufferSize);
 
 		/** create views for the vertex buffer */
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -226,13 +226,13 @@ namespace Foundation
 	void MarchingCubes::CreateCounterBuffer()
 	{
 		/* create the counter buffer */
-		CounterResource = D3D12BufferUtilities::CreateCounterResource(true, true);
+		CounterResource = D3D12BufferFactory::CreateCounterResource(true, true);
 
 		/* create the counter read back buffer */
-		CounterReadback = D3D12BufferUtilities::CreateReadBackBuffer(4);
+		CounterReadback = D3D12BufferFactory::CreateReadBackBuffer(4);
 
 		/* create the counter upload buffer */
-		D3D12BufferUtilities::CreateUploadBuffer(CounterUpload, 4);
+		D3D12BufferFactory::CreateUploadBuffer(CounterUpload, 4);
 
 		const HRESULT	countMapResult = CounterReadback->Map(0, nullptr, reinterpret_cast<void**>(&TriData));
 		THROW_ON_FAILURE(countMapResult);
@@ -244,7 +244,7 @@ namespace Foundation
 	{
 		constexpr auto bufferWidth = (4096 * sizeof(INT32));
 
-		TriangulationTable = D3D12BufferUtilities::CreateDefaultBuffer
+		TriangulationTable = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			TriangleTable,
 			bufferWidth,

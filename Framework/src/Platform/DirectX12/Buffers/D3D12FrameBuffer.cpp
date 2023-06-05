@@ -1,21 +1,12 @@
 #include "Framework/cmpch.h"
 #include "D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Core/Log/Log.h"
 
 namespace Foundation
 {
-	D3D12FrameBuffer::D3D12FrameBuffer(const D3D12FrameBuffer& other)
-		:
-		BackBufferIndex(0)
-	{
-		FrameBufferSpecs = other.FrameBufferSpecs;
-		ScissorRect = other.ScissorRect;
-		ScreenViewport = other.ScreenViewport;
-	}
-
 	D3D12FrameBuffer::D3D12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs)
 		:
 		FrameBufferSpecs(fBufferSpecs),
@@ -30,10 +21,10 @@ namespace Foundation
 		
 	}
 
-	void D3D12FrameBuffer::Init(GraphicsContext* context)
+	void D3D12FrameBuffer::Init(GraphicsContext* context, FrameBufferSpecifications& fbs)
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
-
+		OnResizeFrameBuffer(fbs);
 	}
 
 	void D3D12FrameBuffer::Bind(void* args)
@@ -77,8 +68,9 @@ namespace Foundation
 		);
 	}
 
-	void D3D12FrameBuffer::RebuildFrameBuffer(FrameBufferSpecifications& specifications)
+	void D3D12FrameBuffer::OnResizeFrameBuffer(FrameBufferSpecifications& specifications)
 	{
+		HRESULT hr{ S_OK };
 		CORE_ASSERT(Context->pDevice, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->pSwapChain, "The 'swap chain' has failed...");
 		CORE_ASSERT(Context->pGCL, "The 'graphics command list' has failed...");
@@ -88,8 +80,8 @@ namespace Foundation
 		// Flush before changing any resources.
 		Context->FlushCommandQueue();
 
-		const HRESULT resetResult = Context->pGCL->Reset(Context->pCmdAlloc.Get(), nullptr);
-		THROW_ON_FAILURE(resetResult);
+		hr = Context->pGCL->Reset(Context->pCmdAlloc.Get(), nullptr);
+		THROW_ON_FAILURE(hr);
 
 		// Release the previous resources we will be recreating.
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
@@ -101,14 +93,14 @@ namespace Foundation
 
 
 		// Resize the swap chain.
-		const HRESULT resizeResult = Context->pSwapChain->ResizeBuffers
+		hr = Context->pSwapChain->ResizeBuffers
 		(
 			SWAP_CHAIN_BUFFER_COUNT,
 			FrameBufferSpecs.Width, FrameBufferSpecs.Height,
 			BackBufferFormat,
 			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
 		);
-		THROW_ON_FAILURE(resizeResult);
+		THROW_ON_FAILURE(hr);
 
 
 		BackBufferIndex = 0;
@@ -158,7 +150,7 @@ namespace Foundation
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
 
-		const HRESULT resourceResult = Context->pDevice->CreateCommittedResource
+		hr = Context->pDevice->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -167,7 +159,7 @@ namespace Foundation
 			&optClear,
 			IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf())
 		);
-		THROW_ON_FAILURE(resourceResult);
+		THROW_ON_FAILURE(hr);
 
 		THROW_ON_FAILURE(Context->pDevice->GetDeviceRemovedReason());
 
@@ -199,8 +191,8 @@ namespace Foundation
 		);
 
 		// Execute the resize commands.
-		const HRESULT closeResult = Context->pGCL->Close();
-		THROW_ON_FAILURE(closeResult);
+		hr = Context->pGCL->Close();
+		THROW_ON_FAILURE(hr);
 
 		ID3D12CommandList* cmdsLists[] = { Context->pGCL.Get() };
 		Context->pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
@@ -227,7 +219,6 @@ namespace Foundation
 		FrameBufferSpecs.Height = fbSpecs.Height;
 		FrameBufferSpecs.OffsetX = fbSpecs.OffsetX;
 		FrameBufferSpecs.OffsetY = fbSpecs.OffsetY;
-
 	}
 
 	UINT64 D3D12FrameBuffer::GetFrameBuffer() const
@@ -243,20 +234,11 @@ namespace Foundation
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetCurrentBackBufferViewCpu() const
 	{
 		return RenderTargetHandles[BackBufferIndex];
-
-		/*CD3DX12_CPU_DESCRIPTOR_HANDLE
-		(
-			Context->RtvHeap->GetCPUDescriptorHandleForHeapStart(),
-			BackBufferIndex,
-			RtvDescriptorSize
-		);*/
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetDepthStencilViewCpu() const
 	{
 		return DepthStencilHandle;
-
-		/*Context->DsvHeap->GetCPUDescriptorHandleForHeapStart();*/
 	}
 
 	INT32 D3D12FrameBuffer::GetWidth() const

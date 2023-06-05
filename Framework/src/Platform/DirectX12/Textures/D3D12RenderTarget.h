@@ -20,18 +20,31 @@ namespace Foundation
 			const std::string& name
 		) override;
 
-		void Bind(GraphicsContext* context) override;
-		void UnBind(GraphicsContext* context) override;
-		void OnResize(INT32 width, INT32 height) override;
+		void Bind(GraphicsContext* context)			override;
+		void UnBind(GraphicsContext* context)		override;
+		void OnResize(INT32 width, INT32 height)	override;
+		void Destroy()								override;
 
-		UINT64 GetWidth() override;
-		UINT32 GetHeight() override;
-		UINT16 GetDepth() override;
-		TextureDimension GetTextureDimension() override;
-		TextureFormat GetTextureFormat() override;
-		UINT64 GetTexture() override;
-		void Destroy() override;
-		void Copy(void* src) override;
+	public:/*...Getters...*/
+		[[nodiscard]] UINT64 GetWidth()							const override;
+		[[nodiscard]] UINT32 GetHeight()						const override;
+		[[nodiscard]] UINT16 GetDepth()							const override;
+		[[nodiscard]] TextureDimension GetTextureDimension()	const override;
+		[[nodiscard]] TextureFormat GetTextureFormat()			const override;
+		[[nodiscard]] UINT64 GetTexture()						const override;
+
+		ComPtr<ID3D12Resource> pResource;
+
+		void Regenerate();
+		INT8 DirtyFlag = 0;
+
+		D3D12_RECT Rect;
+		D3D12_VIEWPORT Viewport;
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE pGSRV;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE pCSRV;
+		CD3DX12_CPU_DESCRIPTOR_HANDLE pRTV;
+	private:
 
 		INT32 Width;
 		INT32 Height;
@@ -42,22 +55,12 @@ namespace Foundation
 
 		DXGI_FORMAT Format;
 
-		ComPtr<ID3D12Resource> pResource;
 		BYTE* RawData = nullptr;
 
+		INT32 SrvIndex = -1;
 		D3D12_SRV_DIMENSION Dimension;
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE ResourceSrv;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE ResourceCpuSrv;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE pRTV;
 
-		INT32 SrvIndex = -1;
-
-		D3D12_RECT Rect;
-		D3D12_VIEWPORT Viewport;
-
-		void Regenerate();
-		INT8 DirtyFlag = 0;
 
 	};
 

@@ -14,7 +14,7 @@ namespace Foundation
 		static void OnWindowResize(INT32 x, INT32 y, INT32 width, INT32 height);
 		static RendererAPI::Api GetAPI() { return RendererAPI::GetAPI(); }
 		static RendererStatus RendererStatus();
-
+		static void Clean();
 	private:
 		struct SceneData
 		{

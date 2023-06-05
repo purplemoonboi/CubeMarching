@@ -7,7 +7,7 @@ namespace Foundation
 
 	using Microsoft::WRL::ComPtr;
 
-	class D3D12BufferUtilities
+	class D3D12BufferFactory
 	{
 	public:
 

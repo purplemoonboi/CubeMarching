@@ -11,8 +11,7 @@ int WINAPI main
 )
 {
 
-	auto app = Foundation::CreateApplication(hInstance, L"DX12 Foundation");
-
+	auto app = Foundation::CreateApplication(hInstance, L"Foundation Engine <DX12>");
 	app->Run();
 
 	delete app;

@@ -7,30 +7,21 @@
 #include <Framework/Core/Events/AppEvents.h>
 #include <Framework/Core/Events/KeyEvent.h>
 
-#include <Framework/Algorithm/Radix.h>
 
-#include "IsoSurface/DensityTextureGenerator.h"
-#include "IsoSurface/MarchingCubes.h"
-#include "IsoSurface/DualContouring.h"
-#include "IsoSurface/MarchingCubesHP.h"
-//#include "IsoSurface/DualContouringSPO.h"
 
 #include "Panels/SceneHierarchyPanel.h"
 
 
-#include <pix3.h>
 
 
 namespace Foundation
 {
 
-
-	class EditorLayer : public Layer
+	class EditorLayer : public Foundation::Layer
 	{
 	public:
 		HMODULE GpuCaptureModule;
 		HMODULE GpuTimingModule;
-		PIXCaptureParameters PIXCaptureParams;
 	public:
 
 		EditorLayer();
@@ -45,38 +36,21 @@ namespace Foundation
 		void OnEvent(Event& event) override;
 
 	private:
-
 		bool OnWindowResize(WindowResizeEvent& wndResize);
-
 		bool OnMouseDown(MouseButtonPressedEvent& mEvent);
 		bool OnMouseUp(MouseButtonReleasedEvent& mEvent);
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
-		void ConvertMouseCoordinates(float deltaTime);
 	private:
 		WorldSettings Settings;
-		VoxelWorldSettings VoxelSettings;
-		PerlinNoiseSettings PerlinSettings;
-		CSGOperationSettings CsgOperationSettings;
 
-		ScopePointer<DensityTextureGenerator> PerlinCompute;
+		RendererAPI* Renderer = nullptr;
 
-		ScopePointer<MarchingCubes> MarchingCubes;
-		ScopePointer<DualContouring> DualContouring;
-		ScopePointer<MarchingCubesHP> MarchingCubesHP;
-		ScopePointer<Radix> RadixSort;
-		//ScopePointer<DualContouringSPO> DualContourSPO;
-		ScopePointer<Texture> DensityTexture;
-
-		bool UpdateVoxels = false;
-		bool UpdateTexture = true;
-
-		bool Smooth = false;
-		UINT8 Algorithm = 0;
 	private:
+
+
 		Editor::SceneHierarchyPanel SceneHierarchy;
 
-		void Remap(float& x, float clx, float cmx, float nlx, float nmx);
 
 		bool IsViewportFocused;
 		bool IsViewportHovered;

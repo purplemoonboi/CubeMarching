@@ -9,11 +9,14 @@ namespace Foundation
 	{
 	public:
 
-	
-
 		static void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
 		{
 			RendererApiPtr->Init(context, viewportWidth, viewportHeight);
+		}
+
+		static void Clean()
+		{
+			RendererApiPtr->Clean();
 		}
 
 		static void PreInitRenderer()
@@ -31,6 +34,7 @@ namespace Foundation
 			RendererApiPtr->SetViewport(x, y, width, height);
 		}
 
+	public:/*...Bindings...*/
 		static void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
 		{
 			RendererApiPtr->DrawTerrainGeometry(pso, terrain);
@@ -75,8 +79,6 @@ namespace Foundation
 			RendererApiPtr->PostRender();
 		}
 
-		static RendererAPI* GetApiPtr() { return RendererApiPtr; }
-
 		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
 		{
 			RendererApiPtr->DrawIndexed(vertexArray, count);
@@ -87,7 +89,9 @@ namespace Foundation
 			RendererApiPtr->DrawIndexed(geometry, count);
 		}
 
-
+		
+	public:/*...Getters...*/
+		static RendererAPI* GetApiPtr() { return RendererApiPtr; }
 
 	private:
 

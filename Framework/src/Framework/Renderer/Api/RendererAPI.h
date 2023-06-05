@@ -19,7 +19,6 @@ namespace Foundation
 	class RendererAPI
 	{
 	public:
-
 		enum class Api
 		{
 
@@ -40,40 +39,27 @@ namespace Foundation
 			Specular = 0x3,
 			Depth = 0x4,
 			Lighting = 0x5,
+			AmbientOcclusion = 0x6,
 		};
-	
 		
 	public:
+		static Api GetAPI() { return RenderingApi; }
+
 
 		virtual void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) = 0;
-
+		virtual void Clean() = 0;
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
-
-		virtual void BindDepthPass() = 0;
-
-
-
 		virtual void DrawTerrainGeometry(PipelineStateObject* pso, RenderItem* terrain) = 0;
-
-		virtual void BindScenePass() = 0;
 		virtual void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
-		virtual void UnBindScenePass() = 0;
-
-		virtual void BindLightingPass() = 0;
-		virtual void UnBindLightingPass() = 0;
-
-		virtual void BindPostProcessingPass() = 0;
-		virtual void UnBindPostProcessingPass() = 0;
-
+		virtual void BindPasses() = 0;
 		virtual void PreInit() = 0;
-
 		virtual void PostInit() = 0;
-
 		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
-
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
-
-		
+		virtual void PostRender() = 0;
+		virtual void Flush() = 0;
+		virtual void OnBeginRender() = 0;
+		virtual void OnEndRender() = 0;
 
 		virtual void PreRender
 		(
@@ -86,24 +72,18 @@ namespace Foundation
 			bool wireframe
 		) = 0;
 
-		virtual void PostRender() = 0;
+	public:/*...Getters...*/
+		[[nodiscard]] virtual GraphicsContext*		GetGraphicsContext()	const = 0;
+		[[nodiscard]] virtual MemoryManager*		GetMemoryManager()		const = 0;
+		[[nodiscard]] virtual const FrameBuffer*	GetFrameBuffer()		const = 0;
 
-		virtual void Flush() = 0;
 
-		virtual void OnBeginRender() = 0;
-		virtual void OnEndRender() = 0;
+		[[nodiscard]] virtual const RenderTarget* GetSceneAlbedoTexture()				const = 0;
+		[[nodiscard]] virtual const RenderTarget* GetSceneNormalTexture()				const = 0;
+		[[nodiscard]] virtual const RenderTarget* GetSceneAmbientOcclusionTexture()		const = 0;
+		[[nodiscard]] virtual const RenderTarget* GetSceneDepthTexture()				const = 0;
 
-		static Api GetAPI() { return RenderingApi; }
-
-		[[nodiscard]] virtual GraphicsContext* GetGraphicsContext() const = 0;
-
-		[[nodiscard]] virtual FrameBuffer* GetFrameBuffer() const = 0;
-
-		[[nodiscard]] virtual MemoryManager* GetMemoryManager() const = 0;
-
-		[[nodiscard]] virtual RenderTarget* GetSceneTexture()const = 0;
 	private:
-
 		static Api RenderingApi;
 
 	};

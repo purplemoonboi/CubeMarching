@@ -88,14 +88,13 @@ namespace Foundation
 
 		virtual void Destroy() = 0;
 
-		virtual UINT64 GetWidth() = 0;
-		virtual UINT32 GetHeight() = 0;
-		virtual UINT16 GetDepth() = 0;
-		virtual TextureDimension GetTextureDimension() = 0;
-		virtual TextureFormat GetTextureFormat() = 0;
-		virtual UINT64 GetTexture() = 0;
+		[[nodiscard]] virtual UINT64			GetWidth()				const = 0;
+		[[nodiscard]] virtual UINT32			GetHeight()				const = 0;
+		[[nodiscard]] virtual UINT16			GetDepth()				const = 0;
+		[[nodiscard]] virtual TextureDimension	GetTextureDimension()	const = 0;
+		[[nodiscard]] virtual TextureFormat		GetTextureFormat()		const = 0;
+		[[nodiscard]] virtual UINT64			GetTexture()			const = 0;
 
-		virtual void Copy(void* src) = 0;
 	};
 
 	class TextureLibrary

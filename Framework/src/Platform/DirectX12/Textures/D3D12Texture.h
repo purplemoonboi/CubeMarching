@@ -47,13 +47,12 @@ namespace Foundation
 		void Destroy() override;
 
 
-		UINT64 GetWidth() override;
-		UINT32 GetHeight() override;
-		UINT16 GetDepth() override;
-		UINT64 GetTexture() override;
-		void Copy(void* src) override;
-		TextureDimension GetTextureDimension() override;
-		TextureFormat GetTextureFormat() override;
+		[[nodiscard]] UINT64			GetWidth()				const override;
+		[[nodiscard]] UINT32			GetHeight()				const override;
+		[[nodiscard]] UINT16			GetDepth()				const override;
+		[[nodiscard]] UINT64			GetTexture()			const override;
+		[[nodiscard]] TextureDimension	GetTextureDimension()	const override;
+		[[nodiscard]] TextureFormat		GetTextureFormat()		const override;
 
 		UINT64 Width;
 		UINT32 Height;

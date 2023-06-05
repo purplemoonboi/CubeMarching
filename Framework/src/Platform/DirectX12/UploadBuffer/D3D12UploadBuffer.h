@@ -1,6 +1,6 @@
 #pragma once
 #include "../DirectX12.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Foundation
@@ -23,7 +23,7 @@ namespace Foundation
 
 			if(isConstantBuffer)
 			{
-				ElementByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(T));
+				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
 			const HRESULT uploadResult = graphicsContext->pDevice->CreateCommittedResource
@@ -41,8 +41,7 @@ namespace Foundation
 
 		}
 
-		D3D12UploadBuffer(const D3D12UploadBuffer& rhs) = delete;
-		D3D12UploadBuffer& operator=(const D3D12UploadBuffer& rhs) = delete;
+		//DISABLE_COPY(D3D12UploadBuffer);
 
 		void Bind(UINT index, const D3D12_RANGE* range)
 		{
@@ -64,9 +63,6 @@ namespace Foundation
 			MappedData = nullptr;
 		}
 
-		[[nodiscard]]
-		ID3D12Resource* Resource() const { return pUpload.Get(); }
-
 		void CopyData(INT32 elementIndex, const T& data)
 		{
 			memcpy(&MappedData[elementIndex * ElementByteSize], &data, sizeof(T));
@@ -83,7 +79,7 @@ namespace Foundation
 
 			if (isStatic)
 			{
-				ElementByteSize = D3D12BufferUtilities::CalculateConstantBufferByteSize(sizeof(T));
+				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
 			THROW_ON_FAILURE(context->pDevice->CreateCommittedResource
@@ -98,6 +94,12 @@ namespace Foundation
 
 			THROW_ON_FAILURE(pUpload->Map(0, nullptr, reinterpret_cast<void**>(&MappedData)));
 		}
+
+
+	public:/*...Getters...*/
+		[[nodiscard]]
+		ID3D12Resource* Resource() const { return pUpload.Get(); }
+
 
 	private:
 		ComPtr<ID3D12Resource> pUpload;

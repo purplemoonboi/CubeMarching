@@ -15,8 +15,7 @@ namespace Foundation
 	void Renderer::Init(HWND window, INT32 bufferWidth, INT32 bufferHeight)
 	{
 		// Initialise the api
-		Context = GraphicsContext::Create(window,
-			bufferWidth, bufferHeight);
+		Context = GraphicsContext::Create(window, bufferWidth, bufferHeight);
 
 		RenderInstruction::Init(Context.get(), bufferWidth, bufferHeight);
 
@@ -42,5 +41,10 @@ namespace Foundation
 		return RenderStatus;
 	}
 
-	
+	void Renderer::Clean()
+	{
+		RenderInstruction::Clean();
+
+		Context->Clean();
+	}
 }

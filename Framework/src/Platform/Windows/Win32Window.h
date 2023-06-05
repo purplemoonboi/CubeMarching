@@ -43,21 +43,20 @@ namespace Foundation
 		void SetVSync(bool enabled) override { VSync = enabled; }
 		bool IsVSync() const override { return VSync; }
 
-
-
 		// @brief Set the applications on event process
 		void SetEventCallBack(const WindowCallback& callBack) override { Window32Data.AppEventCallBack = callBack; }
 
 	public:
 		// @brief Returns the pointer to this class.
 		static Win32Window* GetWindow();
+
 	private:
 
 		static Win32Window* WindowSPtr;
 
 		// @brief Initialises new window parameters and registers the
 		//		  window to the system.
-		bool InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption = L"DX12 Foundation");
+		bool InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption = L"Foundation <DX12>");
 
 
 		// @brief Encapsulating window data.

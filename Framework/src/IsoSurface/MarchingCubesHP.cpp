@@ -9,7 +9,7 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 
 #include <random>
 
@@ -320,7 +320,7 @@ namespace Foundation
 	{
 		constexpr auto bufferWidth = (4096 * sizeof(INT32));
 
-		LookUpTableResource = D3D12BufferUtilities::CreateDefaultBuffer
+		LookUpTableResource = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			TriangleTable,
 			bufferWidth,
@@ -328,22 +328,22 @@ namespace Foundation
 		);
 
 		constexpr UINT64 faceCapacity = MarchingCubesNumberOfTriangles * sizeof(MCIFace);
-		FaceBuffer = D3D12BufferUtilities::CreateStructuredBuffer(faceCapacity, true, true);
-		FaceReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(faceCapacity);
+		FaceBuffer = D3D12BufferFactory::CreateStructuredBuffer(faceCapacity, true, true);
+		FaceReadBackBuffer = D3D12BufferFactory::CreateReadBackBuffer(faceCapacity);
 
 		constexpr UINT64 vertexCapcity = MarchingCubesNumberOfVertices * sizeof(MCIVertex);
-		VertexBuffer = D3D12BufferUtilities::CreateStructuredBuffer(vertexCapcity, true, true);
+		VertexBuffer = D3D12BufferFactory::CreateStructuredBuffer(vertexCapcity, true, true);
 
-		VertexReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(vertexCapcity);
+		VertexReadBackBuffer = D3D12BufferFactory::CreateReadBackBuffer(vertexCapcity);
 
 		constexpr UINT64 counterCapacity = (ChunkWidth * ChunkHeight * ChunkWidth) * 3 * sizeof(INT32);
-		VertexCounter = D3D12BufferUtilities::CreateStructuredBuffer(counterCapacity, true, true);
-		VertexIndicesReadBack = D3D12BufferUtilities::CreateReadBackBuffer(counterCapacity);
-		D3D12BufferUtilities::CreateUploadBuffer(VertexCounterUpload, counterCapacity);
+		VertexCounter = D3D12BufferFactory::CreateStructuredBuffer(counterCapacity, true, true);
+		VertexIndicesReadBack = D3D12BufferFactory::CreateReadBackBuffer(counterCapacity);
+		D3D12BufferFactory::CreateUploadBuffer(VertexCounterUpload, counterCapacity);
 
 		constexpr UINT64 hashMapCapacity = MCIHashTableSize32 * sizeof(MCIEdgeElementTable);
-		HashMapBuffer = D3D12BufferUtilities::CreateStructuredBuffer(hashMapCapacity, true, true);
-		HashMapReadBackBuffer = D3D12BufferUtilities::CreateReadBackBuffer(hashMapCapacity);
+		HashMapBuffer = D3D12BufferFactory::CreateStructuredBuffer(hashMapCapacity, true, true);
+		HashMapReadBackBuffer = D3D12BufferFactory::CreateReadBackBuffer(hashMapCapacity);
 	}
 
 

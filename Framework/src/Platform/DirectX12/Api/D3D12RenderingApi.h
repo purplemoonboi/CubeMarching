@@ -10,6 +10,7 @@
 
 namespace Foundation
 {
+	class D3D12PipelineStateObject;
 	class D3D12RootSignature;
 	struct WorldSettings;
 	struct ObjectConstant;
@@ -36,31 +37,24 @@ namespace Foundation
 	class D3D12RenderingApi : public RendererAPI
 	{
 	public:
+		D3D12RenderingApi();
 
-		virtual ~D3D12RenderingApi() ;
+		virtual ~D3D12RenderingApi();
 
 		void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) override;
-
+		void Clean() override;
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
-
-		void BindDepthPass() override;
-
 		void DrawTerrainGeometry(PipelineStateObject* pso, RenderItem* terrain) override;
-
-		void BindScenePass() override;
 		void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
-
-		void BindLightingPass() override;
-
-		void BindPostProcessingPass() override;
-
 		void Flush() override;
 		void PreInit() override;
 		void PostInit() override;
-
 		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override {}
 		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override {}
-
+		void PostRender() override;
+		void OnBeginRender() override;
+		void OnEndRender() override;
+		void BindPasses() override;
 		void PreRender
 		(
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
@@ -72,48 +66,32 @@ namespace Foundation
 			bool wireframe
 		) override;
 
-		void PostRender() override;
 
-		void OnBeginRender() override;
+		[[nodiscard]] GraphicsContext*			GetGraphicsContext()			const override	{ return Context; }
+		[[nodiscard]] MemoryManager*			GetMemoryManager()				const override	{ return nullptr; }
+		[[nodiscard]] FrameBuffer*				GetFrameBuffer()				const override	{ return FrameBuffer.get(); };
 
-		void OnEndRender() override;
-
-		[[nodiscard]] GraphicsContext* GetGraphicsContext() const override { return Context; }
-
-		[[nodiscard]] FrameBuffer* GetFrameBuffer() const override { return FrameBuffer.get(); };
-
-		[[nodiscard]] D3D12FrameResource* GetCurrentFrameResource() const { return Frames[FrameIndex].get(); }
-
-		[[nodiscard]] RenderTarget* GetSceneTexture() const override { return RenderTargets[(INT8)RenderLayer::Albedo].get(); }
+		[[nodiscard]] const RenderTarget* GetSceneAlbedoTexture()				const override { return RenderTargets[(INT8)RenderLayer::Albedo].get();}
+		[[nodiscard]] const RenderTarget* GetSceneNormalTexture()				const override { return RenderTargets[(INT8)RenderLayer::Normals].get();}
+		[[nodiscard]] const RenderTarget* GetSceneAmbientOcclusionTexture()		const override { return RenderTargets[(INT8)RenderLayer::AmbientOcclusion].get();}
+		[[nodiscard]] const RenderTarget* GetSceneDepthTexture()				const override { return RenderTargets[(INT8)RenderLayer::Depth].get();}
 
 	private:
-
-		
-
 		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
-
-		// Buffer for uploading shader constants.
-		ScopePointer<D3D12ResourceBuffer> UploadBuffer;
-
-		// All of our frame resources.
-		std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT> Frames;
-		UINT32 FrameIndex = 0;
-
 		
-		// Defines shader inputs
-		ComPtr<ID3D12RootSignature> RootSignature;
 
 		// A pointer to the graphics context
-		D3D12Context* Context = nullptr;
-		// A unique pointer to the frame buffer
-		ScopePointer<D3D12FrameBuffer> FrameBuffer = nullptr;
-	
-		// A unique pointer to the Api's memory allocator class.
-		ScopePointer<D3D12HeapManager> HeapManager = nullptr;
+		D3D12Context* Context{ nullptr };
+		ScopePointer<D3D12ResourceBuffer>	UploadBuffer	{ nullptr };
+		ScopePointer<D3D12FrameBuffer>		FrameBuffer		{ nullptr };
+		ScopePointer<D3D12HeapManager>		HeapManager		{ nullptr };
+
+		std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT> Frames{ nullptr };
+		UINT32 FrameIndex = 0;
 
 		std::array<ScopePointer<D3D12RenderTarget>, GBufferTextureCount> RenderTargets;
-		//std::array<ScopePointer<D3D12Shader>, GBufferTextureCount> CoreShaders;
 
+		ComPtr<ID3D12RootSignature> RootSignature;
 	};
 
 }

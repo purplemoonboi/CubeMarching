@@ -16,7 +16,7 @@ namespace Foundation
 
 
 		virtual void Init() = 0;
-
+		virtual void Clean() = 0;
 		virtual void SwapBuffers() = 0;
 
 		static ScopePointer<GraphicsContext> Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);

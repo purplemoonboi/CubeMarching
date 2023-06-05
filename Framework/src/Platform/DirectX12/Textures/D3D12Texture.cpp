@@ -3,7 +3,7 @@
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 #include "Platform/DirectX12/Copy/D3D12CopyContext.h"
@@ -47,7 +47,7 @@ namespace Foundation
 		if (MipLevels != 1)
 			MipLevels = 1;
 
-		GpuResource = D3D12BufferUtilities::CreateTexture3D(
+		GpuResource = D3D12BufferFactory::CreateTexture3D(
 			Width,
 			Height,
 			Depth,
@@ -72,8 +72,8 @@ namespace Foundation
 		uavDesc.Texture3D.FirstWSlice = 0;
 		uavDesc.Texture3D.WSize = Depth;
 
-		GpuHandleSrv = D3D12Utils::CreateShaderResourceView(desc, GpuResource.Get());
-		GpuHandleUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
+		GpuHandleSrv = D3D12ResourceFactory::CreateShaderResourceView(desc, GpuResource.Get());
+		GpuHandleUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
 		
 	}
 
@@ -99,7 +99,7 @@ namespace Foundation
 			MipLevels = 1;
 
 
-		GpuResource = D3D12BufferUtilities::CreateTexture2D(
+		GpuResource = D3D12BufferFactory::CreateTexture2D(
 			Width,
 			Height,
 			MipLevels,
@@ -121,8 +121,8 @@ namespace Foundation
 		uavDesc.Texture2D.MipSlice = 0;
 		uavDesc.Texture2D.PlaneSlice = 0;
 
-		GpuHandleSrv = D3D12Utils::CreateShaderResourceView(desc, GpuResource.Get());
-		GpuHandleUav = D3D12Utils::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
+		GpuHandleSrv = D3D12ResourceFactory::CreateShaderResourceView(desc, GpuResource.Get());
+		GpuHandleUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
 	}
 
 	D3D12Texture::D3D12Texture(const std::wstring& fileName, const std::string& name)
@@ -156,7 +156,7 @@ namespace Foundation
 		srvDesc.Texture2D.MipLevels = 3;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-		GpuHandleSrv = D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
+		GpuHandleSrv = D3D12ResourceFactory::CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
 	void D3D12Texture::LoadFromFile(const std::wstring& fileName, const std::string& name)
@@ -196,7 +196,7 @@ namespace Foundation
 		srvDesc.Texture2D.MipLevels = GpuResource->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-		D3D12Utils::CreateShaderResourceView(srvDesc, GpuResource.Get());
+		D3D12ResourceFactory::CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
 	void D3D12Texture::Destroy()
@@ -207,46 +207,32 @@ namespace Foundation
 		UploadBuffer = nullptr;
 	}
 
-	UINT64 D3D12Texture::GetWidth()
+	UINT64 D3D12Texture::GetWidth() const
 	{
 		return Width;
 	}
 
-	UINT32 D3D12Texture::GetHeight()
+	UINT32 D3D12Texture::GetHeight() const
 	{
 		return Height;
 	}
 
-	UINT16 D3D12Texture::GetDepth()
+	UINT16 D3D12Texture::GetDepth() const
 	{
 		return Depth;
 	}
 
-	UINT64 D3D12Texture::GetTexture()
+	UINT64 D3D12Texture::GetTexture() const
 	{
 		return GpuHandleSrv.ptr;
 	}
 
-	void D3D12Texture::Copy(void* src)
-	{
-
-		ID3D12Resource* _src = static_cast<ID3D12Resource*>(src);
-
-		/**
-		 * Add a copy command to the copy context.
-		 * @note - copying does not happen immediately, ensure the copy
-		 *		   is in scope of the command list
-		 */
-		D3D12CopyContext::CopyTexture(_src, GpuResource.Get(), 0, 0, 0);
-
-	}
-
-	TextureDimension D3D12Texture::GetTextureDimension()
+	TextureDimension D3D12Texture::GetTextureDimension() const
 	{
 		return static_cast<TextureDimension>(Dimension);
 	}
 
-	TextureFormat D3D12Texture::GetTextureFormat()
+	TextureFormat D3D12Texture::GetTextureFormat() const
 	{
 		return static_cast<TextureFormat>(Format);
 	}

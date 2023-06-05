@@ -58,7 +58,7 @@ namespace Foundation
 	class EventDispatcher
 	{
 		template<typename T>
-		using EventAction = std::function<bool(T&)>;
+		using EventDelegate = std::function<bool(T&)>;
 
 	public:
 
@@ -67,7 +67,7 @@ namespace Foundation
 			Event(event)
 		{}
 
-		template<typename T> bool Dispatch(EventAction<T> function)
+		template<typename T> bool Dispatch(EventDelegate<T> function)
 		{
 			if (Event.GetEventType() == T::GetStaticType())
 			{

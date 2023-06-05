@@ -45,11 +45,7 @@ namespace Foundation
 			ComPtr<ID3D12RootSignature> rootSignature
 		);
 
-
-		D3D12PipelineStateObject(const D3D12PipelineStateObject&) = delete;
-		auto operator=(const D3D12PipelineStateObject&) noexcept -> D3D12PipelineStateObject& = delete;
-		D3D12PipelineStateObject(D3D12PipelineStateObject&&) = delete;
-		auto operator=(const D3D12PipelineStateObject&&) noexcept -> D3D12PipelineStateObject&& = delete;
+		DISABLE_COPY_AND_MOVE(D3D12PipelineStateObject);
 
 
 		~D3D12PipelineStateObject() override;

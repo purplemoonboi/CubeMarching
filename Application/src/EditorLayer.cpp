@@ -2,19 +2,16 @@
 
 #include "Framework/Scene/Scene.h"
 #include "Framework/Core/Input/Input.h"
-
-#include <../ImGui/imgui.h>
-#include <../ImGui/imgui_internal.h>
-
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Textures/RenderTarget.h"
 #include "Framework/Renderer/Textures/Texture.h"
 #include "Framework/Scene/WorldSettings.h"
-#include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 
 #include "Isosurface/VoxelWorldConstantExpressions.h"
 
-//change
+#include <../ImGui/imgui.h>
+#include <../ImGui/imgui_internal.h>
+
 namespace Foundation
 {
     EditorLayer::EditorLayer()
@@ -25,81 +22,27 @@ namespace Foundation
         Scene = CreateRef<class Scene>("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
-        PerlinCompute = CreateScope<class DensityTextureGenerator>();
-
-        MarchingCubes = CreateScope<class MarchingCubes>();
-        MarchingCubesHP = CreateScope<class MarchingCubesHP>();
-
-        DualContouring = CreateScope<class DualContouring>();
-        RadixSort = CreateScope<class Radix>();
-    	//DualContourSPO   = CreateScope < class DualContouringSPO >();
-
+        
 
     }
 
     EditorLayer::~EditorLayer()
     {
-
-        MarchingCubes.reset();
-        MarchingCubes = nullptr;
-
-        DualContouring.reset();
-        DualContouring = nullptr;
-
-        PerlinCompute.reset();
-        PerlinCompute = nullptr;
+        
 
     }
 
     void EditorLayer::OnAttach()
     {
-#ifdef USE_PIX
+        Renderer = RenderInstruction::GetApiPtr();
+        APP_ASSERT(!Renderer);
 
-        GpuCaptureModule = PIXLoadLatestWinPixGpuCapturerLibrary();
-        GpuTimingModule = PIXLoadLatestWinPixTimingCapturerLibrary();
-
-        PIXCaptureParams.GpuCaptureParameters.FileName = L"assets/pix/Test.wpix";
-        PIXCaptureParams.TimingCaptureParameters.FileName = L"assets/pix/MarchingCubes.wpix";
-        PIXCaptureParams.TimingCaptureParameters.CpuSamplesPerSecond = 4000;
-        PIXCaptureParams.TimingCaptureParameters.CaptureGpuTiming = TRUE;
-        
-#endif
-
-        const auto api = RenderInstruction::GetApiPtr();
-
-        ComputeInstruction::Init(api->GetGraphicsContext());
+        ComputeInstruction::Init(Renderer->GetGraphicsContext());
         const auto csApi = ComputeInstruction::GetComputeApi();
 
         RenderInstruction::OnBeginResourceCreation();
 
-        DensityTexture = Texture::Create(nullptr, VoxelTextureWidth, VoxelTextureHeight, VoxelTextureWidth, TextureFormat::R_FLOAT_32);
 
-        RenderInstruction::OnEndResourceCreation();
-
-        RenderInstruction::OnBeginResourceCreation();
-
-        PerlinCompute->Init(csApi, api->GetMemoryManager());
-        PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings, DensityTexture.get());
-
-    	MarchingCubes->Init(csApi, api->GetMemoryManager());
-        DualContouring->Init(csApi, api->GetMemoryManager());
-
-        /*
-			RadixSort->Init(csApi, api->GetMemoryManager());
-				RadixSort->SortChunk(VoxelSettings);
-		*/
-
-        //MarchingCubesHP->Init(csApi, api->GetMemoryManager());
-        //DualContourSPO->Init(csApi, api->GetMemoryManager());
-
-    	Renderer3D::CreateVoxelTerrain("Voxel", Transform(0, 0, 0));
-
-        /*
-         *   Renderer3D::CreateVoxelTerrain(DualContouring->GetVertices(), 
-         *     DualContouring->GetIndices(), "DualTerrain", Transform(0, 0, 0));
-		 */
-
-        Renderer3D::CreateMesh("Brush", Transform(0, 0, 0, 0,0,0), 1);
 
         RenderInstruction::OnEndResourceCreation();
 
@@ -147,109 +90,11 @@ namespace Foundation
                 camera->Strafe(deltaTime);
             }
 
-            // Update Texture
-            if (RightMButton)
-            {
-                CsgOperationSettings.IsMouseDown = 1;
-                ConvertMouseCoordinates(deltaTime);
-                UpdateTexture = true;
-            }
-            else
-            {
-                CsgOperationSettings.IsMouseDown = 0;
-            }
-
+        
         }
+        
 
-        Scene->OnUpdate(deltaTime.GetSeconds(), TimerManager->TimeElapsed());
-
-        if (UpdateTexture)
-        {
-           /* if(PerlinSettings.TextureWidth > DensityTexture->GetWidth() || 
-                PerlinSettings.TextureHeight > DensityTexture->GetHeight())
-            {
-                DensityTexture->Destroy();
-                DensityTexture->Create(0, 
-                    PerlinSettings.TextureWidth, 
-                    PerlinSettings.TextureHeight, 
-                    PerlinSettings.TextureWidth, 
-                    TextureFormat::R_FLOAT_32);
-            }*/
-
-            PerlinSettings.ChunkCoord = { (float)0, 0, (float)0 };
-            PerlinCompute->PerlinFBM(PerlinSettings, CsgOperationSettings, DensityTexture.get());
-            UpdateTexture = false;
-            UpdateVoxels = true;
-        }
-
-        if(UpdateVoxels && !UpdateTexture)
-        {
-#ifdef USE_PIX
-            HRESULT hr = PIXBeginCapture(PIX_CAPTURE_GPU, &PIXCaptureParams);
-            if (!SUCCEEDED(hr))
-            {
-                CORE_ERROR("GPU capture failed...")
-            }
-            else
-            {
-                CORE_TRACE("Beginning GPU capture...");
-            }
-#endif
-           
-            switch (Algorithm)
-            {
-            case 0:
-                MarchingCubes->Dispatch(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("Voxel", (Vertex*)MarchingCubes->GetVertices(), MarchingCubes->GetVertexCount(), nullptr, 0);
-
-                break;
-            case 1:
-                /* polygonise the texture with surface nets*/
-                ///
-                VoxelSettings.SurfaceNets = 1;
-                ///
-                DualContouring->Dispatch(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("Voxel", (Vertex*)DualContouring->GetVertices(), DualContouring->GetVertexCount(), nullptr, 0);
-                break;
-            case 2:
-                /* polygonise the texture with dual contouring */
-                /* polygonise the texture with surface nets*/
-                ///
-                VoxelSettings.SurfaceNets = 0;
-                ///
-                DualContouring->Dispatch(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("Voxel", (Vertex*)DualContouring->GetVertices(), DualContouring->GetVertexCount(), nullptr, 0);
-
-                break;
-            case 3:
-                /* polygonise the texture with improved marching cubes */
-                MarchingCubesHP->Polygonise(VoxelSettings, DensityTexture.get());
-                Renderer3D::SetBuffer("Voxel", MarchingCubesHP->GetVertexBuffer(), MarchingCubesHP->GetIndexBuffer());
-                break;
-
-            }
-
-
-#ifdef USE_PIX
-            if(SUCCEEDED(hr))
-            {
-                hr = PIXEndCapture(FALSE);
-				if(!SUCCEEDED(hr))
-				{
-                    CORE_ERROR("Could not end GPU capture successfully...");
-				}
-                else
-                {
-                    CORE_TRACE("Ending GPU capture...");
-
-                }
-            }
-#endif
-            UpdateVoxels = false;
-
-        }
-
-        auto rt = RenderInstruction::GetApiPtr()->GetSceneTexture();
+        auto rt = Renderer->GetFrameBuffer();
 
         if(ViewportSize.x > 0 && ViewportSize.x < 8196 && ViewportSize.y > 0 && ViewportSize.y < 8196)
         {
@@ -257,7 +102,10 @@ namespace Foundation
             {
                 mc->SetAspectRatio(ViewportSize.x, ViewportSize.y);
                 mc->RecalculateAspectRatio(ViewportSize.x, ViewportSize.y);
-                rt->OnResize((INT32)ViewportSize.x, (INT32)ViewportSize.y);
+                FrameBufferSpecifications fb{};
+                fb.Width = ViewportSize.x;
+                fb.Height = ViewportSize.y;
+                //rt->OnResizeFrameBuffer(fb);
             }
         }
 
@@ -275,12 +123,6 @@ namespace Foundation
 
     void EditorLayer::OnImGuiRender()
     {
-        
-            // If we removed all the options we are showcasing, this demo would become:
-            //     void ShowExampleAppDockSpace()
-            //     {
-            //         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-            //     }
 
             static bool dockspace_open = true;
             static bool opt_fullscreen = true;
@@ -413,214 +255,7 @@ namespace Foundation
 
             }
 
-            //VOXEL SETTINGS 
-            {
-                ImGui::Begin("Noise Settings");
-                ImGui::Separator();
-                ImGui::Spacing();
-                float freq = PerlinSettings.Frequency;
-                float gain = PerlinSettings.Gain;
-                float groundHeight = PerlinSettings.GroundHeight;
-                INT32 octaves = PerlinSettings.Octaves;
-
-                if (ImGui::DragInt("Octaves", &octaves, 1, 1, 8))
-                    UpdateTexture = true;
-
-                if (ImGui::DragFloat("Frequency", &freq, 0.1f, 0.001f, 0.999f))
-                    UpdateTexture = true;
-
-                ImGui::Spacing();
-                if (ImGui::DragFloat("Gain", &gain, 0.1f, 0.1f, 4.0f))
-                    UpdateTexture = true;
-
-                ImGui::Spacing();
-                if (ImGui::DragFloat("Ground Height", &groundHeight, 0.1f, 2.0f, (float)ChunkHeight))
-                    UpdateTexture = true;
-
-
-                ImGui::Separator();
-                ImGui::End();
-                PerlinSettings.Frequency = freq;
-                PerlinSettings.Gain = gain;
-                PerlinSettings.GroundHeight = groundHeight;
-                PerlinSettings.Octaves = octaves;
-
-                float isoVal         = VoxelSettings.IsoValue;
-                bool useBinarySearch = VoxelSettings.UseBinarySearch;
-                INT32 resolution = VoxelSettings.Resolution;
-                bool useTexture = VoxelSettings.UseTexture;
-
-
-                ImGui::Begin("Voxel Settings");
-
-                ImGui::Spacing();
-
-                const char* algos[] = { "Marching Cubes", "Surface Nets", "Dual Contouring" };
-                static const char* currentAlgo = algos[0];
-
-                if (ImGui::BeginCombo("Isosurface Algorithms", currentAlgo)) // The second parameter is the label previewed before opening the combo.
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(algos); ++n)
-                    {
-                        const bool isSelected = (currentAlgo == algos[n]); // You can store your selection however you want, outside or inside your objects
-                        if (ImGui::Selectable(algos[n], isSelected))
-                        {
-                            currentAlgo = algos[n];
-                            Algorithm = n;
-                            UpdateVoxels = true;
-                        }
-                        if (isSelected)
-                        {
-                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::Spacing();
-
-                const char* res[] = { "16x16x16", "32x32x32", "64x64x64" };
-                constexpr INT32 resi[] = { 16, 32, 64 };
-                static const char* currentRes = res[0];
-
-                if (ImGui::BeginCombo("Terrain Resolution", currentRes)) 
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(res); ++n)
-                    {
-                        const bool isSelected = (currentRes == res[n]); 
-                        if (ImGui::Selectable(res[n], isSelected))
-                        {
-                            currentRes = res[n];
-                            VoxelSettings.Resolution = resi[n];
-                            PerlinSettings.TextureWidth = VoxelSettings.Resolution + 1;
-                            PerlinSettings.TextureHeight = VoxelSettings.Resolution + 1;
-                            UpdateTexture = true;
-                        }
-                        if (isSelected)
-                        {
-                            ImGui::SetItemDefaultFocus();  
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::Spacing();
-
-                if (ImGui::DragFloat("IsoValue", &isoVal, 0.02f, -1.0f, 1.0f))
-                    UpdateVoxels = true;
-
-                ImGui::Spacing();
-                if (ImGui::DragInt("Voxel Scale", &resolution, 0.1f, 2.0f, 64.0f))
-                    UpdateVoxels = true;
-
-                ImGui::Spacing();
-                if (ImGui::Checkbox("UseTexture", &useTexture))
-                    UpdateVoxels = true;
-
-                ImGui::Spacing();
-
-                static bool useGradient = false;
-                static float alpha = 0.5f;
-                static bool useTangential = false;
-                if(currentAlgo == algos[0])
-                {
-                    if(ImGui::Checkbox("Use Gradient Transform", &useGradient))
-                    {
-                        VoxelSettings.UseGradient = (VoxelSettings.UseGradient == 1) ? 0 : 1;
-                        VoxelSettings.UseTangent = 0;
-                        UpdateVoxels = true;
-                    }
-                    if (ImGui::DragFloat("Gradient Alpha", &alpha, 0.001f, 0.001f, 1.0f))
-                    {
-                        VoxelSettings.Alpha = alpha;
-                        UpdateVoxels = true;
-                    }
-
-
-                    if (ImGui::Checkbox("Use Tangential Transform", &useTangential))
-                    {
-                        VoxelSettings.UseGradient = 0;
-                        VoxelSettings.UseTangent = (VoxelSettings.UseTangent == 1) ? 0 : 1;
-                        UpdateVoxels = true;
-                    }
-
-                }
-
-                ImGui::Spacing();
-                ImGui::Checkbox("Wireframe", &wireframe);
-
-
-                ImGui::Spacing();
-                ImGui::Separator();
-
-                VoxelSettings.IsoValue = isoVal;
-                VoxelSettings.UseBinarySearch = useBinarySearch;
-                VoxelSettings.Resolution = resolution;
-                VoxelSettings.UseTexture = useTexture;
-                ImGui::End();
-            }
-
-            // CSG SETTINGS
-            {
-                float radius = CsgOperationSettings.Radius;
-                float rayDist = CsgOperationSettings.RayDistance;
-                ImGui::Begin("CSG Settings");
-                ImGui::Spacing();
-                if (ImGui::DragFloat("Brush Radius", &radius, 0.02f, 1.0f, 10.0f))
-                {
-                    CsgOperationSettings.Radius = radius;
-                }
-
-                ImGui::Spacing();
-                if (ImGui::DragFloat("Ray Range", &rayDist, 0.02f, 2.0f, 100.0f))
-                {
-                    CsgOperationSettings.RayDistance = rayDist;
-                }
-
-
-                ImGui::Spacing();
-                const char* primitives[] = { "Box", "Sphere", "Cylinder", "Torus" };
-                static const char* currentPrim = nullptr;
-
-                if (ImGui::BeginCombo("Density Primitive", currentPrim)) // The second parameter is the label previewed before opening the combo.
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(primitives); ++n)
-                    {
-                        const bool isSelected = (currentPrim == primitives[n]); // You can store your selection however you want, outside or inside your objects
-                        if (ImGui::Selectable(primitives[n], isSelected))
-                        {
-                            currentPrim = primitives[n];
-                            CsgOperationSettings.DensityPrimitive = n;
-                        }
-                        if (isSelected)
-                        {
-                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::Spacing();
-                const char* operations[] = { "Add", "Subtract", "Union" };
-                static const char* currentOperation = nullptr;
-
-                if (ImGui::BeginCombo("Csg Operation", currentOperation)) // The second parameter is the label previewed before opening the combo.
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(operations); ++n)
-                    {
-                        const bool isSelected = (currentOperation == operations[n]); // You can store your selection however you want, outside or inside your objects
-                        if (ImGui::Selectable(operations[n], isSelected))
-                        {
-                            currentOperation = operations[n];
-                            CsgOperationSettings.CsgOperation = n;
-                        }
-                        if (isSelected)
-                        {
-                            ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::End();
-
-            }
+            
 
             ImGui::Spacing();
 
@@ -654,7 +289,7 @@ namespace Foundation
                 }
 
                 
-                auto rt = RenderInstruction::GetApiPtr()->GetSceneTexture();
+                auto rt = RenderInstruction::GetApiPtr()->GetSceneAlbedoTexture();
                 ImGui::Image((ImTextureID)rt->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,0}, {1,1});
 
 
@@ -675,16 +310,13 @@ namespace Foundation
 
     void EditorLayer::OnEvent(Event& event)
     {
-
         /** process mouse and keyboard events */
-
         EventDispatcher dispatcher(event);
 
         dispatcher.Dispatch<WindowResizeEvent>(BIND_DELEGATE(EditorLayer::OnWindowResize));
         dispatcher.Dispatch<MouseMovedEvent>(BIND_DELEGATE(EditorLayer::OnMouseMove));
         dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_DELEGATE(EditorLayer::OnMouseDown));
         dispatcher.Dispatch<MouseButtonReleasedEvent>(BIND_DELEGATE(EditorLayer::OnMouseUp));
-
     }
 
     bool EditorLayer::OnWindowResize(WindowResizeEvent& wndResize)
@@ -746,67 +378,5 @@ namespace Foundation
         return false;
     }
 
-    void EditorLayer::ConvertMouseCoordinates(float deltaTime)
-    {
-        float xx = CurrentMouseX / ViewportSize.x;
-        float yy = CurrentMouseY / ViewportSize.y;
 
-        const float x = (2.0f * xx) - 1.0f;
-        const float y = 1.0f - (2.0f * yy);
-
-        const auto* camera = Scene->GetSceneCamera();
-
-        XMFLOAT4X4 inverseProjection;
-        XMStoreFloat4x4(&inverseProjection, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetProjection())));
-
-        const float vx = x / inverseProjection(0, 0);
-        const float vy = y / inverseProjection(1, 1);
-        const float vz = 1.0f;
-
-        XMFLOAT4X4 inverseView;
-        XMStoreFloat4x4(&inverseView, XMMatrixInverse(nullptr, XMLoadFloat4x4(&camera->GetView())));
-
-        XMFLOAT3 camPos = camera->GetPosition();
-        /*Remap(camPos.x, -1024.0f, 1024.0f, 0.0f, (float) VoxelSettings.Resolution);
-        Remap(camPos.y, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);
-        Remap(camPos.z, -1024.0f, 1024.0f, 0.0f, (float)VoxelSettings.Resolution);*/
-
-        XMFLOAT3 rayOrigin = camPos;
-        XMFLOAT3 rayDirection(
-            vx * inverseView(0, 0) + vy * inverseView(1, 0) + vz * inverseView(2, 0),
-            vx * inverseView(0, 1) + vy * inverseView(1, 1) + vz * inverseView(2, 1),
-            vx * inverseView(0, 2) + vy * inverseView(1, 2) + vz * inverseView(2, 2));
-
-        // Normalize the direction vector to get a unit vector
-        rayDirection.x *= CsgOperationSettings.RayDistance;
-        rayDirection.y *= CsgOperationSettings.RayDistance;
-        rayDirection.z *= CsgOperationSettings.RayDistance;
-
-        CXMVECTOR direction = XMLoadFloat3(&rayDirection);
-        XMStoreFloat3(&rayDirection, direction);
-
-        XMFLOAT3 camForward = camera->GetForward();
-
-        float xf = rayOrigin.x + camForward.x + rayDirection.x;
-        float yf = rayOrigin.y + camForward.y + rayDirection.y;
-        float zf = rayOrigin.z + camForward.z + rayDirection.z;
-
-
-        CsgOperationSettings.MousePos = { xf, yf, zf };
-        CORE_TRACE("Mouse Pos W: {0}, {1}, {2}", xf, yf, zf);
-        CORE_TRACE("Camera Pos W: {0}, {1}, {2}", rayOrigin.x, rayOrigin.y, rayOrigin.z);
-
-        D3D12RenderItem* brush = dynamic_cast<D3D12RenderItem*>(Renderer3D::GetRenderItem(2));
-
-        float rad = CsgOperationSettings.Radius;
-        auto transform = XMMatrixTranslation(xf, yf, zf);
-        XMStoreFloat4x4(&brush->World, transform);
-        brush->NumFramesDirty++;
-    }
-
-
-    void EditorLayer::Remap(float& x, float clx, float cmx, float nlx, float nmx)
-    {
-        x = nlx + (x - clx) * (nmx - nlx) / (cmx - clx);
-    }
 }

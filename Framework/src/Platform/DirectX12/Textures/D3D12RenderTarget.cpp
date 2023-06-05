@@ -1,7 +1,7 @@
 #include "D3D12RenderTarget.h"
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtilities.h"
+#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 namespace Foundation
@@ -21,7 +21,7 @@ namespace Foundation
 		Dimension(D3D12_SRV_DIMENSION_TEXTURE2D)
 	{
 
-		pResource = D3D12BufferUtilities::CreateRenderTexture(Width, Height, Format);
+		pResource = D3D12BufferFactory::CreateRenderTexture(Width, Height, Format);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -30,9 +30,9 @@ namespace Foundation
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		ResourceSrv = D3D12Utils::CreateShaderResourceView(srvDesc, pResource.Get(), ResourceCpuSrv);
+		pGSRV = D3D12ResourceFactory::CreateShaderResourceView(srvDesc, pResource.Get(), pCSRV);
 
-		pRTV = D3D12Utils::CreateRenderTargetView(pResource.Get(), nullptr);
+		pRTV = D3D12ResourceFactory::CreateRenderTargetView(pResource.Get(), nullptr);
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
@@ -48,13 +48,10 @@ namespace Foundation
 	{}
 
 	void D3D12RenderTarget::Bind(GraphicsContext* context)
-	{
-		
-	}
+	{}
 
 	void D3D12RenderTarget::UnBind(GraphicsContext* context)
-	{
-	}
+	{}
 
 	void D3D12RenderTarget::OnResize(INT32 width, INT32 height)
 	{
@@ -67,34 +64,34 @@ namespace Foundation
 		}
 	}
 
-	UINT64 D3D12RenderTarget::GetWidth()
+	UINT64 D3D12RenderTarget::GetWidth() const
 	{
 		return Width;
 	}
 
-	UINT32 D3D12RenderTarget::GetHeight()
+	UINT32 D3D12RenderTarget::GetHeight() const
 	{
 		return Height;
 	}
 
-	UINT16 D3D12RenderTarget::GetDepth()
+	UINT16 D3D12RenderTarget::GetDepth() const
 	{
 		return 0;
 	}
 
-	TextureDimension D3D12RenderTarget::GetTextureDimension()
+	TextureDimension D3D12RenderTarget::GetTextureDimension() const
 	{
 		return static_cast<TextureDimension>(Dimension);
 	}
 
-	TextureFormat D3D12RenderTarget::GetTextureFormat()
+	TextureFormat D3D12RenderTarget::GetTextureFormat() const
 	{
 		return static_cast<TextureFormat>(Format);
 	}
 
-	UINT64 D3D12RenderTarget::GetTexture()
+	UINT64 D3D12RenderTarget::GetTexture() const
 	{
-		return ResourceSrv.ptr;
+		return pGSRV.ptr;
 	}
 
 	void D3D12RenderTarget::Destroy()
@@ -102,15 +99,12 @@ namespace Foundation
 		pResource.Reset();
 		
 	}
-
-	void D3D12RenderTarget::Copy(void* src)
-	{
-	}
+	
 	void D3D12RenderTarget::Regenerate()
 	{
 		pResource.Reset();
 
-		pResource = D3D12BufferUtilities::CreateRenderTexture(Width, Height, Format);
+		pResource = D3D12BufferFactory::CreateRenderTexture(Width, Height, Format);
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -118,8 +112,8 @@ namespace Foundation
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		D3D12Utils::RefreshShaderResourceViews(srvDesc, pResource.Get(), ResourceCpuSrv);
-		D3D12Utils::RefreshRenderTargetView(pResource.Get(), nullptr, pRTV);
+		D3D12ResourceFactory::RefreshShaderResourceViews(srvDesc, pResource.Get(), pCSRV);
+		D3D12ResourceFactory::RefreshRenderTargetView(pResource.Get(), nullptr, pRTV);
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;

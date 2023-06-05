@@ -376,15 +376,10 @@ namespace Foundation
 		}
 	}
 
-	
-
-
 	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
 	{
 		return RenderData.OpaqueRenderItems[index];
 	}
-
-
 
 	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{

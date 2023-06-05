@@ -9,6 +9,7 @@
 
 namespace Foundation
 {
+	struct RenderItem;
 	struct WorldSettings;
 	struct Transform;
 	struct MeshGeometry;
