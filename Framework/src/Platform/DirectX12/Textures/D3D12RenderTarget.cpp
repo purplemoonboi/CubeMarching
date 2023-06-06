@@ -4,7 +4,7 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	D3D12RenderTarget::D3D12RenderTarget(
 		const void* data, 
@@ -30,9 +30,15 @@ namespace Foundation
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		pGSRV = D3D12ResourceFactory::CreateShaderResourceView(srvDesc, pResource.Get(), pCSRV);
+		pSRV = CreateShaderResourceView(srvDesc, pResource.Get());
 
-		pRTV = D3D12ResourceFactory::CreateRenderTargetView(pResource.Get(), nullptr);
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.Format = Format;
+		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		rtvDesc.Texture2D.MipSlice = 0;
+		rtvDesc.Texture2D.PlaneSlice = 0;
+
+		pRTV = CreateRenderTargetView(&rtvDesc, pResource.Get());
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
@@ -91,7 +97,7 @@ namespace Foundation
 
 	UINT64 D3D12RenderTarget::GetTexture() const
 	{
-		return pGSRV.ptr;
+		return pSRV.GpuHandle.ptr;
 	}
 
 	void D3D12RenderTarget::Destroy()
@@ -112,8 +118,15 @@ namespace Foundation
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		D3D12ResourceFactory::RefreshShaderResourceViews(srvDesc, pResource.Get(), pCSRV);
-		D3D12ResourceFactory::RefreshRenderTargetView(pResource.Get(), nullptr, pRTV);
+		RefreshShaderResourceViews(&srvDesc, pSRV, pResource.Get());
+
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.Format = Format;
+		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		rtvDesc.Texture2D.MipSlice = 0;
+		rtvDesc.Texture2D.PlaneSlice = 0;
+
+		RefreshRenderTargetView(&rtvDesc, pRTV, pResource.Get());
 
 		Viewport.TopLeftX = 0;
 		Viewport.TopLeftY = 0;
@@ -123,7 +136,6 @@ namespace Foundation
 		Viewport.MaxDepth = 1.0f;
 
 		Rect = { 0, 0, Width, Height };
-
 
 		DirtyFlag = 0;
 	}

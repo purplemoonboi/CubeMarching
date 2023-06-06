@@ -3,7 +3,7 @@
 #include "MathHelper.h"
 #include "Framework/Renderer/Resources/RenderItems.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	using Microsoft::WRL::ComPtr;
 
@@ -14,7 +14,7 @@ namespace Foundation
 		D3D12RenderItem
 		(
 			MeshGeometry* geometry,
-			Foundation::Material* material,
+			class Material* material,
 			const std::string& drawArgs,
 			UINT constantBufferIndex,
 			Transform transform

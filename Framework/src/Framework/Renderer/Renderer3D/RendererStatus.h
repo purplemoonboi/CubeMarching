@@ -1,7 +1,7 @@
 #pragma once
 #include <intsafe.h>
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	//TODO: Make these more descriptive, add functionality for handling states.
 	enum class RendererStatus : UINT8

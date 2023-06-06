@@ -5,7 +5,7 @@
 #include "Framework/Core/Time/DeltaTime.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 
 

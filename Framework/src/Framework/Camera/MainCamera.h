@@ -2,12 +2,12 @@
 #include <DirectXMath.h>
 #include "../FDLuna/MathHelper.h"
 
-namespace Foundation
+
+
+using namespace DirectX;
+
+namespace Foundation::Graphics
 {
-
-	using namespace DirectX;
-
-	
 
 	class MainCamera
 	{

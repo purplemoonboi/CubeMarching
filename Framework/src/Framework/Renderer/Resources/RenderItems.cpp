@@ -1,17 +1,19 @@
 #include "RenderItems.h"
 #include "Framework/Renderer/Api/RendererAPI.h"
-#include "Framework/Renderer/Engine/Renderer.h"
+#include "Framework/Renderer/Renderer3D/Renderer.h"
 
 #include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
 
 using namespace DirectX;
 
-namespace Foundation
+namespace Foundation::Graphics
 {
+	using namespace D3D12;
+
 	ScopePointer<RenderItem> RenderItem::Create
 	(
-		Foundation::MeshGeometry* geometry,
-		Foundation::Material* material,
+		MeshGeometry* geometry,
+		class Material* material,
 		const std::string& drawArgs,
 		UINT constantBufferIndex,
 		Transform transform

@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Renderer/Resources/Light.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	using namespace DirectX;
 

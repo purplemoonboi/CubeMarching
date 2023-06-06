@@ -4,18 +4,17 @@
 #include "D3D12Context.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
+	class D3D12DescriptorHeap;
+
 	class D3D12PipelineStateObject;
 	class D3D12RootSignature;
-	struct WorldSettings;
-	struct ObjectConstant;
 
-	constexpr UINT GBufferTextureCount = 5;
+	constexpr UINT GBufferCount = 5;
 
 	class D3D12RenderingPipelines
 	{
@@ -24,13 +23,20 @@ namespace Foundation
 		DISABLE_COPY_AND_MOVE(D3D12RenderingPipelines);
 
 		void Insert(const std::string& name, D3D12PipelineStateObject* pso);
-		void Remove(const std::string& name);
+		void InsertStateObject(const std::string& name, ID3D12StateObject* pso);
 
-		D3D12PipelineStateObject* Get(const std::string& name) const { return pPipelines.at(name); }
+		void Remove(const std::string& name);
+		void RemoveStateObject(const std::string& name);
+
+	public:/*...Getters...*/
+
+		[[nodiscard]] D3D12PipelineStateObject* Get(const std::string& name) const { return pPipelineStates.at(name); }
+		[[nodiscard]] ID3D12StateObject* GetStateObject(const std::string& name) const { return pPipelineObjects.at(name); }
 
 	private:
-		std::unordered_map<std::string, D3D12PipelineStateObject*> pPipelines;
+		std::unordered_map<std::string, D3D12PipelineStateObject*> pPipelineStates;
 
+		std::unordered_map<std::string, ID3D12StateObject*> pPipelineObjects;
 	};
 
 
@@ -43,29 +49,31 @@ namespace Foundation
 
 		void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) override;
 		void Clean() override;
+
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
-		void DrawTerrainGeometry(PipelineStateObject* pso, RenderItem* terrain) override;
-		void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
-		void Flush() override;
+		[[nodiscard]] FrameBufferSpecifications GetViewportSpecifications() const override { return BufferSpecs; }
+
 		void PreInit() override;
 		void PostInit() override;
-		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override {}
-		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override {}
-		void PostRender() override;
-		void OnBeginRender() override;
-		void OnEndRender() override;
+
 		void BindPasses() override;
-		void PreRender
+
+		void OnPreBeginRender
 		(
-			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
-			RenderItem* terrain,
-			const WorldSettings& settings,
-			const MainCamera& camera,
-			float deltaTime,
-			float elapsedTime,
+			MainCamera* camera,
+			AppTimeManager* time,
+			const std::vector<RenderItem*>& items, 
+			const std::vector<Material*>& materials,
 			bool wireframe
 		) override;
+		void OnBeginRender() override;
+		void OnEndRender() override;
 
+		void Flush() override;
+
+		void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) override;
+		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override {}
+		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override {}
 
 		[[nodiscard]] GraphicsContext*			GetGraphicsContext()			const override	{ return Context; }
 		[[nodiscard]] MemoryManager*			GetMemoryManager()				const override	{ return nullptr; }
@@ -78,20 +86,26 @@ namespace Foundation
 
 	private:
 		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
-		
+		FrameBufferSpecifications BufferSpecs;
+
+		D3D12RenderingPipelines Pipeline;
 
 		// A pointer to the graphics context
-		D3D12Context* Context{ nullptr };
-		ScopePointer<D3D12ResourceBuffer>	UploadBuffer	{ nullptr };
-		ScopePointer<D3D12FrameBuffer>		FrameBuffer		{ nullptr };
-		ScopePointer<D3D12HeapManager>		HeapManager		{ nullptr };
+		Foundation::Graphics::D3D12::D3D12Context* Context{ nullptr };
+
+		ScopePointer<D3D12ResourceBuffer>		UploadBuffer		{ nullptr };
+		ScopePointer<D3D12FrameBuffer>			FrameBuffer			{ nullptr };
+		ScopePointer<D3D12RenderingPipelines>	RenderingPipelines	{ nullptr };
 
 		std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT> Frames{ nullptr };
-		UINT32 FrameIndex = 0;
 
-		std::array<ScopePointer<D3D12RenderTarget>, GBufferTextureCount> RenderTargets;
+		std::array<ScopePointer<D3D12RenderTarget>, GBufferCount> RenderTargets;
 
-		ComPtr<ID3D12RootSignature> RootSignature;
+		ComPtr<ID3D12RootSignature> pRootSignature;
+
+
+
+
 	};
 
 }

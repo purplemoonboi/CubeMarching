@@ -10,7 +10,7 @@
 #endif
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 
 	enum class ShaderType

@@ -2,7 +2,7 @@
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Platform/DirectX12/DirectX12.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	using Microsoft::WRL::ComPtr;
 

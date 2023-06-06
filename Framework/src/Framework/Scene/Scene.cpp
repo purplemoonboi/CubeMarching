@@ -1,5 +1,5 @@
 #include "Framework/cmpch.h"
-#include "Framework/Renderer/Engine/Renderer3D.h"
+#include "Framework/Renderer/Renderer3D/Renderer3D.h"
 
 #include "Scene.h"
 #include "Components.h"
@@ -54,10 +54,10 @@ namespace Foundation
 	{
 	}
 
-	void Scene::OnUpdate(const float deltaTime, const float elapsedTime)
+	void Scene::OnUpdate(AppTimeManager* time)
 	{
-
 		/** process scripts and entities */
+
 		SceneCamera->Update();
 
 
@@ -73,47 +73,52 @@ namespace Foundation
 						nsc.Instance->OnCreate();
 					}
 
-					nsc.Instance->OnUpdate(deltaTime);
+					nsc.Instance->OnUpdate(time->DeltaTime());
 				});
 		}
 
 		//Get the active camera.
 		MainCamera* camera = nullptr;
 		XMMATRIX camTransform;
+		
+		auto group = Registry.view<TransformComponent, CameraComponent>();
+		for (auto entity : group)
 		{
-			auto group = Registry.view<TransformComponent, CameraComponent>();
-			for (auto entity : group)
+			auto [transform, camComponent] = group.get<TransformComponent, CameraComponent>(entity);
+			if (camComponent.Primary)
 			{
-				auto [transform, camComponent] = group.get<TransformComponent, CameraComponent>(entity);
-				if (camComponent.Primary)
-				{
-					camera = &camComponent.Camera;
-					camTransform = transform.GetTransform();
-					break;
-				}
+				camera = &camComponent.Camera;
+				camTransform = transform.GetTransform();
+				break;
 			}
 		}
-
-
-
-		//Render Scene
-		if (camera != nullptr)
-		{
-			
-		}
-
+		
 
 	}
 
-	void Scene::OnRender(const float deltaTime, const float elapsedTime, const WorldSettings& settings, bool wireframe) const
+	void Scene::OnRender(AppTimeManager* time, bool wireframe)
 	{
-		/** process drawing instructions */
+		//TODO: Implement camera component properly.
+		/**
+			MainCamera* camera = nullptr;
+			auto group = Registry.view<CameraComponent>();
 
-		Renderer3D::BeginScene(*SceneCamera, settings, deltaTime, wireframe, elapsedTime);
+			for(auto entity : group)
+			{
+				auto cameraComponent = group.get<CameraComponent>(entity);
 
+				if(cameraComponent.Primary)
+				{
+					camera = &cameraComponent.Camera;
+					
+				}
+			}
+		*/
+		Renderer3D::BeginScene(SceneCamera, time, wireframe);
 
 		
 
 		Renderer3D::EndScene();
+
 	}
 }

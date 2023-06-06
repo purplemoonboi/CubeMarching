@@ -1,7 +1,7 @@
 #include "Framework/cmpch.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	D3D12FrameResource::~D3D12FrameResource()
 	{
@@ -10,7 +10,7 @@ namespace Foundation
 
 	
 
-	D3D12FrameResource::D3D12FrameResource(GraphicsContext* graphicsContext, 
+	D3D12FrameResource::D3D12FrameResource(ID3D12Device* device,
 	                                       UINT passCount, 
 	                                       UINT materialBufferCount, 
 	                                       UINT objectCount,
@@ -18,20 +18,19 @@ namespace Foundation
 
 	)
 	{
-		const auto d3d12Context = dynamic_cast<D3D12Context*>(graphicsContext);
 
 		
 		/**
 		 * Create a command allocator for this resource.
 		 */
-		HRESULT hr = d3d12Context->pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+		HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(pCmdAlloc.GetAddressOf()));
 		THROW_ON_FAILURE(hr);
 
 		/**
 		 * Create a graphics command list for this resource.
 		 */
-		hr = d3d12Context->pDevice->CreateCommandList(0,
+		hr = device->CreateCommandList(0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			pCmdAlloc.Get(),
 			nullptr,
@@ -46,10 +45,10 @@ namespace Foundation
 		/**
 		 * Create buffers for this resource
 		 */
-		PassBuffer		= CreateScope<D3D12UploadBuffer<PassConstants>>(d3d12Context, passCount, true);
-		MaterialBuffer  = CreateScope<D3D12UploadBuffer<MaterialConstants>>(d3d12Context, materialBufferCount, true);
-		ConstantBuffer	= CreateScope<D3D12UploadBuffer<ObjectConstant>>(d3d12Context, objectCount, true);
-		TerrainBuffer   = CreateScope<D3D12UploadBuffer<Vertex>>(d3d12Context,voxelBufferElementCount, false);
+		PassBuffer		= CreateScope<D3D12UploadBuffer<PassConstants>>(device, passCount, true);
+		MaterialBuffer  = CreateScope<D3D12UploadBuffer<MaterialConstants>>(device, materialBufferCount, true);
+		ConstantBuffer	= CreateScope<D3D12UploadBuffer<ObjectConstant>>(device, objectCount, true);
+		TerrainBuffer   = CreateScope<D3D12UploadBuffer<Vertex>>(device,voxelBufferElementCount, false);
 
 		//RenderTarget = CreateScope<D3D12RenderTarget>(nullptr, 1920, 1080);
 	}

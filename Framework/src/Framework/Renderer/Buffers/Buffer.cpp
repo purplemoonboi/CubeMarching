@@ -6,16 +6,16 @@
 
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
+	using namespace D3D12;
+
 	ScopePointer<VertexBuffer> VertexBuffer::Create(UINT size, UINT vertexCount)
 	{
 		switch (RendererAPI::GetAPI())
 		{
 		case RendererAPI::Api::None:   CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
-		case RendererAPI::Api::OpenGL: CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:   CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX12:   return CreateScope<D3D12VertexBuffer>(size, vertexCount);
 		}
 
@@ -28,9 +28,7 @@ namespace Foundation
 		switch (RendererAPI::GetAPI())
 		{
 		case RendererAPI::Api::None:		CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
-		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX12:   return CreateScope<D3D12VertexBuffer>(vertices, size, vertexCount, isDynamic);
 		}
 
@@ -45,9 +43,7 @@ namespace Foundation
 		switch (RendererAPI::GetAPI())
 		{
 		case RendererAPI::Api::None:		CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
-		case RendererAPI::Api::OpenGL:		CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:		CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX12:   return CreateScope<D3D12IndexBuffer>(indices, size, indexCount);
 		}
 

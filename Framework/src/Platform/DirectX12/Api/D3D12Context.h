@@ -1,14 +1,9 @@
 #pragma once
-#include "../DirectX12.h"
 #include "Framework/Renderer/Api/GraphicsContext.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
-using Microsoft::WRL::ComPtr;
-
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
-	class D3D12HeapManager;
-	constexpr INT32 FRAMES_IN_FLIGHT = 1;
-
 
 	class D3D12Context : public GraphicsContext
 	{
@@ -23,12 +18,9 @@ namespace Foundation
 		void SwapBuffers() override{}
 		void FlushCommandQueue();
 		void ExecuteGraphicsCommandList() const;
-		void SignalGPU() const;
 
-		ComPtr<ID3D12Device>				pDevice;
 		ComPtr<IDXGISwapChain>				pSwapChain;
-		ComPtr<IDXGIFactory4>				pDXGIFactory4;
-		ComPtr<ID3D12GraphicsCommandList>	pGCL;
+		ComPtr<ID3D12GraphicsCommandList4>	pGCL;
 		ComPtr<ID3D12CommandQueue>			pQueue;
 		ComPtr<ID3D12CommandAllocator>		pCmdAlloc;
 		ComPtr<ID3D12Fence>					pFence;

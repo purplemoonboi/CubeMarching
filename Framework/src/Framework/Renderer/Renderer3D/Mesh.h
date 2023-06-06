@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include "Framework/Renderer/Buffers/Buffer.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	// Defines a sub-range of geometry in a MeshGeometry.  This is for when multiple
 	// geometries are stored in one vertex and index buffer.  It provides the offsets
@@ -18,13 +18,12 @@ namespace Foundation
 
 		// Bounding box of the geometry defined by this submesh. 
 		// This is used in later chapters of the book.
-		//DirectX::BoundingBox Bounds;
+		DirectX::BoundingBox Bounds;
 	};
 
 
 	struct MeshGeometry
 	{
-
 		MeshGeometry(const std::string& name)
 			:
 			Name(name)

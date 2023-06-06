@@ -1,6 +1,4 @@
 #include "D3D12Context.h"
-#include "Platform/DirectX12/_D3D12ConstantExpressions/D3D12ConstantExpressions.h"
-
 #include "Framework/Core/Log/Log.h"
 
 #include <filesystem>
@@ -8,9 +6,9 @@
 
 
 
-namespace Foundation
-{
 
+namespace Foundation::Graphics::D3D12
+{
 
 	D3D12Context::D3D12Context
 	(
@@ -50,19 +48,16 @@ namespace Foundation
 
 	void D3D12Context::Init()
 	{
-
-
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 		{
 			DebugController->EnableDebugLayer();
 		}
-		
-		
+
 		CreateDevice();
-		CheckMSAAQualityAndCache();
-		LogAdapters();
 		CreateCommandObjects();
 		CreateSwapChain();
+		CheckMSAAQualityAndCache();
+		LogAdapters();
 
 		pDevice->SetName(L"GPU Device");
 		pQueue->SetName(L"Graphics Queue");
@@ -71,9 +66,7 @@ namespace Foundation
 	}
 
 	void D3D12Context::Clean()
-	{
-
-	}
+	{}
 
 	void D3D12Context::FlushCommandQueue()
 	{
@@ -92,16 +85,10 @@ namespace Foundation
 		}
 	}
 
-
 	void D3D12Context::ExecuteGraphicsCommandList() const
 	{
 		ID3D12CommandList* cmdsLists[] = { pGCL.Get() };
 		pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	}
-
-	void D3D12Context::SignalGPU() const
-	{
-		pQueue->Signal(pFence.Get(), SyncCounter);
 	}
 
 	void D3D12Context::CreateDevice()
@@ -135,30 +122,32 @@ namespace Foundation
 		THROW_ON_FAILURE(hr);
 	}
 
-
 	void D3D12Context::CreateCommandObjects()
 	{
+		HRESULT hr{ S_OK };
 		//Create the command queue description
 		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 
 		//Now we can create the command queue
-		HRESULT qDescResult = pDevice->CreateCommandQueue
+		hr = pDevice->CreateCommandQueue
 		(
 			&queueDesc,
 			IID_PPV_ARGS(&pQueue)
 		);
+		THROW_ON_FAILURE(hr);
 
 		//Create the command allocator 
-		HRESULT cmdQueueAllocResult = pDevice->CreateCommandAllocator
+		hr = pDevice->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(pCmdAlloc.GetAddressOf())
 		);
+		THROW_ON_FAILURE(hr);
 
 		//Create the direct command queue
-		HRESULT cmdListResult = pDevice->CreateCommandList
+		hr = pDevice->CreateCommandList
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -166,10 +155,8 @@ namespace Foundation
 			nullptr,
 			IID_PPV_ARGS(pGCL.GetAddressOf())
 		);
+		THROW_ON_FAILURE(hr);
 
-		//Now close the list. When we first use the command list
-		//we'll need to reset it, for this to happen, the list must
-		//be in a closed state.
 		pGCL->Close();
 
 	}

@@ -19,7 +19,7 @@
 
 #include "IsoSurface/MarchingCubes.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 
 	Renderer3D::VoxelWorldRenderingStats Renderer3D::VoxelStats;
@@ -160,7 +160,7 @@ namespace Foundation
 	void Renderer3D::Shutdown()
 	{}
 
-	void Renderer3D::BeginScene(const MainCamera& cam, const WorldSettings& settings, const float deltaTime, bool wireframe, const float elapsedTime)
+	void Renderer3D::BeginScene(MainCamera* camera, AppTimeManager* time, bool wireframe)
 	{
 		
 		/*
@@ -173,19 +173,13 @@ namespace Foundation
 
 		RenderInstruction::PreRender
 		(
+			camera,
+			time,
 			RenderData.OpaqueRenderItems,
 			RenderData.Materials,
-			RenderData.Terrain.get(),
-			cam,
-			settings,
-			deltaTime,
-			elapsedTime,
 			wireframe
 		);
 
-
-		
-		RenderInstruction::BindTerrainPass(tpso, RenderData.Terrain.get());
 
 		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}
@@ -195,11 +189,7 @@ namespace Foundation
 		/**
 		 *	Render the scene geometry to the scene
 		 */
-		
-		//ProfileStats.MCDrawCalls = 1;
 		RenderInstruction::Flush();
-		RenderInstruction::PostRender();
-		
 	}
 
 	void Renderer3D::BuildMaterials()

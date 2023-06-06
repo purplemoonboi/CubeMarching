@@ -2,7 +2,7 @@
 #include "Framework/Core/Core.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 
 	// @brief Base class for the graphics context class.

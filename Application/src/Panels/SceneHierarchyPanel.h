@@ -4,7 +4,7 @@
 #include "Framework/Scene/Entity.h"
 #include "Framework/Scene/Components.h"
 
-namespace Editor
+namespace Foundation::Editor
 {
 	class SceneHierarchyPanel
 	{

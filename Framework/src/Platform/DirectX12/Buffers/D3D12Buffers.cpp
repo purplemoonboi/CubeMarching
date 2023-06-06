@@ -10,9 +10,12 @@
 
 #include <ppl.h>
 
-namespace Foundation
+#include "Framework/Core/Time/AppTimeManager.h"
+
+using namespace DirectX;
+
+namespace Foundation::Graphics::D3D12
 {
-	using namespace DirectX;
 
 	D3D12VertexBuffer::D3D12VertexBuffer(UINT64 size, UINT vertexCount)
 		:
@@ -241,6 +244,7 @@ namespace Foundation
 		return ibv;
 	}
 
+	/*
 	D3D12ResourceBuffer::D3D12ResourceBuffer
 	(
 		ID3D12Device* device,
@@ -249,7 +253,6 @@ namespace Foundation
 		UINT renderItemsCount
 	)
 	{
-		/**	cast to appropriate api implementation */
 
 		const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
@@ -321,20 +324,18 @@ namespace Foundation
 		}
 	}
 
-
+	*/
 	void D3D12ResourceBuffer::UpdatePassBuffer
 	(
 		D3D12FrameResource* resource,
-		const WorldSettings& settings,
-		const MainCamera& camera, 
-		const float deltaTime, 
-		const float elapsedTime, 
+		const MainCamera* camera,
+		AppTimeManager* time,
 		bool wireframe
 	)
 	{
 
-		const XMMATRIX view = XMLoadFloat4x4(&camera.GetView());
-		const XMMATRIX proj = XMLoadFloat4x4(&camera.GetProjection());
+		const XMMATRIX view = XMLoadFloat4x4(&camera->GetView());
+		const XMMATRIX proj = XMLoadFloat4x4(&camera->GetProjection());
 
 		const XMMATRIX viewProj	    = XMMatrixMultiply(view, proj);
 		const XMMATRIX invView		= XMMatrixInverse(&XMMatrixDeterminant(view), view);
@@ -348,20 +349,20 @@ namespace Foundation
 		XMStoreFloat4x4(&MainPassCB.ViewProj,		XMMatrixTranspose(viewProj));
 		XMStoreFloat4x4(&MainPassCB.InvViewProj,	XMMatrixTranspose(invViewProj));
 
-		MainPassCB.EyePosW = camera.GetPosition();
-		MainPassCB.RenderTargetSize	= XMFLOAT2((float)camera.GetBufferDimensions().x, (float)camera.GetBufferDimensions().y);
-		MainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / camera.GetBufferDimensions().x, 1.0f / camera.GetBufferDimensions().y);
+		MainPassCB.EyePosW = camera->GetPosition();
+		MainPassCB.RenderTargetSize	= XMFLOAT2((float)camera->GetBufferDimensions().x, (float)camera->GetBufferDimensions().y);
+		MainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / camera->GetBufferDimensions().x, 1.0f / camera->GetBufferDimensions().y);
 		MainPassCB.NearZ = 1.0f;
 		MainPassCB.FarZ = 1000.0f;
-		MainPassCB.AmbientLight = { settings.SunColour[0], settings.SunColour[1], settings.SunColour[2], settings.SunColour[3] };
-		MainPassCB.Lights[0].Direction = { settings.SunDirection[0], settings.SunDirection[1], settings.SunDirection[2] };
+		MainPassCB.AmbientLight = { 1.f, 1.f, 1.f, 1.f };
+		MainPassCB.Lights[0].Direction = { 0.f, -1.0f, 0.6f };
 		MainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
 		MainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 		MainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
 		MainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
 		MainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
-		MainPassCB.TotalTime = elapsedTime;
-		MainPassCB.DeltaTime = deltaTime;
+		MainPassCB.TotalTime = time->TimeElapsed();
+		MainPassCB.DeltaTime = time->DeltaTime();
 
 		const auto currentPassCB = resource->PassBuffer.get();
 		currentPassCB->CopyData(0, MainPassCB);

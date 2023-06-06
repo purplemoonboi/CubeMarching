@@ -1,6 +1,6 @@
 #pragma once
 #include "Framework/Core/Core.h"
-#include "Platform/DirectX12/_D3D12ConstantExpressions/D3D12ConstantExpressions.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 #include "Framework/Renderer/Buffers/FrameBuffer.h"
 
@@ -8,12 +8,11 @@
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
-	class D3D12Texture;
 	using Microsoft::WRL::ComPtr;
 
-
+	class D3D12Texture;
 	class D3D12Context;
 
 	class D3D12FrameBuffer : public FrameBuffer

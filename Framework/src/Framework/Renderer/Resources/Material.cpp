@@ -4,7 +4,7 @@
 
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	ScopePointer<Material> Material::Create(std::string&& name)
 	{
@@ -14,7 +14,7 @@ namespace Foundation
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Material>(std::move(name));
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12::D3D12Material>(std::move(name));
 		}
 
 		CORE_ASSERT(false, "Unknown renderer RendererAPI!");

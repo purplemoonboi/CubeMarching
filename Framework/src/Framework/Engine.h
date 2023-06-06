@@ -16,10 +16,16 @@
 #include "Core/Input/MouseButtonCodes.h"
 
 /** rendering */
-#include "Renderer/Engine/RenderInstruction.h"
-#include "Renderer/Engine/Renderer3D.h"
+#include "Framework/Renderer/Api/RendererAPI.h"
+#include "Renderer/Renderer3D/RenderInstruction.h"
+#include "Renderer/Renderer3D/Renderer3D.h"
 #include "Renderer/Resources/Shader.h"
 #include "Renderer/Buffers/FrameBuffer.h"
+
+/** events */
+#include <Framework/Core/Events/MouseEvent.h>
+#include <Framework/Core/Events/AppEvents.h>
+#include <Framework/Core/Events/KeyEvent.h>
 
 /** components */
 //#include "Camera/MainCamera.h"

@@ -1,12 +1,10 @@
 #pragma once
 #include <Framework/Renderer/Textures/RenderTarget.h>
+#include "Platform/DirectX12/Heap/D3D12HeapManager.h"
 
-#include "Platform/DirectX12/DirectX12.h"
 
-
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
-	using Microsoft::WRL::ComPtr;
 
 	class D3D12RenderTarget : public RenderTarget
 	{
@@ -41,9 +39,10 @@ namespace Foundation
 		D3D12_RECT Rect;
 		D3D12_VIEWPORT Viewport;
 
-		CD3DX12_GPU_DESCRIPTOR_HANDLE pGSRV;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE pCSRV;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE pRTV;
+		D3D12DescriptorHandle pSRV;
+		D3D12DescriptorHandle pUAV;
+		D3D12DescriptorHandle pRTV;
+
 	private:
 
 		INT32 Width;

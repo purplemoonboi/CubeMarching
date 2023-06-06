@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Renderer/Textures/Texture.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	class RenderTarget : public Texture
 	{

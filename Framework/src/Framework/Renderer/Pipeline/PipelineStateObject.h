@@ -7,9 +7,13 @@
 
 #include "Framework/Renderer/Resources/Shader.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
-	class ComputeApi;
+	namespace Compute
+	{
+		class ComputeApi;
+	}
+
 	class BufferLayout;
 	class Shader;
 	class GraphicsContext;
@@ -99,7 +103,7 @@ namespace Foundation
 
 		static ScopePointer<PipelineStateObject> Create
 		(
-			ComputeApi* computeContext,
+			Compute::ComputeApi* computeContext,
 			Shader* computeShader,
 			Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature
 		);

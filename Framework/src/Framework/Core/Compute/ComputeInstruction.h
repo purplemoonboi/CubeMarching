@@ -3,7 +3,7 @@
 
 #include "ComputeApi.h"
 
-namespace Foundation
+namespace Foundation::Compute
 {
 	class ComputeInstruction
 	{

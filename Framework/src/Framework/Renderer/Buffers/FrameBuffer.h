@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Core/core.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	class GraphicsContext;
 

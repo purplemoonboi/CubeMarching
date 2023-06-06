@@ -6,7 +6,7 @@
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	
 
@@ -14,9 +14,9 @@ namespace Foundation
 	{
 	public:
 
-		static void Init(D3D12Context* context)
+		static void Init(ID3D12GraphicsCommandList4* pCmd)
 		{
-			Context = context;
+			pGCL = pCmd;
 		}
 
 		static HRESULT LoadTexture2DFromFile
@@ -27,15 +27,15 @@ namespace Foundation
 		)
 		{
 			const HRESULT hr = DirectX::CreateDDSTextureFromFile12(
-				Context->pDevice.Get(), 
-				Context->pGCL.Get(), 
+				pDevice.Get(), 
+				pGCL, 
 				fileName.c_str(),
 				resource, uploadHeap
 			);
 			return hr;
 		}
 
-		static inline D3D12Context* Context = nullptr;
+		static inline ID3D12GraphicsCommandList4* pGCL{ nullptr };
 
 	};
 }

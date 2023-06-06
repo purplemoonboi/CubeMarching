@@ -2,15 +2,12 @@
 
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
+#include "Platform/DirectX12/Heap/D3D12HeapManager.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-
-#include "Platform/DirectX12/Copy/D3D12CopyContext.h"
-
 #include "Loader/D3D12TextureLoader.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 
 	D3D12Texture::~D3D12Texture()
@@ -65,6 +62,9 @@ namespace Foundation
 		desc.Texture3D.MipLevels = MipLevels;
 		desc.Texture3D.MostDetailedMip = 0;
 
+		pSRV = CreateShaderResourceView(desc, GpuResource.Get());
+
+
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.Format = Format;
 		uavDesc.ViewDimension = DimensionUav;
@@ -72,8 +72,7 @@ namespace Foundation
 		uavDesc.Texture3D.FirstWSlice = 0;
 		uavDesc.Texture3D.WSize = Depth;
 
-		GpuHandleSrv = D3D12ResourceFactory::CreateShaderResourceView(desc, GpuResource.Get());
-		GpuHandleUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
+		pUAV = CreateUnorderedAccessView(uavDesc, GpuResource.Get());
 		
 	}
 
@@ -115,14 +114,15 @@ namespace Foundation
 		desc.Texture2D.MipLevels = MipLevels;
 		desc.Texture2D.MostDetailedMip = 0;
 
+		pSRV = CreateShaderResourceView(desc, GpuResource.Get());
+
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.Format = Format;
 		uavDesc.ViewDimension = DimensionUav;
 		uavDesc.Texture2D.MipSlice = 0;
 		uavDesc.Texture2D.PlaneSlice = 0;
 
-		GpuHandleSrv = D3D12ResourceFactory::CreateShaderResourceView(desc, GpuResource.Get());
-		GpuHandleUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc, GpuResource.Get());
+		pUAV = CreateUnorderedAccessView(uavDesc, GpuResource.Get());
 	}
 
 	D3D12Texture::D3D12Texture(const std::wstring& fileName, const std::string& name)
@@ -156,7 +156,7 @@ namespace Foundation
 		srvDesc.Texture2D.MipLevels = 3;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-		GpuHandleSrv = D3D12ResourceFactory::CreateShaderResourceView(srvDesc, GpuResource.Get());
+		pSRV = CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
 	void D3D12Texture::LoadFromFile(const std::wstring& fileName, const std::string& name)
@@ -196,7 +196,7 @@ namespace Foundation
 		srvDesc.Texture2D.MipLevels = GpuResource->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-		D3D12ResourceFactory::CreateShaderResourceView(srvDesc, GpuResource.Get());
+		pSRV = CreateShaderResourceView(srvDesc, GpuResource.Get());
 	}
 
 	void D3D12Texture::Destroy()
@@ -224,7 +224,7 @@ namespace Foundation
 
 	UINT64 D3D12Texture::GetTexture() const
 	{
-		return GpuHandleSrv.ptr;
+		return pSRV.CpuHandle.ptr;
 	}
 
 	TextureDimension D3D12Texture::GetTextureDimension() const

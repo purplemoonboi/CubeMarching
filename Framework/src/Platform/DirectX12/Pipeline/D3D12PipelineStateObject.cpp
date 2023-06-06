@@ -5,7 +5,7 @@
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 
 	D3D12PipelineStateObject::~D3D12PipelineStateObject()
@@ -17,7 +17,7 @@ namespace Foundation
 	{
 
 		CORE_ASSERT(context, "Failed to cast graphics context into DirectX 12 context...");
-		InitialiseRoot(context->pDevice.Get(), args);
+		InitialiseRoot(pDevice.Get(), args);
 
 		/** pso description */
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
@@ -81,7 +81,7 @@ namespace Foundation
 		psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 		HRESULT hr = S_OK;
-		hr = context->pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
+		hr = pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
 		THROW_ON_FAILURE(hr);
 	}
 
@@ -151,21 +151,21 @@ namespace Foundation
 
 
 		HRESULT creationResult = S_OK;
-		creationResult  = graphicsContext->pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
+		creationResult  = pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&Pso));
 		THROW_ON_FAILURE(creationResult);
 	}
 
 	D3D12PipelineStateObject::D3D12PipelineStateObject
 	(
-		ComputeApi* computeContext, 
+		Compute::ComputeApi* computeContext, 
 		Shader* computeShader,
 		ComPtr<ID3D12RootSignature> rootSignature
 
 	)
 	{
 
-		const auto d3d12Shader = dynamic_cast<D3D12Shader*>(computeShader);
-		const auto d3d12ComputeApi = dynamic_cast<D3D12ComputeApi*>(computeContext);
+		/*const auto d3d12Shader = dynamic_cast<D3D12Shader*>(computeShader);
+		const auto d3d12ComputeApi = dynamic_cast<Foundation::Compute::D3D12::D3D12ComputeApi*>(computeContext);
 
 		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
 		desc.pRootSignature = rootSignature.Get();
@@ -177,12 +177,12 @@ namespace Foundation
 		};
 		desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
-		const HRESULT csPipelineState = d3d12ComputeApi->Context->pDevice->CreateComputePipelineState
+		const HRESULT csPipelineState = pDevice->CreateComputePipelineState
 		(
 			&desc,
 			IID_PPV_ARGS(&Pso)
 		);
-		THROW_ON_FAILURE(csPipelineState);
+		THROW_ON_FAILURE(csPipelineState);*/
 		
 	}
 

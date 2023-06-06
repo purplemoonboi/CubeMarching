@@ -1,7 +1,7 @@
 #include "D3D12Shader.h"
 #include "Framework/Core/Log/Log.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 
 

@@ -2,7 +2,7 @@
 #include "Framework/Core/Core.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	class D3D12VertexArray : public VertexArray
 	{

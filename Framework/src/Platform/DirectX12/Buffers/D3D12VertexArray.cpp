@@ -1,6 +1,6 @@
-#include "DX12VertexArray.h"
+#include "D3D12VertexArray.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	D3D12VertexArray::D3D12VertexArray()
 	{

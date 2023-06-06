@@ -5,7 +5,7 @@
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Core/Log/Log.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	D3D12FrameBuffer::D3D12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs)
 		:

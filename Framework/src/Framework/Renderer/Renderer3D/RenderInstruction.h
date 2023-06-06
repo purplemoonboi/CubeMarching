@@ -1,7 +1,8 @@
 #pragma once
 #include "Framework/Renderer/Api/RendererAPI.h"
+#include "Framework/Core/Time/AppTimeManager.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 
 
@@ -35,10 +36,7 @@ namespace Foundation
 		}
 
 	public:/*...Bindings...*/
-		static void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
-		{
-			RendererApiPtr->DrawTerrainGeometry(pso, terrain);
-		}
+		
 
 		static void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 		{
@@ -60,24 +58,14 @@ namespace Foundation
 			RendererApiPtr->Flush();
 		}
 
-		static void PreRender
-		(
+		static void PreRender(MainCamera* camera, AppTimeManager* time,
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
-			RenderItem* terrain,
-			const MainCamera& camera,
-			const WorldSettings& settings,
-			float deltaTime,
-			float elapsedTime,
 			bool wireframe
 		)
 		{
-			RendererApiPtr->PreRender(items, materials, terrain, settings, camera, deltaTime, elapsedTime, wireframe);
+			RendererApiPtr->OnPreBeginRender(camera, time, items, materials, wireframe);
 		}
 
-		static void PostRender()
-		{
-			RendererApiPtr->PostRender();
-		}
 
 		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
 		{

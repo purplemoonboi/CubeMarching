@@ -5,7 +5,7 @@
 #include "Framework/Core/core.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	class MemoryManager;
 	class GraphicsContext;

@@ -8,7 +8,7 @@
 #include "Framework/Core/Core.h"
 #include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Camera/MainCamera.h"
-#include "Framework/Renderer/Engine/Mesh.h"
+#include "Framework/Renderer/Renderer3D/Mesh.h"
 #include "Framework/Renderer/Textures/Texture.h"
 
 namespace Foundation
@@ -64,7 +64,7 @@ namespace Foundation
 
 	struct CameraComponent
 	{
-		MainCamera Camera;
+		Graphics::MainCamera Camera;
 		bool Primary = true;
 		bool FixedAspectRatio = false;
 
@@ -75,10 +75,8 @@ namespace Foundation
 	struct MeshComponent
 	{
 		MeshComponent() = default;
-		
-
 		bool WireFrame = false;
-		MeshGeometry* Mesh;
+		Graphics::MeshGeometry* Mesh;
 	};
 
 	//Forward Declarations

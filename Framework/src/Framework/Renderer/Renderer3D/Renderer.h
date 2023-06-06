@@ -4,7 +4,7 @@
 #include "Framework/Renderer/Api/RendererAPI.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 
 	class Renderer

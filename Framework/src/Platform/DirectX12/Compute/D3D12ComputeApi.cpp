@@ -1,12 +1,14 @@
 #include "D3D12ComputeApi.h"
+#include "Framework/Core/Log/Log.h"
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
-#include "Framework/Core/Log/Log.h"
 
 
-namespace Foundation
+namespace Foundation::Compute::D3D12
 {
+	using namespace Graphics::D3D12;
+
 	D3D12ComputeFrameResource::D3D12ComputeFrameResource(ID3D12Device* device)
 	{
 
@@ -31,17 +33,17 @@ namespace Foundation
 
 	void D3D12ComputeApi::Init(GraphicsContext* context)
 	{
-		Context = dynamic_cast<D3D12Context*>(context);
+		HRESULT hr{ S_OK };
 
 		FenceValue = 0;
 
-		const HRESULT fenceResult = Context->pDevice->CreateFence
+		hr = pDevice->CreateFence
 		(
 			0,
 			D3D12_FENCE_FLAG_NONE,
 			IID_PPV_ARGS(&Fence)
 		);
-		THROW_ON_FAILURE(fenceResult);
+		THROW_ON_FAILURE(hr);
 
 		D3D12_COMMAND_QUEUE_DESC desc = {};
 		desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -49,32 +51,32 @@ namespace Foundation
 		desc.Priority = 0;
 		desc.NodeMask = 0;
 
-		const HRESULT queueResult = Context->pDevice->CreateCommandQueue(
+		hr = pDevice->CreateCommandQueue(
 			&desc,
 			IID_PPV_ARGS(Queue.GetAddressOf()));
-		THROW_ON_FAILURE(queueResult);
+		THROW_ON_FAILURE(hr);
 
-		const HRESULT cmdAllocResult = Context->pDevice->CreateCommandAllocator(
+		hr = pDevice->CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE_COMPUTE,
 			IID_PPV_ARGS(CommandAllocator.GetAddressOf()
 			));
-		THROW_ON_FAILURE(cmdAllocResult);
+		THROW_ON_FAILURE(hr);
 
-		const HRESULT cmdListResult = Context->pDevice->CreateCommandList(
+		hr = pDevice->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_COMPUTE,
 			CommandAllocator.Get(),
 			nullptr,
 			IID_PPV_ARGS(CommandList.GetAddressOf()));
-		THROW_ON_FAILURE(cmdListResult);
+		THROW_ON_FAILURE(hr);
 
 		for(INT32 i = 0; i < NUMBER_OF_CS_FRAMES_IN_FLIGHT;++i)
 		{
-			CsFrameResources[i] = CreateScope<D3D12ComputeFrameResource>(Context->pDevice.Get());
+			CsFrameResources[i] = CreateScope<D3D12ComputeFrameResource>(pDevice.Get());
 		}
 
-		const HRESULT closeResult = CommandList->Close();
-		THROW_ON_FAILURE(closeResult);
+		hr = CommandList->Close();
+		THROW_ON_FAILURE(hr);
 
 
 	}

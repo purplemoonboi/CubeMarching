@@ -2,7 +2,7 @@
 #include <intsafe.h>
 
 
-namespace Foundation
+namespace Foundation::Compute
 {
 	struct FrameResource;
 	class GraphicsContext;

@@ -6,13 +6,23 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include <array>
 
-namespace Foundation
+
+
+namespace Foundation::Graphics::D3D12
 {
+	class D3D12Context;
+}
+
+namespace Foundation::Compute::D3D12
+{
+
+
 
 	constexpr UINT NUMBER_OF_CS_FRAMES_IN_FLIGHT = 1;
 	struct D3D12FrameResource;
-	using Microsoft::WRL::ComPtr;
-	class D3D12Context;
+
+	
+	
 
 	struct D3D12ComputeFrameResource
 	{
@@ -42,7 +52,6 @@ namespace Foundation
 		void FlushComputeQueue(UINT64* fence) override;
 		void Wait(UINT64* fence) override;
 		void GlobalSignal(UINT64* fence) override;
-		D3D12Context* Context = nullptr;
 
 		std::array<ScopePointer<D3D12ComputeFrameResource>, NUMBER_OF_CS_FRAMES_IN_FLIGHT> CsFrameResources;
 		D3D12ComputeFrameResource* CurrentCSFrameResource = nullptr;

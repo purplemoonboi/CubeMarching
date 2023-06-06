@@ -2,12 +2,12 @@
 #include <intsafe.h>
 #include <DirectXCollision.h>
 
-#include "Framework/Renderer/Engine/Mesh.h"
+#include "Framework/Renderer/Renderer3D/Mesh.h"
 #include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Core/core.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Foundation
+namespace Foundation::Graphics
 {
 	struct Vertex;
 	class Texture;

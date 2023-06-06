@@ -3,9 +3,8 @@
 #include "Framework/Camera/MainCamera.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
-	class DeltaTime;
 
 	class GraphicsContext;
 	class RenderItem;

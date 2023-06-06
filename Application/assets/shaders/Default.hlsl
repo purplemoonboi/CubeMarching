@@ -19,13 +19,9 @@ struct VertexOut
 };
 
 
-
 //TextureCube IrradienceTexture : register(t4);
 //TextureCube SpecularTexture : register(t5);
 //Texture2D SpecularBRDF : register(t6);
-
-
-
 
 VertexOut VS(VertexIn vin)
 {

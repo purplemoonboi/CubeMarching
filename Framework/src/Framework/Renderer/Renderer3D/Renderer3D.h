@@ -4,13 +4,14 @@
 #include "GeometryGenerator.h"
 #include "Framework/Camera/MainCamera.h";
 #include "Framework/Core/core.h"
+#include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Renderer/Api/FrameResource.h"
 
 
-namespace Foundation
+namespace Foundation::Graphics
 {
+
 	struct RenderItem;
-	struct WorldSettings;
 	struct Transform;
 	struct MeshGeometry;
 	struct MCTriangle;
@@ -43,7 +44,7 @@ namespace Foundation
 
 		// @brief - Marks the start of rendering commands.
 		//		
-		static void BeginScene(const MainCamera& cam, const WorldSettings& settings, const float deltaTime, bool wireframe = false, const float elapsedTime = 0.0f);
+		static void BeginScene(MainCamera* camera, AppTimeManager* time, bool wireframe);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
@@ -70,7 +71,6 @@ namespace Foundation
 
 		static void SetBuffer(const std::string& renderItemTag, Vertex* vertices, UINT vCount, UINT16* indices, UINT iCount);
 
-		static void SetTerrainBuffer(UINT64* id, Vertex* vertices, UINT32 vCount, UINT16* indices, UINT32 iCount);
 
 		static RenderItem* GetRenderItem(UINT16 index);
 

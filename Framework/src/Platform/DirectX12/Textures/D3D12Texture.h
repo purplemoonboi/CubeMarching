@@ -1,15 +1,10 @@
 #pragma once
-#include "Platform/DirectX12/DirectX12.h"
 #include "Framework/Renderer/Textures/Texture.h"
+#include "Platform/DirectX12/Heap/D3D12HeapManager.h"
 
-#include <string>
 
-
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
-	class D3D12HeapManager;
-	using Microsoft::WRL::ComPtr;
-
 
 
 	class D3D12Texture : public Texture
@@ -54,6 +49,7 @@ namespace Foundation
 		[[nodiscard]] TextureDimension	GetTextureDimension()	const override;
 		[[nodiscard]] TextureFormat		GetTextureFormat()		const override;
 
+	private:
 		UINT64 Width;
 		UINT32 Height;
 		UINT16 Depth;
@@ -67,14 +63,13 @@ namespace Foundation
 		ComPtr<ID3D12Resource> UploadBuffer;
 		BYTE* RawData = nullptr;
 
-
+		D3D12DescriptorHandle pSRV;
+		D3D12DescriptorHandle pUAV;
 
 		D3D12_SRV_DIMENSION Dimension;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandleSrv;
 		INT32 SrvIndex = -1;
 
 		D3D12_UAV_DIMENSION DimensionUav;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandleUav;
 		INT32 UavIndex = -1;
 
 

@@ -3,7 +3,7 @@
 #include <../imgui/imgui.h>
 #include <../imgui/imgui_internal.h>
 
-namespace Editor
+namespace Foundation::Editor
 {
 	SceneHierarchyPanel::SceneHierarchyPanel(const Foundation::RefPointer<Foundation::Scene>& context)
 		:

@@ -3,7 +3,7 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	// Using namespace
 	using Microsoft::WRL::ComPtr;
@@ -13,7 +13,7 @@ namespace Foundation
 	{
 	public:
 
-		D3D12UploadBuffer(D3D12Context* graphicsContext, UINT elementCount, bool isConstantBuffer)
+		D3D12UploadBuffer(ID3D12Device* device, UINT elementCount, bool isConstantBuffer)
 			:
 			IsConstantBuffer(isConstantBuffer)
 		{
@@ -26,7 +26,7 @@ namespace Foundation
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			const HRESULT uploadResult = graphicsContext->pDevice->CreateCommittedResource
+			const HRESULT uploadResult = device->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,

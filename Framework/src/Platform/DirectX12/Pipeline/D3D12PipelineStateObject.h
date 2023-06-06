@@ -7,7 +7,7 @@
 
 #include "Platform/DirectX12/DirectX12.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	class D3D12Shader;
 	class ComputeApi;
@@ -40,7 +40,7 @@ namespace Foundation
 
 		D3D12PipelineStateObject
 		(
-			ComputeApi* computeContext,
+			Compute::ComputeApi* computeContext,
 			Shader* computeShader,
 			ComPtr<ID3D12RootSignature> rootSignature
 		);

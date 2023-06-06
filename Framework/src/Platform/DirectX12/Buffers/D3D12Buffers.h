@@ -2,21 +2,21 @@
 #include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Primitives/GeometryBuilder.h"
 
-#include <memory>
-#include "../DirectX12.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 #include "../Resources/D3D12FrameResource.h"
 #include "../RenderItems/D3D12RenderItem.h"
 
-#include "Platform/DirectX12/Allocator/D3D12HeapManager.h"
-
-
 namespace Foundation
 {
-	struct WorldSettings;
+	class AppTimeManager;
+}
 
-	// Using namespace
-	using Microsoft::WRL::ComPtr;
+// Using namespace
+using Microsoft::WRL::ComPtr;
+
+namespace Foundation::Graphics::D3D12
+{
 
 	class D3D12Context;
 
@@ -126,19 +126,10 @@ namespace Foundation
 	};
 
 
+
 	class D3D12ResourceBuffer 
 	{
 	public:
-
-
-		D3D12ResourceBuffer
-		(
-			ID3D12Device* device,
-			D3D12HeapManager* memoryManager,
-			const std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT>& frameResources,
-			UINT renderItemsCount
-		);
-
 		~D3D12ResourceBuffer()  = default;
 
 
@@ -146,10 +137,8 @@ namespace Foundation
 
 		void UpdatePassBuffer(
 			D3D12FrameResource* resource,
-			const WorldSettings& settings,
-			const MainCamera& camera, 
-			const float deltaTime, 
-			const float elapsedTime, 
+			const MainCamera* camera,
+			AppTimeManager* time,
 			bool wireframe
 		) ;
 

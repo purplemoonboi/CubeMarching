@@ -8,13 +8,13 @@
 #include "MathHelper.h"
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
     // Stores the resources needed for the CPU to build the command lists
 	// for a frame.  
     struct D3D12FrameResource
     {
-        D3D12FrameResource(GraphicsContext* graphicsContext, UINT passCount, UINT materialBufferCount, UINT objectCount, UINT voxelBufferElementCount);
+        D3D12FrameResource(ID3D12Device* device, UINT passCount, UINT materialBufferCount, UINT objectCount, UINT voxelBufferElementCount);
         GENERATE_COPY_AND_MOVE(D3D12FrameResource);
 
         

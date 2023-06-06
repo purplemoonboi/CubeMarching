@@ -1,23 +1,16 @@
 #pragma once
-#include <Framework/Scene/WorldSettings.h>
 #include <Framework/Engine.h>
-
-#include <Framework/Core/Time/DeltaTime.h>
-#include <Framework/Core/Events/MouseEvent.h>
-#include <Framework/Core/Events/AppEvents.h>
-#include <Framework/Core/Events/KeyEvent.h>
-
-
 
 #include "Panels/SceneHierarchyPanel.h"
 
 
-
-
-namespace Foundation
+namespace Foundation::Editor
 {
+	
+	using namespace Graphics;
+	
 
-	class EditorLayer : public Foundation::Layer
+	class EditorLayer : public Layer
 	{
 	public:
 		HMODULE GpuCaptureModule;
@@ -30,8 +23,8 @@ namespace Foundation
 		void OnAttach() override;
 		void OnDetach() override;
 
-		void OnUpdate(const DeltaTime& timer) override;
-		void OnRender(const DeltaTime& timer) override;
+		void OnUpdate(AppTimeManager* time) override;
+		void OnRender(AppTimeManager* time) override;
 		void OnImGuiRender() override;
 		void OnEvent(Event& event) override;
 
@@ -42,14 +35,11 @@ namespace Foundation
 		bool OnMouseMove(MouseMovedEvent& mEvent);
 
 	private:
-		WorldSettings Settings;
 
 		RendererAPI* Renderer = nullptr;
 
 	private:
-
-
-		Editor::SceneHierarchyPanel SceneHierarchy;
+		SceneHierarchyPanel SceneHierarchy;
 
 
 		bool IsViewportFocused;

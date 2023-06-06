@@ -1,11 +1,9 @@
 #pragma once
-#include "../DirectX12.h"
-#include "Framework/Core/Log/Log.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
-namespace Foundation
+
+namespace Foundation::Graphics::D3D12
 {
-
-	using Microsoft::WRL::ComPtr;
 
 	class D3D12BufferFactory
 	{
@@ -13,8 +11,7 @@ namespace Foundation
 
 		static void Init
 		(
-			ID3D12Device* device,
-			ID3D12GraphicsCommandList* graphicsCmdList
+			ID3D12GraphicsCommandList4* graphicsCmdList
 		);
 
 		// @brief Creates a default upload buffer.
@@ -75,7 +72,6 @@ namespace Foundation
 
 
 	private:
-		static ID3D12Device* Device;
-		static ID3D12GraphicsCommandList* pGCL;
+		static ID3D12GraphicsCommandList4* pGCL;
 	};
 }
