@@ -1,17 +1,53 @@
 #pragma once
 #include "Framework/Renderer/Resources/Light.h"
 
+using namespace DirectX;
+
+
 namespace Foundation::Graphics
 {
-	using namespace DirectX;
 
-	// Simple vertex buffer
 	struct Vertex
 	{
-		XMFLOAT3 Position	= {0,0,0};
-		XMFLOAT3 Normal		= {0,0,0};
-		XMFLOAT3 Tangent	= {0,0,0};
-		XMFLOAT2 TexCoords	= {0,0};
+		Vertex() {}
+		Vertex(
+			const DirectX::XMFLOAT3& p,
+			const DirectX::XMFLOAT3& n,
+			const DirectX::XMFLOAT3& t,
+			const DirectX::XMFLOAT2& uv) :
+			Position(p),
+			Normal(n),
+			TangentU(t),
+			TexC(uv) {}
+		Vertex(
+			float px, float py, float pz,
+			float nx, float ny, float nz,
+			float tx, float ty, float tz,
+			float u, float v) :
+			Position(px, py, pz),
+			Normal(nx, ny, nz),
+			TangentU(tx, ty, tz),
+			TexC(u, v) {}
+
+		XMFLOAT3 Position;
+		XMFLOAT3 Normal;
+		XMFLOAT3 TangentU;
+		XMFLOAT2 TexC;
+	};
+
+	struct Triangle
+	{
+		Triangle() = default;
+		Triangle(Vertex& va, Vertex& vb, Vertex& vc)
+			:
+			VertexA(va),
+			VertexB(vb),
+			VertexC(vc)
+		{}
+
+		Vertex VertexA;
+		Vertex VertexB;
+		Vertex VertexC;
 	};
 
 	struct PassConstants

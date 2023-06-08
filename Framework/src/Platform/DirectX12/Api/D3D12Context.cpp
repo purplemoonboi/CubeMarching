@@ -1,10 +1,7 @@
+#include "Framework/cmpch.h"
 #include "D3D12Context.h"
 #include "Framework/Core/Log/Log.h"
-
-#include <filesystem>
-#include <shlobj.h>
-
-
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 
 namespace Foundation::Graphics::D3D12
@@ -12,22 +9,18 @@ namespace Foundation::Graphics::D3D12
 
 	D3D12Context::D3D12Context
 	(
-		HWND windowHandle,
+		HWND hwnd,
 		INT32 swapChainBufferWidth,
 		INT32 swapChainBufferHeight
 	)
 		:
-		pWindowHandle(windowHandle),
+		pWindowHandle(hwnd),
 		SwapChainWidth(swapChainBufferWidth),
 		SwapChainHeight(swapChainBufferHeight)
 	{
 		CORE_ASSERT(pWindowHandle, "Window handle is null!");
 		D3D12Context::Init();
 	}
-
-	D3D12Context::D3D12Context(const D3D12Context& other)
-	{}
-
 
 	D3D12Context::~D3D12Context()
 	{

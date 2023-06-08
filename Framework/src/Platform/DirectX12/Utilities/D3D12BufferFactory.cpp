@@ -1,6 +1,8 @@
 #include "D3D12BufferFactory.h"
 
-#include "Framework/Core/Log/Log.h"
+#include <Framework/Core/Log/Log.h>
+
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 namespace Foundation::Graphics::D3D12
 {

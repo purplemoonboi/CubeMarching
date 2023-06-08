@@ -1,19 +1,20 @@
 #pragma once
 #include "../DirectX12.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Framework/Core/Log/Log.h"
+
+
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 namespace Foundation::Graphics::D3D12
 {
-	// Using namespace
-	using Microsoft::WRL::ComPtr;
 
 	template <typename T>
 	class D3D12UploadBuffer
 	{
 	public:
 
-		D3D12UploadBuffer(ID3D12Device* device, UINT elementCount, bool isConstantBuffer)
+		D3D12UploadBuffer(UINT elementCount, bool isConstantBuffer)
 			:
 			IsConstantBuffer(isConstantBuffer)
 		{
@@ -26,7 +27,7 @@ namespace Foundation::Graphics::D3D12
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			const HRESULT uploadResult = device->CreateCommittedResource
+			const HRESULT uploadResult = pDevice->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
@@ -73,7 +74,7 @@ namespace Foundation::Graphics::D3D12
 			pUpload.Reset();
 		}
 
-		void Create(const D3D12Context* context, UINT elementCount, bool isStatic)
+		void Create(UINT elementCount, bool isStatic)
 		{
 			ElementByteSize = sizeof(T);
 
@@ -82,7 +83,7 @@ namespace Foundation::Graphics::D3D12
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			THROW_ON_FAILURE(context->pDevice->CreateCommittedResource
+			THROW_ON_FAILURE(pDevice->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
@@ -97,8 +98,7 @@ namespace Foundation::Graphics::D3D12
 
 
 	public:/*...Getters...*/
-		[[nodiscard]]
-		ID3D12Resource* Resource() const { return pUpload.Get(); }
+		[[nodiscard]] ID3D12Resource* Resource() const { return pUpload.Get(); }
 
 
 	private:

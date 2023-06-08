@@ -23,8 +23,8 @@ namespace Foundation
 		void OnAttach() override;
 		void OnDetach() override;
 		void OnEvent(Event& event) override;
-		void OnUpdate(const DeltaTime& timer) override {}
-		void OnRender(const DeltaTime& timer) override {}
+		void OnUpdate(AppTimeManager* timer) override {}
+		void OnRender(AppTimeManager* timer) override {}
 		void OnImGuiRender() override;
 		static void Begin();
 		static void End();

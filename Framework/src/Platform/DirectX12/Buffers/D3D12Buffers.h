@@ -2,7 +2,6 @@
 #include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Primitives/GeometryBuilder.h"
 
-#include "Platform/DirectX12/Core/D3D12Core.h"
 
 #include "../Resources/D3D12FrameResource.h"
 #include "../RenderItems/D3D12RenderItem.h"
@@ -127,35 +126,6 @@ namespace Foundation::Graphics::D3D12
 
 
 
-	class D3D12ResourceBuffer 
-	{
-	public:
-		~D3D12ResourceBuffer()  = default;
-
-
-		//void RegisterRenderItem();
-
-		void UpdatePassBuffer(
-			D3D12FrameResource* resource,
-			const MainCamera* camera,
-			AppTimeManager* time,
-			bool wireframe
-		) ;
-
-		void UpdateVoxelTerrain(D3D12FrameResource* resource, RenderItem* terrain);
-
-		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems) ;
-
-		void UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials) ;
-
-		void UpdateVoxelTerrainBuffer(D3D12FrameResource* resource, RenderItem* terrain, const std::vector<Vertex>& vertices);
-
-	private:
-		PassConstants MainPassCB;
-
-		INT32 ObjectCount = 0;
-
-	};
 
 	
 }

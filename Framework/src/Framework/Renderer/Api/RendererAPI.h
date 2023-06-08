@@ -74,8 +74,6 @@ namespace Foundation::Graphics
 	public:/*...Getters...*/
 		
 		[[nodiscard]] virtual GraphicsContext*		GetGraphicsContext()	const = 0;
-		//TODO: Remove this getter, don't want to hand over the heap manager.
-		[[nodiscard]] virtual MemoryManager*		GetMemoryManager()		const = 0;
 		[[nodiscard]] virtual const FrameBuffer*	GetFrameBuffer()		const = 0;
 
 

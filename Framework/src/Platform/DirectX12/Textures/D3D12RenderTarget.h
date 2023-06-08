@@ -1,6 +1,7 @@
 #pragma once
 #include <Framework/Renderer/Textures/RenderTarget.h>
 #include "Platform/DirectX12/Heap/D3D12HeapManager.h"
+#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 
 namespace Foundation::Graphics::D3D12

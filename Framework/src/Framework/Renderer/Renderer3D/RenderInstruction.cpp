@@ -5,5 +5,6 @@
 
 namespace Foundation::Graphics
 {
+	using namespace D3D12;
 	RendererAPI* RenderInstruction::RendererApiPtr = new D3D12RenderingApi();
 }

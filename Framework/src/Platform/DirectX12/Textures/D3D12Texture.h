@@ -1,11 +1,11 @@
 #pragma once
-#include "Framework/Renderer/Textures/Texture.h"
+#include <Framework/Renderer/Textures/Texture.h>
+
 #include "Platform/DirectX12/Heap/D3D12HeapManager.h"
 
 
 namespace Foundation::Graphics::D3D12
 {
-
 
 	class D3D12Texture : public Texture
 	{

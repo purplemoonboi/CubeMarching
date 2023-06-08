@@ -2,11 +2,10 @@
 #include "Application.h"
 
 #include "Framework/Core/Log/Log.h"
-#include "Framework/Renderer/Engine/Renderer.h"
-
-
+#include "Framework/Renderer/Renderer3D/Renderer.h"
 
 #include <imgui.h>
+
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -38,7 +37,7 @@ namespace Foundation
 		EventBlob.Callback = BIND_DELEGATE(Application::OnApplicationEvent);
 
 		auto handle = static_cast<HWND>(Window.GetNativeWindow());
-		Renderer::Init(handle, 1920, 1080);
+		Graphics::Renderer::Init(handle, 1920, 1080);
 
 		ImGuiLayer = new class ImGuiLayer();
 		PushOverlay(ImGuiLayer);
@@ -83,10 +82,10 @@ namespace Foundation
 			{
 				AppTimer.Tick();
 
-				auto const rendererStatus = Renderer::RendererStatus();
+				auto const rendererStatus = Graphics::Renderer::RendererStatus();
 				if(
-					rendererStatus	!= RendererStatus::INITIALISING ||
-					rendererStatus	!= RendererStatus::INVALIDATING_BUFFER)
+					rendererStatus	!= Graphics::RendererStatus::INITIALISING ||
+					rendererStatus	!= Graphics::RendererStatus::INVALIDATING_BUFFER)
 				{
 					//Process any events...
 					Window.OnUpdate();
@@ -119,13 +118,13 @@ namespace Foundation
 						//Update each layer
 						for (Layer* layer : LayerStack)
 						{
-							layer->OnUpdate(AppTimer.DeltaTime());
+							layer->OnUpdate(&AppTimer);
 						}
 
 						//Render each layer
 						for (Layer* layer : LayerStack)
 						{
-							layer->OnRender(AppTimer.DeltaTime());
+							layer->OnRender(&AppTimer);
 						}
 
 						ImGuiLayer::Begin();
@@ -163,7 +162,7 @@ namespace Foundation
 			return false;
 		}
 
-		Renderer::OnWindowResize(0, 0, windowResize.GetWidth(), windowResize.GetHeight());
+		Graphics::Renderer::OnWindowResize(0, 0, windowResize.GetWidth(), windowResize.GetHeight());
 
 		return false;
 	}

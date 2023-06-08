@@ -1,19 +1,21 @@
 #pragma once
+#include "VoxelWorldConstantExpressions.h"
+
 #include "Platform/DirectX12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Textures/D3D12Texture.h"
-#include "VoxelWorldConstantExpressions.h"
 
 #include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
 namespace Foundation
 {
+	using namespace Graphics;
+	using namespace D3D12;
+
 	struct ShaderArgs;
 	class MemoryManager;
 	class D3D12ReadBackBuffer;
 	class D3D12HeapManager;
 	class D3D12PipelineStateObject;
-	class D3D12Shader;
-	class Shader;
 
 
 	struct PerlinNoiseSettings
@@ -62,7 +64,7 @@ namespace Foundation
 	{
 	public:
 
-		void Init(ComputeApi* context, MemoryManager* memManager);
+		void Init(ComputeApi* context);
 
 		void PerlinFBM(const PerlinNoiseSettings& noiseSettings, const CSGOperationSettings& csgSettings, Texture* volume);
 

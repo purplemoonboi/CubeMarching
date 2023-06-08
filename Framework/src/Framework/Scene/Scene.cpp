@@ -73,7 +73,7 @@ namespace Foundation
 						nsc.Instance->OnCreate();
 					}
 
-					nsc.Instance->OnUpdate(time->DeltaTime());
+					nsc.Instance->OnUpdate(time);
 				});
 		}
 

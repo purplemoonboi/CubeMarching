@@ -1,20 +1,19 @@
 #pragma once
 #include "Framework/Renderer/Api/RendererAPI.h"
+#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 
-#include "D3D12Context.h"
-#include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
-#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Buffers/D3D12Buffers.h"
-#include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 
 namespace Foundation::Graphics::D3D12
 {
+	class D3D12Context;
+	class D3D12FrameResource;
+	class D3D12ResourceBuffer;
+	class D3D12FrameBuffer;
+	class D3D12RenderTarget;
 	class D3D12DescriptorHeap;
-
 	class D3D12PipelineStateObject;
 	class D3D12RootSignature;
 
-	constexpr UINT GBufferCount = 5;
 
 	class D3D12RenderingPipelines
 	{
@@ -66,6 +65,7 @@ namespace Foundation::Graphics::D3D12
 			const std::vector<Material*>& materials,
 			bool wireframe
 		) override;
+
 		void OnBeginRender() override;
 		void OnEndRender() override;
 
@@ -75,23 +75,24 @@ namespace Foundation::Graphics::D3D12
 		void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) override {}
 		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override {}
 
-		[[nodiscard]] GraphicsContext*			GetGraphicsContext()			const override	{ return Context; }
-		[[nodiscard]] MemoryManager*			GetMemoryManager()				const override	{ return nullptr; }
-		[[nodiscard]] FrameBuffer*				GetFrameBuffer()				const override	{ return FrameBuffer.get(); };
+		[[nodiscard]] GraphicsContext*	  GetGraphicsContext()					const override;				
+		[[nodiscard]] FrameBuffer*		  GetFrameBuffer()						const override;	
+;
+		[[nodiscard]] const RenderTarget* GetSceneAlbedoTexture()				const override; 
+		[[nodiscard]] const RenderTarget* GetSceneNormalTexture()				const override; 
+		[[nodiscard]] const RenderTarget* GetSceneAmbientOcclusionTexture()		const override; 
+		[[nodiscard]] const RenderTarget* GetSceneDepthTexture()				const override; 
 
-		[[nodiscard]] const RenderTarget* GetSceneAlbedoTexture()				const override { return RenderTargets[(INT8)RenderLayer::Albedo].get();}
-		[[nodiscard]] const RenderTarget* GetSceneNormalTexture()				const override { return RenderTargets[(INT8)RenderLayer::Normals].get();}
-		[[nodiscard]] const RenderTarget* GetSceneAmbientOcclusionTexture()		const override { return RenderTargets[(INT8)RenderLayer::AmbientOcclusion].get();}
-		[[nodiscard]] const RenderTarget* GetSceneDepthTexture()				const override { return RenderTargets[(INT8)RenderLayer::Depth].get();}
-
+		[[nodiscard]] D3D12FrameResource* GetFrame() const { return Frames[CurrentFrame].get(); }
 	private:
-		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+		// A pointer to the graphics context
+		D3D12Context* Context{ nullptr };
+
 		FrameBufferSpecifications BufferSpecs;
 
 		D3D12RenderingPipelines Pipeline;
 
-		// A pointer to the graphics context
-		Foundation::Graphics::D3D12::D3D12Context* Context{ nullptr };
+	
 
 		ScopePointer<D3D12ResourceBuffer>		UploadBuffer		{ nullptr };
 		ScopePointer<D3D12FrameBuffer>			FrameBuffer			{ nullptr };
@@ -99,11 +100,11 @@ namespace Foundation::Graphics::D3D12
 
 		std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT> Frames{ nullptr };
 
-		std::array<ScopePointer<D3D12RenderTarget>, GBufferCount> RenderTargets;
+		std::array<ScopePointer<D3D12RenderTarget>, GBUFFER_SIZE> RenderTargets;
 
 		ComPtr<ID3D12RootSignature> pRootSignature;
 
-
+		UINT32 CurrentFrame{ 0 };
 
 
 	};

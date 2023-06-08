@@ -7,6 +7,7 @@
 #include <utility>
 #include <mutex>
 
+
 // Disable exception warning
 #pragma warning(disable: 4530)
 

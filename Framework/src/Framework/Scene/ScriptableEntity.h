@@ -20,7 +20,7 @@ namespace Foundation
 	protected:
 		virtual void OnCreate() {}
 		virtual void OnDestroy() {}
-		virtual void OnUpdate(DeltaTime delta_time) {}
+		virtual void OnUpdate(AppTimeManager* delta_time) {}
 	private:
 		Entity entity;
 	};

@@ -1,12 +1,12 @@
 #include "D3D12RenderItem.h"
 #include "Framework/Renderer/Buffers/Buffer.h"
 
-namespace Foundation
+namespace Foundation::Graphics::D3D12
 {
 	D3D12RenderItem::D3D12RenderItem
 	(
 		MeshGeometry* geometry,
-		Foundation::Material* material,
+		Graphics::Material* material,
 		const std::string& drawArgs,
 		UINT constantBufferIndex,
 		Transform transform

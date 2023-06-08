@@ -1,15 +1,9 @@
 #pragma once
-
 #include <string>
-#include "../../vendor/Microsoft/DDSTextureLoader.h"
-
-#include "Platform/DirectX12/Textures/D3D12Texture.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/DirectX12.h"
 
 namespace Foundation::Graphics::D3D12
 {
-	
-
 	class D3D12TextureLoader
 	{
 	public:
@@ -24,18 +18,9 @@ namespace Foundation::Graphics::D3D12
 			const std::wstring& fileName,
 			ComPtr<ID3D12Resource>& resource,
 			ComPtr<ID3D12Resource>& uploadHeap
-		)
-		{
-			const HRESULT hr = DirectX::CreateDDSTextureFromFile12(
-				pDevice.Get(), 
-				pGCL, 
-				fileName.c_str(),
-				resource, uploadHeap
-			);
-			return hr;
-		}
-
-		static inline ID3D12GraphicsCommandList4* pGCL{ nullptr };
+		);
+		
+		static ID3D12GraphicsCommandList4* pGCL;
 
 	};
 }

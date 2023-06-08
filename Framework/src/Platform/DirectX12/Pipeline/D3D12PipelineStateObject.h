@@ -1,24 +1,13 @@
 #pragma once
-#include <vector>
-
-#include "Framework/Renderer/Buffers/Buffer.h"
-#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
-
-
+#include <Framework/Renderer/Buffers/Buffer.h>
+#include <Framework/Renderer/Pipeline/PipelineStateObject.h>
 #include "Platform/DirectX12/DirectX12.h"
 
 namespace Foundation::Graphics::D3D12
 {
 	class D3D12Shader;
-	class ComputeApi;
-
-	
 	class D3D12Context;
 
-	using Microsoft::WRL::ComPtr;
-
-	
-	
 	class D3D12PipelineStateObject : public PipelineStateObject
 	{
 	public:
@@ -40,7 +29,7 @@ namespace Foundation::Graphics::D3D12
 
 		D3D12PipelineStateObject
 		(
-			Compute::ComputeApi* computeContext,
+			ComputeApi* computeContext,
 			Shader* computeShader,
 			ComPtr<ID3D12RootSignature> rootSignature
 		);
@@ -55,7 +44,6 @@ namespace Foundation::Graphics::D3D12
 
 		[[nodiscard]] ComPtr<ID3D12PipelineState> GetComPtr() const { return Pso; }
 
-		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
 
 	private:

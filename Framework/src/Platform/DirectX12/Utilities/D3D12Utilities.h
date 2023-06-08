@@ -7,35 +7,35 @@ namespace Foundation::Graphics::D3D12
 	class D3D12DescriptorHandle;
 
 
-	static D3D12DescriptorHandle CreateRenderTargetView(
+	D3D12DescriptorHandle CreateRenderTargetView(
 		const D3D12_RENDER_TARGET_VIEW_DESC* desc,
 		ID3D12Resource* resource
 	);
 
-	static HRESULT RefreshRenderTargetView(
+	HRESULT RefreshRenderTargetView(
 		const D3D12_RENDER_TARGET_VIEW_DESC* desc,
 		D3D12DescriptorHandle& handle,
 		ID3D12Resource* resource
 	);
 
-	static D3D12DescriptorHandle CreateShaderResourceView(
+	D3D12DescriptorHandle CreateShaderResourceView(
 		const D3D12_SHADER_RESOURCE_VIEW_DESC& desc,
 		ID3D12Resource* resource
 	);
 
-	static HRESULT RefreshShaderResourceViews(
+	HRESULT RefreshShaderResourceViews(
 		const D3D12_SHADER_RESOURCE_VIEW_DESC* desc,
 		D3D12DescriptorHandle& handle,
 		ID3D12Resource* resource
 	);
 
-	static D3D12DescriptorHandle CreateUnorderedAccessView(
+	D3D12DescriptorHandle CreateUnorderedAccessView(
 		const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc, 
 		ID3D12Resource* resource, 
 		ID3D12Resource* counterBuffer = nullptr
 	);
 
-	static HRESULT RefreshUnorderedAccessView(
+	HRESULT RefreshUnorderedAccessView(
 		const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc,
 		D3D12DescriptorHandle& handle,
 		ID3D12Resource* resource, 

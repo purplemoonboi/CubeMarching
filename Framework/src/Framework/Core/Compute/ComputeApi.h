@@ -2,18 +2,14 @@
 #include <intsafe.h>
 
 
-namespace Foundation::Compute
+namespace Foundation::Graphics
 {
-	struct FrameResource;
 	class GraphicsContext;
 	class PipelineStateObject;
 
 	class ComputeApi
 	{
-	
 	public:
-
-
 		virtual ~ComputeApi(){}
 		virtual void Init(GraphicsContext* context) = 0;
 		virtual void ResetComputeCommandList(PipelineStateObject* state = nullptr) = 0;

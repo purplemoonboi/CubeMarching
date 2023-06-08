@@ -1,8 +1,14 @@
 #pragma once
 #include "Framework/Core/Core.h"
 #include "Framework/Core/Log/Log.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/DirectX12.h"
+#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 
+
+
+
+
+using Microsoft::WRL::ComPtr;
 
 namespace Foundation::Graphics::D3D12
 {
@@ -15,11 +21,6 @@ namespace Foundation::Graphics::D3D12
 		UINT32 Index = 0;
 	};
 
-	struct ImGuiHandles
-	{
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandle;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE CpuHandle;
-	};
 
 	class D3D12DescriptorHeap
 	{
@@ -38,15 +39,17 @@ namespace Foundation::Graphics::D3D12
 
 	public:/*...Getters...*/
 
-		[[nodiscard]] constexpr D3D12_DESCRIPTOR_HEAP_TYPE		GetType()			const { return Type; }
-		[[nodiscard]] constexpr D3D12_CPU_DESCRIPTOR_HANDLE		BeginCPU()			const { return pBeginCPU; }
-		[[nodiscard]] constexpr D3D12_GPU_DESCRIPTOR_HANDLE		BeginGPU()			const { return pBeginGPU; }
-		[[nodiscard]] constexpr ID3D12DescriptorHeap*			GetHeap()			const { return pHeap.Get(); }
-		[[nodiscard]] constexpr UINT32							GetCapacity()		const { return Capacity; }
-		[[nodiscard]] constexpr UINT32							GetSize()			const { return Size; }
-		[[nodiscard]] constexpr UINT32							DescriptorSize()	const { return HeapSize; }
+		[[nodiscard]] D3D12_DESCRIPTOR_HEAP_TYPE	GetType()		 const { return Type; }
+		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE	BeginCPU()		 const { return pBeginCPU; }
+		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE	BeginGPU()		 const { return pBeginGPU; }
+		[[nodiscard]] ID3D12DescriptorHeap*			GetHeap()		 const { return pHeap.Get(); }
+		[[nodiscard]] UINT32						GetCapacity()	 const { return Capacity; }
+		[[nodiscard]] UINT32						GetSize()		 const { return Size; }
+		[[nodiscard]] UINT32						DescriptorSize() const { return HeapSize; }
+
 
 	private:
+
 		ComPtr<ID3D12DescriptorHeap> pHeap{ nullptr };
 		const D3D12_DESCRIPTOR_HEAP_TYPE Type;
 

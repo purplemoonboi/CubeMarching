@@ -1,7 +1,6 @@
 #pragma once
 #include <intsafe.h>
 #include <string>
-#include "GeometryGenerator.h"
 #include "Framework/Camera/MainCamera.h";
 #include "Framework/Core/core.h"
 #include "Framework/Core/Time/AppTimeManager.h"
@@ -75,21 +74,6 @@ namespace Foundation::Graphics
 		static RenderItem* GetRenderItem(UINT16 index);
 
 
-		struct VoxelWorldRenderingStats
-		{
-			UINT32 TriCount = 0;
-			UINT32 VertexCount = 0;
-			float HausdorffDist = 0.0f;
-
-			//TODO: Implement this properly!
-			UINT32 GetTotalVertexCount() { return 0; }
-			//TODO: Implement this properly!
-			UINT32 GetTotalIndexCount() { return 0; }
-		};
-
-		static const VoxelWorldRenderingStats& GetProfileData() { return VoxelStats; }
-
-		static VoxelWorldRenderingStats VoxelStats;
 
 
 	};

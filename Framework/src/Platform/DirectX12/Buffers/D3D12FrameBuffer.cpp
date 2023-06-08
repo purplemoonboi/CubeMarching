@@ -4,6 +4,7 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Core/Log/Log.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -17,9 +18,7 @@ namespace Foundation::Graphics::D3D12
 	}
 
 	D3D12FrameBuffer::~D3D12FrameBuffer()
-	{
-		
-	}
+	{}
 
 	void D3D12FrameBuffer::Init(GraphicsContext* context, FrameBufferSpecifications& fbs)
 	{
@@ -71,7 +70,7 @@ namespace Foundation::Graphics::D3D12
 	void D3D12FrameBuffer::OnResizeFrameBuffer(FrameBufferSpecifications& specifications)
 	{
 		HRESULT hr{ S_OK };
-		CORE_ASSERT(Context->pDevice, "The 'D3D device' has failed...");
+		CORE_ASSERT(pDevice, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->pSwapChain, "The 'swap chain' has failed...");
 		CORE_ASSERT(Context->pGCL, "The 'graphics command list' has failed...");
 
@@ -114,14 +113,14 @@ namespace Foundation::Graphics::D3D12
 		{
 			Context->pSwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
 
-			Context->pDevice->CreateRenderTargetView
+			pDevice->CreateRenderTargetView
 			(
 				SwapChainBuffer[i].Get(),
 				nullptr,
 				RenderTargetHandles[i]
 			);
 			SwapChainBuffer->Get()->SetName(L"Swap Chain");
-			THROW_ON_FAILURE(Context->pDevice->GetDeviceRemovedReason());
+			THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
 			//rtvHeapHandle.Offset(1, RtvDescriptorSize);
 		}
 
@@ -150,7 +149,7 @@ namespace Foundation::Graphics::D3D12
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
 
-		hr = Context->pDevice->CreateCommittedResource
+		hr = pDevice->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -161,7 +160,7 @@ namespace Foundation::Graphics::D3D12
 		);
 		THROW_ON_FAILURE(hr);
 
-		THROW_ON_FAILURE(Context->pDevice->GetDeviceRemovedReason());
+		THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
 
 		// Create descriptor to mip level 0 of entire resource using the format of the resource.
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -170,7 +169,7 @@ namespace Foundation::Graphics::D3D12
 		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		Context->pDevice->CreateDepthStencilView
+		pDevice->CreateDepthStencilView
 		(
 			DepthStencilBuffer.Get(),
 			&dsvDesc,

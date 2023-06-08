@@ -3,6 +3,7 @@
 #include "Framework/Core/Log/Log.h"
 
 #include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/Heap/D3D12HeapManager.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -35,11 +36,11 @@ namespace Foundation::Graphics::D3D12
 		ID3D12Resource* resource
 	)
 	{
-		const auto handles = SrvHeap.Allocate();
-		pDevice->CreateShaderResourceView(resource, &desc, handles.CpuHandle);
+		const auto handle = SrvHeap.Allocate();
+		pDevice->CreateShaderResourceView(resource, &desc, handle.CpuHandle);
 		const HRESULT deviceRemovedReason = pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceRemovedReason);
-		return handles;
+		return handle;
 	}
 
 	HRESULT RefreshShaderResourceViews(

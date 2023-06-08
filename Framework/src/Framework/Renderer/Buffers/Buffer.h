@@ -7,7 +7,7 @@ namespace Foundation::Graphics
 {
 
 	class GraphicsContext;
-	class RenderItem;
+	struct RenderItem;
 	//class FrameResource;
 	class Material;
 

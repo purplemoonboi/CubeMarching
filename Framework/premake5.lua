@@ -60,7 +60,8 @@ project "Framework"
 				"CM_WINDOWS_PLATFORM",
 				--"USE_PIX",
 				"YAML_CPP_STATIC_DEFINE",
-				"PROFILE_BUILD"
+				"PROFILE_BUILD",
+				"IMGUI_SUPPORTED"
 			}
 
 			filter "configurations:Debug"

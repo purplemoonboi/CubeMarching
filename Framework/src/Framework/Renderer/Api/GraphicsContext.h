@@ -1,7 +1,6 @@
 #pragma once
 #include "Framework/Core/Core.h"
 
-
 namespace Foundation::Graphics
 {
 
@@ -19,7 +18,7 @@ namespace Foundation::Graphics
 		virtual void Clean() = 0;
 		virtual void SwapBuffers() = 0;
 
-		static ScopePointer<GraphicsContext> Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
+		static ScopePointer<GraphicsContext> Create(HWND hwnd, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
 
 	};
 }

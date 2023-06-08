@@ -1,5 +1,6 @@
 #include "Framework/cmpch.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -10,8 +11,7 @@ namespace Foundation::Graphics::D3D12
 
 	
 
-	D3D12FrameResource::D3D12FrameResource(ID3D12Device* device,
-	                                       UINT passCount, 
+	D3D12FrameResource::D3D12FrameResource(UINT passCount, 
 	                                       UINT materialBufferCount, 
 	                                       UINT objectCount,
 	                                       UINT voxelBufferElementCount
@@ -23,14 +23,14 @@ namespace Foundation::Graphics::D3D12
 		/**
 		 * Create a command allocator for this resource.
 		 */
-		HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+		HRESULT hr = pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(pCmdAlloc.GetAddressOf()));
 		THROW_ON_FAILURE(hr);
 
 		/**
 		 * Create a graphics command list for this resource.
 		 */
-		hr = device->CreateCommandList(0,
+		hr = pDevice->CreateCommandList(0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			pCmdAlloc.Get(),
 			nullptr,
@@ -45,18 +45,18 @@ namespace Foundation::Graphics::D3D12
 		/**
 		 * Create buffers for this resource
 		 */
-		PassBuffer		= CreateScope<D3D12UploadBuffer<PassConstants>>(device, passCount, true);
-		MaterialBuffer  = CreateScope<D3D12UploadBuffer<MaterialConstants>>(device, materialBufferCount, true);
-		ConstantBuffer	= CreateScope<D3D12UploadBuffer<ObjectConstant>>(device, objectCount, true);
-		TerrainBuffer   = CreateScope<D3D12UploadBuffer<Vertex>>(device,voxelBufferElementCount, false);
+		PassBuffer		= CreateScope<D3D12UploadBuffer<PassConstants>>(passCount, true);
+		MaterialBuffer  = CreateScope<D3D12UploadBuffer<MaterialConstants>>(materialBufferCount, true);
+		ConstantBuffer	= CreateScope<D3D12UploadBuffer<ObjectConstant>>(objectCount, true);
+		TerrainBuffer   = CreateScope<D3D12UploadBuffer<Vertex>>(voxelBufferElementCount, false);
 
 		//RenderTarget = CreateScope<D3D12RenderTarget>(nullptr, 1920, 1080);
 	}
 
-	void D3D12FrameResource::UpdateVoxelBuffer(const D3D12Context*context, UINT elementCount)
+	void D3D12FrameResource::UpdateVoxelBuffer(UINT elementCount)
 	{
 		TerrainBuffer->Destroy();
-		TerrainBuffer->Create(context, elementCount, false);
+		TerrainBuffer->Create(elementCount, false);
 	}
 
 	bool D3D12FrameResource::QueryTerrainBuffer(UINT elementCount)

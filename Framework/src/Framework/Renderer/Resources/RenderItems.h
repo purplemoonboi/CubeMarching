@@ -1,11 +1,12 @@
 #pragma once
-#include <intsafe.h>
-#include <DirectXCollision.h>
-
 #include "Framework/Renderer/Renderer3D/Mesh.h"
 #include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Core/core.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
+
+#include <intsafe.h>
+#include <DirectXCollision.h>
 
 namespace Foundation::Graphics
 {
@@ -33,8 +34,6 @@ namespace Foundation::Graphics
 	};
 
 
-
-
 	// Lightweight structure stores parameters to draw a shape.  This will
 	// vary from app-to-app.
 	struct RenderItem
@@ -44,7 +43,7 @@ namespace Foundation::Graphics
 
 		static ScopePointer<RenderItem> Create(MeshGeometry* geometry, Material* material, const std::string& drawArgs, UINT constantBufferIndex, Transform transform);
 
-		INT32 NumFramesDirty = FRAMES_IN_FLIGHT;
+		INT32 NumFramesDirty = D3D12::FRAMES_IN_FLIGHT;
 		UINT ObjectConstantBufferIndex = -1;
 
 		// A raw pointer to geometry

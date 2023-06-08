@@ -1,6 +1,5 @@
 #pragma once
 #include "Framework/Core/Core.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
 
 #include "Framework/Renderer/Buffers/FrameBuffer.h"
 

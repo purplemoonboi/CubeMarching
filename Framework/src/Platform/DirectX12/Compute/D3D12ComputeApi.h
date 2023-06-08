@@ -1,35 +1,22 @@
 #pragma once
-#include "Framework/Core/Compute/ComputeApi.h"
-#include <Platform/DirectX12/DirectX12.h>
+#include <Framework/Core/core.h>
+#include <Framework/Core/Compute/ComputeApi.h>
 
-#include "Framework/Core/core.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/DirectX12.h"
+
 #include <array>
-
 
 
 namespace Foundation::Graphics::D3D12
 {
 	class D3D12Context;
-}
-
-namespace Foundation::Compute::D3D12
-{
-
-
 
 	constexpr UINT NUMBER_OF_CS_FRAMES_IN_FLIGHT = 1;
-	struct D3D12FrameResource;
-
-	
-	
 
 	struct D3D12ComputeFrameResource
 	{
 		D3D12ComputeFrameResource(ID3D12Device* device);
-		D3D12ComputeFrameResource(const D3D12ComputeFrameResource& rhs) = delete;
-		D3D12ComputeFrameResource& operator=(const D3D12ComputeFrameResource& rhs) = delete;
-		D3D12ComputeFrameResource&& operator=(D3D12ComputeFrameResource&& rhs) = delete;
+		DISABLE_COPY_AND_MOVE(D3D12ComputeFrameResource);
 		~D3D12ComputeFrameResource();
 
 
@@ -39,10 +26,10 @@ namespace Foundation::Compute::D3D12
 
 	class D3D12ComputeApi : public ComputeApi
 	{
-	
-
 	public:
 		~D3D12ComputeApi() override {}
+
+		D3D12Context* Context;
 
 		void Init(GraphicsContext* context) override;
 

@@ -21,18 +21,18 @@ namespace Foundation
 		SecondPerCount = 1.0 / static_cast<double>(countsPerSecond);
 	}
 
-	double AppTimeManager::TimeElapsed() const
+	float AppTimeManager::TimeElapsed() const
 	{
 		//If the application has been paused, don't track the time passed since.
 		//This carries forward in future pause events, hence subtract pause time from
 		//stop!
 		if (HasStopped)
 		{
-			return static_cast<double>((StopTime - PausedTime) - BaseTime * SecondPerCount);
+			return (StopTime - PausedTime) - BaseTime * SecondPerCount;
 		}
 
 		//Similarly, subtract the pause time from current time before subtracting applications t0.
-		return static_cast<double>(((CurrentTime - PausedTime) - BaseTime) * SecondPerCount);
+		return ((CurrentTime - PausedTime) - BaseTime) * SecondPerCount;
 	}
 
 

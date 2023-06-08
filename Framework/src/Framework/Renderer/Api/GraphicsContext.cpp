@@ -9,12 +9,14 @@
 
 namespace Foundation::Graphics
 {
-	ScopePointer<GraphicsContext> GraphicsContext::Create(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight)
+	using namespace D3D12;
+
+	ScopePointer<GraphicsContext> GraphicsContext::Create(HWND hwnd, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case RendererAPI::Api::None:   CORE_ASSERT(false, "Not a recognised api!");              return nullptr;
-			case RendererAPI::Api::DX12:   return CreateScope<D3D12Context>(windowHandle, swapChainBufferWidth, swapChainBufferHeight);
+			case RendererAPI::Api::DX12:   return CreateScope<D3D12Context>(hwnd, swapChainBufferWidth, swapChainBufferHeight);
 			case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!");     return nullptr;
 			default:
 			CORE_ASSERT(false, "Unknown error!");

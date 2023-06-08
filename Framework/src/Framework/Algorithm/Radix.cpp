@@ -3,13 +3,14 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
+#include <Platform/DirectX12/Compute/D3D12ComputeApi.h>
+#include <Platform/DirectX12/Core/D3D12Core.h>
 
-namespace Foundation
+namespace Foundation::Algorithm
 {
 	void Radix::Init(ComputeApi* context)
 	{
 		ComputeContext = dynamic_cast<D3D12ComputeApi*>(context);
-		//MemManager = dynamic_cast<D3D12HeapManager*>(memManager);
 
 		BuildRootSignature();
 		BuildResources();
@@ -25,7 +26,7 @@ namespace Foundation
 		ComputeMortonPso = PipelineStateObject::Create(ComputeContext, ComputeMortonCS.get(), RootSignature);
 
 
-		const ShaderArgs radixSort =
+		const Graphics::ShaderArgs radixSort =
 		{
 			L"assets\\shaders\\Radix.hlsl",
 			"LocalSort",
@@ -34,7 +35,7 @@ namespace Foundation
 		RadixSortShader = Shader::Create(radixSort.FilePath, radixSort.EntryPoint, radixSort.ShaderModel);
 		RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
 
-		const ShaderArgs globalSum =
+		const Graphics::ShaderArgs globalSum =
 		{
 			L"assets\\shaders\\Radix.hlsl",
 			"GlobalBucketSum",
@@ -43,7 +44,7 @@ namespace Foundation
 		GlobalBucketSumCS = Shader::Create(globalSum.FilePath, globalSum.EntryPoint, globalSum.ShaderModel);
 		GlobalBucketSumPso = PipelineStateObject::Create(ComputeContext, GlobalBucketSumCS.get(), RootSignature);
 
-		const ShaderArgs globalDest =
+		const Graphics::ShaderArgs globalDest =
 		{
 			L"assets\\shaders\\Radix.hlsl",
 			"GlobalDestination",
@@ -60,12 +61,12 @@ namespace Foundation
 		const UINT32 dispatchX = VoxelWorldElementCount / 512;
 
 		ComputeContext->ResetComputeCommandList(ComputeMortonPso.get());
-		ID3D12DescriptorHeap* srvHeap[] = { MemManager->GetShaderResourceDescHeap() };
+		ID3D12DescriptorHeap* srvHeap[] = { SrvHeap.GetHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
 		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
 
-		ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav);
+		ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(4, 1, &settings.Resolution, 0);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(4, 1, &settings.Resolution, 1);
 		ComputeContext->CommandList->SetComputeRoot32BitConstants(4, 1, &settings.Resolution, 2);
@@ -103,7 +104,7 @@ namespace Foundation
 
 		ComputeContext->ResetComputeCommandList(RadixSortPso.get());
 
-		srvHeap[0] = { MemManager->GetShaderResourceDescHeap() };
+		srvHeap[0] = { SrvHeap.GetHeap() };
 		ComputeContext->CommandList->SetDescriptorHeaps(_countof(srvHeap), srvHeap);
 
 		ComputeContext->CommandList->SetComputeRootSignature(RootSignature.Get());
@@ -115,10 +116,10 @@ namespace Foundation
 			auto d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(RadixSortPso.get());
 			ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(1, SortedMortonUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(2, GlobalBucketsUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CycleCounterUav);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(1, SortedMortonUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(2, GlobalBucketsUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CycleCounterUav.GpuHandle);
 			ComputeContext->CommandList->SetComputeRoot32BitConstants(4, 1, &settings.Resolution, 0);
 			ComputeContext->CommandList->SetComputeRoot32BitConstants(4, 1, &settings.Resolution, 1);
 			ComputeContext->CommandList->SetComputeRoot32BitConstants(4, 1, &settings.Resolution, 2);
@@ -130,10 +131,10 @@ namespace Foundation
 			d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(GlobalBucketSumPso.get());
 			ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(1, SortedMortonUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(2, GlobalBucketsUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CycleCounterUav);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(1, SortedMortonUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(2, GlobalBucketsUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CycleCounterUav.GpuHandle);
 
 			ComputeContext->CommandList->Dispatch(1, 1, 1);
 
@@ -141,10 +142,10 @@ namespace Foundation
 			d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(GlobalComputeDestPso.get());
 			ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(1, SortedMortonUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(2, GlobalBucketsUav);
-			ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CycleCounterUav);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(1, SortedMortonUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(2, GlobalBucketsUav.GpuHandle);
+			ComputeContext->CommandList->SetComputeRootDescriptorTable(3, CycleCounterUav.GpuHandle);
 
 			ComputeContext->CommandList->Dispatch(dispatchX, 1, 1);
 
@@ -231,7 +232,7 @@ namespace Foundation
 
 		ComputeContext->FlushComputeQueue(&FenceValue);
 
-		const HRESULT dr = ComputeContext->Context->pDevice->GetDeviceRemovedReason();
+		const HRESULT dr = pDevice->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(dr);
 
 		UINT32* data = nullptr;
@@ -288,22 +289,21 @@ namespace Foundation
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 
-		MortonCodeUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
+		MortonCodeUav = CreateUnorderedAccessView(uavDesc,
 			InputMortonCodes.Get());
 
-		SortedMortonUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
+		SortedMortonUav = CreateUnorderedAccessView(uavDesc,
 			SortedMortonCodes.Get());
 
 		uavDesc.Buffer.NumElements = (VoxelWorldElementCount / 512);
-		GlobalBucketsUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
-			GlobalBuckets.Get());
+		GlobalBucketsUav = CreateUnorderedAccessView(uavDesc, GlobalBuckets.Get());
 
 
 
 		/** we only need one element for the counter buffer */
 		uavDesc.Buffer.StructureByteStride = sizeof(INT32);
 		uavDesc.Buffer.NumElements = 1;
-		CycleCounterUav = D3D12ResourceFactory::CreateUnorderedAccessView(uavDesc,
+		CycleCounterUav = CreateUnorderedAccessView(uavDesc,
 			CycleCounter.Get());
 
 	}
@@ -357,7 +357,7 @@ namespace Foundation
 		}
 
 		THROW_ON_FAILURE(hr);
-		const HRESULT rootSigResult = ComputeContext->Context->pDevice->CreateRootSignature
+		const HRESULT rootSigResult = pDevice->CreateRootSignature
 		(
 			0,
 			serializedRootSig->GetBufferPointer(),

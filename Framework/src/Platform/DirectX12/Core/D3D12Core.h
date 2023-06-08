@@ -1,23 +1,20 @@
 #pragma once
 #include "Platform/DirectX12/DirectX12.h"
+#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 #include "Platform/DirectX12/Heap/D3D12HeapManager.h"
-
-using Microsoft::WRL::ComPtr;
+#include <array>
 
 #ifdef CM_DEBUG
 #define NAME_D3D12_OBJECT(O, name)\
 	O->SetName(name);
 #else 
-#define NAME_D3D12_OBJECT()
+#define NAME_D3D12_OBJECT(O, name)
 #endif
 
 namespace Foundation::Graphics::D3D12
 {
+
 	// Global variables
-
-	inline constexpr INT32 SWAP_CHAIN_BUFFER_COUNT = 2;
-	inline constexpr INT32 FRAMES_IN_FLIGHT = 1;
-
 	inline ComPtr<ID3D12Device8>					pDevice{ nullptr };
 	inline ComPtr<IDXGIFactory4>				pDXGIFactory4{ nullptr };
 	inline UINT32 FrameIndex{ 0 };
@@ -58,4 +55,63 @@ namespace Foundation::Graphics::D3D12
 			resource = nullptr;
 		}
 	}
+
+	inline std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers()
+	{
+
+
+		const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
+			0, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC pointClamp(
+			1, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC linearWrap(
+			2, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC linearClamp(
+			3, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC anisotropicWrap(
+			4, // shaderRegister
+			D3D12_FILTER_ANISOTROPIC, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressW
+			0.0f,                             // mipLODBias
+			8);                               // maxAnisotropy
+
+		const CD3DX12_STATIC_SAMPLER_DESC anisotropicClamp(
+			5, // shaderRegister
+			D3D12_FILTER_ANISOTROPIC, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressW
+			0.0f,                              // mipLODBias
+			8);                                // maxAnisotropy
+
+		return
+		{
+			pointWrap, pointClamp,
+			linearWrap, linearClamp,
+			anisotropicWrap, anisotropicClamp
+		};
+	}
+
 }

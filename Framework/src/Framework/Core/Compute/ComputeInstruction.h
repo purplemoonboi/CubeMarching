@@ -1,9 +1,11 @@
 #pragma once
 #include <intsafe.h>
-
 #include "ComputeApi.h"
+#include "Framework/Renderer/Api/GraphicsContext.h"
 
-namespace Foundation::Compute
+
+
+namespace Foundation::Graphics
 {
 	class ComputeInstruction
 	{

@@ -13,3 +13,4 @@
 #include <DirectXColors.h>
 #include <DirectXPackedVector.h>
 
+using Microsoft::WRL::ComPtr;

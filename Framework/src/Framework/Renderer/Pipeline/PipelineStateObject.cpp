@@ -1,9 +1,11 @@
 #include "Framework/cmpch.h"
 #include "PipelineStateObject.h"
+
 #include "Framework/Renderer/Renderer3D/Renderer.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
+#include "Platform/DirectX12/Compute/D3D12ComputeApi.h"
 
 namespace Foundation::Graphics
 {

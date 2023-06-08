@@ -1,7 +1,7 @@
 #include "D3D12RenderingApi.h"
 
 #include "Framework/Core/Log/Log.h"
-
+#include "Platform/DirectX12/Core/D3D12Core.h"
 #include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/Directx12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
@@ -9,11 +9,10 @@
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
 #include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 #include "Platform/DirectX12/Heap/D3D12HeapManager.h"
-
+#include "Platform/DirectX12/Pipeline/D3D12PipelineResource.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
-
-#include "Platform/DirectX12/RootSignature/D3D12RootSignature.h"
+#include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 #include "Platform/DirectX12/Textures/Loader/D3D12TextureLoader.h"
 
 
@@ -137,14 +136,14 @@ namespace Foundation::Graphics::D3D12
 		FrameBuffer->Init(Context, fbs);
 
 		INT32 i;
-		for(i = 0; i < GBufferCount; ++i)
+		for(i = 0; i < GBUFFER_SIZE; ++i)
 		{
 			RenderTargets[i] = CreateScope<D3D12RenderTarget>(nullptr, 1920, 1080);
 		}
 
 		for (i = 0; i < FRAMES_IN_FLIGHT; ++i)
 		{
-			Frames[i] = CreateScope<D3D12FrameResource>(pDevice.Get(), 1, 16, 64, 1);
+			Frames[i] = CreateScope<D3D12FrameResource>(1, 16, 64, 1);
 		}
 
 		UploadBuffer = CreateScope<D3D12ResourceBuffer>();
@@ -200,7 +199,7 @@ namespace Foundation::Graphics::D3D12
 	{
 		HRESULT hr{ S_OK };
 		FrameIndex = (FrameIndex + 1) % FRAMES_IN_FLIGHT;
-
+		CurrentFrame = FrameIndex;
 		// Has the GPU finished processing the commands of the current frame resource
 		// If not, wait until the GPU has completed commands up to this fence point.
 		if (Context->pFence->GetCompletedValue() < Frames[FrameIndex]->Fence)
@@ -389,6 +388,35 @@ namespace Foundation::Graphics::D3D12
 		}
 	}
 
+	GraphicsContext* D3D12RenderingApi::GetGraphicsContext() const
+	{
+		return Context; 
+	}
+
+	FrameBuffer* D3D12RenderingApi::GetFrameBuffer() const
+	{
+		return FrameBuffer.get();
+	}
+
+	const RenderTarget* D3D12RenderingApi::GetSceneAlbedoTexture() const
+	{
+		return RenderTargets[static_cast<UINT32>(RenderLayer::Albedo)].get();
+	}
+
+	const RenderTarget* D3D12RenderingApi::GetSceneNormalTexture() const
+	{
+		return RenderTargets[static_cast<UINT32>(RenderLayer::Normals)].get();
+	}
+
+	const RenderTarget* D3D12RenderingApi::GetSceneAmbientOcclusionTexture() const
+	{
+		return RenderTargets[static_cast<UINT32>(RenderLayer::AmbientOcclusion)].get();
+	}
+
+	const RenderTarget* D3D12RenderingApi::GetSceneDepthTexture() const
+	{
+		return RenderTargets[static_cast<UINT32>(RenderLayer::Depth)].get();
+	}
 
 	void D3D12RenderingApi::Flush()
 	{

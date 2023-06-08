@@ -1,7 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
 #include <intsafe.h>
-
 #include "Framework/Renderer/Api/FrameResource.h"
 
 namespace Foundation
@@ -19,14 +18,6 @@ namespace Foundation
 		DirectX::XMFLOAT3 normal;
 		int numPoints;
 	};
-
-	struct Triangle
-	{
-		Vertex VertexA;
-		Vertex VertexB;
-		Vertex VertexC;
-	};
-
 
 	struct DensityPrimitive
 	{
@@ -57,7 +48,7 @@ namespace Foundation
 	 */
 	constexpr UINT64 MarchingCubesNumberOfVertices = VoxelWorldElementCount * 15;
 	constexpr UINT64 MarchingCubesNumberOfTriangles = VoxelWorldElementCount * 5;
-	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Triangle);
+	constexpr UINT64 MarchingCubesVoxelBufferSize = VoxelWorldElementCount * 5 * sizeof(Graphics::Triangle);
 
 	/**
 	 * @brief Max size of GPU hash tables
@@ -71,10 +62,10 @@ namespace Foundation
 	 * @note  size-of-world-dimensions { minus '1' because the vertex is generated within the cell } 
 	 */
 	constexpr UINT64 DualContourNumberOfElements = (ChunkWidth) * (ChunkHeight) * (ChunkWidth);
-	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(Vertex);
+	constexpr UINT64 DualContourVoxelCapacity = DualContourNumberOfElements * sizeof(Graphics::Vertex);
 
 	constexpr UINT64 DualContourTriangleNumberOfElements = ((ChunkWidth) * (ChunkWidth) * (ChunkWidth) / 8) * 12;
-	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(Triangle);
+	constexpr UINT64 DualContourTriangleBufferCapacity = DualContourTriangleNumberOfElements * sizeof(Graphics::Triangle);
 
 	constexpr UINT64 DensityPrimitiveCount = 8;
 

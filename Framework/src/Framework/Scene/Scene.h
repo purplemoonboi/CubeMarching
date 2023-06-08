@@ -5,6 +5,11 @@
 
 namespace Foundation
 {
+	namespace Editor
+	{
+		class SceneHierarchyPanel;
+	}
+
 	namespace Graphics 
 	{
 		class MainCamera;
@@ -29,7 +34,7 @@ namespace Foundation
 	{
 		friend class Entity;
 		friend class SceneSerializer;
-		friend class SceneHierarchyPanel;
+		friend class Editor::SceneHierarchyPanel;
 	public:
 		Scene() = delete;
 		DISABLE_COPY_AND_MOVE(Scene);

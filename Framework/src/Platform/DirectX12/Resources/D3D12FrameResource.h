@@ -14,7 +14,7 @@ namespace Foundation::Graphics::D3D12
 	// for a frame.  
     struct D3D12FrameResource
     {
-        D3D12FrameResource(ID3D12Device* device, UINT passCount, UINT materialBufferCount, UINT objectCount, UINT voxelBufferElementCount);
+        D3D12FrameResource(UINT passCount, UINT materialBufferCount, UINT objectCount, UINT voxelBufferElementCount);
         GENERATE_COPY_AND_MOVE(D3D12FrameResource);
 
         
@@ -22,7 +22,7 @@ namespace Foundation::Graphics::D3D12
         ~D3D12FrameResource();
 
         bool QueryTerrainBuffer(UINT elementCount);
-        void UpdateVoxelBuffer(const D3D12Context* context, UINT elementCount);
+        void UpdateVoxelBuffer(UINT elementCount);
 
         ComPtr<ID3D12GraphicsCommandList4> pGCL;
 

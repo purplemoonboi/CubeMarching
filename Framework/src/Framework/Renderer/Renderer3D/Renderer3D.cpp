@@ -4,9 +4,6 @@
 #include "GeometryGenerator.h"
 #include "RenderInstruction.h"
 
-
-#include <DirectXColors.h>
-
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Api/FrameResource.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
@@ -15,14 +12,11 @@
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Renderer/Textures/Texture.h"
-#include "IsoSurface/DensityTextureGenerator.h"
 
-#include "IsoSurface/MarchingCubes.h"
 
 namespace Foundation::Graphics
 {
 
-	Renderer3D::VoxelWorldRenderingStats Renderer3D::VoxelStats;
     GeometryGenerator Geo;
 
 	struct RendererData
@@ -334,14 +328,9 @@ namespace Foundation::Graphics
 		{
 			if(RenderData.OpaqueRenderItems[i]->Geometry->GetName()==renderItemTag)
 			{
-				if(renderItemTag=="Voxel")
-				{
-					VoxelStats.TriCount = vertices.size() * 3;
-					VoxelStats.VertexCount = vertices.size();
-				}
-
+				
 				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty+=FRAMES_IN_FLIGHT;
+				ri->NumFramesDirty+=1;
 				const auto item = RenderData.Geometries.at(renderItemTag).get();
 				item->VertexBuffer->SetData(vertices.data(), vertices.size() * sizeof(Vertex), vertices.size());
 				item->IndexBuffer->SetData(indices.data(), vertices.size());
@@ -357,7 +346,7 @@ namespace Foundation::Graphics
 			if (RenderData.OpaqueRenderItems[i]->Geometry->GetName() == renderItemTag)
 			{
 				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty+=FRAMES_IN_FLIGHT;
+				ri->NumFramesDirty+=1;
 				const auto item = RenderData.Geometries.at(renderItemTag).get();
 				item->VertexBuffer->SetData(vertices, vCount * sizeof(Vertex), vCount);
 				item->IndexBuffer->SetData(indices, iCount);

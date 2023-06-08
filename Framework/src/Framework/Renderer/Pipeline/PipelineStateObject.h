@@ -9,11 +9,8 @@
 
 namespace Foundation::Graphics
 {
-	namespace Compute
-	{
-		class ComputeApi;
-	}
 
+	class ComputeApi;
 	class BufferLayout;
 	class Shader;
 	class GraphicsContext;
@@ -103,7 +100,7 @@ namespace Foundation::Graphics
 
 		static ScopePointer<PipelineStateObject> Create
 		(
-			Compute::ComputeApi* computeContext,
+			ComputeApi* computeContext,
 			Shader* computeShader,
 			Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature
 		);

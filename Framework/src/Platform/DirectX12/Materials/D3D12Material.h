@@ -1,7 +1,7 @@
 #pragma once
 #include "MathHelper.h"
 #include "Framework/Renderer/Resources/Material.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 
 
 namespace Foundation::Graphics::D3D12

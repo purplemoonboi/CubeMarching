@@ -2,7 +2,6 @@
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
-#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 
 namespace Foundation::Graphics::D3D12
 {

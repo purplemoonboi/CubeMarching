@@ -1,13 +1,12 @@
 #include "D3D12ComputeApi.h"
 #include "Framework/Core/Log/Log.h"
 
-#include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
-
-namespace Foundation::Compute::D3D12
+namespace Foundation::Graphics::D3D12
 {
-	using namespace Graphics::D3D12;
 
 	D3D12ComputeFrameResource::D3D12ComputeFrameResource(ID3D12Device* device)
 	{
@@ -120,7 +119,7 @@ namespace Foundation::Compute::D3D12
 		}
 	}
 
-	void D3D12ComputeApi::ExecuteComputeCommandList(UINT64* voxelWorldSyncValue)
+	void D3D12ComputeApi::ExecuteComputeCommandList(UINT64* fence)
 	{
 		
 		const HRESULT closeResult = CommandList->Close();
@@ -129,9 +128,9 @@ namespace Foundation::Compute::D3D12
 		ID3D12CommandList* cmdList[] = { CommandList.Get() };
 		Queue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		*voxelWorldSyncValue = ++CurrentCSFrameResource->Fence;
+		*fence = ++CurrentCSFrameResource->Fence;
 
-		const HRESULT signalResult = Queue->Signal(Fence.Get(), *voxelWorldSyncValue);
+		const HRESULT signalResult = Queue->Signal(Fence.Get(), *fence);
 		THROW_ON_FAILURE(signalResult);
 	}
 

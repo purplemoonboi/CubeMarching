@@ -1,6 +1,8 @@
 #pragma once
-#include "Framework/Renderer/Api/GraphicsContext.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
+#include <Framework/Renderer/Api/GraphicsContext.h>
+
+#include "Platform/DirectX12/DirectX12.h"
+
 
 namespace Foundation::Graphics::D3D12
 {
@@ -8,8 +10,7 @@ namespace Foundation::Graphics::D3D12
 	class D3D12Context : public GraphicsContext
 	{
 	public:
-		D3D12Context(HWND windowHandle, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
-		D3D12Context(const D3D12Context& other);
+		D3D12Context(HWND hwnd, INT32 swapChainBufferWidth, INT32 swapChainBufferHeight);
 	
 		~D3D12Context() override;
 

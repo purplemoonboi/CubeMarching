@@ -1,6 +1,5 @@
 #pragma once
-#include "Platform/DirectX12/Core/D3D12Core.h"
-
+#include "Platform/DirectX12/DirectX12.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -8,6 +7,7 @@ namespace Foundation::Graphics::D3D12
 	class D3D12BufferFactory
 	{
 	public:
+		D3D12BufferFactory() = default;
 
 		static void Init
 		(

@@ -1,8 +1,12 @@
 #include "ImGuiD3D12.h"
 #include "Framework/Core/Application/Application.h"
-#include "Framework/Renderer/Engine/RenderInstruction.h"
+#include "Framework/Renderer/Renderer3D/RenderInstruction.h"
+
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Api/D3D12RenderingApi.h"
+#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 #include <imgui.h>
 
@@ -11,6 +15,9 @@
 
 namespace Foundation
 {
+	using namespace Graphics;
+	using namespace D3D12;
+
 	void ImGuiD3D12::InitialiseImGui()
 	{
 		IMGUI_CHECKVERSION();
@@ -31,24 +38,25 @@ namespace Foundation
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		auto const* api = dynamic_cast<D3D12RenderingApi*>(RenderInstruction::GetApiPtr());
-		auto const* context = dynamic_cast<D3D12Context*>(api->GetGraphicsContext());
-		auto const* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
-		auto const* memoryManager = dynamic_cast<D3D12HeapManager*>(api->GetMemoryManager());
+		auto const* api = RenderInstruction::GetApiPtr();
+		auto const* context = dynamic_cast<const D3D12Context*>(api->GetGraphicsContext());
+		auto const* frameBuffer = dynamic_cast<const D3D12FrameBuffer*>(api->GetFrameBuffer());
+
+		pHandle = SrvHeap.Allocate();
 
 		ImGui_ImplWin32_Init(context->GetHwnd());
 		ImGui_ImplDX12_Init
 		(
-			context->pDevice.Get(),
+			pDevice.Get(),
 			3,
 			frameBuffer->GetBackBufferFormat(),
-			memoryManager->GetShaderResourceDescHeap(),
-			memoryManager->GetImGuiHandles()->CpuHandle,
-			memoryManager->GetImGuiHandles()->GpuHandle
+			SrvHeap.GetHeap(),
+			pHandle.CpuHandle,
+			pHandle.GpuHandle
 		);
 
 		//Create the command allocator 
-		HRESULT hr = context->pDevice->CreateCommandAllocator
+		HRESULT hr = pDevice->CreateCommandAllocator
 		(
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(ImGuiAlloc.GetAddressOf())
@@ -56,7 +64,7 @@ namespace Foundation
 		THROW_ON_FAILURE(hr);
 
 		//Create the direct command queue
-		hr = context->pDevice->CreateCommandList
+		hr = pDevice->CreateCommandList
 		(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -85,7 +93,6 @@ namespace Foundation
 	void ImGuiD3D12::EndRenderImpl()
 	{
 		auto const* api = dynamic_cast<D3D12RenderingApi*>(RenderInstruction::GetApiPtr());
-		auto const* memoryManager = dynamic_cast<D3D12HeapManager*>(api->GetMemoryManager());
 
 		auto* context = dynamic_cast<D3D12Context*>(api->GetGraphicsContext());
 		auto* frameBuffer = dynamic_cast<D3D12FrameBuffer*>(api->GetFrameBuffer());
@@ -94,7 +101,7 @@ namespace Foundation
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2(app->GetWindow()->GetWidth(), app->GetWindow()->GetHeight());
 
-		ID3D12DescriptorHeap* descriptorHeaps[] = { memoryManager->GetShaderResourceDescHeap() };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { SrvHeap.GetHeap() };
 		ImGuiCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 
@@ -108,23 +115,22 @@ namespace Foundation
 			ImGui::RenderPlatformWindowsDefault(nullptr, ImGuiCommandList.Get());
 		}
 
-		////frameBuffer->UnBind(ImGuiCommandList.Get());
 
 
-		//HRESULT hr = ImGuiCommandList->Close();
-		//THROW_ON_FAILURE(hr);
+		HRESULT hr = ImGuiCommandList->Close();
+		THROW_ON_FAILURE(hr);
 
-		//ID3D12CommandList* cmdList[] = { ImGuiCommandList.Get() };
-		//context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+		ID3D12CommandList* cmdList[] = { ImGuiCommandList.Get() };
+		context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 
-		//hr = context->pSwapChain->Present(0, 0);
-		//THROW_ON_FAILURE(hr);
+		hr = context->pSwapChain->Present(0, 0);
+		THROW_ON_FAILURE(hr);
 
-		//frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
-		//api->GetCurrentFrameResource()->Fence = ++context->SyncCounter;
+		frameBuffer->SetBackBufferIndex((frameBuffer->GetBackBufferIndex() + 1) % SWAP_CHAIN_BUFFER_COUNT);
+		api->GetFrame()->Fence = ++context->SyncCounter;
 
-		//hr = context->pQueue->Signal(context->pFence.Get(), api->GetCurrentFrameResource()->Fence);
-		//THROW_ON_FAILURE(hr);
+		hr = context->pQueue->Signal(context->pFence.Get(), api->GetFrame()->Fence);
+		THROW_ON_FAILURE(hr);
 	}
 
 	void ImGuiD3D12::CleanUp()

@@ -1,25 +1,36 @@
 #pragma once
 #include <vector>
 #include <Platform/DirectX12/DirectX12.h>
-#include <Platform/DirectX12/Compute/D3D12ComputeApi.h>
-#include <Platform/DirectX12/Allocator/D3D12HeapManager.h>
+#include <Platform/DirectX12/Heap/D3D12HeapManager.h>
 
 #include "IsoSurface/VoxelWorldConstantExpressions.h"
 
-
-namespace Foundation
+namespace Foundation::Graphics
 {
-	class MemoryManager;
-	using Microsoft::WRL::ComPtr;
+	namespace D3D12
+	{
+		class D3D12ComputeApi;
+		class D3D12HeapManager;
+	}
 
+	class ComputeApi;
+	class MemoryManager;
 	class PipelineStateObject;
 	class Shader;
 	class Texture;
+	
+}
+using namespace Foundation::Graphics;
+using namespace D3D12;
+
+namespace Foundation::Algorithm
+{
+	
 
 	class Radix
 	{
 	public:
-		void Init(ComputeApi* context);
+		void Init(Graphics::ComputeApi* context);
 
 
 		void SortChunk(const VoxelWorldSettings& settings);
@@ -64,9 +75,17 @@ namespace Foundation
 		ComPtr<ID3D12Resource> GlobalBucketsUpload;
 
 
+		/*
 		D3D12_GPU_DESCRIPTOR_HANDLE MortonCodeUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE SortedMortonUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE GlobalBucketsUav;
 		D3D12_GPU_DESCRIPTOR_HANDLE CycleCounterUav;
+		*/
+
+		D3D12DescriptorHandle MortonCodeUav;
+		D3D12DescriptorHandle SortedMortonUav;
+		D3D12DescriptorHandle GlobalBucketsUav;
+		D3D12DescriptorHandle CycleCounterUav;
+
 	};
 }

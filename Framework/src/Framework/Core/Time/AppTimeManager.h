@@ -1,5 +1,5 @@
 #pragma once
-
+#include <intsafe.h>
 
 namespace Foundation
 {
@@ -9,8 +9,8 @@ namespace Foundation
 		AppTimeManager();
 		//AppTimeManager(const AppTimeManager&) = delete;
 
-		double TimeElapsed() const;
-		double DeltaTime() const { return DTime; };
+		float TimeElapsed() const;
+		float DeltaTime() const { return DTime; }
 
 		void Reset();
 		void Start();
@@ -18,11 +18,11 @@ namespace Foundation
 		void Tick();
 
 
-		double GetMilliseconds() const { return DTime * 1000.0; }
+		double GetMilliseconds() const { return static_cast<double>(DTime) * 1000.0; }
 
 	private:
-		double DTime;
-		double SecondPerCount;
+		float DTime;
+		float SecondPerCount;
 
 		INT64 BaseTime;
 		INT64 PausedTime;

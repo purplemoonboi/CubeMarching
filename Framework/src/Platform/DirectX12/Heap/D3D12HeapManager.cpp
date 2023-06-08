@@ -1,7 +1,13 @@
 #include "D3D12HeapManager.h"
+#include "Platform/DirectX12/Core/D3D12Core.h"
 
 namespace Foundation::Graphics::D3D12
 {
+	D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type)
+		:
+	Type(type)
+	{
+	}
 
 	HRESULT D3D12DescriptorHeap::Init(UINT32 capacity, bool isShaderVisible)
 	{
@@ -48,6 +54,7 @@ namespace Foundation::Graphics::D3D12
 
 		pBeginCPU = pHeap->GetCPUDescriptorHandleForHeapStart();
 		pBeginGPU = (isShaderVisible) ? pHeap->GetGPUDescriptorHandleForHeapStart() : D3D12_GPU_DESCRIPTOR_HANDLE{ 0 };
+
 
 		return hr;
 	}

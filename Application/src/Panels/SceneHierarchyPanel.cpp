@@ -5,13 +5,13 @@
 
 namespace Foundation::Editor
 {
-	SceneHierarchyPanel::SceneHierarchyPanel(const Foundation::RefPointer<Foundation::Scene>& context)
+	SceneHierarchyPanel::SceneHierarchyPanel(const RefPointer<Scene>& context)
 		:
 		ActiveScene(context)
 	{
 	}
 
-	void SceneHierarchyPanel::SetContext(const Foundation::RefPointer<Foundation::Scene>& context)
+	void SceneHierarchyPanel::SetContext(const RefPointer<Scene>& context)
 	{
 		ActiveScene = context;
 		SelectionContext = {};
@@ -25,7 +25,7 @@ namespace Foundation::Editor
 		//For each entity in the scene, draw a node in the panel.
 		ActiveScene->Registry.each([&](auto entity_id)
 			{
-				Foundation::Entity entity{ entity_id, ActiveScene.get() };
+				Entity entity{ entity_id, ActiveScene.get() };
 				DrawEntityNode(entity);
 			});
 
@@ -63,9 +63,9 @@ namespace Foundation::Editor
 		ImGui::End();
 	}
 
-	void SceneHierarchyPanel::DrawEntityNode(Foundation::Entity entity)
+	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 	{
-		auto& entityTag = entity.GetComponent<Foundation::TagComponent>().tag;
+		auto& entityTag = entity.GetComponent<TagComponent>().tag;
 
 
 		ImGuiTreeNodeFlags flags = ((SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
@@ -110,7 +110,7 @@ namespace Foundation::Editor
 		}
 	}
 
-	template <typename T, typename UIFunction> static void DrawComponent(const std::string& name, Foundation::Entity entity, UIFunction uiFunction)
+	template <typename T, typename UIFunction> static void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
 	{
 		//Set the tree node flags.
 		const ImGuiTreeNodeFlags treeNodeFlags =
@@ -240,14 +240,14 @@ namespace Foundation::Editor
 		ImGui::PopID();
 	}
 
-	void SceneHierarchyPanel::DrawComponents(Foundation::Entity entity)
+	void SceneHierarchyPanel::DrawComponents(Entity entity)
 	{
 		//Draw each component linked to *this* entity. 
 
 
-		if (entity.HasComponent<Foundation::TagComponent>())
+		if (entity.HasComponent<TagComponent>())
 		{
-			auto& tag = entity.GetComponent<Foundation::TagComponent>().tag;
+			auto& tag = entity.GetComponent<TagComponent>().tag;
 			char buffer[256];
 			memset(buffer, 0, sizeof(buffer));
 			strcpy_s(buffer, sizeof(buffer), tag.c_str());
@@ -270,13 +270,13 @@ namespace Foundation::Editor
 		{
 			if (ImGui::MenuItem("Camera"))
 			{
-				SelectionContext.AddComponent<Foundation::CameraComponent>();
+				SelectionContext.AddComponent<CameraComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
 			if (ImGui::MenuItem("Sprite Renderer"))
 			{
-				SelectionContext.AddComponent<Foundation::SpriteRendererComponent>();
+				SelectionContext.AddComponent<SpriteRendererComponent>();
 				ImGui::CloseCurrentPopup();
 			}
 
@@ -299,16 +299,16 @@ namespace Foundation::Editor
 
 		//Draw components.
 
-			DrawComponent<Foundation::TransformComponent>("Transform", entity, [](auto& component)
+			DrawComponent<TransformComponent>("Transform", entity, [](auto& component)
 			{
 				DrawVec3Control("Translation", component.Translation);
 				DrawVec3Control("Rotation", component.Rotation);
 				DrawVec3Control("Scale", component.Scale, 1.0f);
 			});
 
-			DrawComponent<Foundation::CameraComponent>("Camera", entity, [](auto& component)
+			DrawComponent<CameraComponent>("Camera", entity, [](auto& component)
 			{
-				Foundation::MainCamera& camera = component.Camera;
+				MainCamera& camera = component.Camera;
 
 				ImGui::Checkbox("Primary", &component.Primary);
 
@@ -328,7 +328,7 @@ namespace Foundation::Editor
 						if (ImGui::Selectable(projectionTypeStr[i], isSelected))
 						{
 							currentProjectionType = projectionTypeStr[i];
-							camera.SetProjectionType((Foundation::MainCamera::ProjectionType)i);
+							camera.SetProjectionType((MainCamera::ProjectionType)i);
 						}
 
 						if (isSelected)
@@ -340,7 +340,7 @@ namespace Foundation::Editor
 					ImGui::EndCombo();
 				}
 
-				if (component.Camera.GetProjectionType() == (INT)Foundation::MainCamera::ProjectionType::Perspective)
+				if (component.Camera.GetProjectionType() == (INT)MainCamera::ProjectionType::Perspective)
 				{
 					float perspectiveFov = DirectX::XMConvertToDegrees(camera.GetPerspectiveFOV());
 					if (ImGui::DragFloat("Fov", &perspectiveFov))
@@ -359,7 +359,7 @@ namespace Foundation::Editor
 					}
 				}
 
-				if (component.Camera.GetProjectionType() == (INT)Foundation::MainCamera::ProjectionType::Orthographic)
+				if (component.Camera.GetProjectionType() == (INT)MainCamera::ProjectionType::Orthographic)
 				{
 					float orthoSize = camera.GetOrthographicSize();
 					if (ImGui::DragFloat("Size", &orthoSize))
@@ -381,13 +381,13 @@ namespace Foundation::Editor
 				}
 			});
 
-		DrawComponent<Foundation::SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
+		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
 		{
 				float col[] = { component.Colour.x, component.Colour.y, component.Colour.z, component.Colour.w };
 			ImGui::ColorEdit4("Colour", col);
 		});
 
-		DrawComponent<Foundation::MeshComponent>("Mesh Component", entity, [](auto& component)
+		DrawComponent<MeshComponent>("Mesh Component", entity, [](auto& component)
 		{
 				const char* name = component.Mesh->GetName().c_str();
 				ImGui::Text("Name", name);

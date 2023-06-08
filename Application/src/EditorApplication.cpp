@@ -16,7 +16,7 @@ namespace Foundation
 			:
 			Application(hInstance, appName)
 		{
-			PushLayer(new EditorLayer());
+			PushLayer(new Editor::EditorLayer());
 		}
 
 		~EditorApplication()
