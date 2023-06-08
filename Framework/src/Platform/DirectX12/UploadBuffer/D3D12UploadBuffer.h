@@ -42,8 +42,6 @@ namespace Foundation::Graphics::D3D12
 
 		}
 
-		//DISABLE_COPY(D3D12UploadBuffer);
-
 		void Bind(UINT index, const D3D12_RANGE* range)
 		{
 			pUpload->Map(index, range, reinterpret_cast<void**>(&MappedData));

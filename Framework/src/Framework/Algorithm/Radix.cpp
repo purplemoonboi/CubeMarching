@@ -23,7 +23,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		ComputeMortonCS = Shader::Create(computeMorton.FilePath, computeMorton.EntryPoint, computeMorton.ShaderModel);
-		ComputeMortonPso = PipelineStateObject::Create(ComputeContext, ComputeMortonCS.get(), RootSignature);
+	//	ComputeMortonPso = PipelineStateObject::Create(ComputeContext, ComputeMortonCS.get(), RootSignature);
 
 
 		const Graphics::ShaderArgs radixSort =
@@ -33,7 +33,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		RadixSortShader = Shader::Create(radixSort.FilePath, radixSort.EntryPoint, radixSort.ShaderModel);
-		RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
+	//	RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
 
 		const Graphics::ShaderArgs globalSum =
 		{
@@ -42,7 +42,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		GlobalBucketSumCS = Shader::Create(globalSum.FilePath, globalSum.EntryPoint, globalSum.ShaderModel);
-		GlobalBucketSumPso = PipelineStateObject::Create(ComputeContext, GlobalBucketSumCS.get(), RootSignature);
+		//GlobalBucketSumPso = PipelineStateObject::Create(ComputeContext, GlobalBucketSumCS.get(), RootSignature);
 
 		const Graphics::ShaderArgs globalDest =
 		{
@@ -51,7 +51,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		GlobalComputeDestCS = Shader::Create(globalSum.FilePath, globalSum.EntryPoint, globalSum.ShaderModel);
-		GlobalComputeDestPso = PipelineStateObject::Create(ComputeContext, GlobalComputeDestCS.get(), RootSignature);
+		//GlobalComputeDestPso = PipelineStateObject::Create(ComputeContext, GlobalComputeDestCS.get(), RootSignature);
 	}
 
 

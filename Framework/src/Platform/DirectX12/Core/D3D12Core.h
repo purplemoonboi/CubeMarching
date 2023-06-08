@@ -28,7 +28,37 @@ namespace Foundation::Graphics::D3D12
 	inline D3D12DescriptorHeap	SrvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
 	inline D3D12DescriptorHeap	UavHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
 
+	// @Unsigned integer representing the supported multi sampling quality.
+	inline UINT32 MsaaQaulity = 0;
+	inline bool MsaaState = false;
+
 	inline std::vector<IUnknown*> DeferredReleases[FRAMES_IN_FLIGHT]{};
+
+	// @brief Checks the MSAA qaulity support and caches level.
+	inline void CacheMSAAQuality()
+	{
+		
+		D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQualityLevels;
+		msaaQualityLevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		msaaQualityLevels.SampleCount = 4;
+		msaaQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+		msaaQualityLevels.NumQualityLevels = 0;
+
+		HRESULT hr{ S_OK };
+
+		hr = pDevice->CheckFeatureSupport
+		(
+			D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+			&msaaQualityLevels,
+			sizeof(msaaQualityLevels)
+		);
+		THROW_ON_FAILURE(hr);
+
+		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
+		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
+	}
+
+	
 
 	// Global functions
 	namespace Internal

@@ -96,7 +96,6 @@ namespace Foundation::Graphics
 		/** build the pipeline state objects */
 		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
 		(
-			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
 			FillMode::Opaque
@@ -104,7 +103,6 @@ namespace Foundation::Graphics
 
 		RenderData.PSOs.emplace("Terrain", PipelineStateObject::Create
 		(
-			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("tps"),
 			FillMode::Opaque
@@ -112,7 +110,6 @@ namespace Foundation::Graphics
 
 		RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
 		(
-			api->GetGraphicsContext(),
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
 			FillMode::WireFrame
@@ -165,7 +162,7 @@ namespace Foundation::Graphics
 		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
 
 
-		RenderInstruction::PreRender
+		/*RenderInstruction::PreRender
 		(
 			camera,
 			time,
@@ -175,7 +172,7 @@ namespace Foundation::Graphics
 		);
 
 
-		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
+		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);*/
 	}
 
 	void Renderer3D::EndScene()
@@ -183,7 +180,7 @@ namespace Foundation::Graphics
 		/**
 		 *	Render the scene geometry to the scene
 		 */
-		RenderInstruction::Flush();
+		//RenderInstruction::Flush();
 	}
 
 	void Renderer3D::BuildMaterials()
@@ -240,53 +237,6 @@ namespace Foundation::Graphics
 		RenderData.Textures.push_back(rockNormal.get());
 		RenderData.TextureLibrary.Add("RockNormal", std::move(rockNormal));
 	}
-
-	void Renderer3D::CreateVoxelTerrain
-	(
-		const std::string& meshTag,
-		Transform transform
-	)
-	{
-
-		//if (RenderData.OpaqueRenderItems.size() < 20)
-		//{
-		//	if (RenderData.Geometries.find(meshTag) == RenderData.Geometries.end())
-		//	{
-		//		ScopePointer<MeshGeometry> mesh = CreateScope<MeshGeometry>(meshTag);
-
-		//		mesh->VertexBuffer = VertexBuffer::Create(
-		//			nullptr,
-		//			sizeof(Vertex) * 1,
-		//			1,
-		//			false);
-
-		//		mesh->IndexBuffer = IndexBuffer::Create(
-		//			nullptr,
-		//			sizeof(UINT16) * 1,
-		//			0);
-
-		//		SubGeometry drawArgs = { (UINT)mesh->IndexBuffer->GetCount(), 0, 0 };
-		//		mesh->DrawArgs.emplace(meshTag + "_Args", drawArgs);
-
-
-		//		RenderData.Terrain = RenderItem::Create(mesh.get(),
-		//			RenderData.MaterialLibrary.Get("Terrain"),
-		//			meshTag + "_Args",
-		//			RenderData.OpaqueRenderItems.size(),
-		//			transform);
-		//		RenderData.Geometries.emplace(meshTag, std::move(mesh));
-
-		//		RenderData.OpaqueRenderItems.push_back(RenderData.Terrain.get());
-
-		//		
-		//	}
-		//}
-
-	}
-
-	void Renderer3D::DeleteVoxelTerrain(const std::string& tag)
-	{}
-
 
 	void Renderer3D::CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType)
 	{

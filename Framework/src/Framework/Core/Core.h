@@ -57,6 +57,13 @@
 #endif
 
 
+// Generate class constructors
+#ifndef GENERATE_CLASS
+#define GENERATE_CLASS(T)\
+GENERATE_COPY(T)\
+GENERATE_MOVE(T)\
+
+#endif
 
 namespace Foundation
 {

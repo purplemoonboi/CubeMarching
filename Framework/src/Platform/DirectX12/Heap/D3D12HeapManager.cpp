@@ -70,7 +70,7 @@ namespace Foundation::Graphics::D3D12
 		std::lock_guard{ Mutex };
 
 		CORE_ASSERT(pHeap.Get(), "Invalid heap!");
-		CORE_ASSERT(Size < Capacity, "Out of memory!");
+		CORE_ASSERT(Size > Capacity, "Out of memory!");
 
 		const UINT32 index = AvailableHandles[Size];
 		const UINT32 offset = index * HeapSize;

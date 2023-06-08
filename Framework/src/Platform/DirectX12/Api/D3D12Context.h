@@ -26,8 +26,6 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12CommandAllocator>		pCmdAlloc;
 		ComPtr<ID3D12Fence>					pFence;
 
-		[[nodiscard]] UINT32 GetMsaaQaulity() const { return MsaaQaulity; }
-		[[nodiscard]] bool GetMsaaState() const { return MsaaState; }
 
 		// @brief Tracks the number of syncs between CPU and GPU.
 		UINT64 SyncCounter;
@@ -45,12 +43,7 @@ namespace Foundation::Graphics::D3D12
 		void CreateDevice();
 		// @brief Creates the pointers responsible for swapping between the front and back buffers.
 		void CreateSwapChain();
-		// @brief Checks the MSAA qaulity support and caches level.
-		void CheckMSAAQualityAndCache();
-
-		// @brief Unsigned integer representing the supported multi sampling quality.
-		UINT32 MsaaQaulity = 0;
-		bool MsaaState = false;
+		
 
 		// @brief This is out dated. Please use frame buffer class instead.   
 		INT32 SwapChainWidth;

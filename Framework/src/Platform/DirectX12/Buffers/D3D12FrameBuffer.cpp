@@ -23,6 +23,11 @@ namespace Foundation::Graphics::D3D12
 	void D3D12FrameBuffer::Init(GraphicsContext* context, FrameBufferSpecifications& fbs)
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
+
+		pRTV[0] = RtvHeap.Allocate();
+		pRTV[1] = RtvHeap.Allocate();
+		pDSV = DsvHeap.Allocate();
+
 		OnResizeFrameBuffer(fbs);
 	}
 
@@ -43,10 +48,7 @@ namespace Foundation::Graphics::D3D12
 		commandList->RSSetViewports(1, &ScreenViewport);
 		commandList->RSSetScissorRects(1, &ScissorRect);
 
-		commandList->OMSetRenderTargets(1,
-			&RenderTargetHandles[BackBufferIndex],
-			true, &DepthStencilHandle
-		);
+		commandList->OMSetRenderTargets(1, &pRTV[BackBufferIndex].CpuHandle, true, &pDSV.CpuHandle);
 
 	}
 
@@ -117,7 +119,7 @@ namespace Foundation::Graphics::D3D12
 			(
 				SwapChainBuffer[i].Get(),
 				nullptr,
-				RenderTargetHandles[i]
+				pRTV[i].CpuHandle
 			);
 			SwapChainBuffer->Get()->SetName(L"Swap Chain");
 			THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
@@ -139,8 +141,8 @@ namespace Foundation::Graphics::D3D12
 		//   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
 		// we need to create the depth buffer resource with a typeless format.  
 		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-		depthStencilDesc.SampleDesc.Count = Context->GetMsaaState() ? 4 : 1;
-		depthStencilDesc.SampleDesc.Quality = Context->GetMsaaState() ? (Context->GetMsaaQaulity() - 1) : 0;
+		depthStencilDesc.SampleDesc.Count = MsaaState ? 4 : 1;
+		depthStencilDesc.SampleDesc.Quality = MsaaState ? (MsaaQaulity - 1) : 0;
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -232,12 +234,12 @@ namespace Foundation::Graphics::D3D12
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetCurrentBackBufferViewCpu() const
 	{
-		return RenderTargetHandles[BackBufferIndex];
+		return pRTV[BackBufferIndex].CpuHandle;
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetDepthStencilViewCpu() const
 	{
-		return DepthStencilHandle;
+		return pDSV.CpuHandle;
 	}
 
 	INT32 D3D12FrameBuffer::GetWidth() const

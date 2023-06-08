@@ -14,25 +14,21 @@ namespace Foundation::Graphics::D3D12
 
 		D3D12PipelineStateObject
 		(
-			D3D12Context* graphicsContext,
-			const PipelineResourceDesc& args,
-			const PipelineDesc& desc
+			PipelineDesc& desc
 		);
 
 		D3D12PipelineStateObject
 		(
-			D3D12Context* graphicsContext,
 			D3D12Shader* vertexShader,
 			D3D12Shader* pixelShader,
 			FillMode fillMode 
 		);
 
-		D3D12PipelineStateObject
+		/*D3D12PipelineStateObject
 		(
-			ComputeApi* computeContext,
 			Shader* computeShader,
 			ComPtr<ID3D12RootSignature> rootSignature
-		);
+		);*/
 
 		DISABLE_COPY_AND_MOVE(D3D12PipelineStateObject);
 
@@ -47,7 +43,7 @@ namespace Foundation::Graphics::D3D12
 
 
 	private:
-		void InitialiseRoot(ID3D12Device* device, const PipelineResourceDesc& desc);
+		void InitialiseRoot(const PipelineInputDesc& pipelineIn);
 
 		ComPtr<ID3D12PipelineState> Pso;
 		ComPtr<ID3D12RootSignature> RootSignature;

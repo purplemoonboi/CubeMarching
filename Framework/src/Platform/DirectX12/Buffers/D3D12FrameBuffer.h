@@ -58,8 +58,11 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>				SwapChainBuffer[SWAP_CHAIN_BUFFER_COUNT]{nullptr};
 		ComPtr<ID3D12Resource>				DepthStencilBuffer{nullptr};
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTargetHandles[2] = {};
-		CD3DX12_CPU_DESCRIPTOR_HANDLE DepthStencilHandle = {};
+		D3D12DescriptorHandle pRTV[2] = {{}};
+		D3D12DescriptorHandle pDSV = {};
+
+		/*CD3DX12_CPU_DESCRIPTOR_HANDLE RenderTargetHandles[2] = {};
+		CD3DX12_CPU_DESCRIPTOR_HANDLE DepthStencilHandle = {};*/
 
 		D3D12_VIEWPORT ScreenViewport;
 		D3D12_RECT ScissorRect;

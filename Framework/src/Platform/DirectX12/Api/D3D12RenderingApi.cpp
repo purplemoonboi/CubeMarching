@@ -108,6 +108,8 @@ namespace Foundation::Graphics::D3D12
 	{
 		HRESULT hr{ S_OK };
 		Context = dynamic_cast<D3D12Context*>(context);
+		Context->Init();
+
 
 		// Initialise heaps.
 		hr = RtvHeap.Init(512, false);

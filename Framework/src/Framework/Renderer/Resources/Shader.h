@@ -45,13 +45,9 @@ namespace Foundation::Graphics
 		virtual void SetFloat2(std::string&& name, const DirectX::XMFLOAT2& matrix) = 0;
 		virtual void SetFloat3(std::string&& name, const DirectX::XMFLOAT3& matrix) = 0;
 		virtual void SetFloat4(std::string&& name, const DirectX::XMFLOAT4& matrix) = 0;
-
 		virtual void SetMat3(std::string&& name, const DirectX::XMFLOAT3X3& matrix) = 0;
 		virtual void SetMat4(std::string&& name, const DirectX::XMFLOAT4X4& matrix) = 0;
-
-
 		virtual const std::string& GetName() const = 0;
-
 		virtual ShaderType GetShaderType() const = 0;
 
 		static ScopePointer<Shader> Create(const std::string& filepath);

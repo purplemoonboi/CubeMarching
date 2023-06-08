@@ -60,10 +60,6 @@ namespace Foundation::Graphics
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
-		static void CreateVoxelTerrain(const std::string& meshTag, Transform transform);
-
-		static void DeleteVoxelTerrain(const std::string& tag);
-
 		static void CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType);
 
 		static void SetBuffer(const std::string& renderItemTag, const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);

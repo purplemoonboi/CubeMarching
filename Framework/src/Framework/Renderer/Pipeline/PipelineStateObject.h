@@ -21,9 +21,33 @@ namespace Foundation::Graphics
 		Opaque = 3,
 	};
 
-	enum class ResourceType : INT8
+	enum class CullMode
 	{
-		StructBuffer,// e.g A structured buffer
+		Default = 0,
+		Back,
+		Front
+	};
+
+	enum class BlendMode
+	{
+		Default=0,
+		OneMinus,
+		Add,
+		Multiply
+	};
+
+	enum class TopologyMode
+	{
+		Point = 0,
+		Line,
+		Triangle,
+		TriangleFan,
+		SurfacePatch
+	};
+
+	enum class Resource 
+	{
+		StructBuffer=0,// e.g A structured buffer
 		ConstBuffer,
 		Texture,// e.g A 2D texture
 		Constants,// e.g A constant buffer of 32-bit values
@@ -32,25 +56,14 @@ namespace Foundation::Graphics
 		TableStructBuffer
 	};
 
-	struct PipelineInput
+	struct PipelineInputDesc
 	{
-		UINT8 Count=1;// some apis (DX12) allow you to initialise multiple inputs at once
-		UINT8 Register = 0;
-		UINT8 Space = 0;
-		UINT8 Flags =0;
-		ResourceType Type;
+		UINT8 Count		= 1;// some apis (DX12) allow you to initialise multiple inputs at once
+		UINT8 Register	= 0;
+		UINT8 Space		= 0;
+		UINT8 Flags		= 0;
+		Resource Type = Resource::ConstBuffer;
 	};
-
-	/**
-	 * @brief The pipeline input description describes what resources you wish to bind to the
-	 * pipeline. 
-	 */
-	struct PipelineResourceDesc
-	{
-		UINT8 RootArgCount = 1;// e.g How many resources in total do you expect to bind.
-		std::vector<PipelineInput> Resources;
-	};
-
 
 	/**
 	 * @brief The pipeline description struct describes how the pipeline should behave.
@@ -60,18 +73,39 @@ namespace Foundation::Graphics
 	struct PipelineDesc
 	{
 		PipelineDesc() = default;
-
-		void AddShader(Shader* shader, ShaderType type)
+		~PipelineDesc() = default;
+		PipelineDesc(const PipelineDesc& other)
 		{
-			Shaders[static_cast<INT32>(type)] = shader;
+			*this = other;
 		}
 
-		[[nodiscard]] const std::array<Shader*, 5>& GetShaders() const { return Shaders; }
+		auto operator=(const PipelineDesc& other) -> PipelineDesc&
+		{
 
-		FillMode Fill;
+			Input		= other.Input;
+			Fill		= other.Fill;
+			Cull		= other.Cull;
+			Blend		= other.Blend;
+			Topology	= other.Topology;
 
-	private:
-		std::array<Shader*, 5> Shaders;
+			for (UINT32 i = 0; i < other.Shaders.size(); ++i)
+			{
+				Shaders[i] = other.Shaders[i];
+			}
+
+			return *this;
+		}
+
+
+		PipelineInputDesc Input;
+
+		FillMode		Fill		= FillMode::Opaque;
+		CullMode		Cull		= CullMode::Back;
+		BlendMode		Blend		= BlendMode::OneMinus;
+		TopologyMode	Topology	= TopologyMode::Triangle;
+
+	
+		std::array<Shader*, 5> Shaders{nullptr};
 	};
 
 	// @brief Base class for describing the rendering pipeline.
@@ -81,28 +115,25 @@ namespace Foundation::Graphics
 		PipelineStateObject() = default;
 		virtual ~PipelineStateObject() = default;
 
+		static ScopePointer<PipelineStateObject> Create
+		(
+			PipelineDesc& desc
+		);
 
 		static ScopePointer<PipelineStateObject> Create
 		(
-			GraphicsContext* graphicsContext,
 			Shader* vertexShader,
 			Shader* pixelShader,
 			FillMode fillMode = FillMode::Opaque
 		);
 
-		static ScopePointer<PipelineStateObject> Create
+		/*static ScopePointer<PipelineStateObject> Create
 		(
-			GraphicsContext* graphicsContext,
-			const PipelineResourceDesc& args,
-			const PipelineDesc& desc
-		);
-
-
-		static ScopePointer<PipelineStateObject> Create
-		(
-			ComputeApi* computeContext,
 			Shader* computeShader,
 			Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature
-		);
+		);*/
+
+	protected:
+		PipelineDesc Desc;
 	};
 }

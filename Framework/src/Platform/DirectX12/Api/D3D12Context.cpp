@@ -19,7 +19,6 @@ namespace Foundation::Graphics::D3D12
 		SwapChainHeight(swapChainBufferHeight)
 	{
 		CORE_ASSERT(pWindowHandle, "Window handle is null!");
-		D3D12Context::Init();
 	}
 
 	D3D12Context::~D3D12Context()
@@ -49,7 +48,7 @@ namespace Foundation::Graphics::D3D12
 		CreateDevice();
 		CreateCommandObjects();
 		CreateSwapChain();
-		CheckMSAAQualityAndCache();
+		CacheMSAAQuality();
 		LogAdapters();
 
 		pDevice->SetName(L"GPU Device");
@@ -153,26 +152,7 @@ namespace Foundation::Graphics::D3D12
 		pGCL->Close();
 
 	}
-
-	void D3D12Context::CheckMSAAQualityAndCache()
-	{
-		D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQualityLevels;
-		msaaQualityLevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		msaaQualityLevels.SampleCount = 4;
-		msaaQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-		msaaQualityLevels.NumQualityLevels = 0;
-
-		pDevice->CheckFeatureSupport
-		(
-			D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
-			&msaaQualityLevels,
-			sizeof(msaaQualityLevels)
-		);
-
-		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
-		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
-
-	}
+	
 
 	void D3D12Context::CreateSwapChain()
 	{
