@@ -104,8 +104,7 @@ namespace Foundation
 		ID3D12DescriptorHeap* descriptorHeaps[] = { SrvHeap.GetHeap() };
 		ImGuiCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-
-		//frameBuffer->Bind(ImGuiCommandList.Get());
+		frameBuffer->Bind(ImGuiCommandList.Get());
 
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), ImGuiCommandList.Get());
 
@@ -115,6 +114,7 @@ namespace Foundation
 			ImGui::RenderPlatformWindowsDefault(nullptr, ImGuiCommandList.Get());
 		}
 
+		frameBuffer->UnBind(ImGuiCommandList.Get());
 
 
 		HRESULT hr = ImGuiCommandList->Close();

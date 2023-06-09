@@ -92,6 +92,7 @@ namespace Foundation::Editor
             }
         }
         
+       
 
         if(ViewportSize.x > 0 && ViewportSize.x < 8196 && ViewportSize.y > 0 && ViewportSize.y < 8196)
         {

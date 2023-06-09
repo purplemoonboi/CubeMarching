@@ -41,6 +41,9 @@ namespace Foundation::Graphics::D3D12
 
 		void Destroy() override;
 
+		void SetWidth(UINT32 width) override;
+		void SetHeight(UINT32 height) override;
+		void SetDepth(UINT16 depth) override;
 
 		[[nodiscard]] UINT64			GetWidth()				const override;
 		[[nodiscard]] UINT32			GetHeight()				const override;
@@ -72,7 +75,7 @@ namespace Foundation::Graphics::D3D12
 		D3D12_UAV_DIMENSION DimensionUav;
 		INT32 UavIndex = -1;
 
-
+		UINT8 DirtyFlag{ 0 };
 
 	};
 }

@@ -47,7 +47,7 @@ namespace Foundation::Graphics::D3D12
 
 		for(UINT32 i{0}; i < FRAMES_IN_FLIGHT; ++i)
 		{
-			DeferredAvailableIndices[i].clear();
+			CORE_ASSERT(DeferredAvailableIndices[i].empty(), " ");
 		}
 
 		HeapSize = pDevice->GetDescriptorHandleIncrementSize(Type);
@@ -98,13 +98,15 @@ namespace Foundation::Graphics::D3D12
 
 		CORE_ASSERT(pHandle.CpuHandle.ptr >= pBeginCPU.ptr, "Invalid handle!");
 		CORE_ASSERT((pHandle.CpuHandle.ptr - pBeginCPU.ptr) % HeapSize == 0, "Incorrect type of handle!");
-		CORE_ASSERT(pHandle.Index < Capacity, "Index exceeded max descriptor count!");
+		CORE_ASSERT(pHandle.Index > Capacity, "Index exceeded max descriptor count!");
 		const auto index = static_cast<UINT32>((pHandle.CpuHandle.ptr - pBeginCPU.ptr) / HeapSize);
 		CORE_ASSERT(pHandle.Index == index, "Index does not match the index of this descriptor slot!");
 
 		// Defer the free operation until we know it is safe.
 		DeferredAvailableIndices[FrameIndex].push_back(index);
 
+		// Let the renderer know there are pending releases for the current frame.
+		SetDeferredReleasesFlag();
 		pHandle = {};
 
 	}

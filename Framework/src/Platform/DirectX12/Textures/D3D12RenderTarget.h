@@ -24,6 +24,10 @@ namespace Foundation::Graphics::D3D12
 		void OnResize(INT32 width, INT32 height)	override;
 		void Destroy()								override;
 
+		void SetWidth(UINT32 width) override;
+		void SetHeight(UINT32 height) override;
+		void SetDepth(UINT16 depth) override;
+
 	public:/*...Getters...*/
 		[[nodiscard]] UINT64 GetWidth()							const override;
 		[[nodiscard]] UINT32 GetHeight()						const override;

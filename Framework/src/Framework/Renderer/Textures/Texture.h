@@ -95,6 +95,10 @@ namespace Foundation::Graphics
 		[[nodiscard]] virtual TextureFormat		GetTextureFormat()		const = 0;
 		[[nodiscard]] virtual UINT64			GetTexture()			const = 0;
 
+		virtual void SetWidth(UINT32 width) = 0;
+		virtual void SetHeight(UINT32 height) = 0;
+		virtual void SetDepth(UINT16 depth) = 0;
+
 	};
 
 	class TextureLibrary

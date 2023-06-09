@@ -104,7 +104,25 @@ namespace Foundation::Graphics::D3D12
 		pResource.Reset();
 		
 	}
-	
+
+	void D3D12RenderTarget::SetWidth(UINT32 width)
+	{
+		Width = width;
+		DirtyFlag = 1;
+	}
+
+	void D3D12RenderTarget::SetHeight(UINT32 height)
+	{
+		Height = height;
+		DirtyFlag = 1;
+	}
+
+	void D3D12RenderTarget::SetDepth(UINT16 depth)
+	{
+		Depth = depth;
+		DirtyFlag = 1;
+	}
+
 	void D3D12RenderTarget::Regenerate()
 	{
 		pResource.Reset();

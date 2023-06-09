@@ -72,12 +72,7 @@ namespace Foundation
 		CameraComponent(const CameraComponent&) = default;
 	};
 
-	struct MeshComponent
-	{
-		MeshComponent() = default;
-		bool WireFrame = false;
-		Graphics::MeshGeometry* Mesh;
-	};
+
 
 	//Forward Declarations
 	class DeltaTime;
@@ -97,6 +92,20 @@ namespace Foundation
 			DestoryScript = [](NativeScriptComponent* nsc) { delete nsc->instance; nsc->instance = nullptr; };
 		}
 	};
+
+	namespace Graphics
+	{
+
+
+		struct StaticMeshComponent
+		{
+			StaticMeshComponent() = default;
+
+			bool WireFrame = false;
+			MeshGeometry* Mesh;
+		};
+
+	}
 
 }
 

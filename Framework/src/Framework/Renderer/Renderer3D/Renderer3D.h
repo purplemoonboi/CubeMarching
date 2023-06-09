@@ -41,6 +41,9 @@ namespace Foundation::Graphics
 		// @brief - Cleans the rendering system.
 		static void Shutdown();
 
+		// @brief - Update internal entity attributes
+		static void OnUpdatePipelineResources();
+
 		// @brief - Marks the start of rendering commands.
 		//		
 		static void BeginScene(MainCamera* camera, AppTimeManager* time, bool wireframe);

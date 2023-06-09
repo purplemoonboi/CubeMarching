@@ -58,14 +58,18 @@ namespace Foundation::Graphics
 			RendererApiPtr->Flush();
 		}
 
-		static void PreRender(MainCamera* camera, AppTimeManager* time,
+		static void OnUpdatePipelineResources(MainCamera* camera, AppTimeManager* time,
 			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
 			bool wireframe
 		)
 		{
-			RendererApiPtr->OnPreBeginRender(camera, time, items, materials, wireframe);
+			RendererApiPtr->OnUpdatePipelineResources(camera, time, items, materials, wireframe);
 		}
 
+		static void OnBeginRender()
+		{
+			RendererApiPtr->OnBeginRender();
+		}
 
 		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
 		{
@@ -77,6 +81,10 @@ namespace Foundation::Graphics
 			RendererApiPtr->DrawIndexed(geometry, count);
 		}
 
+		static void OnEndRender()
+		{
+			RendererApiPtr->OnEndRender();
+		}
 		
 	public:/*...Getters...*/
 		static RendererAPI* GetApiPtr() { return RendererApiPtr; }

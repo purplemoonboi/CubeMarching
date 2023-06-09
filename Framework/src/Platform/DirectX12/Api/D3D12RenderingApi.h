@@ -50,14 +50,14 @@ namespace Foundation::Graphics::D3D12
 		void Clean() override;
 
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
-		[[nodiscard]] FrameBufferSpecifications GetViewportSpecifications() const override { return BufferSpecs; }
+		[[nodiscard]] const FrameBufferSpecifications& GetViewportSpecifications() const override;
 
 		void PreInit() override;
 		void PostInit() override;
 
 		void BindPasses() override;
 
-		void OnPreBeginRender
+		void OnUpdatePipelineResources
 		(
 			MainCamera* camera,
 			AppTimeManager* time,
@@ -88,7 +88,6 @@ namespace Foundation::Graphics::D3D12
 		// A pointer to the graphics context
 		D3D12Context* Context{ nullptr };
 
-		FrameBufferSpecifications BufferSpecs;
 
 		D3D12RenderingPipelines Pipeline;
 

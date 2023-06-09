@@ -29,9 +29,6 @@ namespace Foundation::Graphics
 
 		ScopePointer<VertexArray> VertexArray;
 
-		ScopePointer<Shader> VertexShader;
-		ScopePointer<Shader> PixelShader;
-
 		ShaderLibrary ShaderLibrary;
 		MaterialLibrary MaterialLibrary;
 		TextureLibrary TextureLibrary;
@@ -82,13 +79,6 @@ namespace Foundation::Graphics
 		RenderData.ShaderLibrary.Add("ps", std::move(pS));
 		RenderData.ShaderLibrary.Add("tps", std::move(pTS));
 
-		const BufferLayout layout =
-		{
-			{"POSITION",	ShaderDataType::Float3, 0,  0},
-			{"NORMAL",		ShaderDataType::Float3, 12, 1},
-			{"TANGENT",		ShaderDataType::Float3, 24, 1},
-			{"TEXCOORD",	ShaderDataType::Float2, 32, 3},
-		};
 
 		BuildTextures();
 		BuildMaterials();
@@ -115,37 +105,6 @@ namespace Foundation::Graphics
 			FillMode::WireFrame
 		));
 
-		auto gridData = Geo.CreateGrid(100, 100, 12, 12);
-		auto gridMesh = MeshGeometry::Create("EditorGrid");
-		
-		gridMesh->VertexBuffer = VertexBuffer::Create(
-			gridData.Vertices.data(),
-			sizeof(Vertex) * gridData.Vertices.size(),
-			gridData.Vertices.size(),
-			false);
-
-		gridMesh->IndexBuffer = IndexBuffer::Create(
-			gridData.GetIndices16().data(),
-			sizeof(UINT16) * gridData.GetIndices16().size(),
-			gridData.GetIndices16().size());
-
-		SubGeometry geoArgs = {(UINT)gridMesh->IndexBuffer->GetCount(), 0, 0};
-		gridMesh->DrawArgs.emplace("EditorArgs", geoArgs);
-
-		RenderData.Geometries.emplace("EditorGrid", std::move(gridMesh));
-
-		ScopePointer<RenderItem> renderItem = RenderItem::Create
-		(
-			RenderData.Geometries["EditorGrid"].get(),
-			RenderData.MaterialLibrary.Get("Default"),
-			"EditorArgs",
-			0,
-			Transform(0,0,0)
-		);
-
-		RenderData.OpaqueRenderItems.push_back(renderItem.get());
-		RenderData.RenderItems.push_back(std::move(renderItem));
-
 	}
 
 	void Renderer3D::Shutdown()
@@ -162,7 +121,7 @@ namespace Foundation::Graphics
 		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
 
 
-		/*RenderInstruction::PreRender
+		RenderInstruction::OnUpdatePipelineResources
 		(
 			camera,
 			time,
@@ -171,8 +130,9 @@ namespace Foundation::Graphics
 			wireframe
 		);
 
+		RenderInstruction::OnBeginRender();
 
-		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);*/
+		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}
 
 	void Renderer3D::EndScene()
@@ -180,7 +140,9 @@ namespace Foundation::Graphics
 		/**
 		 *	Render the scene geometry to the scene
 		 */
-		//RenderInstruction::Flush();
+		RenderInstruction::OnEndRender();
+
+		RenderInstruction::Flush();
 	}
 
 	void Renderer3D::BuildMaterials()

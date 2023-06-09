@@ -77,6 +77,21 @@ namespace Foundation
 				});
 		}
 
+
+		// Update object properties
+		{
+			auto view = Registry.view<TransformComponent>();
+			for (auto entity : view)
+			{
+				auto transform = view.get<TransformComponent>(entity);
+				
+				
+				
+			}
+
+		}
+
+
 		//Get the active camera.
 		MainCamera* camera = nullptr;
 		XMMATRIX camTransform;

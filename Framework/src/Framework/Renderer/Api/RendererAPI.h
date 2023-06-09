@@ -52,9 +52,9 @@ namespace Foundation::Graphics
 		virtual void Clean() = 0;
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
-		[[nodiscard]] virtual FrameBufferSpecifications GetViewportSpecifications() const = 0;
+		[[nodiscard]] virtual const FrameBufferSpecifications& GetViewportSpecifications() const = 0;
 		
-		virtual void OnPreBeginRender
+		virtual void OnUpdatePipelineResources
 		(
 			MainCamera* camera,
 			AppTimeManager* time,

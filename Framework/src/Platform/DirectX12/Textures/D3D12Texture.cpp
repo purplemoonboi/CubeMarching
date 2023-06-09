@@ -207,6 +207,24 @@ namespace Foundation::Graphics::D3D12
 		UploadBuffer = nullptr;
 	}
 
+	void D3D12Texture::SetWidth(UINT32 width)
+	{
+		Width = width;
+		DirtyFlag = 1;
+	}
+
+	void D3D12Texture::SetHeight(UINT32 height)
+	{
+		Height = height;
+		DirtyFlag = 1;
+	}
+
+	void D3D12Texture::SetDepth(UINT16 depth)
+	{
+		Depth = depth;
+		DirtyFlag = 1;
+	}
+
 	UINT64 D3D12Texture::GetWidth() const
 	{
 		return Width;

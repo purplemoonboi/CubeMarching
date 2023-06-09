@@ -10,87 +10,85 @@
 
 namespace Foundation::Graphics::D3D12
 {
-	/*
-D3D12ResourceBuffer::D3D12ResourceBuffer
-(
-	ID3D12Device* device,
-	D3D12HeapManager* memoryManager,
-	const std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT>& frameResources,
-	UINT renderItemsCount
-)
-{
+	
+//D3D12ResourceBuffer::D3D12ResourceBuffer
+//(
+//	const std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT>& frameResources,
+//	UINT renderItemsCount
+//)
+//{
+//
+//	const auto frameResourceCount = static_cast<UINT>(frameResources.size());
+//
+//	const UINT64 constantBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(ObjectConstant));
+//
+//	const UINT32 objectCount = renderItemsCount;
+//
+//	for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
+//	{
+//		auto currentResource = frameResources[frameIndex].get();
+//
+//		const auto constantBuffer = currentResource->ConstantBuffer.get();
+//		D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
+//
+//		UINT32 i{ 0 };
+//		for (i = 0; i < objectCount; ++i)
+//		{
+//			constantBufferAddress += i * constantBufferSizeInBytes;
+//
+//			const UINT32 heapIndex = frameIndex * objectCount + i;
+//
+//			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvHeap.BeginCPU());
+//			handle.Offset(heapIndex, SrvHeap.GetSize());
+//
+//			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+//			cbvDesc.BufferLocation = constantBufferAddress;
+//			cbvDesc.SizeInBytes = constantBufferSizeInBytes;
+//			pDevice->CreateConstantBufferView(&cbvDesc, handle);
+//		}
+//
+//		const UINT64 materialBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(MaterialConstants));
+//
+//		const auto materialBuffer = currentResource->MaterialBuffer.get();
+//		D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
+//
+//		for (i = 0; i < objectCount; ++i)
+//		{
+//
+//			materialBufferAddress += i * materialBufferSizeInBytes;
+//
+//			const UINT32 heapIndex = frameIndex * objectCount + i;
+//
+//			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(SrvHeap.BeginCPU());
+//			handle.Offset(heapIndex, SrvHeap.GetSize());
+//
+//			D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
+//			mbvDesc.BufferLocation = materialBufferAddress;
+//			mbvDesc.SizeInBytes = materialBufferSizeInBytes;
+//
+//			pDevice->CreateConstantBufferView(&mbvDesc, handle);
+//		}
+//
+//		const UINT64 passConstantBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(PassConstants));
+//		const auto passConstantBuffer = currentResource->PassBuffer->Resource();
+//
+//		const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
+//
+//		const UINT32 heapIndex = memoryManager->GetPassBufferOffset() + frameIndex;
+//
+//		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
+//		handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
+//
+//		D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
+//		passCbDesc.BufferLocation = passConstantBufferAddress;
+//		passCbDesc.SizeInBytes = passConstantBufferSizeInBytes;
+//
+//		device->CreateConstantBufferView(&passCbDesc, handle);
+//
+//	}
+//}
 
-	const auto frameResourceCount = static_cast<UINT>(frameResources.size());
 
-	const UINT64 constantBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(ObjectConstant));
-
-	const UINT32 objectCount = renderItemsCount;
-
-	for (UINT32 frameIndex = 0; frameIndex < frameResourceCount; ++frameIndex)
-	{
-		auto currentResource = frameResources[frameIndex].get();
-
-		const auto constantBuffer = currentResource->ConstantBuffer.get();
-		D3D12_GPU_VIRTUAL_ADDRESS constantBufferAddress = constantBuffer->Resource()->GetGPUVirtualAddress();
-
-		UINT32 i{ 0 };
-		for (i = 0; i < objectCount; ++i)
-		{
-			constantBufferAddress += i * constantBufferSizeInBytes;
-
-			const UINT32 heapIndex = frameIndex * objectCount + i;
-
-			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
-			handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
-
-			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-			cbvDesc.BufferLocation = constantBufferAddress;
-			cbvDesc.SizeInBytes = constantBufferSizeInBytes;
-			device->CreateConstantBufferView(&cbvDesc, handle);
-		}
-
-		const UINT64 materialBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(MaterialConstants));
-
-		const auto materialBuffer = currentResource->MaterialBuffer.get();
-		D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialBuffer->Resource()->GetGPUVirtualAddress();
-
-		for (i = 0; i < objectCount; ++i)
-		{
-
-			materialBufferAddress += i * materialBufferSizeInBytes;
-
-			const UINT32 heapIndex = frameIndex * objectCount + i;
-
-			auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
-			handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
-
-			D3D12_CONSTANT_BUFFER_VIEW_DESC mbvDesc;
-			mbvDesc.BufferLocation = materialBufferAddress;
-			mbvDesc.SizeInBytes = materialBufferSizeInBytes;
-
-			device->CreateConstantBufferView(&mbvDesc, handle);
-		}
-
-		const UINT64 passConstantBufferSizeInBytes = D3D12BufferFactory::CalculateBufferByteSize(sizeof(PassConstants));
-		const auto passConstantBuffer = currentResource->PassBuffer->Resource();
-
-		const D3D12_GPU_VIRTUAL_ADDRESS passConstantBufferAddress = passConstantBuffer->GetGPUVirtualAddress();
-
-		const UINT32 heapIndex = memoryManager->GetPassBufferOffset() + frameIndex;
-
-		auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(memoryManager->GetConstantBufferViewCpu());
-		handle.Offset(heapIndex, memoryManager->GetCbvSrvUavDescSize());
-
-		D3D12_CONSTANT_BUFFER_VIEW_DESC passCbDesc;
-		passCbDesc.BufferLocation = passConstantBufferAddress;
-		passCbDesc.SizeInBytes = passConstantBufferSizeInBytes;
-
-		device->CreateConstantBufferView(&passCbDesc, handle);
-
-	}
-}
-
-*/
 	void D3D12ResourceBuffer::UpdatePassBuffer
 	(
 		D3D12FrameResource* resource,

@@ -19,9 +19,6 @@ namespace Foundation::Graphics::D3D12
 	inline ComPtr<IDXGIFactory4>				pDXGIFactory4{ nullptr };
 	inline UINT32 FrameIndex{ 0 };
 
-	inline UINT32 DeferralFlags[FRAMES_IN_FLIGHT];
-	inline std::mutex DeferralsMutex;
-
 
 	inline D3D12DescriptorHeap	RtvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
 	inline D3D12DescriptorHeap	DsvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
@@ -32,7 +29,10 @@ namespace Foundation::Graphics::D3D12
 	inline UINT32 MsaaQaulity = 0;
 	inline bool MsaaState = false;
 
+
 	inline std::vector<IUnknown*> DeferredReleases[FRAMES_IN_FLIGHT]{};
+	inline UINT32 DeferralFlags[FRAMES_IN_FLIGHT];
+	inline std::mutex DeferralsMutex;
 
 	// @brief Checks the MSAA qaulity support and caches level.
 	inline void CacheMSAAQuality()
@@ -85,6 +85,8 @@ namespace Foundation::Graphics::D3D12
 			resource = nullptr;
 		}
 	}
+
+	void __declspec(noinline) ProcessDeferrals(UINT32 frame);
 
 	inline std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers()
 	{
@@ -143,5 +145,6 @@ namespace Foundation::Graphics::D3D12
 			anisotropicWrap, anisotropicClamp
 		};
 	}
+
 
 }
