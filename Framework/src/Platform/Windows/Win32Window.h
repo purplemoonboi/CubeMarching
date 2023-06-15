@@ -21,27 +21,18 @@ namespace Foundation
 		);
 
 
-		// @brief Returns the maximised boolean
-		bool IsWndMaximised() const { return IsMaximised; }
-
-		// @brief Returns the minimised boolean
-		bool IsWndMinimised() const { return IsMinimised; }
-
-		// @brief Returns if the user has closed the window
-		bool HasUserRequestedToCloseWnd() const { return IsClosing; }
-
 
 		void OnUpdate() override;
 
-		UINT32 GetWidth() const override { return Width; }
-		UINT32 GetHeight() const override { return Height; }
+		[[nodiscard]] INT32 GetWidth() const override { return Width; }
+		[[nodiscard]] INT32 GetHeight() const override { return Height; }
 
-		void* GetNativeWindow() const override { return WindowHandle; }
+		[[nodiscard]] void* GetNativeWindow() const override { return WindowHandle; }
 
 		/*..Window Attributes..*/
 
 		void SetVSync(bool enabled) override { VSync = enabled; }
-		bool IsVSync() const override { return VSync; }
+		[[nodiscard]] bool IsVSync() const override { return VSync; }
 
 		// @brief Set the applications on event process
 		void SetEventCallBack(const WindowCallback& callBack) override { Window32Data.AppEventCallBack = callBack; }

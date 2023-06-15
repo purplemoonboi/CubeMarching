@@ -9,11 +9,12 @@
 namespace Foundation::Graphics::D3D12
 {
 
-	template <typename T>
-	class D3D12UploadBuffer
+	
+	template <typename T> class D3D12UploadBuffer
 	{
 	public:
 
+		D3D12UploadBuffer() = default;
 		D3D12UploadBuffer(UINT elementCount, bool isConstantBuffer)
 			:
 			IsConstantBuffer(isConstantBuffer)
@@ -27,7 +28,7 @@ namespace Foundation::Graphics::D3D12
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			const HRESULT uploadResult = pDevice->CreateCommittedResource
+			const HRESULT hr = pDevice->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
@@ -36,11 +37,12 @@ namespace Foundation::Graphics::D3D12
 				nullptr,
 				IID_PPV_ARGS(&pUpload)
 			);
-			THROW_ON_FAILURE(uploadResult);
+			THROW_ON_FAILURE(hr);
 
 			THROW_ON_FAILURE(pUpload->Map(0, nullptr, reinterpret_cast<void**>(&MappedData)));
 
 		}
+		DISABLE_COPY_AND_MOVE(D3D12UploadBuffer<T>);
 
 		void Bind(UINT index, const D3D12_RANGE* range)
 		{
@@ -59,7 +61,9 @@ namespace Foundation::Graphics::D3D12
 				pUpload->Unmap(0, nullptr);
 			}
 
+			pUpload = nullptr;
 			MappedData = nullptr;
+			Internal::DeferredRelease(pUpload);
 		}
 
 		void CopyData(INT32 elementIndex, const T& data)
@@ -69,29 +73,7 @@ namespace Foundation::Graphics::D3D12
 
 		void Destroy()
 		{
-			pUpload.Reset();
-		}
-
-		void Create(UINT elementCount, bool isStatic)
-		{
-			ElementByteSize = sizeof(T);
-
-			if (isStatic)
-			{
-				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
-			}
-
-			THROW_ON_FAILURE(pDevice->CreateCommittedResource
-			(
-				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-				D3D12_HEAP_FLAG_NONE,
-				&CD3DX12_RESOURCE_DESC::Buffer(ElementByteSize * elementCount),
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&pUpload)
-			));
-
-			THROW_ON_FAILURE(pUpload->Map(0, nullptr, reinterpret_cast<void**>(&MappedData)));
+			Internal::DeferredRelease(pUpload);
 		}
 
 
@@ -100,11 +82,10 @@ namespace Foundation::Graphics::D3D12
 
 
 	private:
-		ComPtr<ID3D12Resource> pUpload;
-		BYTE* MappedData = nullptr;
-		UINT ElementByteSize = 0U;
-		bool IsConstantBuffer = false;
-
+		ComPtr<ID3D12Resource> pUpload{nullptr};
+		BYTE* MappedData{ nullptr };
+		UINT ElementByteSize{ 0U};
+		bool IsConstantBuffer{ false };
 	};
 }
 

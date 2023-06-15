@@ -4,13 +4,18 @@
 #include "Framework/Renderer/Api/RendererAPI.h"
 
 
+namespace Foundation
+{
+	class Window;
+}
+
 namespace Foundation::Graphics
 {
 
 	class Renderer
 	{
 	public:
-		static void Init(HWND window, INT32 bufferWidth, INT32 bufferHeight);
+		static void Init(Window* window);
 		static void OnWindowResize(INT32 x, INT32 y, INT32 width, INT32 height);
 		static RendererAPI::Api GetAPI() { return RendererAPI::GetAPI(); }
 		static RendererStatus RendererStatus();

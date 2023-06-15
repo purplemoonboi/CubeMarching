@@ -2,40 +2,28 @@
 #include "D3D12Context.h"
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/Windows/Win32Window.h"
 
 
 namespace Foundation::Graphics::D3D12
 {
 
-	D3D12Context::D3D12Context
-	(
-		HWND hwnd,
-		INT32 swapChainBufferWidth,
-		INT32 swapChainBufferHeight
-	)
+	D3D12Context::D3D12Context(Win32Window* window)
 		:
-		pWindowHandle(hwnd),
-		SwapChainWidth(swapChainBufferWidth),
-		SwapChainHeight(swapChainBufferHeight)
+		pWindowHandle(static_cast<HWND>(window->GetNativeWindow())),
+		SwapChainWidth(window->GetWidth()),
+		SwapChainHeight(window->GetHeight())
 	{
 		CORE_ASSERT(pWindowHandle, "Window handle is null!");
 	}
 
 	D3D12Context::~D3D12Context()
 	{
-	
 		if (pSwapChain != nullptr)
 		{
 			pSwapChain.Reset();
 			pSwapChain = nullptr;
 		}
-
-		if(pDevice != nullptr)
-		{
-			pDevice.Reset();
-			pDevice = nullptr;
-		}
-		
 	}
 
 	void D3D12Context::Init()
@@ -45,13 +33,10 @@ namespace Foundation::Graphics::D3D12
 			DebugController->EnableDebugLayer();
 		}
 
-		CreateDevice();
 		CreateCommandObjects();
 		CreateSwapChain();
-		CacheMSAAQuality();
 		LogAdapters();
 
-		pDevice->SetName(L"GPU Device");
 		pQueue->SetName(L"Graphics Queue");
 		pGCL->SetName(L"Graphics List");
 		
@@ -83,40 +68,16 @@ namespace Foundation::Graphics::D3D12
 		pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
-	void D3D12Context::CreateDevice()
-	{
-		HRESULT hr{ S_OK };
-
-#ifdef CM_DEBUG
-		ComPtr<ID3D12Debug>  DX12DebugController;
-		hr = D3D12GetDebugInterface(IID_PPV_ARGS(&DX12DebugController));
-#endif
-
-		//Create the factory.
-		hr = CreateDXGIFactory1(IID_PPV_ARGS(&pDXGIFactory4));
-		THROW_ON_FAILURE(hr);
-
-		//Create the Device.
-		hr = D3D12CreateDevice(nullptr, /* Use dedicated GPU.*/ D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice));
-
-		//If we were unable to create a Device using our
-		//dedicated GPU, try to create one with the WARP
-		//Device.
-		if (FAILED(hr))
-		{
-			ComPtr<IDXGIAdapter> warpAdapter;
-			HRESULT warpEnumResult = pDXGIFactory4->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
-			HRESULT warpDeviceResult = D3D12CreateDevice(warpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice));
-		}
-
-		//Create the fence
-		hr = pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence));
-		THROW_ON_FAILURE(hr);
-	}
+	
 
 	void D3D12Context::CreateCommandObjects()
 	{
 		HRESULT hr{ S_OK };
+
+		//Create the fence
+		hr = pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence));
+		THROW_ON_FAILURE(hr);
+
 		//Create the command queue description
 		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;

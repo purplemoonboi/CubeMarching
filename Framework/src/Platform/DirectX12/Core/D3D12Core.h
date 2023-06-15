@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/DirectX12/DirectX12.h"
 #include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
+#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
 #include "Platform/DirectX12/Heap/D3D12HeapManager.h"
 #include <array>
 
@@ -13,6 +14,9 @@
 
 namespace Foundation::Graphics::D3D12
 {
+
+	inline HRESULT Init();
+	inline void Shutdown();
 
 	// Global variables
 	inline ComPtr<ID3D12Device8>					pDevice{ nullptr };
@@ -29,10 +33,14 @@ namespace Foundation::Graphics::D3D12
 	inline UINT32 MsaaQaulity = 0;
 	inline bool MsaaState = false;
 
+	inline std::array<D3D12FrameResource, FRAMES_IN_FLIGHT> RenderFrames;
 
 	inline std::vector<IUnknown*> DeferredReleases[FRAMES_IN_FLIGHT]{};
 	inline UINT32 DeferralFlags[FRAMES_IN_FLIGHT];
 	inline std::mutex DeferralsMutex;
+
+
+	
 
 	// @brief Checks the MSAA qaulity support and caches level.
 	inline void CacheMSAAQuality()

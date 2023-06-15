@@ -46,7 +46,7 @@ namespace Foundation::Graphics::D3D12
 
 		virtual ~D3D12RenderingApi();
 
-		void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) override;
+		void Init(GraphicsContext* context) override;
 		void Clean() override;
 
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
@@ -57,7 +57,7 @@ namespace Foundation::Graphics::D3D12
 
 		void BindPasses() override;
 
-		void OnUpdatePipelineResources
+		void OnPreBeginRender
 		(
 			MainCamera* camera,
 			AppTimeManager* time,
@@ -83,11 +83,11 @@ namespace Foundation::Graphics::D3D12
 		[[nodiscard]] const RenderTarget* GetSceneAmbientOcclusionTexture()		const override; 
 		[[nodiscard]] const RenderTarget* GetSceneDepthTexture()				const override; 
 
-		[[nodiscard]] D3D12FrameResource* GetFrame() const { return Frames[CurrentFrame].get(); }
+		[[nodiscard]] D3D12FrameResource* GetFrame() const { return CurrentFrame; }
 	private:
 		// A pointer to the graphics context
 		D3D12Context* Context{ nullptr };
-
+		D3D12FrameResource* CurrentFrame;
 
 		D3D12RenderingPipelines Pipeline;
 
@@ -97,15 +97,7 @@ namespace Foundation::Graphics::D3D12
 		ScopePointer<D3D12FrameBuffer>			FrameBuffer			{ nullptr };
 		ScopePointer<D3D12RenderingPipelines>	RenderingPipelines	{ nullptr };
 
-		std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT> Frames{ nullptr };
-
-		std::array<ScopePointer<D3D12RenderTarget>, GBUFFER_SIZE> RenderTargets;
-
-		ComPtr<ID3D12RootSignature> pRootSignature;
-
-		UINT32 CurrentFrame{ 0 };
-
-
+		UINT32 CurrentFrameIndex{ 0 };
 	};
 
 }

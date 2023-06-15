@@ -46,15 +46,16 @@ namespace Foundation::Graphics
 		static Api GetAPI() { return RenderingApi; }
 
 
-		virtual void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight) = 0;
+		virtual void Init(GraphicsContext* context) = 0;
 		virtual void PreInit() = 0;
 		virtual void PostInit() = 0;
 		virtual void Clean() = 0;
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 		[[nodiscard]] virtual const FrameBufferSpecifications& GetViewportSpecifications() const = 0;
-		
-		virtual void OnUpdatePipelineResources
+
+
+		virtual void OnPreBeginRender
 		(
 			MainCamera* camera,
 			AppTimeManager* time,

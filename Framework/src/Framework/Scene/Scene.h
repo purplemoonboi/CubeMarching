@@ -38,7 +38,7 @@ namespace Foundation
 	public:
 		Scene() = delete;
 		DISABLE_COPY_AND_MOVE(Scene);
-		Scene(const std::string& name);
+		explicit Scene(const std::string& name);
 
 		Entity CreateEntity(const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
@@ -49,7 +49,6 @@ namespace Foundation
 		MainCamera* GetSceneCamera() { return SceneCamera; }
 
 	private:
-
 		template<typename T> void OnComponentAdded(Entity entity, T& component);
 
 

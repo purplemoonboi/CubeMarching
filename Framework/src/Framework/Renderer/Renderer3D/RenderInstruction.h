@@ -10,9 +10,9 @@ namespace Foundation::Graphics
 	{
 	public:
 
-		static void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
+		static void Init(GraphicsContext* context)
 		{
-			RendererApiPtr->Init(context, viewportWidth, viewportHeight);
+			RendererApiPtr->Init(context);
 		}
 
 		static void Clean()
@@ -63,7 +63,7 @@ namespace Foundation::Graphics
 			bool wireframe
 		)
 		{
-			RendererApiPtr->OnUpdatePipelineResources(camera, time, items, materials, wireframe);
+			RendererApiPtr->OnPreBeginRender(camera, time, items, materials, wireframe);
 		}
 
 		static void OnBeginRender()

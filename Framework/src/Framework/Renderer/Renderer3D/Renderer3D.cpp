@@ -12,6 +12,7 @@
 #include "Framework/Renderer/Resources/Shader.h"
 #include "Framework/Renderer/Resources/Material.h"
 #include "Framework/Renderer/Textures/Texture.h"
+#include "Framework/Scene/Scene.h"
 
 
 namespace Foundation::Graphics
@@ -73,12 +74,9 @@ namespace Foundation::Graphics
 		/** build and compile shaders */
 		auto vS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "VS", "vs_5_1");
 		auto pS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "PS", "ps_5_1");
-		auto pTS = Shader::Create(L"assets\\shaders\\TerrainPS.hlsl", "PS", "ps_5_1");
 
 		RenderData.ShaderLibrary.Add("vs", std::move(vS));
 		RenderData.ShaderLibrary.Add("ps", std::move(pS));
-		RenderData.ShaderLibrary.Add("tps", std::move(pTS));
-
 
 		BuildTextures();
 		BuildMaterials();
@@ -91,12 +89,6 @@ namespace Foundation::Graphics
 			FillMode::Opaque
 		));
 
-		RenderData.PSOs.emplace("Terrain", PipelineStateObject::Create
-		(
-			RenderData.ShaderLibrary.GetShader("vs"),
-			RenderData.ShaderLibrary.GetShader("tps"),
-			FillMode::Opaque
-		));
 
 		RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
 		(
@@ -110,6 +102,12 @@ namespace Foundation::Graphics
 	void Renderer3D::Shutdown()
 	{}
 
+	void Renderer3D::OnUpdateSceneEntities(AppTimeManager* timer, MainCamera* camera, entt::registry* registry)
+	{
+
+
+	}
+
 	void Renderer3D::BeginScene(MainCamera* camera, AppTimeManager* time, bool wireframe)
 	{
 		
@@ -118,7 +116,6 @@ namespace Foundation::Graphics
 		 * here we execute any copies for apis which rely on manual control of syncing data
 		 */
 		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
-		auto* tpso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Terrain"].get();
 
 
 		RenderInstruction::OnUpdatePipelineResources

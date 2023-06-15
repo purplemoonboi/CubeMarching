@@ -12,12 +12,12 @@ namespace Foundation::Graphics
 	ScopePointer<GraphicsContext> Renderer::Context = nullptr;
 
 
-	void Renderer::Init(HWND window, INT32 bufferWidth, INT32 bufferHeight)
+	void Renderer::Init(Window* window)
 	{
 		// Initialise the api
-		Context = GraphicsContext::Create(window, bufferWidth, bufferHeight);
+		Context = GraphicsContext::Create(window);
 
-		RenderInstruction::Init(Context.get(), bufferWidth, bufferHeight);
+		RenderInstruction::Init(Context.get());
 
 		RenderStatus = RendererStatus::INITIALISING;
 

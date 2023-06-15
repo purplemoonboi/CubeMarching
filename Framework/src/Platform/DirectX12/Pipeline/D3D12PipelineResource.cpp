@@ -101,20 +101,20 @@ namespace Foundation::Graphics::D3D12
 		const XMMATRIX view = XMLoadFloat4x4(&camera->GetView());
 		const XMMATRIX proj = XMLoadFloat4x4(&camera->GetProjection());
 
-		const XMMATRIX viewProj = XMMatrixMultiply(view, proj);
-		const XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(view), view);
-		const XMMATRIX invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
-		const XMMATRIX invViewProj = XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
+		const XMMATRIX viewProj		= XMMatrixMultiply(view, proj);
+		const XMMATRIX invView		= XMMatrixInverse(&XMMatrixDeterminant(view), view);
+		const XMMATRIX invProj		= XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
+		const XMMATRIX invViewProj	= XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
 
-		XMStoreFloat4x4(&MainPassCB.View, XMMatrixTranspose(view));
-		XMStoreFloat4x4(&MainPassCB.InvView, XMMatrixTranspose(invView));
-		XMStoreFloat4x4(&MainPassCB.Proj, XMMatrixTranspose(proj));
-		XMStoreFloat4x4(&MainPassCB.InvProj, XMMatrixTranspose(invProj));
-		XMStoreFloat4x4(&MainPassCB.ViewProj, XMMatrixTranspose(viewProj));
-		XMStoreFloat4x4(&MainPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
+		XMStoreFloat4x4(&MainPassCB.View,			XMMatrixTranspose(view));
+		XMStoreFloat4x4(&MainPassCB.InvView,		XMMatrixTranspose(invView));
+		XMStoreFloat4x4(&MainPassCB.Proj,			XMMatrixTranspose(proj));
+		XMStoreFloat4x4(&MainPassCB.InvProj,		XMMatrixTranspose(invProj));
+		XMStoreFloat4x4(&MainPassCB.ViewProj,		XMMatrixTranspose(viewProj));
+		XMStoreFloat4x4(&MainPassCB.InvViewProj,	XMMatrixTranspose(invViewProj));
 
 		MainPassCB.EyePosW = camera->GetPosition();
-		MainPassCB.RenderTargetSize = XMFLOAT2((float)camera->GetBufferDimensions().x, (float)camera->GetBufferDimensions().y);
+		MainPassCB.RenderTargetSize = XMFLOAT2(camera->GetBufferDimensions().x, camera->GetBufferDimensions().y);
 		MainPassCB.InvRenderTargetSize = XMFLOAT2(1.0f / camera->GetBufferDimensions().x, 1.0f / camera->GetBufferDimensions().y);
 		MainPassCB.NearZ = 1.0f;
 		MainPassCB.FarZ = 1000.0f;
@@ -128,39 +128,13 @@ namespace Foundation::Graphics::D3D12
 		MainPassCB.TotalTime = time->TimeElapsed();
 		MainPassCB.DeltaTime = time->DeltaTime();
 
-		const auto currentPassCB = resource->PassBuffer.get();
-		currentPassCB->CopyData(0, MainPassCB);
+		resource->PassBuffer.CopyData(0, MainPassCB);
 	}
 
-	void D3D12ResourceBuffer::UpdateVoxelTerrain
-	(
-		D3D12FrameResource* resource,
-		RenderItem* terrain
-	)
-	{
-		const auto voxelBuffer = resource->TerrainBuffer.get();
-		const auto d3d12RenderItem = dynamic_cast<D3D12RenderItem*>(terrain);
-
-		auto vCount = terrain->Geometry->VertexBuffer->GetCount();
-		const Vertex* vertex = (const Vertex*)terrain->Geometry->VertexBuffer->GetData();
-
-		if (vCount != 0)
-		{
-
-			{
-				for (INT32 i = 0; i < vCount; ++i)
-				{
-					voxelBuffer->CopyData(i, vertex[i]);
-				}
-			}
-
-			d3d12RenderItem->Geometry->VertexBuffer->SetBuffer(voxelBuffer->Resource());
-		}
-	}
 
 	void D3D12ResourceBuffer::UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems)
 	{
-		const auto constantBuffer = resource->ConstantBuffer.get();
+		const auto constantBuffer = &resource->ConstantBuffer;
 
 		for (const auto& renderItem : renderItems)
 		{
@@ -185,49 +159,13 @@ namespace Foundation::Graphics::D3D12
 		}
 	}
 
-	void D3D12ResourceBuffer::UpdateMaterialBuffers(D3D12FrameResource* resource, const std::vector<Material*>& materials)
+	
+
+	void D3D12ResourceBuffer::UpdateSceneObjects(D3D12FrameResource* resource, entt::registry* registry)
 	{
-		const auto materialBuffer = resource->MaterialBuffer.get();
 
-		for (const auto& material : materials)
-		{
-			const auto d3dMaterial = dynamic_cast<D3D12Material*>(material);
-			if (d3dMaterial->DirtyFrameCount > 0)
-			{
-				MaterialConstants matConstants;
-				matConstants.DiffuseAlbedo = d3dMaterial->DiffuseAlbedo;
-				matConstants.FresnelR0 = d3dMaterial->FresnelR0;
-				matConstants.Roughness = d3dMaterial->Roughness;
-				matConstants.DiffuseMapIndex = d3dMaterial->DiffuseMapIndex;
-				matConstants.NormalMapIndex = d3dMaterial->NormalMapIndex;
-				matConstants.RoughMapIndex = d3dMaterial->RoughMapIndex;
-				matConstants.AoMapIndex = d3dMaterial->AoMapIndex;
-				matConstants.HeighMapIndex = d3dMaterial->HeightMapIndex;
-				matConstants.Wire = d3dMaterial->UseWire;
 
-				const XMMATRIX matTransform = XMLoadFloat4x4(&d3dMaterial->MatTransform);
-				XMStoreFloat4x4(&matConstants.MatTransform, XMMatrixTranspose(matTransform));
 
-				materialBuffer->CopyData(d3dMaterial->MaterialBufferIndex, matConstants);
-				d3dMaterial->DirtyFrameCount--;
-			}
-		}
 	}
-
-	void D3D12ResourceBuffer::UpdateVoxelTerrainBuffer
-	(
-		D3D12FrameResource* resource,
-		RenderItem* terrain,
-		const std::vector<Vertex>& vertices
-	)
-	{
-		const INT32 vertexCount = static_cast<INT32>(vertices.size());
-		for (INT32 i = 0; i < vertexCount; ++i)
-		{
-			resource->TerrainBuffer->CopyData(i, vertices[i]);
-		}
-		//terrain->Geometry->VertexBuffer->SetData();
-	}
-
 }
 

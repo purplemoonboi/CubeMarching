@@ -15,7 +15,7 @@
 #include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
 #include "Platform/DirectX12/Textures/Loader/D3D12TextureLoader.h"
 
-
+#include "Framework/Scene/Scene.h"
 
 
 namespace Foundation::Graphics::D3D12
@@ -71,50 +71,18 @@ namespace Foundation::Graphics::D3D12
 
 	}
 
-	void D3D12RenderingApi::Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
+	void D3D12RenderingApi::Init(GraphicsContext* context)
 	{
 		HRESULT hr{ S_OK };
 		Context = dynamic_cast<D3D12Context*>(context);
 		Context->Init();
 
-		// Initialise heaps.
-		hr = RtvHeap.Init(512, false);
-		THROW_ON_FAILURE(hr);
-		hr = DsvHeap.Init(512, false);
-		THROW_ON_FAILURE(hr);
-		hr = SrvHeap.Init(4096, true);
-		THROW_ON_FAILURE(hr);
-		hr = UavHeap.Init(512, false);
-		THROW_ON_FAILURE(hr);
-
-		NAME_D3D12_OBJECT(RtvHeap.GetHeap(), L"RTV Heap Descriptor");
-		NAME_D3D12_OBJECT(DsvHeap.GetHeap(), L"DSV Heap Descriptor");
-		NAME_D3D12_OBJECT(SrvHeap.GetHeap(), L"SRV Heap Descriptor");
-		NAME_D3D12_OBJECT(UavHeap.GetHeap(), L"UAV Heap Descriptor");
+		
 
 		D3D12BufferFactory::Init(Context->pGCL.Get());
 		D3D12TextureLoader::Init(Context->pGCL.Get());
 
-		FrameBufferSpecifications fbs;
-		fbs.Width = viewportWidth;
-		fbs.Height = viewportHeight;
-		
-		FrameBuffer = CreateScope<D3D12FrameBuffer>(fbs);
-		FrameBuffer->Init(Context, fbs);
-
-		INT32 i;
-		for(i = 0; i < GBUFFER_SIZE; ++i)
-		{
-			RenderTargets[i] = CreateScope<D3D12RenderTarget>(nullptr, 1920, 1080);
-		}
-
-		for (i = 0; i < FRAMES_IN_FLIGHT; ++i)
-		{
-			Frames[i] = CreateScope<D3D12FrameResource>(1, 16, 64, 1);
-		}
-
-		UploadBuffer = CreateScope<D3D12ResourceBuffer>();
-
+	
 
 	}
 
@@ -136,14 +104,7 @@ namespace Foundation::Graphics::D3D12
 			FrameBuffer->OnResizeFrameBuffer(fbSpecs);
 
 
-			for (auto& rt : RenderTargets)
-			{
-				rt->SetWidth(width);
-				rt->SetHeight(height);
-				rt->Regenerate();
-				
-			}
-
+		
 		}
 	}
 
@@ -170,7 +131,7 @@ namespace Foundation::Graphics::D3D12
 		//Flush();
 	}
 
-	void D3D12RenderingApi::OnUpdatePipelineResources
+	void D3D12RenderingApi::OnPreBeginRender
 	(
 		MainCamera* camera,
 		AppTimeManager* time,
@@ -182,14 +143,14 @@ namespace Foundation::Graphics::D3D12
 
 		HRESULT hr{ S_OK };
 		FrameIndex = (FrameIndex + 1) % FRAMES_IN_FLIGHT;
-		CurrentFrame = FrameIndex;
+		CurrentFrameIndex = FrameIndex;
 
 		// Has the GPU finished processing the commands of the current frame resource
 		// If not, wait until the GPU has completed commands up to this fence point.
-		if (Context->pFence->GetCompletedValue() < Frames[FrameIndex]->Fence)
+		if (Context->pFence->GetCompletedValue() < RenderFrames[FrameIndex].Fence)
 		{
 			const HANDLE pEvent = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-			const HRESULT pEventState = Context->pFence->SetEventOnCompletion(Frames[FrameIndex]->Fence, pEvent);
+			const HRESULT pEventState = Context->pFence->SetEventOnCompletion(RenderFrames[FrameIndex].Fence, pEvent);
 			THROW_ON_FAILURE(pEventState);
 			WaitForSingleObject(pEvent, INFINITE);
 			CloseHandle(pEvent);
@@ -202,9 +163,9 @@ namespace Foundation::Graphics::D3D12
 		}
 
 		// Update constant buffers for each render item and material
-		UploadBuffer->UpdateObjectBuffers(Frames[FrameIndex].get(), items);
-		UploadBuffer->UpdateMaterialBuffers(Frames[FrameIndex].get(), materials);
-		UploadBuffer->UpdatePassBuffer(Frames[FrameIndex].get(), camera, time, wireframe);
+		UploadBuffer->UpdateObjectBuffers(&RenderFrames[FrameIndex], items);
+		UploadBuffer->UpdateMaterialBuffers(&RenderFrames[FrameIndex], materials);
+		UploadBuffer->UpdatePassBuffer(&RenderFrames[FrameIndex], camera, time, wireframe);
 
 	}
 
@@ -214,48 +175,49 @@ namespace Foundation::Graphics::D3D12
 		// current frame resource.
 		CORE_ASSERT(pDevice, "Device lost");
 		CORE_ASSERT(Context->pQueue, "Invalid command queue...");
-		CORE_ASSERT(Frames[FrameIndex]->pGCL, "Invalid command list...");
+		CORE_ASSERT(RenderFrames[FrameIndex].pGCL, "Invalid command list...");
 
-		THROW_ON_FAILURE(Frames[FrameIndex]->pCmdAlloc->Reset());
-		THROW_ON_FAILURE(Frames[FrameIndex]->pGCL->Reset(Frames[FrameIndex]->pCmdAlloc.Get(), nullptr));
+		THROW_ON_FAILURE(RenderFrames[FrameIndex].pCmdAlloc->Reset());
+		THROW_ON_FAILURE(RenderFrames[FrameIndex].pGCL->Reset(RenderFrames[FrameIndex].pCmdAlloc.Get(), nullptr));
 		CD3DX12_RESOURCE_BARRIER rtBarriers[GBUFFER_SIZE] = {  };
 
 		for(INT32 i = 0; i < GBUFFER_SIZE; ++i)
 		{
-			rtBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(RenderTargets[i]->pResource.Get(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			rtBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(RenderTargets[i]->pResource.Get(), D3D12_RESOURCE_STATE_GENERIC_READ, 
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 
 		// Bind core render root signature.
 		// Bind the resource descriptor heap and keep it live until the end of the passes.
-		Frames[FrameIndex]->pGCL->ResourceBarrier(GBUFFER_SIZE, &rtBarriers[0]);
-		Frames[FrameIndex]->pGCL->SetGraphicsRootSignature(pRootSignature.Get());
+		RenderFrames[FrameIndex].pGCL->ResourceBarrier(GBUFFER_SIZE, &rtBarriers[0]);
+		RenderFrames[FrameIndex].pGCL->SetGraphicsRootSignature(pRootSignature.Get());
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { SrvHeap.GetHeap() };
-		Frames[FrameIndex]->pGCL->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+		RenderFrames[FrameIndex].pGCL->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = Frames[FrameIndex]->PassBuffer->Resource()->GetGPUVirtualAddress();
-		Frames[FrameIndex]->pGCL->SetGraphicsRootConstantBufferView(2, passBufferAddress);
+		const D3D12_GPU_VIRTUAL_ADDRESS passBufferAddress = RenderFrames[FrameIndex].PassBuffer.Resource()->GetGPUVirtualAddress();
+		RenderFrames[FrameIndex].pGCL->SetGraphicsRootConstantBufferView(2, passBufferAddress);
 
 		// We can bind all textures in the scene - we declared 'n' amount of descriptors in the root signature.
-		Frames[FrameIndex]->pGCL->SetGraphicsRootDescriptorTable(3, SrvHeap.BeginGPU());
+		RenderFrames[FrameIndex].pGCL->SetGraphicsRootDescriptorTable(3, SrvHeap.BeginGPU());
 
 	}
 
 	void D3D12RenderingApi::BindPasses()
 	{
 		/*
-		Frames[FrameIndex]->pGCL->RSSetViewports(1, &RenderTargets[(INT8)RenderLayer::Albedo].Viewport);
-		Frames[FrameIndex]->pGCL->RSSetScissorRects(1, &RenderTargets[(INT8)RenderLayer::Albedo].Rect);
+		RenderFrames[FrameIndex].pGCL->RSSetViewports(1, &RenderTargets[(INT8)RenderLayer::Albedo].Viewport);
+		RenderFrames[FrameIndex].pGCL->RSSetScissorRects(1, &RenderTargets[(INT8)RenderLayer::Albedo].Rect);
 
 		// Specify the buffers we are going to render to.
-		Frames[FrameIndex]->pGCL->OMSetRenderTargets(1, &RenderTargets[(INT8)RenderLayer::Albedo].pRTV,
+		RenderFrames[FrameIndex].pGCL->OMSetRenderTargets(1, &RenderTargets[(INT8)RenderLayer::Albedo].pRTV,
 			true, &FrameBuffer.GetDepthStencilViewCpu());
 
 		// Clear the back buffer and depth buffer.
-		Frames[FrameIndex]->pGCL->ClearRenderTargetView(RenderTargets[(INT8)RenderLayer::Albedo].pRTV, DirectX::Colors::LightBlue, 0, nullptr);
-		Frames[FrameIndex]->pGCL->ClearDepthStencilView(FrameBuffer.GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+		RenderFrames[FrameIndex].pGCL->ClearRenderTargetView(RenderTargets[(INT8)RenderLayer::Albedo].pRTV, DirectX::Colors::LightBlue, 0, nullptr);
+		RenderFrames[FrameIndex].pGCL->ClearDepthStencilView(FrameBuffer.GetDepthStencilViewCpu(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
-		//Frames[FrameIndex]->pGCL->SetPipelineState();
+		//RenderFrames[FrameIndex].pGCL->SetPipelineState();
 		*/
 
 		//const float clearColour[]{ 0.f, 0.f, 0.f, 0.f };
@@ -279,20 +241,21 @@ namespace Foundation::Graphics::D3D12
 		//};
 
 		//// Bind render target
-		//Frames[FrameIndex]->pGCL->OMSetRenderTargets(1, &RenderTargets[static_cast<UINT32>(RenderLayer::Albedo)]->pRTV, 
+		//RenderFrames[FrameIndex].pGCL->OMSetRenderTargets(1, &RenderTargets[static_cast<UINT32>(RenderLayer::Albedo)]->pRTV, 
 		//	FALSE,
 		//	&RenderTargets[static_cast<UINT32>(RenderLayer::Albedo)]->pCSRV
 		//);
 
 		////Albedo Pass
-		//Frames[FrameIndex]->pGCL->BeginRenderPass(1, &renderPassRenderTargetDesc, &renderPassDepthStencilDesc, D3D12_RENDER_PASS_FLAG_NONE);
+		//RenderFrames[FrameIndex].pGCL->BeginRenderPass(1, &renderPassRenderTargetDesc, &renderPassDepthStencilDesc, D3D12_RENDER_PASS_FLAG_NONE);
 		//// Record Commands
 
-		//Frames[FrameIndex]->pGCL->SetPipelineState1(RenderingPipelines->GetStateObject("Albedo"));
+		//RenderFrames[FrameIndex].pGCL->SetPipelineState1(RenderingPipelines->GetStateObject("Albedo"));
 
 
-		//Frames[FrameIndex]->pGCL->EndRenderPass();
+		//RenderFrames[FrameIndex].pGCL->EndRenderPass();
 	}
+
 
 	void D3D12RenderingApi::OnEndRender()
 	{
@@ -302,14 +265,14 @@ namespace Foundation::Graphics::D3D12
 		{
 			rtBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(RenderTargets[i]->pResource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ);
 		}
-		Frames[FrameIndex]->pGCL->ResourceBarrier(GBUFFER_SIZE, &rtBarriers[0]);
+		RenderFrames[FrameIndex].pGCL->ResourceBarrier(GBUFFER_SIZE, &rtBarriers[0]);
 	}
 
 
 	void D3D12RenderingApi::DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
 	{
 		const auto dx12Pso = dynamic_cast<D3D12PipelineStateObject*>(pso);
-		Frames[FrameIndex]->pGCL->SetPipelineState(dx12Pso->GetPipelineState());
+		RenderFrames[FrameIndex].pGCL->SetPipelineState(dx12Pso->GetPipelineState());
 		
 		// For each render item...
 		for (auto& renderItem : renderItems)
@@ -319,22 +282,19 @@ namespace Foundation::Graphics::D3D12
 			const auto d3d12VertexBuffer = dynamic_cast<D3D12VertexBuffer*>(renderItem->Geometry->VertexBuffer.get());
 			const auto d3d12IndexBuffer = dynamic_cast<D3D12IndexBuffer*>(renderItem->Geometry->IndexBuffer.get());
 
-			Frames[FrameIndex]->pGCL->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
-			Frames[FrameIndex]->pGCL->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
-			Frames[FrameIndex]->pGCL->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
+			RenderFrames[FrameIndex].pGCL->IASetVertexBuffers(0, 1, &d3d12VertexBuffer->GetVertexBufferView());
+			RenderFrames[FrameIndex].pGCL->IASetIndexBuffer(&d3d12IndexBuffer->GetIndexBufferView());
+			RenderFrames[FrameIndex].pGCL->IASetPrimitiveTopology(renderItemDerived->PrimitiveType);
 
 			const UINT objConstBufferByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(ObjectConstant));
 			const UINT matConstBufferByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(MaterialConstants));
 
-			ID3D12Resource* objectConstantBuffer	= Frames[FrameIndex]->ConstantBuffer->Resource();
-			ID3D12Resource* materialConstantBuffer	= Frames[FrameIndex]->MaterialBuffer->Resource();
+			ID3D12Resource* objectConstantBuffer	= RenderFrames[FrameIndex].ConstantBuffer.Resource();
 
 			const D3D12_GPU_VIRTUAL_ADDRESS objConstBufferAddress = objectConstantBuffer->GetGPUVirtualAddress() + renderItem->ObjectConstantBufferIndex * objConstBufferByteSize;
-			const D3D12_GPU_VIRTUAL_ADDRESS materialBufferAddress = materialConstantBuffer->GetGPUVirtualAddress() + renderItem->Material->GetMaterialIndex() * matConstBufferByteSize;
 
-			Frames[FrameIndex]->pGCL->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
-			Frames[FrameIndex]->pGCL->SetGraphicsRootConstantBufferView(1, materialBufferAddress);
-			Frames[FrameIndex]->pGCL->DrawIndexedInstanced(renderItem->Geometry->IndexBuffer->GetCount(), 1, renderItem->StartIndexLocation, renderItem->BaseVertexLocation, 0);
+			RenderFrames[FrameIndex].pGCL->SetGraphicsRootConstantBufferView(0, objConstBufferAddress);
+			RenderFrames[FrameIndex].pGCL->DrawIndexedInstanced(renderItem->Geometry->IndexBuffer->GetCount(), 1, renderItem->StartIndexLocation, renderItem->BaseVertexLocation, 0);
 
 		}
 	}
@@ -372,12 +332,12 @@ namespace Foundation::Graphics::D3D12
 	void D3D12RenderingApi::Flush()
 	{
 		HRESULT hr{ S_OK };
-		hr = Frames[FrameIndex]->pGCL->Close();
+		hr = RenderFrames[FrameIndex].pGCL->Close();
 		THROW_ON_FAILURE(hr);
-		ID3D12CommandList* cmdList[] = { Frames[FrameIndex]->pGCL.Get() };
+		ID3D12CommandList* cmdList[] = { RenderFrames[FrameIndex].pGCL.Get() };
 		Context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
-		Frames[FrameIndex]->Fence = ++Context->SyncCounter;
-		hr = Context->pQueue->Signal(Context->pFence.Get(), Frames[FrameIndex]->Fence);
+		RenderFrames[FrameIndex].Fence = ++Context->SyncCounter;
+		hr = Context->pQueue->Signal(Context->pFence.Get(), RenderFrames[FrameIndex].Fence);
 		THROW_ON_FAILURE(hr);
 	}
 

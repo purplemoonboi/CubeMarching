@@ -31,8 +31,8 @@ namespace Foundation
 
 		virtual void OnUpdate() = 0;
 
-		virtual UINT32 GetWidth() const = 0;
-		virtual UINT32 GetHeight() const = 0;
+		virtual INT32 GetWidth() const = 0;
+		virtual INT32 GetHeight() const = 0;
 
 		virtual void* GetNativeWindow() const = 0;
 

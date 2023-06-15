@@ -6,6 +6,17 @@
 #include "Framework/Core/Time/AppTimeManager.h"
 #include "Framework/Renderer/Api/FrameResource.h"
 
+#include <entt.hpp>
+
+namespace entt
+{
+	registry;
+}
+
+namespace Foundation
+{
+	class Scene;
+}
 
 namespace Foundation::Graphics
 {
@@ -42,7 +53,7 @@ namespace Foundation::Graphics
 		static void Shutdown();
 
 		// @brief - Update internal entity attributes
-		static void OnUpdatePipelineResources();
+		static void OnUpdateSceneEntities(AppTimeManager* timer, MainCamera* camera, entt::registry* registry);
 
 		// @brief - Marks the start of rendering commands.
 		//		

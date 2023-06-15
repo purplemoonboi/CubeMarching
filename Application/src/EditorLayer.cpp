@@ -106,6 +106,7 @@ namespace Foundation::Editor
             }
         }
 
+        Scene->OnUpdate(time);
     }
 
     static bool wireframe = false;

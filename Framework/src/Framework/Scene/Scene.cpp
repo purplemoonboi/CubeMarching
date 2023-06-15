@@ -113,24 +113,9 @@ namespace Foundation
 
 	void Scene::OnRender(AppTimeManager* time, bool wireframe)
 	{
-		//TODO: Implement camera component properly.
-		/**
-			MainCamera* camera = nullptr;
-			auto group = Registry.view<CameraComponent>();
-
-			for(auto entity : group)
-			{
-				auto cameraComponent = group.get<CameraComponent>(entity);
-
-				if(cameraComponent.Primary)
-				{
-					camera = &cameraComponent.Camera;
-					
-				}
-			}
-		*/
-		Renderer3D::BeginScene(SceneCamera, time, wireframe);
-
+		
+		//Renderer3D::BeginScene(SceneCamera, time, wireframe);
+		Renderer3D::OnUpdateSceneEntities(time, SceneCamera, &Registry);
 		
 
 		Renderer3D::EndScene();

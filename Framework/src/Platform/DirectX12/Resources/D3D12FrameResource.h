@@ -14,26 +14,21 @@ namespace Foundation::Graphics::D3D12
 	// for a frame.  
     struct D3D12FrameResource
     {
-        D3D12FrameResource(UINT passCount, UINT materialBufferCount, UINT objectCount, UINT voxelBufferElementCount);
-        GENERATE_COPY_AND_MOVE(D3D12FrameResource);
-
-        
+        D3D12FrameResource();
+        D3D12FrameResource(UINT passCount, UINT objectCount);
+        DISABLE_COPY_AND_MOVE(D3D12FrameResource);
 
         ~D3D12FrameResource();
 
-        bool QueryTerrainBuffer(UINT elementCount);
-        void UpdateVoxelBuffer(UINT elementCount);
 
-        ComPtr<ID3D12GraphicsCommandList4> pGCL;
-
-        ComPtr<ID3D12CommandAllocator> pCmdAlloc;
+        ComPtr<ID3D12GraphicsCommandList4> pGCL{nullptr};
+        ComPtr<ID3D12CommandAllocator> pCmdAlloc{nullptr};
 
 		
-		ScopePointer<D3D12UploadBuffer<PassConstants>> PassBuffer = nullptr;
-        ScopePointer<D3D12UploadBuffer<MaterialConstants>> MaterialBuffer = nullptr;
-		ScopePointer<D3D12UploadBuffer<ObjectConstant>> ConstantBuffer = nullptr;
-        ScopePointer<D3D12UploadBuffer<Vertex>> TerrainBuffer = nullptr;
-        ScopePointer<D3D12RenderTarget> RenderTarget = nullptr;
+        D3D12UploadBuffer<PassConstants> PassBuffer;
+        D3D12UploadBuffer<ObjectConstant> ConstantBuffer;
+
+        std::array<D3D12RenderTarget, GBUFFER_SIZE> GBuffer;
 
 		UINT64 Fence = 0;
     };
