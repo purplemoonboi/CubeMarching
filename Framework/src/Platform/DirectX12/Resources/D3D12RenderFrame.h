@@ -12,13 +12,13 @@ namespace Foundation::Graphics::D3D12
 {
     // Stores the resources needed for the CPU to build the command lists
 	// for a frame.  
-    struct D3D12FrameResource
+    struct D3D12RenderFrame
     {
-        D3D12FrameResource();
-        D3D12FrameResource(UINT passCount, UINT objectCount);
-        DISABLE_COPY_AND_MOVE(D3D12FrameResource);
+        D3D12RenderFrame();
+        D3D12RenderFrame(UINT passCount, UINT objectCount);
+        DISABLE_COPY_AND_MOVE(D3D12RenderFrame);
 
-        ~D3D12FrameResource();
+        ~D3D12RenderFrame();
 
 
         ComPtr<ID3D12GraphicsCommandList4> pGCL{nullptr};

@@ -4,7 +4,7 @@
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Api/D3D12RenderingApi.h"
-#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
 #include "Platform/DirectX12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/DirectX12/Core/D3D12Core.h"
 

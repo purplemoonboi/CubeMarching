@@ -157,7 +157,6 @@ namespace Foundation::Graphics
 	{
 	public:
 		virtual ~VertexBuffer() = default;
-
 		virtual void Bind() const = 0;
 		virtual void UnBind() const = 0;
 		virtual void SetData(const void* data, INT32 size, INT32 count) = 0;
@@ -170,7 +169,6 @@ namespace Foundation::Graphics
 		[[nodiscard]] virtual const void* GetGPUResource() const = 0;
 		static ScopePointer<VertexBuffer> Create(UINT size, UINT vertexCount);
 		static ScopePointer<VertexBuffer> Create(const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
-
 	};
 
 	class IndexBuffer

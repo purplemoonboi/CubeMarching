@@ -10,7 +10,7 @@ namespace Foundation::Graphics
 	// geometries are stored in one vertex and index buffer.  It provides the offsets
 	// and data needed to draw a subset of geometry stores in the vertex and index 
 	// buffers so that we can implement the technique described by Figure 6.3.
-	struct SubGeometry
+	struct MeshData
 	{
 		UINT IndexCount = 0;
 		UINT StartIndexLocation = 0;
@@ -18,7 +18,7 @@ namespace Foundation::Graphics
 
 		// Bounding box of the geometry defined by this submesh. 
 		// This is used in later chapters of the book.
-		DirectX::BoundingBox Bounds;
+		BoundingBox Bounds;
 	};
 
 
@@ -35,25 +35,19 @@ namespace Foundation::Graphics
 			Name(std::move(name))
 		{}
 
-
-		static ScopePointer<MeshGeometry> Create(std::string&& name)
-		{
-			return CreateScope<MeshGeometry>(name);
-		}
-
 		// @brief Returns the name of the mesh
-		const std::string& GetName() const { return Name; }
+		[[nodiscard]] const std::string& GetName() const { return Name; }
 
 		// @brief Contains the vertex data for drawing the mesh
-		ScopePointer<VertexBuffer> VertexBuffer;
+		ScopePointer<VertexBuffer> VertexBuffer{nullptr};
 
 		// @brief Contains the indices for drawing the mesh
-		ScopePointer<IndexBuffer> IndexBuffer;
+		ScopePointer<IndexBuffer> IndexBuffer{nullptr};
 
 		// A MeshGeometry may store multiple geometries in one vertex/index buffer.
 		// Use this container to define the Submesh geometries so we can draw
 		// the Submeshes individually.
-		std::unordered_map<std::string, SubGeometry> DrawArgs;
+		std::unordered_map<std::string, MeshData> DrawArgs;
 
 		INT8 DirtFlag = -1;
 	private:

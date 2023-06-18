@@ -1,12 +1,261 @@
 #include "Framework/cmpch.h"
 #include "D3D12Context.h"
 #include "Framework/Core/Log/Log.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
 #include "Platform/Windows/Win32Window.h"
 
 
 namespace Foundation::Graphics::D3D12
 {
+
+	// Global variables
+	inline ComPtr<ID3D12Device8>	pDevice{ nullptr };
+	inline ComPtr<IDXGIFactory4>	pDXGIFactory4{ nullptr };
+	inline ComPtr<ID3D12Fence>		pFence{ nullptr };
+
+	inline UINT32 MsaaQaulity = 0;
+	inline bool MsaaState = false;
+
+	inline D3D12DescriptorHeap	RtvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
+	inline D3D12DescriptorHeap	DsvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
+	inline D3D12DescriptorHeap	SrvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+	inline D3D12DescriptorHeap	UavHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+
+	inline std::array<D3D12RenderFrame, FRAMES_IN_FLIGHT> RenderFrames;
+	inline UINT32 FrameIndex{ 0 };
+
+	inline std::vector<IUnknown*> DeferredReleases[FRAMES_IN_FLIGHT]{};
+	inline UINT32 DeferralFlags[FRAMES_IN_FLIGHT];
+	inline std::mutex DeferralsMutex;
+
+	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers()
+	{
+		const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
+			0, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC pointClamp(
+			1, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC linearWrap(
+			2, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC linearClamp(
+			3, // shaderRegister
+			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+		const CD3DX12_STATIC_SAMPLER_DESC anisotropicWrap(
+			4, // shaderRegister
+			D3D12_FILTER_ANISOTROPIC, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressW
+			0.0f,                             // mipLODBias
+			8);                               // maxAnisotropy
+
+		const CD3DX12_STATIC_SAMPLER_DESC anisotropicClamp(
+			5, // shaderRegister
+			D3D12_FILTER_ANISOTROPIC, // filter
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressW
+			0.0f,                              // mipLODBias
+			8);                                // maxAnisotropy
+
+		return
+		{
+			pointWrap, pointClamp,
+			linearWrap, linearClamp,
+			anisotropicWrap, anisotropicClamp
+		};
+	}
+
+	namespace Internal
+	{
+		void DeferredRelease(IUnknown* resource)
+		{
+			const UINT32 frame = FrameIndex;
+			std::lock_guard{ DeferralsMutex };
+
+			DeferredReleases[frame].push_back(resource);
+			SetDeferredReleasesFlag();
+		}
+	}
+
+	HRESULT InitD3D12Core()
+	{
+		HRESULT hr{ S_OK };
+
+
+		// Initialise heaps.
+		hr = RtvHeap.Init(512, false);
+		THROW_ON_FAILURE(hr);
+		hr = DsvHeap.Init(512, false);
+		THROW_ON_FAILURE(hr);
+		hr = SrvHeap.Init(4096, true);
+		THROW_ON_FAILURE(hr);
+		hr = UavHeap.Init(512, false);
+		THROW_ON_FAILURE(hr);
+
+		NAME_D3D12_OBJECT(RtvHeap.GetHeap(), L"RTV Heap Descriptor");
+		NAME_D3D12_OBJECT(DsvHeap.GetHeap(), L"DSV Heap Descriptor");
+		NAME_D3D12_OBJECT(SrvHeap.GetHeap(), L"SRV Heap Descriptor");
+		NAME_D3D12_OBJECT(UavHeap.GetHeap(), L"UAV Heap Descriptor");
+
+
+#ifdef CM_DEBUG
+		ComPtr<ID3D12Debug>  DX12DebugController;
+		hr = D3D12GetDebugInterface(IID_PPV_ARGS(&DX12DebugController));
+#endif
+
+		//Create the factory.
+		hr = CreateDXGIFactory1(IID_PPV_ARGS(&pDXGIFactory4));
+		THROW_ON_FAILURE(hr);
+
+		//Create the Device.
+		hr = D3D12CreateDevice(nullptr, /* Use dedicated GPU.*/ D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice));
+
+		//If we were unable to create a Device using our
+		//dedicated GPU, try to create one with the WARP
+		//Device.
+		if (FAILED(hr))
+		{
+			ComPtr<IDXGIAdapter> warpAdapter;
+			HRESULT hr = pDXGIFactory4->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter));
+			THROW_ON_FAILURE(hr);
+			hr = D3D12CreateDevice(warpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice));
+			THROW_ON_FAILURE(hr);
+		}
+
+		return hr;
+	}
+
+	void Shutdown()
+	{
+	}
+
+	constexpr D3D12DescriptorHeap* GetRTVHeap()
+	{
+		return &RtvHeap;
+	}
+	constexpr D3D12DescriptorHeap* GetDSVHeap()
+	{
+		return &DsvHeap;
+	}
+	constexpr D3D12DescriptorHeap* GetSRVHeap()
+	{
+		return &SrvHeap;
+	}
+	constexpr D3D12DescriptorHeap* GetUAVHeap()
+	{
+		return &UavHeap;
+	}
+
+	constexpr ID3D12Device8* Device()
+	{
+		return pDevice.Get();
+	}
+
+	constexpr D3D12RenderFrame* CurrentRenderFrame()
+	{
+		return &RenderFrames[FrameIndex];
+	}
+
+	constexpr ID3D12Fence* Fence()
+	{
+		return pFence.Get();
+	}
+
+	void CacheMSAAQuality()
+	{
+
+		D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaaQualityLevels;
+		msaaQualityLevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		msaaQualityLevels.SampleCount = 4;
+		msaaQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+		msaaQualityLevels.NumQualityLevels = 0;
+
+		HRESULT hr{ S_OK };
+
+		hr = pDevice->CheckFeatureSupport
+		(
+			D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+			&msaaQualityLevels,
+			sizeof(msaaQualityLevels)
+		);
+		THROW_ON_FAILURE(hr);
+
+		MsaaQaulity = msaaQualityLevels.NumQualityLevels;
+		CORE_ASSERT(MsaaQaulity > 0 && "Unexpected MSAA quality level.", "Unexpected MSAA quality level.");
+	}
+
+	void SetDeferredReleasesFlag()
+	{
+		DeferralFlags[FrameIndex] = 1;
+	}
+
+	D3D12RenderFrame* __declspec(noinline) IncrementFrame()
+	{
+
+		HRESULT hr{ S_OK };
+		FrameIndex = (FrameIndex + 1) % FRAMES_IN_FLIGHT;
+
+		// Has the GPU finished processing the commands of the current frame resource
+		// If not, wait until the GPU has completed commands up to this fence point.
+		if (pFence->GetCompletedValue() < RenderFrames[FrameIndex].Fence)
+		{
+			const HANDLE pEvent = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+			const HRESULT pEventState = pFence->SetEventOnCompletion(RenderFrames[FrameIndex].Fence, pEvent);
+			THROW_ON_FAILURE(pEventState);
+			WaitForSingleObject(pEvent, INFINITE);
+			CloseHandle(pEvent);
+		}
+
+		// Process pending free operations
+		if (DeferralFlags[FrameIndex] == 1)
+		{
+			ProcessDeferrals(FrameIndex);
+		}
+
+		return &RenderFrames[FrameIndex];
+	}
+
+	void __declspec(noinline) ProcessDeferrals(UINT32 frame)
+	{
+		std::lock_guard{ DeferralsMutex };
+
+		DeferralFlags[frame] = 0;
+
+		RtvHeap.ProcessDeferredFree(frame);
+		DsvHeap.ProcessDeferredFree(frame);
+		SrvHeap.ProcessDeferredFree(frame);
+		UavHeap.ProcessDeferredFree(frame);
+
+		std::vector<IUnknown*>& resources{ DeferredReleases[frame] };
+		if (!resources.empty())
+		{
+			for (auto& resource : resources)
+			{
+				Release(resource);
+			}
+			resources.clear();
+		}
+	}
+
+
 
 	D3D12Context::D3D12Context(Win32Window* window)
 		:
@@ -33,12 +282,24 @@ namespace Foundation::Graphics::D3D12
 			DebugController->EnableDebugLayer();
 		}
 
-		CreateCommandObjects();
-		CreateSwapChain();
-		LogAdapters();
+		const HRESULT hr{ InitD3D12Core() };
+		if(hr != S_OK)
+		{
+			CORE_ERROR("Failed to instantiate core D3D objects...");
+			THROW_ON_FAILURE(hr);
+		}
+		else
+		{
+			CORE_TRACE("Creating D3D command objects...");
+			CreateCommandObjects();
+			CreateSwapChain();
+			LogAdapters();
 
-		pQueue->SetName(L"Graphics Queue");
-		pGCL->SetName(L"Graphics List");
+#ifdef CM_DEBUG
+			pQueue->SetName(L"Graphics Queue");
+			pGCL->SetName(L"Graphics List");
+#endif
+		}
 		
 	}
 
@@ -68,7 +329,16 @@ namespace Foundation::Graphics::D3D12
 		pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
-	
+
+	HWND D3D12Context::GetHwnd() const
+	{
+		return pWindowHandle;
+	}
+
+	UINT64 D3D12Context::GetSyncCount() const
+	{
+		return SyncCounter;
+	}
 
 	void D3D12Context::CreateCommandObjects()
 	{
@@ -138,6 +408,7 @@ namespace Foundation::Graphics::D3D12
 
 		THROW_ON_FAILURE(pDXGIFactory4->CreateSwapChain(pQueue.Get(), &swapChainDesc, pSwapChain.GetAddressOf()));
 	}
+
 
 
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }

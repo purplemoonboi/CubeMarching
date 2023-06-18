@@ -118,15 +118,6 @@ namespace Foundation::Graphics
 		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
 
 
-		RenderInstruction::OnUpdatePipelineResources
-		(
-			camera,
-			time,
-			RenderData.OpaqueRenderItems,
-			RenderData.Materials,
-			wireframe
-		);
-
 		RenderInstruction::OnBeginRender();
 
 		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);

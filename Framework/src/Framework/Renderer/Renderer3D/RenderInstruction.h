@@ -58,13 +58,7 @@ namespace Foundation::Graphics
 			RendererApiPtr->Flush();
 		}
 
-		static void OnUpdatePipelineResources(MainCamera* camera, AppTimeManager* time,
-			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
-			bool wireframe
-		)
-		{
-			RendererApiPtr->OnPreBeginRender(camera, time, items, materials, wireframe);
-		}
+		
 
 		static void OnBeginRender()
 		{

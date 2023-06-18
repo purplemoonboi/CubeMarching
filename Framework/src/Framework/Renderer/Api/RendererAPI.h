@@ -54,15 +54,6 @@ namespace Foundation::Graphics
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 		[[nodiscard]] virtual const FrameBufferSpecifications& GetViewportSpecifications() const = 0;
 
-
-		virtual void OnPreBeginRender
-		(
-			MainCamera* camera,
-			AppTimeManager* time,
-			const std::vector<RenderItem*>& items, 
-			const std::vector<Material*>& materials,
-			bool wireframe
-		) = 0;
 		virtual void OnBeginRender() = 0;
 		virtual void OnEndRender() = 0;
 		virtual void BindPasses() = 0;

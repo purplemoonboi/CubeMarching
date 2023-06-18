@@ -1,11 +1,12 @@
-#include "Platform/DirectX12/Pipeline/D3D12PipelineResource.h"
+#include "D3D12PipelineResource.h"
 
 #include "Framework/Camera/MainCamera.h"
 #include "Framework/Core/Time/AppTimeManager.h"
 
+#include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 #include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
-#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
 
 
 namespace Foundation::Graphics::D3D12
@@ -13,7 +14,7 @@ namespace Foundation::Graphics::D3D12
 	
 //D3D12ResourceBuffer::D3D12ResourceBuffer
 //(
-//	const std::array<ScopePointer<D3D12FrameResource>, FRAMES_IN_FLIGHT>& frameResources,
+//	const std::array<ScopePointer<D3D12RenderFrame>, FRAMES_IN_FLIGHT>& frameResources,
 //	UINT renderItemsCount
 //)
 //{
@@ -91,7 +92,6 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12ResourceBuffer::UpdatePassBuffer
 	(
-		D3D12FrameResource* resource,
 		const MainCamera* camera,
 		AppTimeManager* time,
 		bool wireframe
@@ -128,13 +128,16 @@ namespace Foundation::Graphics::D3D12
 		MainPassCB.TotalTime = time->TimeElapsed();
 		MainPassCB.DeltaTime = time->DeltaTime();
 
-		resource->PassBuffer.CopyData(0, MainPassCB);
+		const auto frame = CurrentRenderFrame();
+		frame->PassBuffer.CopyData(0, MainPassCB);
+
 	}
 
 
-	void D3D12ResourceBuffer::UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems)
+	void D3D12ResourceBuffer::UpdateObjectBuffers(const std::vector<RenderItem*>& renderItems)
 	{
-		const auto constantBuffer = &resource->ConstantBuffer;
+		const auto frame = CurrentRenderFrame();
+		const auto constantBuffer = &frame->ConstantBuffer;
 
 		for (const auto& renderItem : renderItems)
 		{
@@ -161,7 +164,7 @@ namespace Foundation::Graphics::D3D12
 
 	
 
-	void D3D12ResourceBuffer::UpdateSceneObjects(D3D12FrameResource* resource, entt::registry* registry)
+	void D3D12ResourceBuffer::UpdateSceneObjects(entt::registry* registry)
 	{
 
 

@@ -6,7 +6,7 @@
 namespace Foundation::Graphics::D3D12
 {
 	class D3D12Context;
-	class D3D12FrameResource;
+	class D3D12RenderFrame;
 	class D3D12ResourceBuffer;
 	class D3D12FrameBuffer;
 	class D3D12RenderTarget;
@@ -57,15 +57,6 @@ namespace Foundation::Graphics::D3D12
 
 		void BindPasses() override;
 
-		void OnPreBeginRender
-		(
-			MainCamera* camera,
-			AppTimeManager* time,
-			const std::vector<RenderItem*>& items, 
-			const std::vector<Material*>& materials,
-			bool wireframe
-		) override;
-
 		void OnBeginRender() override;
 		void OnEndRender() override;
 
@@ -83,17 +74,14 @@ namespace Foundation::Graphics::D3D12
 		[[nodiscard]] const RenderTarget* GetSceneAmbientOcclusionTexture()		const override; 
 		[[nodiscard]] const RenderTarget* GetSceneDepthTexture()				const override; 
 
-		[[nodiscard]] D3D12FrameResource* GetFrame() const { return CurrentFrame; }
 	private:
 		// A pointer to the graphics context
 		D3D12Context* Context{ nullptr };
-		D3D12FrameResource* CurrentFrame;
 
 		D3D12RenderingPipelines Pipeline;
 
 	
 
-		ScopePointer<D3D12ResourceBuffer>		UploadBuffer		{ nullptr };
 		ScopePointer<D3D12FrameBuffer>			FrameBuffer			{ nullptr };
 		ScopePointer<D3D12RenderingPipelines>	RenderingPipelines	{ nullptr };
 

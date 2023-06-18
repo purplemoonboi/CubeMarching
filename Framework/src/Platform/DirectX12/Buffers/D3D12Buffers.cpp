@@ -4,7 +4,7 @@
 #include "Framework/Core/Time/AppTimeManager.h"
 
 #include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
+#include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
 #include "Platform/DirectX12/UploadBuffer/D3D12UploadBuffer.h"
 #include "Platform/DirectX12/Materials/D3D12Material.h"
 #include "Platform/DirectX12/Core/D3D12Core.h"

@@ -1,23 +1,23 @@
 #include "Framework/cmpch.h"
-#include "Platform/DirectX12/Resources/D3D12FrameResource.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Foundation::Graphics::D3D12
 {
-	D3D12FrameResource::~D3D12FrameResource()
+	D3D12RenderFrame::~D3D12RenderFrame()
 	{
 		
 	}
 
 
-	D3D12FrameResource::D3D12FrameResource()
+	D3D12RenderFrame::D3D12RenderFrame()
 		:
 	pGCL(nullptr),
 	pCmdAlloc(nullptr)
 	{
 	}
 
-	D3D12FrameResource::D3D12FrameResource(UINT passCount, UINT objectCount)
+	D3D12RenderFrame::D3D12RenderFrame(UINT passCount, UINT objectCount)
 	{
 
 		

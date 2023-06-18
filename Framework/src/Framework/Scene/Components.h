@@ -102,7 +102,7 @@ namespace Foundation
 			StaticMeshComponent() = default;
 
 			bool WireFrame = false;
-			MeshGeometry* Mesh;
+			MeshGeometry Mesh{"StaticMesh"};
 		};
 
 	}

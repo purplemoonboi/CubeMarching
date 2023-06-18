@@ -3,7 +3,7 @@
 #include "Framework/Primitives/GeometryBuilder.h"
 
 
-#include "../Resources/D3D12FrameResource.h"
+#include "../Resources/D3D12RenderFrame.h"
 #include "../RenderItems/D3D12RenderItem.h"
 
 namespace Foundation

@@ -127,11 +127,7 @@ namespace Foundation::Graphics
 			FillMode fillMode = FillMode::Opaque
 		);
 
-		/*static ScopePointer<PipelineStateObject> Create
-		(
-			Shader* computeShader,
-			Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature
-		);*/
+		
 
 	protected:
 		PipelineDesc Desc;

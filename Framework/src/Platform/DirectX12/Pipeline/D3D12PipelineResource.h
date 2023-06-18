@@ -20,7 +20,7 @@ namespace Foundation::Graphics
 
 namespace Foundation::Graphics::D3D12
 {
-	class D3D12FrameResource;
+	class D3D12RenderFrame;
 
 	class D3D12ResourceBuffer
 	{
@@ -31,14 +31,13 @@ namespace Foundation::Graphics::D3D12
 
 
 		void UpdatePassBuffer(
-			D3D12FrameResource* resource,
 			const MainCamera* camera,
 			AppTimeManager* time,
 			bool wireframe
 		);
 
-		void UpdateObjectBuffers(D3D12FrameResource* resource, const std::vector<RenderItem*>& renderItems);
-		void UpdateSceneObjects(D3D12FrameResource* resource, entt::registry* registry);
+		void UpdateObjectBuffers(const std::vector<RenderItem*>& renderItems);
+		void UpdateSceneObjects(entt::registry* registry);
 
 	private:
 		PassConstants MainPassCB;

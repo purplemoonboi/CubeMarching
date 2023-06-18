@@ -1,10 +1,10 @@
 #pragma once
 #include "../DirectX12.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Framework/Core/Log/Log.h"
 
 
-#include "Platform/DirectX12/Core/D3D12Core.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -28,7 +28,7 @@ namespace Foundation::Graphics::D3D12
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			const HRESULT hr = pDevice->CreateCommittedResource
+			const HRESULT hr = Device()->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
