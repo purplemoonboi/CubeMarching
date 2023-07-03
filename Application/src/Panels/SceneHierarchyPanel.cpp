@@ -387,9 +387,9 @@ namespace Foundation::Editor
 			ImGui::ColorEdit4("Colour", col);
 		});
 
-		DrawComponent<MeshComponent>("Mesh Component", entity, [](auto& component)
+		DrawComponent<StaticMeshComponent>("Mesh Component", entity, [](auto& component)
 		{
-				const char* name = component.Mesh->GetName().c_str();
+				const char* name = component.Mesh.GetName().c_str();
 				ImGui::Text("Name", name);
 
 				bool wire = component.WireFrame;

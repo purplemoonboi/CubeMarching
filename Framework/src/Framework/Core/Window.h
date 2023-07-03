@@ -31,16 +31,18 @@ namespace Foundation
 
 		virtual void OnUpdate() = 0;
 
-		virtual INT32 GetWidth() const = 0;
-		virtual INT32 GetHeight() const = 0;
+		[[nodiscard]] virtual INT32 GetWidth() const = 0;
+		[[nodiscard]] virtual INT32 GetHeight() const = 0;
+		[[nodiscard]] virtual bool IsVSync() const = 0;
+		[[nodiscard]] virtual void* GetNativeWindow() const = 0;
 
-		virtual void* GetNativeWindow() const = 0;
+		[[nodiscard]] virtual bool IsMinimised() const = 0;
+		[[nodiscard]] virtual bool IsFullScreen() const = 0;
 
 		/*..Window Attributes..*/
 		
 		virtual void SetEventCallBack(const WindowCallback& callback) = 0;
 		virtual void SetVSync(bool enabled) = 0;
-		virtual bool IsVSync() const = 0;
 
 		static Window* Create(const WindowProperties& props = WindowProperties());
 

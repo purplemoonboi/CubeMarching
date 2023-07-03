@@ -52,21 +52,20 @@ namespace Foundation::Graphics
 		// @brief - Cleans the rendering system.
 		static void Shutdown();
 
-		// @brief - Update internal entity attributes
-		static void OnUpdateSceneEntities(AppTimeManager* timer, MainCamera* camera, entt::registry* registry);
-
-		// @brief - Marks the start of rendering commands.
+		// @brief - Marks the start of rendering a scene.
 		//		
-		static void BeginScene(MainCamera* camera, AppTimeManager* time, bool wireframe);
+		static void BeginScene(MainCamera* camera, AppTimeManager* time);
 
 		// @brief - Marks the end to capturing rendering instructions.
 		//			Calls a flush() once the current block of data is
 		//			calculated for rendering.
 		static void EndScene();
 
-		static void BuildMaterials();
+ 		// @brief - Creates the core engine materials. 
+		static void BuildCoreEngineDefaultMaterials();
 
-		static void BuildTextures();
+		// @brief - Creates the core engine textures.
+		static void BuildCoreEngineDefaultTextures();
 
 		static void CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions = 1);
 
@@ -76,16 +75,7 @@ namespace Foundation::Graphics
 
 		static void CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType);
 
-		static void SetBuffer(const std::string& renderItemTag, const std::vector<Vertex>& vertices, const std::vector<UINT16>& indices);
-
-		static void SetBuffer(const std::string& renderItemTag, Vertex* vertices, UINT vCount, UINT16* indices, UINT iCount);
-
-
 		static RenderItem* GetRenderItem(UINT16 index);
-
-
-
-
 	};
 
 

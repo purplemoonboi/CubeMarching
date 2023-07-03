@@ -1,6 +1,8 @@
 #include "Framework/cmpch.h"
 #include "D3D12Context.h"
+
 #include "Framework/Core/Log/Log.h"
+
 #include "Platform/Windows/Win32Window.h"
 
 
@@ -13,7 +15,7 @@ namespace Foundation::Graphics::D3D12
 	inline ComPtr<ID3D12Fence>		pFence{ nullptr };
 
 	inline UINT32 MsaaQaulity = 0;
-	inline bool MsaaState = false;
+	inline BOOL MsaaState = false;
 
 	inline D3D12DescriptorHeap	RtvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
 	inline D3D12DescriptorHeap	DsvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
@@ -159,24 +161,30 @@ namespace Foundation::Graphics::D3D12
 	{
 		return &SrvHeap;
 	}
+
 	constexpr D3D12DescriptorHeap* GetUAVHeap()
 	{
 		return &UavHeap;
 	}
 
-	constexpr ID3D12Device8* Device()
+	constexpr ID3D12Device8* GetDevice()
 	{
 		return pDevice.Get();
 	}
 
-	constexpr D3D12RenderFrame* CurrentRenderFrame()
+	D3D12RenderFrame* CurrentRenderFrame()
 	{
 		return &RenderFrames[FrameIndex];
 	}
 
-	constexpr ID3D12Fence* Fence()
+	constexpr ID3D12Fence* GetFence()
 	{
 		return pFence.Get();
+	}
+
+	constexpr UINT CurrentFrameIndex()
+	{
+		return FrameIndex;
 	}
 
 	void CacheMSAAQuality()
@@ -207,7 +215,18 @@ namespace Foundation::Graphics::D3D12
 		DeferralFlags[FrameIndex] = 1;
 	}
 
-	D3D12RenderFrame* __declspec(noinline) IncrementFrame()
+	UINT32 GetMSAAQuality()
+	{
+		return MsaaQaulity;
+	}
+
+	BOOL GetMSAAState()
+	{
+		return MsaaState;
+	}
+
+
+	void IncrementFrame()
 	{
 
 		HRESULT hr{ S_OK };
@@ -230,7 +249,6 @@ namespace Foundation::Graphics::D3D12
 			ProcessDeferrals(FrameIndex);
 		}
 
-		return &RenderFrames[FrameIndex];
 	}
 
 	void __declspec(noinline) ProcessDeferrals(UINT32 frame)
@@ -254,7 +272,6 @@ namespace Foundation::Graphics::D3D12
 			resources.clear();
 		}
 	}
-
 
 
 	D3D12Context::D3D12Context(Win32Window* window)
@@ -306,7 +323,12 @@ namespace Foundation::Graphics::D3D12
 	void D3D12Context::Clean()
 	{}
 
-	void D3D12Context::FlushCommandQueue()
+	void D3D12Context::SwapBuffers()
+	{
+		
+	}
+
+	void D3D12Context::FlushRenderQueue()
 	{
 		SyncCounter++;
 		HRESULT hr{ S_OK };
@@ -323,12 +345,18 @@ namespace Foundation::Graphics::D3D12
 		}
 	}
 
+
 	void D3D12Context::ExecuteGraphicsCommandList() const
 	{
 		ID3D12CommandList* cmdsLists[] = { pGCL.Get() };
 		pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
+
+	void inline D3D12Context::IncrementSync() 
+	{
+		++SyncCounter; 
+	}
 
 	HWND D3D12Context::GetHwnd() const
 	{

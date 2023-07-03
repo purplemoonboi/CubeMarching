@@ -157,16 +157,15 @@ namespace Foundation::Graphics
 	{
 	public:
 		virtual ~VertexBuffer() = default;
-		virtual void Bind() const = 0;
-		virtual void UnBind() const = 0;
+
 		virtual void SetData(const void* data, INT32 size, INT32 count) = 0;
 		virtual void SetBuffer(const void* bufferAddress)= 0;
-		virtual void Destroy() = 0;
+		virtual void OnDestroy() = 0;
 		virtual void SetLayout(const BufferLayout& layout) = 0;
-		virtual UINT32 GetCount() = 0;
+		virtual UINT GetCount() = 0;
 		[[nodiscard]] virtual const BufferLayout& GetLayout() const = 0;
 		[[nodiscard]] virtual const void* GetData() const = 0;
-		[[nodiscard]] virtual const void* GetGPUResource() const = 0;
+
 		static ScopePointer<VertexBuffer> Create(UINT size, UINT vertexCount);
 		static ScopePointer<VertexBuffer> Create(const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
 	};
@@ -176,37 +175,45 @@ namespace Foundation::Graphics
 	public:
 		virtual ~IndexBuffer() = default;
 
-		virtual void Bind() const = 0;
-		virtual void UnBind() const = 0;
-		virtual void Destroy() = 0;
-		
+		virtual void OnDestroy() = 0;
 		virtual void SetData(const UINT16* data, INT32 count) = 0;
 		virtual void SetBuffer(const void* bufferAddress) = 0;
-
-		virtual INT32 GetCount() const = 0;
-		virtual UINT16* GetData() const = 0;
+		[[nodiscard]] virtual UINT GetCount() const = 0;
+		[[nodiscard]] virtual UINT16* GetData() const = 0;
 
 		static ScopePointer<IndexBuffer> Create(UINT16* indices, UINT64 size, UINT indexCount);
 	};
 
+	template<typename T>
+	class StructuredBuffer
+	{
+	public:
+		virtual ~StructuredBuffer() = default;
+
+		virtual void OnDestroy() = 0;
+		virtual void SetBuffer(const T&& other) = 0
+		;
+		[[nodiscard]] virtual T* GetData() const = 0;
+
+		static ScopePointer<StructuredBuffer<T>> Create(T& args);
+	
+	};
+
+
+	
 
 	class ResourceBuffer
 	{
 	public:
-
+		ResourceBuffer() = default;
 		virtual ~ResourceBuffer() = default;
-
 		virtual void Bind() const = 0;
-
 		virtual void UnBind() const = 0;
-
 		virtual void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime, bool wireframe) = 0;
-
 		virtual void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) = 0;
-
 		virtual void UpdateMaterialBuffers(std::vector<Material*>& materials) = 0;
 
-		virtual const INT32 GetCount() const = 0;
+		[[nodiscard]] virtual const INT32 GetCount() const = 0;
 
 		static ScopePointer<ResourceBuffer> Create
 		(

@@ -2,7 +2,7 @@
 
 #include <Framework/Core/Log/Log.h>
 
-#include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -22,15 +22,16 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		ComPtr<ID3D12Resource> defaultBuffer;
 
-		const HRESULT deviceCr = pDevice->GetDeviceRemovedReason();
+		const HRESULT deviceCr = device->GetDeviceRemovedReason();
 		THROW_ON_FAILURE(deviceCr);
 
 		//Create the committed resource
-		const HRESULT vertexResult = pDevice->CreateCommittedResource
+		const HRESULT vertexResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -41,7 +42,7 @@ namespace Foundation::Graphics::D3D12
 		);
 		THROW_ON_FAILURE(vertexResult);
 
-		const HRESULT uploadResult = pDevice->CreateCommittedResource
+		const HRESULT uploadResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -114,7 +115,8 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		ComPtr<ID3D12Resource> defaultBuffer;
 		D3D12_RESOURCE_DESC texDesc{};
@@ -131,7 +133,7 @@ namespace Foundation::Graphics::D3D12
 		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		//Create the committed resource
-		const HRESULT defaultResult = pDevice->CreateCommittedResource
+		const HRESULT defaultResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -156,7 +158,7 @@ namespace Foundation::Graphics::D3D12
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultBuffer.Get(),
 			0, numOfResources);
 
-		const HRESULT uploadResult = pDevice->CreateCommittedResource
+		const HRESULT uploadResult = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -231,7 +233,8 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		/**
 		 * make a wee circle if no data has been passed 
@@ -253,7 +256,7 @@ namespace Foundation::Graphics::D3D12
 		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		//Create the committed resource
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -267,7 +270,7 @@ namespace Foundation::Graphics::D3D12
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(defaultBuffer.Get(),
 			0, texDesc.DepthOrArraySize * texDesc.MipLevels);
 
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -327,7 +330,8 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
 
@@ -347,7 +351,7 @@ namespace Foundation::Graphics::D3D12
 		texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-		hr = pDevice->CreateCommittedResource(
+		hr = device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&texDesc,
@@ -362,7 +366,8 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> counterBuffer = nullptr;
@@ -370,7 +375,7 @@ namespace Foundation::Graphics::D3D12
 		const D3D12_RESOURCE_FLAGS flags = (allowWrite) ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		const D3D12_HEAP_FLAGS heapFlags = (allowShaderAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
 
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			heapFlags,
@@ -385,10 +390,11 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12BufferFactory::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -402,12 +408,13 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateReadBackBuffer(UINT32 bufferWidth)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
 		ComPtr<ID3D12Resource> readBackResource = nullptr;
 
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 			D3D12_HEAP_FLAG_NONE,
@@ -424,7 +431,8 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		ComPtr<ID3D12Resource> buffer = nullptr;
 
@@ -432,7 +440,7 @@ namespace Foundation::Graphics::D3D12
 		const D3D12_RESOURCE_STATES bufferState = (allowWrite) ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
 		const D3D12_HEAP_FLAGS heapFlags = (allowAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
 
-		const HRESULT result = pDevice->CreateCommittedResource
+		const HRESULT result = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			heapFlags,
@@ -449,7 +457,8 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* upload, const void* data, bool allowWrite, bool allowAtomics)
 	{
-		CORE_ASSERT(pDevice, "Device has been lost!");
+		const auto device = GetDevice();
+		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
 
@@ -459,7 +468,7 @@ namespace Foundation::Graphics::D3D12
 		const D3D12_RESOURCE_STATES bufferState = (allowWrite) ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : D3D12_RESOURCE_STATE_GENERIC_READ;
 		const D3D12_HEAP_FLAGS heapFlags = (allowAtomics) ? D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS : D3D12_HEAP_FLAG_NONE;
 
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			heapFlags,
@@ -470,7 +479,7 @@ namespace Foundation::Graphics::D3D12
 		);
 		THROW_ON_FAILURE(hr);
 
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,

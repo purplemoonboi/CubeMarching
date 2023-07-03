@@ -24,15 +24,19 @@ namespace Foundation
 
 		void OnUpdate() override;
 
-		[[nodiscard]] INT32 GetWidth() const override { return Width; }
-		[[nodiscard]] INT32 GetHeight() const override { return Height; }
+		[[nodiscard]] INT32 GetWidth() const override; 
+		[[nodiscard]] INT32 GetHeight() const override;
+		[[nodiscard]] void* GetNativeWindow() const override;
 
-		[[nodiscard]] void* GetNativeWindow() const override { return WindowHandle; }
+		[[nodiscard]] bool IsFullScreen() const override;
+		[[nodiscard]] bool IsMinimised() const override;
 
 		/*..Window Attributes..*/
 
 		void SetVSync(bool enabled) override { VSync = enabled; }
 		[[nodiscard]] bool IsVSync() const override { return VSync; }
+
+		
 
 		// @brief Set the applications on event process
 		void SetEventCallBack(const WindowCallback& callBack) override { Window32Data.AppEventCallBack = callBack; }
@@ -71,8 +75,8 @@ namespace Foundation
 
 		INT32 Width;
 		INT32 Height;
-		bool IsMinimised;
-		bool IsMaximised;
+		bool IsWindowMinimised;
+		bool IsWindowFullScreen;
 		bool IsResizing;
 		bool IsClosing;
 		bool WindowCreated;

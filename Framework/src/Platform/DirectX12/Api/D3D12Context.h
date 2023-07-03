@@ -43,12 +43,20 @@ namespace Foundation::Graphics::D3D12
 	constexpr D3D12DescriptorHeap* GetSRVHeap();
 	constexpr D3D12DescriptorHeap* GetUAVHeap();
 
-	constexpr ID3D12Device8* Device();
-	constexpr D3D12RenderFrame* CurrentRenderFrame();
-	constexpr ID3D12Fence* Fence();
+	void IncrementFrame();
+
+	constexpr ID3D12Device8*	GetDevice();
+	constexpr ID3D12Fence*		GetFence();
+
+	D3D12RenderFrame* CurrentRenderFrame();
+
+
+	constexpr UINT CurrentFrameIndex();
 
 	void SetDeferredReleasesFlag();
-	D3D12RenderFrame* IncrementFrame();
+
+	UINT32 GetMSAAQuality();
+	BOOL GetMSAAState();
 
 	template<typename T> constexpr void Release(T*& resource)
 	{
@@ -80,8 +88,8 @@ namespace Foundation::Graphics::D3D12
 
 		void Init() override;
 		void Clean() override;
-		void SwapBuffers() override{}
-		void FlushCommandQueue();
+		void SwapBuffers() override;
+		void FlushRenderQueue();
 		void ExecuteGraphicsCommandList() const;
 
 		ComPtr<IDXGISwapChain>				pSwapChain	{nullptr};
@@ -90,7 +98,7 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12CommandAllocator>		pCmdAlloc	{nullptr};
 
 
-
+		void inline IncrementSync();
 
 	public:/*...Getters...*/
 		[[nodiscard]] HWND GetHwnd() const;

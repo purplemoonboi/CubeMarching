@@ -9,6 +9,7 @@
 
 namespace Foundation::Graphics
 {
+	class Texture;
 
 	class ComputeApi;
 	class BufferLayout;
@@ -74,27 +75,6 @@ namespace Foundation::Graphics
 	{
 		PipelineDesc() = default;
 		~PipelineDesc() = default;
-		PipelineDesc(const PipelineDesc& other)
-		{
-			*this = other;
-		}
-
-		auto operator=(const PipelineDesc& other) -> PipelineDesc&
-		{
-
-			Input		= other.Input;
-			Fill		= other.Fill;
-			Cull		= other.Cull;
-			Blend		= other.Blend;
-			Topology	= other.Topology;
-
-			for (UINT32 i = 0; i < other.Shaders.size(); ++i)
-			{
-				Shaders[i] = other.Shaders[i];
-			}
-
-			return *this;
-		}
 
 
 		PipelineInputDesc Input;
@@ -109,27 +89,39 @@ namespace Foundation::Graphics
 	};
 
 	// @brief Base class for describing the rendering pipeline.
-	class PipelineStateObject 
+	class RenderPipeline 
 	{
 	public:
-		PipelineStateObject() = default;
-		virtual ~PipelineStateObject() = default;
+		RenderPipeline() = default;
+		virtual ~RenderPipeline() = default;
 
-		static ScopePointer<PipelineStateObject> Create
-		(
-			PipelineDesc& desc
-		);
+		static ScopePointer<RenderPipeline> Create(PipelineDesc& desc);
 
-		static ScopePointer<PipelineStateObject> Create
-		(
-			Shader* vertexShader,
-			Shader* pixelShader,
-			FillMode fillMode = FillMode::Opaque
-		);
+		// @brief Updates pipeline resources
+		virtual void Invalidate() = 0;
+		virtual void Bind() = 0;
+		virtual void Destroy() = 0;
 
-		
+		virtual void SetVertexShader(const std::string_view& name,		Shader* shader)	 = 0;
+		virtual void SetPixelShader(const std::string_view& name,		Shader* shader)	 = 0;
+		virtual void SetHullShader(const std::string_view& name,		Shader* shader)	 = 0;
+		virtual void SetDomainShader(const std::string_view& name,		Shader* shader)	 = 0;
+		virtual void SetGeometryShader(const std::string_view& name,	Shader* shader)	 = 0;
+		virtual void SetTaskShader(const std::string_view& name,		Shader* shader)	 = 0;
+		virtual void SetMeshShader(const std::string_view& name,		Shader* shader)	 = 0;
+		virtual void SetRaytracingShader(const std::string_view& name,	Shader* shader)	 = 0;
 
-	protected:
-		PipelineDesc Desc;
+		virtual void SetComputeShader(const std::string_view& name,		Shader* shader)	 = 0;
+
+		virtual void SetInput(const std::string_view& name, float value) = 0;
+		virtual void SetInput(const std::string_view& name, INT32 value) = 0;
+		virtual void SetInput(const std::string_view& name, bool value) = 0;
+
+		virtual void SetInput(const std::string_view& name, VertexBuffer& buffer) = 0;
+		virtual void SetInput(const std::string_view& name, IndexBuffer& buffer) = 0;
+
+		[[nodiscard]] virtual ScopePointer<Texture> GetSceneTexture() const = 0;
+		[[nodiscard]] virtual ScopePointer<Texture> GetSceneDepthTexture() const = 0;
+
 	};
 }

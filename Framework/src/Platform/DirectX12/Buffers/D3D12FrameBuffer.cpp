@@ -24,9 +24,12 @@ namespace Foundation::Graphics::D3D12
 	{
 		Context = dynamic_cast<D3D12Context*>(context);
 
-		pRTV[0] = RtvHeap.Allocate();
-		pRTV[1] = RtvHeap.Allocate();
-		pDSV = DsvHeap.Allocate();
+		auto rtvHeap = GetRTVHeap();
+		auto dsvHeap = GetDSVHeap();
+
+		pRTV[0] = rtvHeap->Allocate();
+		pRTV[1] = rtvHeap->Allocate();
+		pDSV	= dsvHeap->Allocate();
 
 		OnResizeFrameBuffer(fbs);
 	}
@@ -72,14 +75,17 @@ namespace Foundation::Graphics::D3D12
 	void D3D12FrameBuffer::OnResizeFrameBuffer(FrameBufferSpecifications& specifications)
 	{
 		HRESULT hr{ S_OK };
-		CORE_ASSERT(pDevice, "The 'D3D device' has failed...");
+
+		auto device = GetDevice();
+
+		CORE_ASSERT(device, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->pSwapChain, "The 'swap chain' has failed...");
 		CORE_ASSERT(Context->pGCL, "The 'graphics command list' has failed...");
 
 		FrameBufferSpecs = specifications;
 
 		// Flush before changing any resources.
-		Context->FlushCommandQueue();
+		Context->FlushRenderQueue();
 
 		hr = Context->pGCL->Reset(Context->pCmdAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(hr);
@@ -115,16 +121,18 @@ namespace Foundation::Graphics::D3D12
 		{
 			Context->pSwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
 
-			pDevice->CreateRenderTargetView
+			device->CreateRenderTargetView
 			(
 				SwapChainBuffer[i].Get(),
 				nullptr,
 				pRTV[i].CpuHandle
 			);
 			SwapChainBuffer->Get()->SetName(L"Swap Chain");
-			THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
-			//rtvHeapHandle.Offset(1, RtvDescriptorSize);
+			THROW_ON_FAILURE(device->GetDeviceRemovedReason());
 		}
+
+		auto msaaState = GetMSAAState();
+		auto msaaQuality = GetMSAAQuality();
 
 		// Create the depth/stencil buffer and view.
 		D3D12_RESOURCE_DESC depthStencilDesc;
@@ -134,15 +142,14 @@ namespace Foundation::Graphics::D3D12
 		depthStencilDesc.Height = FrameBufferSpecs.Height;
 		depthStencilDesc.DepthOrArraySize = 1;
 		depthStencilDesc.MipLevels = 1;
-
 		// Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from 
 		// the depth buffer.  Therefore, because we need to create two views to the same resource:
 		//   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
 		//   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
 		// we need to create the depth buffer resource with a typeless format.  
 		depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-		depthStencilDesc.SampleDesc.Count = MsaaState ? 4 : 1;
-		depthStencilDesc.SampleDesc.Quality = MsaaState ? (MsaaQaulity - 1) : 0;
+		depthStencilDesc.SampleDesc.Count = msaaState ? 4 : 1;
+		depthStencilDesc.SampleDesc.Quality = msaaState ? (msaaQuality - 1) : 0;
 		depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -151,7 +158,7 @@ namespace Foundation::Graphics::D3D12
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
 
-		hr = pDevice->CreateCommittedResource
+		hr = device->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -162,7 +169,7 @@ namespace Foundation::Graphics::D3D12
 		);
 		THROW_ON_FAILURE(hr);
 
-		THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
+		THROW_ON_FAILURE(device->GetDeviceRemovedReason());
 
 		// Create descriptor to mip level 0 of entire resource using the format of the resource.
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -171,7 +178,7 @@ namespace Foundation::Graphics::D3D12
 		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		pDevice->CreateDepthStencilView
+		device->CreateDepthStencilView
 		(
 			DepthStencilBuffer.Get(),
 			&dsvDesc,
@@ -199,7 +206,7 @@ namespace Foundation::Graphics::D3D12
 		Context->pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.
-		Context->FlushCommandQueue();
+		Context->FlushRenderQueue();
 
 		// Update the viewport transform to cover the client area.
 		ScreenViewport.TopLeftX = 0.0f;

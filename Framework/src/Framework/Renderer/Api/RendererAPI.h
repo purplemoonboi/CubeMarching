@@ -8,8 +8,8 @@
 #include "Framework/Renderer/Buffers/VertexArray.h"
 #include "Framework/Renderer/Renderer3D/Mesh.h"
 #include "Framework/Renderer/Renderer3D/RendererStatus.h"
-#include "Framework/Renderer/Memory/MemoryManager.h"
-#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
+#include "Framework/Core/Memory/MemoryManager.h"
+#include "Framework/Renderer/Pipeline/RenderPipeline.h"
 
 namespace Foundation::Graphics
 {
@@ -44,7 +44,8 @@ namespace Foundation::Graphics
 		
 	public:
 		static Api GetAPI() { return RenderingApi; }
-
+		
+		virtual ~RendererAPI() = 0;
 
 		virtual void Init(GraphicsContext* context) = 0;
 		virtual void PreInit() = 0;
@@ -52,31 +53,15 @@ namespace Foundation::Graphics
 		virtual void Clean() = 0;
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
-		[[nodiscard]] virtual const FrameBufferSpecifications& GetViewportSpecifications() const = 0;
 
 		virtual void OnBeginRender() = 0;
 		virtual void OnEndRender() = 0;
-		virtual void BindPasses() = 0;
+
 		virtual void Flush() = 0;
 
-		virtual void DrawSceneStaticGeometry(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems) = 0;
-		virtual void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 indexCount = 0) = 0;
+		virtual void DrawSceneStaticGeometry(RenderPipeline* pso, const std::vector<RenderItem*>& renderItems) = 0;
 		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
 
-	public:/*...Getters...*/
-		
-		[[nodiscard]] virtual GraphicsContext*		GetGraphicsContext()	const = 0;
-		[[nodiscard]] virtual const FrameBuffer*	GetFrameBuffer()		const = 0;
-
-
-		// @brief Returns the scene albedo texture, (unlit)
-		[[nodiscard]] virtual const RenderTarget* GetSceneAlbedoTexture()				const = 0;
-		// @brief Returns the scene normals in world space
-		[[nodiscard]] virtual const RenderTarget* GetSceneNormalTexture()				const = 0;
-		// @brief Returns the scene ambient occlusion map
-		[[nodiscard]] virtual const RenderTarget* GetSceneAmbientOcclusionTexture()		const = 0;
-		// @brief Returns the depth texture of the scene
-		[[nodiscard]] virtual const RenderTarget* GetSceneDepthTexture()				const = 0;
 
 	private:
 		static Api RenderingApi;

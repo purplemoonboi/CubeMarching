@@ -24,9 +24,9 @@ namespace Foundation::Graphics
 
 		Renderer3D::PreInit();
 
-			Renderer3D::Init();
+		Renderer3D::Init();
 
-				Renderer3D::PostInit();
+		Renderer3D::PostInit();
 	}
 
 	void Renderer::OnWindowResize(INT32 x, INT32 y, INT32 width, INT32 height)

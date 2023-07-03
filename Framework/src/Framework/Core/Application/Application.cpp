@@ -37,7 +37,7 @@ namespace Foundation
 		EventBlob.Callback = BIND_DELEGATE(Application::OnApplicationEvent);
 
 		auto handle = static_cast<HWND>(Window.GetNativeWindow());
-		Graphics::Renderer::Init(handle, 1920, 1080);
+		Graphics::Renderer::Init(&Window);
 
 		ImGuiLayer = new class ImGuiLayer();
 		PushOverlay(ImGuiLayer);
@@ -110,7 +110,7 @@ namespace Foundation
 					}
 					
 
-					if (!Window.IsWndMinimised() && IsRunning)
+					if (!Window.IsMinimised() && IsRunning)
 					{
 
 						UpdateTimer();
@@ -245,14 +245,12 @@ namespace Foundation
 		case WM_EXITSIZEMOVE:
 			isResizing = false;
 			AppTimer .Start();
-
 			return 0;
-
 			// WM_DESTROY is sent when the window is being destroyed.
 		case WM_DESTROY:
+			Graphics::Renderer::Clean();
 			PostQuitMessage(0);
 			return 0;
-
 			// The WM_MENUCHAR message is sent when a menu is active and the user presses 
 			// a key that does not correspond to any mnemonic or accelerator key. 
 		case WM_MENUCHAR:

@@ -1,11 +1,11 @@
 #include "D3D12HeapManager.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 namespace Foundation::Graphics::D3D12
 {
 	D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type)
 		:
-	Type(type)
+		Type(type)
 	{
 	}
 
@@ -27,8 +27,10 @@ namespace Foundation::Graphics::D3D12
 		desc.Type = Type;
 		desc.NodeMask = 0;
 
+		ID3D12Device8* device = GetDevice();
+
 		HRESULT hr{ S_OK };
-		hr = pDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
+		hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
 		if(!SUCCEEDED(hr))
 		{
 			Release();
@@ -50,7 +52,7 @@ namespace Foundation::Graphics::D3D12
 			CORE_ASSERT(DeferredAvailableIndices[i].empty(), " ");
 		}
 
-		HeapSize = pDevice->GetDescriptorHandleIncrementSize(Type);
+		HeapSize = device->GetDescriptorHandleIncrementSize(Type);
 
 		pBeginCPU = pHeap->GetCPUDescriptorHandleForHeapStart();
 		pBeginGPU = (isShaderVisible) ? pHeap->GetGPUDescriptorHandleForHeapStart() : D3D12_GPU_DESCRIPTOR_HANDLE{ 0 };
@@ -103,7 +105,7 @@ namespace Foundation::Graphics::D3D12
 		CORE_ASSERT(pHandle.Index == index, "Index does not match the index of this descriptor slot!");
 
 		// Defer the free operation until we know it is safe.
-		DeferredAvailableIndices[FrameIndex].push_back(index);
+		DeferredAvailableIndices[CurrentFrameIndex()].push_back(index);
 
 		// Let the renderer know there are pending releases for the current frame.
 		SetDeferredReleasesFlag();

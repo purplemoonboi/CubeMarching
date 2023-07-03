@@ -33,7 +33,7 @@ namespace Foundation::Graphics::D3D12
 
 		void Init(GraphicsContext* context) override;
 
-		void ResetComputeCommandList(PipelineStateObject* state) override;
+		void ResetComputeCommandList(RenderPipeline* state) override;
 
 		void ExecuteComputeCommandList(UINT64* fence) override;
 		void FlushComputeQueue(UINT64* fence) override;
@@ -50,7 +50,7 @@ namespace Foundation::Graphics::D3D12
 
 		ComPtr<ID3D12Fence> Fence;
 
-		PipelineStateObject* LastPso = nullptr;
+		RenderPipeline* LastPso = nullptr;
 
 		UINT64 FenceValue = 0;
 

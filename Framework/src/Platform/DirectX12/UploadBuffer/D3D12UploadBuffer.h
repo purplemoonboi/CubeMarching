@@ -19,8 +19,6 @@ namespace Foundation::Graphics::D3D12
 			:
 			IsConstantBuffer(isConstantBuffer)
 		{
-
-
 			ElementByteSize = sizeof(T);
 
 			if(isConstantBuffer)
@@ -28,7 +26,8 @@ namespace Foundation::Graphics::D3D12
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			const HRESULT hr = Device()->CreateCommittedResource
+			auto device = GetDevice();
+			const HRESULT hr = device->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 				D3D12_HEAP_FLAG_NONE,
@@ -39,10 +38,26 @@ namespace Foundation::Graphics::D3D12
 			);
 			THROW_ON_FAILURE(hr);
 
-			THROW_ON_FAILURE(pUpload->Map(0, nullptr, reinterpret_cast<void**>(&MappedData)));
+			hr = pUpload->Map(0, nullptr, reinterpret_cast<void**>(&MappedData));
+			THROW_ON_FAILURE(hr);
 
 		}
-		DISABLE_COPY_AND_MOVE(D3D12UploadBuffer<T>);
+
+		DISABLE_COPY(D3D12UploadBuffer<T>);
+
+		D3D12UploadBuffer(D3D12UploadBuffer<T>&& rhs) noexcept
+		{
+			pUpload				= std::move(rhs.pUpload);
+			
+			MappedData			= rhs.MappedData;
+			ElementByteSize		= rhs.ElementByteSize;
+			IsConstantBuffer	= rhs.IsConstantBuffer;
+		}
+
+		auto operator=(D3D12UploadBuffer<T>&& rhs) noexcept -> D3D12UploadBuffer &
+		{
+			return *this;
+		}
 
 		void Bind(UINT index, const D3D12_RANGE* range)
 		{
@@ -63,7 +78,7 @@ namespace Foundation::Graphics::D3D12
 
 			pUpload = nullptr;
 			MappedData = nullptr;
-			Internal::DeferredRelease(pUpload);
+			Internal::DeferredRelease(pUpload.Get());
 		}
 
 		void CopyData(INT32 elementIndex, const T& data)
@@ -73,7 +88,7 @@ namespace Foundation::Graphics::D3D12
 
 		void Destroy()
 		{
-			Internal::DeferredRelease(pUpload);
+			Internal::DeferredRelease(pUpload.Get());
 		}
 
 

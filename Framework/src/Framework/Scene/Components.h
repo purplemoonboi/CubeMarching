@@ -8,9 +8,10 @@
 #include "Framework/Core/Core.h"
 #include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Camera/MainCamera.h"
+#include "Framework/Renderer/Api/FrameResource.h"
 #include "Framework/Renderer/Renderer3D/Mesh.h"
 #include "Framework/Renderer/Textures/Texture.h"
-
+#include "Framework/Renderer/Material/Material.h"
 namespace Foundation
 {
 
@@ -100,9 +101,24 @@ namespace Foundation
 		struct StaticMeshComponent
 		{
 			StaticMeshComponent() = default;
+			~StaticMeshComponent() = default;
+			DISABLE_COPY_AND_MOVE(StaticMeshComponent);
 
 			bool WireFrame = false;
-			MeshGeometry Mesh{"StaticMesh"};
+			std::vector<Vertex> Vertices{};
+			std::vector<UINT16> Indices{};
+			UINT16 MaterialIndex{ 0 };
+
+		};
+
+
+		struct MaterialComponent
+		{
+			MaterialComponent() = default;
+			~MaterialComponent() = default;
+			DISABLE_COPY_AND_MOVE(MaterialComponent);
+			class Material Material;
+
 		};
 
 	}

@@ -15,10 +15,10 @@ namespace Foundation::Graphics::D3D12
 
 	struct D3D12DescriptorHandle
 	{
-		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandle;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE CpuHandle;
-		bool IsValid = true;
-		UINT32 Index = 0;
+		CD3DX12_GPU_DESCRIPTOR_HANDLE GpuHandle{};
+		CD3DX12_CPU_DESCRIPTOR_HANDLE CpuHandle{};
+		bool IsValid{ true };
+		UINT32 Index{ 0 };
 	};
 
 

@@ -38,7 +38,7 @@ namespace Foundation::Graphics
 	public:/*...Bindings...*/
 		
 
-		static void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
+		static void BindGeometryPass(RenderPipeline* pso, const std::vector<RenderItem*>& renderItems)
 		{
 			RendererApiPtr->DrawSceneStaticGeometry(pso, renderItems);
 		}
@@ -67,7 +67,7 @@ namespace Foundation::Graphics
 
 		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
 		{
-			RendererApiPtr->DrawIndexed(vertexArray, count);
+			//RendererApiPtr->DrawIndexed(vertexArray, count);
 		}
 
 		static void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 count = 0)

@@ -39,8 +39,6 @@ namespace Foundation::Editor
         Renderer = RenderInstruction::GetApiPtr();
         APP_ASSERT(!Renderer);
 
-        ComputeInstruction::Init(Renderer->GetGraphicsContext());
-        const auto csApi = ComputeInstruction::GetComputeApi();
 
         RenderInstruction::OnBeginResourceCreation();
 
@@ -91,8 +89,6 @@ namespace Foundation::Editor
                 camera->Strafe(time->DeltaTime());
             }
         }
-        
-       
 
         if(ViewportSize.x > 0 && ViewportSize.x < 8196 && ViewportSize.y > 0 && ViewportSize.y < 8196)
         {
@@ -235,7 +231,7 @@ namespace Foundation::Editor
             {
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
                 ImGui::Begin("Viewport");
-
+                ImGui::IsWindowDocked();
                 IsViewportFocused = ImGui::IsWindowFocused();
                 IsViewportHovered = ImGui::IsWindowHovered();
                 Application::Get()->GetImGuiLayer()->SetBlockEvents(!IsViewportFocused || !IsViewportHovered);
@@ -249,7 +245,7 @@ namespace Foundation::Editor
                 }
 
                 
-                auto rt = RenderInstruction::GetApiPtr()->GetSceneAlbedoTexture();
+                
                 ImGui::Image((ImTextureID)rt->GetTexture(), ImVec2(ViewportSize.x, ViewportSize.y), {0,0}, {1,1});
 
 

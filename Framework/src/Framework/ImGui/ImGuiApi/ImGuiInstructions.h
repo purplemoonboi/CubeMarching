@@ -1,4 +1,4 @@
-pragma once
+#pragma once
 #include <intsafe.h>
 
 #include <Platform/DirectX12/DirectX12.h>

@@ -2,6 +2,7 @@
 #include "entt.hpp"
 #include "Framework/Core/Core.h"
 #include "Framework/Core/Time/AppTimeManager.h"
+#include "Framework/Renderer/Pipeline/RenderPipeline.h"
 
 namespace Foundation
 {
@@ -44,17 +45,26 @@ namespace Foundation
 		void DestroyEntity(Entity entity);
 
 		void OnUpdate(AppTimeManager* time);
-		void OnRender(AppTimeManager* time, bool wireframe = false);
+		void OnRender(AppTimeManager* time);
+
+	public:
+		
+		void InsertRenderPipeline(std::string&& name, ScopePointer<RenderPipeline> pipeline);
+
+		void RemovePipeline(std::string&& name);
+
+		[[nodiscard("")]] RenderPipeline* GetRenderPipeline(const std::string& name) const;
 
 		MainCamera* GetSceneCamera() { return SceneCamera; }
 
 	private:
 		template<typename T> void OnComponentAdded(Entity entity, T& component);
 
+		std::unordered_map<std::string, ScopePointer<RenderPipeline>> RenderPipelines{};
 
 		entt::registry Registry;
-		int Width = 0;
-		int Height = 0;
+		INT32 Width = 0;
+		INT32 Height = 0;
 
 		MainCamera* SceneCamera;
 		WorldSettings SceneSettings;

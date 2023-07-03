@@ -15,7 +15,7 @@ namespace Foundation::Graphics
 
 	class ComputeApi;
 	class MemoryManager;
-	class PipelineStateObject;
+	class RenderPipeline;
 	class Shader;
 	class Texture;
 	
@@ -43,16 +43,16 @@ namespace Foundation::Algorithm
 
 		ComPtr<ID3D12RootSignature> RootSignature;
 
-		ScopePointer<PipelineStateObject> ComputeMortonPso;
+		ScopePointer<RenderPipeline> ComputeMortonPso;
 		ScopePointer<Shader> ComputeMortonCS;
 
-		ScopePointer<PipelineStateObject> RadixSortPso;
+		ScopePointer<RenderPipeline> RadixSortPso;
 		ScopePointer<Shader> RadixSortShader;
 
-		ScopePointer<PipelineStateObject> GlobalBucketSumPso;
+		ScopePointer<RenderPipeline> GlobalBucketSumPso;
 		ScopePointer<Shader> GlobalBucketSumCS;
 
-		ScopePointer<PipelineStateObject> GlobalComputeDestPso;
+		ScopePointer<RenderPipeline> GlobalComputeDestPso;
 		ScopePointer<Shader> GlobalComputeDestCS;
 
 		void BuildRootSignature();

@@ -20,7 +20,6 @@ namespace Foundation::Graphics
 
 namespace Foundation::Graphics::D3D12
 {
-	class D3D12RenderFrame;
 
 	class D3D12ResourceBuffer
 	{

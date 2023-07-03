@@ -51,4 +51,15 @@ namespace Foundation::Graphics
 		return nullptr;
 	}
 
+	template<typename T>
+	ScopePointer<StructuredBuffer<T>> StructuredBuffer<T>::Create(T& args)
+	{
+		switch(RendererAPI::GetAPI())
+		{
+		case RendererAPI::Api::None:		CORE_ASSERT(false, "None is not a renderer api!"); return nullptr;
+		case RendererAPI::Api::Vulkan:		CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
+		case RendererAPI::Api::DX12:		return CreateScope<D3D12StructuredBuffer<T>>(args);
+		}
+	}
+
 }

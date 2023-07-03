@@ -1,6 +1,6 @@
 #include "Radix.h"
 #include "Framework/Renderer/Resources/Shader.h"
-#include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
+#include "Platform/DirectX12/Pipeline/D3D12RenderPipeline.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include <Platform/DirectX12/Compute/D3D12ComputeApi.h>
@@ -23,7 +23,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		ComputeMortonCS = Shader::Create(computeMorton.FilePath, computeMorton.EntryPoint, computeMorton.ShaderModel);
-	//	ComputeMortonPso = PipelineStateObject::Create(ComputeContext, ComputeMortonCS.get(), RootSignature);
+	//	ComputeMortonPso = RenderPipeline::Create(ComputeContext, ComputeMortonCS.get(), RootSignature);
 
 
 		const Graphics::ShaderArgs radixSort =
@@ -33,7 +33,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		RadixSortShader = Shader::Create(radixSort.FilePath, radixSort.EntryPoint, radixSort.ShaderModel);
-	//	RadixSortPso = PipelineStateObject::Create(ComputeContext, RadixSortShader.get(), RootSignature);
+	//	RadixSortPso = RenderPipeline::Create(ComputeContext, RadixSortShader.get(), RootSignature);
 
 		const Graphics::ShaderArgs globalSum =
 		{
@@ -42,7 +42,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		GlobalBucketSumCS = Shader::Create(globalSum.FilePath, globalSum.EntryPoint, globalSum.ShaderModel);
-		//GlobalBucketSumPso = PipelineStateObject::Create(ComputeContext, GlobalBucketSumCS.get(), RootSignature);
+		//GlobalBucketSumPso = RenderPipeline::Create(ComputeContext, GlobalBucketSumCS.get(), RootSignature);
 
 		const Graphics::ShaderArgs globalDest =
 		{
@@ -51,7 +51,7 @@ namespace Foundation::Algorithm
 			"cs_5_0"
 		};
 		GlobalComputeDestCS = Shader::Create(globalSum.FilePath, globalSum.EntryPoint, globalSum.ShaderModel);
-		//GlobalComputeDestPso = PipelineStateObject::Create(ComputeContext, GlobalComputeDestCS.get(), RootSignature);
+		//GlobalComputeDestPso = RenderPipeline::Create(ComputeContext, GlobalComputeDestCS.get(), RootSignature);
 	}
 
 
@@ -113,7 +113,7 @@ namespace Foundation::Algorithm
 
 		for(INT32 i = 0; i < 1; ++i)
 		{
-			auto d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(RadixSortPso.get());
+			auto d3d12Pso = dynamic_cast<D3D12RenderPipeline*>(RadixSortPso.get());
 			ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
 			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);
@@ -128,7 +128,7 @@ namespace Foundation::Algorithm
 			ComputeContext->CommandList->Dispatch(dispatchX, 1, 1);
 
 			/*..Dispatch Global Sum..*/
-			d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(GlobalBucketSumPso.get());
+			d3d12Pso = dynamic_cast<D3D12RenderPipeline*>(GlobalBucketSumPso.get());
 			ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
 			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);
@@ -139,7 +139,7 @@ namespace Foundation::Algorithm
 			ComputeContext->CommandList->Dispatch(1, 1, 1);
 
 			/*..Dispatch Global scatter..*/
-			d3d12Pso = dynamic_cast<D3D12PipelineStateObject*>(GlobalComputeDestPso.get());
+			d3d12Pso = dynamic_cast<D3D12RenderPipeline*>(GlobalComputeDestPso.get());
 			ComputeContext->CommandList->SetPipelineState(d3d12Pso->GetPipelineState());
 
 			ComputeContext->CommandList->SetComputeRootDescriptorTable(0, MortonCodeUav.GpuHandle);

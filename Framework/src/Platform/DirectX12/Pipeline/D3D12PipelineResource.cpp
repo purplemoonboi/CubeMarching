@@ -162,8 +162,6 @@ namespace Foundation::Graphics::D3D12
 		}
 	}
 
-	
-
 	void D3D12ResourceBuffer::UpdateSceneObjects(entt::registry* registry)
 	{
 

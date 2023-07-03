@@ -4,34 +4,32 @@
 
 namespace Foundation::Graphics::D3D12
 {
+	
+
 	D3D12RenderFrame::~D3D12RenderFrame()
 	{
-		
+		Internal::DeferredRelease(PassBuffer.Resource());
+		Internal::DeferredRelease(ConstantBuffer.Resource());
+
+	
 	}
 
 
 	D3D12RenderFrame::D3D12RenderFrame()
-		:
-	pGCL(nullptr),
-	pCmdAlloc(nullptr)
 	{
-	}
-
-	D3D12RenderFrame::D3D12RenderFrame(UINT passCount, UINT objectCount)
-	{
-
+		const auto device = GetDevice();
 		
 		/**
 		 * Create a command allocator for this resource.
 		 */
-		HRESULT hr = pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+		HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(pCmdAlloc.GetAddressOf()));
 		THROW_ON_FAILURE(hr);
 
 		/**
 		 * Create a graphics command list for this resource.
 		 */
-		hr = pDevice->CreateCommandList(0,
+		hr = device->CreateCommandList(0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			pCmdAlloc.Get(),
 			nullptr,
@@ -46,18 +44,10 @@ namespace Foundation::Graphics::D3D12
 		/**
 		 * Create buffers for this resource
 		 */
-		PassBuffer		= D3D12UploadBuffer<PassConstants>(passCount, true);
-		ConstantBuffer	= D3D12UploadBuffer<ObjectConstant>(objectCount, true);
-
-		INT32 i;
-		for (i = 0; i < GBUFFER_SIZE; ++i)
-		{
-			RenderFrames[i] = CreateScope<D3D12RenderTarget>(nullptr, 1920, 1080);
-		}
+		PassBuffer		= D3D12UploadBuffer<PassConstants>(FRAMES_IN_FLIGHT, true);
+		ConstantBuffer	= D3D12UploadBuffer<ObjectConstant>(MAX_D3D12_WORLD_OBJECT_COUNT, true);
 
 	}
 
 	
-
-
 }

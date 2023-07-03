@@ -1,6 +1,6 @@
 #pragma once
 #include "Framework/Renderer/Renderer3D/Mesh.h"
-#include "Framework/Renderer/Resources/Material.h"
+#include "Framework/Renderer/Material/Material.h"
 #include "Framework/Core/core.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"

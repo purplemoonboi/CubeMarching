@@ -6,8 +6,6 @@
 #include "Platform/DirectX12/Api/D3D12Context.h"
 #include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
 #include "Platform/DirectX12/UploadBuffer/D3D12UploadBuffer.h"
-#include "Platform/DirectX12/Materials/D3D12Material.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
 
 #include <ppl.h>
 
@@ -16,31 +14,15 @@ using namespace DirectX;
 
 namespace Foundation::Graphics::D3D12
 {
-
-	D3D12VertexBuffer::D3D12VertexBuffer(UINT64 size, UINT vertexCount)
-		:
-		Layout(),
-		VertexBufferByteSize(size),
-		VertexCount(vertexCount)
-	{
-
-		// Reserve memory and copy the vertices into our CPU buffer
-		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
-		
-		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferFactory::CreateDefaultBuffer
-		(
-			nullptr,
-			size,
-			UploadBuffer
-		);
-	}
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//D3D12 VERTEX BUFFER///////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	D3D12VertexBuffer::D3D12VertexBuffer(const void* vertices, UINT64 size, UINT vertexCount, bool isDynamic)
 		:
 		Layout(),
-		VertexBufferByteSize(size),
-		VertexCount(vertexCount)
+		Size(size),
+		Count(vertexCount)
 	{
 		// Reserve memory and copy the vertices into our CPU buffer
 		THROW_ON_FAILURE(D3DCreateBlob(size, &Blob));
@@ -52,50 +34,49 @@ namespace Foundation::Graphics::D3D12
 		}
 
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferFactory::CreateDefaultBuffer
+		pVertexResource = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			vertices,
 			size,
-			UploadBuffer
+			pUploadBuffers[0]
 		);
 	}
 
-	//Vertex buffer methods
-	void D3D12VertexBuffer::Bind() const
+	D3D12VertexBuffer::D3D12VertexBuffer(D3D12VertexBuffer&& rhs) noexcept
 	{
-
 	}
 
-	void D3D12VertexBuffer::UnBind() const
+	auto D3D12VertexBuffer::operator=(D3D12VertexBuffer&& rhs) noexcept -> D3D12VertexBuffer&
 	{
-
 	}
 
-	void D3D12VertexBuffer::Destroy()
+	D3D12VertexBuffer::~D3D12VertexBuffer()
+	{
+	}
+
+	const BufferLayout& D3D12VertexBuffer::GetLayout() const
+	{
+	}
+
+	UINT32 D3D12VertexBuffer::GetCount()
+	{
+	}
+
+	void D3D12VertexBuffer::OnDestroy()
 	{
 
-		if(Blob != nullptr)
-		{
-			Blob.Reset();
-			Blob = nullptr;
-		}
-		if(DefaultBuffer != nullptr)
-		{
-			DefaultBuffer.Reset();
-			DefaultBuffer = nullptr;
-		}
-		if(UploadBuffer != nullptr)
-		{
-			UploadBuffer.Reset();
-			UploadBuffer = nullptr;
-		}
-		
+		auto* srvHeap = GetSRVHeap();
+		auto* rtvHeap = GetRTVHeap();
+		auto* dsvHeap = GetDSVHeap();
+
+		Internal::DeferredRelease(pVertexResource.Get());
+
 	}
 
 
 	void D3D12VertexBuffer::SetData(const void* data, INT32 size, INT32 count)
 	{
-		if(count > VertexCount)
+		if(count > Count)
 		{
 			Blob.Reset();
 			const HRESULT hr = D3DCreateBlob(size, &Blob);
@@ -103,23 +84,22 @@ namespace Foundation::Graphics::D3D12
 		}
 
 		CopyMemory(Blob->GetBufferPointer(), data, size);
-		VertexBufferByteSize = size;
-		VertexCount = count;
+		Size = size;
+		Count = count;
 	}
 
 	void D3D12VertexBuffer::SetBuffer(const void* buffer)
 	{
-		const auto rhs = (ID3D12Resource*)buffer;
-		const auto desc = rhs->GetDesc();
+		const auto rhs = static_cast<ID3D12Resource*>(const_cast<void*>(buffer));
 
-		/*if (desc.Width > DefaultBuffer->GetDesc().Width)
+		/*if (desc.Width > pVertexResource->GetDesc().Width)
 		{
-			DefaultBuffer.Reset();
+			pVertexResource.Reset();
 
 		}
 		else*/
 		{
-			DefaultBuffer = rhs;
+			pVertexResource = rhs;
 		}
 	}
 
@@ -130,29 +110,29 @@ namespace Foundation::Graphics::D3D12
 
 	const void* D3D12VertexBuffer::GetData() const
 	{
-		
 		return Blob->GetBufferPointer();
 	}
 
-	const void* D3D12VertexBuffer::GetGPUResource() const
-	{
-		return DefaultBuffer.Get();
-	}
-
-	D3D12_VERTEX_BUFFER_VIEW D3D12VertexBuffer::GetVertexBufferView() const
+	D3D12_VERTEX_BUFFER_VIEW D3D12VertexBuffer::GetView() const
 	{
 		D3D12_VERTEX_BUFFER_VIEW vbv;
-		vbv.BufferLocation = DefaultBuffer->GetGPUVirtualAddress();
-		vbv.StrideInBytes = sizeof(Vertex);
-		vbv.SizeInBytes    = sizeof(Vertex) * VertexCount;
-
+		vbv.BufferLocation	= pVertexResource->GetGPUVirtualAddress();
+		vbv.StrideInBytes	= sizeof(Vertex);
+		vbv.SizeInBytes		= sizeof(Vertex) * Count;
+		
 		return vbv;
 	}
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//D3D12 INDEX BUFFER////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 	D3D12IndexBuffer::D3D12IndexBuffer(UINT16* indices, UINT64 size, UINT indexCount)
 		:
 		Format(DXGI_FORMAT_R16_UINT),
-		IndexBufferByteSize(size),
+		Size(size),
 		Count(indexCount)
 	{
 
@@ -165,25 +145,45 @@ namespace Foundation::Graphics::D3D12
 		}
 
 		// Create the GPU vertex buffer
-		DefaultBuffer = D3D12BufferFactory::CreateDefaultBuffer
+		pIndexResource = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			indices, 
-			IndexBufferByteSize, 
-			UploadBuffer
+			Size, 
+			pUploadResource
 		);
 
 	}
 
-	//Index buffer methods
-	void D3D12IndexBuffer::Bind() const
+	D3D12IndexBuffer::D3D12IndexBuffer(D3D12IndexBuffer&& rhs) noexcept
 	{
 
+
+
+		BufferState		= rhs.BufferState;
+		Size			= rhs.Size;
+		Count			= rhs.Count;
+		Format			= rhs.Format;
 	}
 
-	void D3D12IndexBuffer::UnBind() const
+	auto D3D12IndexBuffer::operator=(D3D12IndexBuffer&& rhs) noexcept -> D3D12IndexBuffer&
 	{
+		this->pIndexResource	= std::move(rhs.pIndexResource);
+		this->pUploadResource	= std::move(rhs.pUploadResource);
+		this->Blob = std::move(rhs.Blob);
 
+
+
+		return *this;
 	}
+
+	D3D12IndexBuffer::~D3D12IndexBuffer()
+	{
+		Internal::DeferredRelease(pIndexResource.Get());
+		Internal::DeferredRelease(pUploadResource.Get());
+
+		Blob.Reset();
+	}
+
 
 	void D3D12IndexBuffer::SetData(const UINT16* data, INT32 count)
 	{
@@ -203,30 +203,22 @@ namespace Foundation::Graphics::D3D12
 	void D3D12IndexBuffer::SetBuffer(const void* bufferAddress)
 	{
 		const auto rhs = (ID3D12Resource*)bufferAddress;
-		const auto desc = rhs->GetDesc();
+
+		pIndexResource = rhs;
 		
-		/*if(desc.Width > DefaultBuffer->GetDesc().Width)
-		{
-			DefaultBuffer.Reset();
-		}
-		else*/
-		{
-			DefaultBuffer = rhs;
-		}
 	}
 
-	void D3D12IndexBuffer::Destroy()
+	void D3D12IndexBuffer::OnDestroy()
 	{
-		if(DefaultBuffer != nullptr)
-		{
-			DefaultBuffer.Reset();
-			DefaultBuffer->Release();
-		}
-		if(UploadBuffer != nullptr)
-		{
-			UploadBuffer.Reset();
-			UploadBuffer->Release();
-		}
+		Internal::DeferredRelease(pIndexResource.Get());
+		Internal::DeferredRelease(pUploadResource.Get());
+
+		Blob.Reset();
+	}
+
+	UINT D3D12IndexBuffer::GetCount() const
+	{
+		return Count;
 	}
 
 	UINT16* D3D12IndexBuffer::GetData() const
@@ -237,13 +229,46 @@ namespace Foundation::Graphics::D3D12
 	D3D12_INDEX_BUFFER_VIEW D3D12IndexBuffer::GetIndexBufferView() const
 	{
 		D3D12_INDEX_BUFFER_VIEW ibv;
-		ibv.BufferLocation	= DefaultBuffer->GetGPUVirtualAddress();
+		ibv.BufferLocation	= pIndexResource->GetGPUVirtualAddress();
 		ibv.Format			= Format;
 		ibv.SizeInBytes		= Count * sizeof(UINT16);
-
 		return ibv;
 	}
 
 
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//D3D12 STRUCTURED BUFFER///////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	template <typename T>
+	D3D12StructuredBuffer<T>::D3D12StructuredBuffer(T&& args) noexcept
+	{
+
+	}
+
+	template <typename T>
+	auto D3D12StructuredBuffer<T>::operator=(T&& rhs) noexcept -> D3D12StructuredBuffer<T>&
+	{
+		*this = std::forward<T>(rhs);
+		return *this;
+	}
+
+	template <typename T>
+	D3D12StructuredBuffer<T>::~D3D12StructuredBuffer()
+	{
+	}
+
+	template <typename T>
+	void D3D12StructuredBuffer<T>::OnDestroy()
+	{
+		Internal::DeferredRelease(pResource.Get());
+
+	}
+
+	template <typename T>
+	void D3D12StructuredBuffer<T>::SetBuffer(const T&& other)
+	{
+		Struct = std::forward<T>(other);
+	}
 
 }

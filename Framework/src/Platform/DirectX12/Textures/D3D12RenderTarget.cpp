@@ -5,19 +5,12 @@
 
 namespace Foundation::Graphics::D3D12
 {
-	D3D12RenderTarget::D3D12RenderTarget(
-		const void* data, 
-		UINT32 width, UINT32 height, 
-		TextureFormat format
-	)
+	D3D12RenderTarget::D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, TextureFormat format)
 		:
 		Width(width),
 		Height(height),
-		Depth(1),
-		MipLevels(1),
 		Format(static_cast<DXGI_FORMAT>(format)),
-		RawData(static_cast<BYTE*>(const_cast<void*>(data))),
-		Dimension(D3D12_SRV_DIMENSION_TEXTURE2D)
+		RawData(static_cast<BYTE*>(const_cast<void*>(data)))
 	{
 
 		pResource = D3D12BufferFactory::CreateRenderTexture(Width, Height, Format);
@@ -49,81 +42,64 @@ namespace Foundation::Graphics::D3D12
 		Rect = { 0, 0, (INT)Width, (INT)Height };
 	}
 
+	D3D12RenderTarget::D3D12RenderTarget(D3D12RenderTarget&& rhs) noexcept
+	{
+		Name = std::move(rhs.Name);
+		FileName = std::move(rhs.FileName);
+		Width = rhs.Width;
+		Height = rhs.Height;
+
+		rhs.Width = -1;//Force max value
+		rhs.Width = -1;//so render it garbage.
+
+		Rect = std::move(rhs.Rect);
+		Viewport = std::move(rhs.Viewport);
+	}
+
+	auto D3D12RenderTarget::operator=(D3D12RenderTarget&& rhs) noexcept -> D3D12RenderTarget&
+	{
+		*this = std::move(rhs);
+		return *this;
+	}
+
+	D3D12RenderTarget::~D3D12RenderTarget() 
+	{
+		const auto rtvHeap = GetRTVHeap();
+		rtvHeap->Free(pRTV);
+
+		Internal::DeferredRelease(pResource.Get());
+	}
+
+	void D3D12RenderTarget::Bind()
+	{
+		const auto frame = CurrentRenderFrame();
+		CORE_ASSERT(frame->pGCL.Get(), "Invalid graphics command list!");
+
+
+		frame->pGCL->OMSetRenderTargets(1, &pRTV.CpuHandle,
+			FALSE, &pDSV.CpuHandle);
+
+
+
+	}
+
+	void D3D12RenderTarget::OnDestroy()
+	{
+		auto* srvHeap = GetSRVHeap();
+		auto* rtvHeap = GetRTVHeap();
+		auto* dsvHeap = GetDSVHeap();
+
+		rtvHeap->Free(pRTV);
+		srvHeap->Free(pSRV);
+		dsvHeap->Free(pRTV);
+
+		Internal::DeferredRelease(pResource.Get());
+	}
+
 	void D3D12RenderTarget::LoadFromFile(const std::wstring& fileName, const std::string& name)
 	{}
 
-	void D3D12RenderTarget::Bind(GraphicsContext* context)
-	{}
-
-	void D3D12RenderTarget::UnBind(GraphicsContext* context)
-	{}
-
-	void D3D12RenderTarget::OnResize(INT32 width, INT32 height)
-	{
-		if (Width != width || Height != height)
-		{
-			Width = width;
-			Height = height;
-
-			DirtyFlag = 1;
-		}
-	}
-
-	UINT64 D3D12RenderTarget::GetWidth() const
-	{
-		return Width;
-	}
-
-	UINT32 D3D12RenderTarget::GetHeight() const
-	{
-		return Height;
-	}
-
-	UINT16 D3D12RenderTarget::GetDepth() const
-	{
-		return 0;
-	}
-
-	TextureDimension D3D12RenderTarget::GetTextureDimension() const
-	{
-		return static_cast<TextureDimension>(Dimension);
-	}
-
-	TextureFormat D3D12RenderTarget::GetTextureFormat() const
-	{
-		return static_cast<TextureFormat>(Format);
-	}
-
-	UINT64 D3D12RenderTarget::GetTexture() const
-	{
-		return pSRV.GpuHandle.ptr;
-	}
-
-	void D3D12RenderTarget::Destroy()
-	{
-		pResource.Reset();
-		
-	}
-
-	void D3D12RenderTarget::SetWidth(UINT32 width)
-	{
-		Width = width;
-		DirtyFlag = 1;
-	}
-
-	void D3D12RenderTarget::SetHeight(UINT32 height)
-	{
-		Height = height;
-		DirtyFlag = 1;
-	}
-
-	void D3D12RenderTarget::SetDepth(UINT16 depth)
-	{
-		Depth = depth;
-		DirtyFlag = 1;
-	}
-
-	void D3D12RenderTarget::Regenerate()
+	void D3D12RenderTarget::OnResize(UINT32 width, UINT32 height)
 	{
 		pResource.Reset();
 
@@ -156,4 +132,38 @@ namespace Foundation::Graphics::D3D12
 
 		DirtyFlag = 0;
 	}
+
+	UINT32 D3D12RenderTarget::GetWidth() const
+	{
+		return Width;
+	}
+
+	UINT32 D3D12RenderTarget::GetHeight() const
+	{
+		return Height;
+	}
+
+	TextureFormat D3D12RenderTarget::GetTextureFormat() const
+	{
+		return static_cast<TextureFormat>(Format);
+	}
+
+	void* D3D12RenderTarget::GetTexture() const
+	{
+		return reinterpret_cast<void*>(pSRV.GpuHandle.ptr);
+	}
+
+	
+	void D3D12RenderTarget::SetWidth(UINT32 width)
+	{
+		Width = width;
+		DirtyFlag = 1;
+	}
+
+	void D3D12RenderTarget::SetHeight(UINT32 height)
+	{
+		Height = height;
+		DirtyFlag = 1;
+	}
+
 }

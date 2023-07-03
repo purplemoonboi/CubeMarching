@@ -111,14 +111,67 @@ namespace Foundation
 
 	}
 
-	void Scene::OnRender(AppTimeManager* time, bool wireframe)
+	void Scene::OnRender(AppTimeManager* time)
 	{
+
+		for (auto& pipeline : RenderPipelines)
+		{
+		}
+
+		Renderer3D::BeginScene(SceneCamera, time);
 		
-		//Renderer3D::BeginScene(SceneCamera, time, wireframe);
-		Renderer3D::OnUpdateSceneEntities(time, SceneCamera, &Registry);
 		
 
 		Renderer3D::EndScene();
+
+	}
+
+	void Scene::InsertRenderPipeline(std::string&& name, ScopePointer<RenderPipeline> pipeline)
+	{
+		CORE_ASSERT(pipeline, "Invalid pipeline");
+
+		if(pipeline != nullptr)
+		{
+			if(RenderPipelines.find(name) != RenderPipelines.end())
+			{
+				CORE_WARNING("Pipeline already exists in library.");
+				APP_WARNING("Pipeline already exists in library.");
+				return;
+			}
+
+			RenderPipelines.emplace(name, std::move(pipeline));
+
+		}
+
+	}
+
+	void Scene::RemovePipeline(std::string&& name)
+	{
+
+		if (RenderPipelines.find(name) == RenderPipelines.end())
+		{
+			CORE_WARNING("Pipeline does not exist in library.");
+			APP_WARNING("Pipeline does not exist in library.");
+			return;
+		}
+
+		auto pipeline = RenderPipelines.at(name).get();
+
+		pipeline->Destroy();
+
+	}
+
+	RenderPipeline* Scene::GetRenderPipeline(const std::string& name) const
+	{
+
+		if(RenderPipelines.find(name) == RenderPipelines.end())
+		{
+			CORE_WARNING("Could not find render pipeline {0}, returning nullptr.");
+			APP_WARNING("Could not find render pipeline {0}, returning nullptr.");
+			return { nullptr };
+		}
+
+		return RenderPipelines.at(name).get();
 
 	}
 }

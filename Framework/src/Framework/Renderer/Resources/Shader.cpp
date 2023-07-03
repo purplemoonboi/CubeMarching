@@ -41,7 +41,17 @@ namespace Foundation::Graphics
 		return nullptr;
 	}
 
-	ScopePointer<Shader> Shader::Create(const std::wstring& filePath, const std::string& entryPoint, const std::string& target, D3D_SHADER_MACRO* defines)
+
+
+	ScopePointer<Shader> Shader::Create(const ShaderDescription& shaderDesc)
+	{
+	}
+
+	ScopePointer<Shader> Shader::Create(ShaderDescription&& shaderDesc)
+	{
+	}
+
+	ScopePointer<Shader> Shader::Create(const std::wstring& filePath, const std::string& entryPoint, const std::string& target)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -49,7 +59,7 @@ namespace Foundation::Graphics
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12::D3D12Shader>(filePath, entryPoint, target, defines);
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12::D3D12Shader>(filePath, entryPoint, target);
 
 		}
 
@@ -57,7 +67,7 @@ namespace Foundation::Graphics
 		return nullptr;
 	}
 
-	ScopePointer<Shader> Shader::Create(std::wstring&& filePath, std::string&& entryPoint, std::string&& target, D3D_SHADER_MACRO* defines)
+	ScopePointer<Shader> Shader::Create(std::wstring&& filePath, std::string&& entryPoint, std::string&& target)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -65,7 +75,7 @@ namespace Foundation::Graphics
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12::D3D12Shader>(std::move(filePath), std::move(entryPoint), std::move(target), defines);
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12::D3D12Shader>(std::move(filePath), std::move(entryPoint), std::move(target));
 
 		}
 

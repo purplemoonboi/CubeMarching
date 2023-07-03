@@ -1,7 +1,7 @@
 #include "D3D12ComputeApi.h"
 #include "Framework/Core/Log/Log.h"
 
-#include "Platform/DirectX12/Pipeline/D3D12PipelineStateObject.h"
+#include "Platform/DirectX12/Pipeline/D3D12RenderPipeline.h"
 #include "Platform/DirectX12/Core/D3D12Core.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
 
@@ -81,7 +81,7 @@ namespace Foundation::Graphics::D3D12
 	}
 
 
-	void D3D12ComputeApi::ResetComputeCommandList(PipelineStateObject* state)
+	void D3D12ComputeApi::ResetComputeCommandList(RenderPipeline* state)
 	{
 
 		
@@ -106,7 +106,7 @@ namespace Foundation::Graphics::D3D12
 
 		if(state != nullptr)
 		{
-			auto const d3d12PipelineState = dynamic_cast<D3D12PipelineStateObject*>(state);
+			auto const d3d12PipelineState = dynamic_cast<D3D12RenderPipeline*>(state);
 			const HRESULT resetResult = CommandList->Reset(CurrentCSFrameResource->CommandAllocator.Get(),
 				d3d12PipelineState->GetPipelineState());
 			THROW_ON_FAILURE(resetResult);

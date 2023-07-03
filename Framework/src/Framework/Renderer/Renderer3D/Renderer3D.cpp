@@ -7,10 +7,10 @@
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Api/FrameResource.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
-#include "Framework/Renderer/Pipeline/PipelineStateObject.h"
+#include "Framework/Renderer/Pipeline/RenderPipeline.h"
 #include "Framework/Renderer/Resources/RenderItems.h"
 #include "Framework/Renderer/Resources/Shader.h"
-#include "Framework/Renderer/Resources/Material.h"
+#include "Framework/Renderer/Material/Material.h"
 #include "Framework/Renderer/Textures/Texture.h"
 #include "Framework/Scene/Scene.h"
 
@@ -22,11 +22,6 @@ namespace Foundation::Graphics
 
 	struct RendererData
 	{
-		// Constant data
-		static constexpr UINT32 MaxTriangles = 100000;
-		static constexpr UINT32 MaxVertices = MaxTriangles * 4;
-		static constexpr UINT32 MaxIndices = MaxTriangles * 6;
-		static constexpr UINT32 MaxTextureSlots = 32;
 
 		ScopePointer<VertexArray> VertexArray;
 
@@ -38,6 +33,7 @@ namespace Foundation::Graphics
 		std::vector<Texture*> Textures;
 
 		std::unordered_map<std::string, ScopePointer<MeshGeometry>> Geometries;
+		std::unordered_map<std::string, RenderPipeline> PSOs;
 
 
 		std::vector<ScopePointer<RenderItem>> RenderItems;
@@ -46,7 +42,6 @@ namespace Foundation::Graphics
 
 		ScopePointer<RenderItem> Terrain;
 
-		std::unordered_map<std::string, RefPointer<PipelineStateObject>> PSOs;
 
 		UINT64 BaseVertexLocation = 0;
 
@@ -78,49 +73,47 @@ namespace Foundation::Graphics
 		RenderData.ShaderLibrary.Add("vs", std::move(vS));
 		RenderData.ShaderLibrary.Add("ps", std::move(pS));
 
-		BuildTextures();
-		BuildMaterials();
+		BuildCoreEngineDefaultTextures();
+		BuildCoreEngineDefaultMaterials();
+
+		PipelineDesc desc{};
+		desc.Shaders[VERTEX_SHADER] = vS.get();
+		desc.Shaders[PIXEL_SHADER] = pS.get();
+		
+
 
 		/** build the pipeline state objects */
-		RenderData.PSOs.emplace("Opaque", PipelineStateObject::Create
+		/*auto pipeline = RenderPipeline::Create
 		(
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
 			FillMode::Opaque
-		));
+		);*/
 
+		//RenderData.PSOs.emplace("Opaque", RenderPipeline::Create(desc));
 
-		RenderData.PSOs.emplace("Wire", PipelineStateObject::Create
+		/*RenderPipeline::Create
 		(
 			RenderData.ShaderLibrary.GetShader("vs"),
 			RenderData.ShaderLibrary.GetShader("ps"),
 			FillMode::WireFrame
-		));
+		);*/
+
+		desc.Fill = FillMode::WireFrame;
+		
+		//RenderData.PSOs.emplace("Wire", RenderPipeline::Create(desc));
 
 	}
 
 	void Renderer3D::Shutdown()
 	{}
 
-	void Renderer3D::OnUpdateSceneEntities(AppTimeManager* timer, MainCamera* camera, entt::registry* registry)
+	void Renderer3D::BeginScene(MainCamera* camera, AppTimeManager* time)
 	{
 
-
-	}
-
-	void Renderer3D::BeginScene(MainCamera* camera, AppTimeManager* time, bool wireframe)
-	{
-		
-		/*
-		 * stage data for rendering
-		 * here we execute any copies for apis which rely on manual control of syncing data
-		 */
-		auto* pso = (wireframe) ? RenderData.PSOs["Wire"].get() : RenderData.PSOs["Opaque"].get();
 
 
 		RenderInstruction::OnBeginRender();
-
-		RenderInstruction::BindGeometryPass(pso, RenderData.OpaqueRenderItems);
 	}
 
 	void Renderer3D::EndScene()
@@ -129,17 +122,14 @@ namespace Foundation::Graphics
 		 *	Render the scene geometry to the scene
 		 */
 		RenderInstruction::OnEndRender();
-
-		RenderInstruction::Flush();
 	}
 
-	void Renderer3D::BuildMaterials()
+	void Renderer3D::BuildCoreEngineDefaultMaterials()
 	{
 		auto mat = Material::Create("Green");
 		mat->SetDiffuse(0.0f, 1.0f, 0.3f, 1.0f);
 		mat->SetFresnel(0.05f, 0.05f, 0.05f);
 		mat->SetRoughness(0.2f);
-		
 		mat->SetMaterialBufferIndex(0);
 		RenderData.MaterialLibrary.Add("Green", std::move(mat));
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Green"));
@@ -163,7 +153,7 @@ namespace Foundation::Graphics
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Terrain"));
 	}
 
-	void Renderer3D::BuildTextures()
+	void Renderer3D::BuildCoreEngineDefaultTextures()
 	{
 		/**
 		 *	moss
@@ -219,41 +209,6 @@ namespace Foundation::Graphics
 		RenderData.RenderItems.push_back(std::move(renderItem));
 	}
 
-	void Renderer3D::SetBuffer(const std::string& renderItemTag, 
-	                           const std::vector<Vertex>& vertices,
-	                           const std::vector<UINT16>& indices
-	)
-	{
-		for(INT32 i=0;i<RenderData.OpaqueRenderItems.size();++i)
-		{
-			if(RenderData.OpaqueRenderItems[i]->Geometry->GetName()==renderItemTag)
-			{
-				
-				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty+=1;
-				const auto item = RenderData.Geometries.at(renderItemTag).get();
-				item->VertexBuffer->SetData(vertices.data(), vertices.size() * sizeof(Vertex), vertices.size());
-				item->IndexBuffer->SetData(indices.data(), vertices.size());
-				break;
-			}
-		}
-	}
-
-	void Renderer3D::SetBuffer(const std::string& renderItemTag, Vertex* vertices, UINT vCount, UINT16* indices, UINT iCount)
-	{
-		for (INT32 i = 0; i < RenderData.OpaqueRenderItems.size(); ++i)
-		{
-			if (RenderData.OpaqueRenderItems[i]->Geometry->GetName() == renderItemTag)
-			{
-				const auto ri = RenderData.OpaqueRenderItems[i];
-				ri->NumFramesDirty+=1;
-				const auto item = RenderData.Geometries.at(renderItemTag).get();
-				item->VertexBuffer->SetData(vertices, vCount * sizeof(Vertex), vCount);
-				item->IndexBuffer->SetData(indices, iCount);
-				break;
-			}
-		}
-	}
 
 	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
 	{

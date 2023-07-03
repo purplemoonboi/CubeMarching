@@ -10,62 +10,47 @@ namespace Foundation::Graphics::D3D12
 	class D3D12RenderTarget : public RenderTarget
 	{
 	public:
+		explicit D3D12RenderTarget(const void* data=nullptr, UINT32 width=-1U, UINT32 height=1U, TextureFormat format = TextureFormat::RGBA_UINT_UNORM);
+		DISABLE_COPY(D3D12RenderTarget);
+		D3D12RenderTarget(D3D12RenderTarget&& rhs) noexcept;
+		auto operator=(D3D12RenderTarget&& rhs) noexcept -> D3D12RenderTarget&;
+		~D3D12RenderTarget() override;
 
-		D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, TextureFormat format = TextureFormat::RGBA_UINT_UNORM);
-
-		void LoadFromFile
-		(
-			const std::wstring& fileName,
-			const std::string& name
-		) override;
-
-		void Bind(GraphicsContext* context)			override;
-		void UnBind(GraphicsContext* context)		override;
-		void OnResize(INT32 width, INT32 height)	override;
-		void Destroy()								override;
-
-		void SetWidth(UINT32 width) override;
-		void SetHeight(UINT32 height) override;
-		void SetDepth(UINT16 depth) override;
+		void LoadFromFile(const std::wstring& fileName, const std::string& name) override;
+		void Bind()										override;
+		void OnResize(UINT32 width, UINT32 height)		override;
+		void OnDestroy()								override;
+		void SetWidth(UINT32 width)						override;
+		void SetHeight(UINT32 height)					override;
 
 	public:/*...Getters...*/
-		[[nodiscard]] UINT64 GetWidth()							const override;
-		[[nodiscard]] UINT32 GetHeight()						const override;
-		[[nodiscard]] UINT16 GetDepth()							const override;
-		[[nodiscard]] TextureDimension GetTextureDimension()	const override;
-		[[nodiscard]] TextureFormat GetTextureFormat()			const override;
-		[[nodiscard]] UINT64 GetTexture()						const override;
+		[[nodiscard]] UINT32 GetWidth()					const override;
+		[[nodiscard]] UINT32 GetHeight()				const override;
+		[[nodiscard]] TextureFormat GetTextureFormat()	const override;
+		[[nodiscard]] void* GetTexture()				const override;
 
-		ComPtr<ID3D12Resource> pResource;
-
-		void Regenerate();
-		INT8 DirtyFlag = 0;
-
-		D3D12_RECT Rect;
-		D3D12_VIEWPORT Viewport;
-
-		D3D12DescriptorHandle pSRV;
-		D3D12DescriptorHandle pUAV;
-		D3D12DescriptorHandle pRTV;
 
 	private:
+		std::string Name{ "RenderTarget" };
+		std::wstring FileName{ L"empty" };
 
-		INT32 Width;
-		INT32 Height;
-		UINT16 Depth = 0;
+		ComPtr<ID3D12Resource> pResource{nullptr};
+
+		INT32 Width{ -1 };
+		INT32 Height{ -1 };
+
+		D3D12DescriptorHandle pSRV{};
+		D3D12DescriptorHandle pRTV{};
+		D3D12DescriptorHandle pDSV{};
+
+
+		D3D12_RECT Rect{};
+		D3D12_VIEWPORT Viewport{};
 		UINT MipLevels = 1;
-		std::string Name;
-		std::wstring FileName;
-
-		DXGI_FORMAT Format;
-
+		DXGI_FORMAT Format{DXGI_FORMAT_R8G8B8A8_UNORM};
+		D3D12_SRV_DIMENSION Dimension{ D3D12_SRV_DIMENSION_TEXTURE2D };
+		INT8 DirtyFlag = 0;
 		BYTE* RawData = nullptr;
-
-		INT32 SrvIndex = -1;
-		D3D12_SRV_DIMENSION Dimension;
-
-
-
 	};
 
 }

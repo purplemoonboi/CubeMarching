@@ -25,8 +25,8 @@ namespace Foundation
 		WindowHandle(nullptr),
 		Width(width),
 		Height(height),
-		IsMinimised(false),
-		IsMaximised(false),
+		IsWindowFullScreen(false),
+		IsWindowMinimised(false),
 		IsResizing(false),
 		IsClosing(false)
 	{
@@ -56,6 +56,31 @@ namespace Foundation
 				Window32Data.AppEventCallBack(event);
 			}
 		}
+	}
+
+	INT32 Win32Window::GetWidth() const
+	{
+		return Width;
+	}
+
+	INT32 Win32Window::GetHeight() const
+	{
+		return Height;
+	}
+
+	void* Win32Window::GetNativeWindow() const
+	{
+		return WindowHandle;
+	}
+
+	bool Win32Window::IsFullScreen() const
+	{
+		return IsWindowFullScreen;
+	}
+
+	bool Win32Window::IsMinimised() const
+	{
+		return IsWindowMinimised;
 	}
 
 	bool Win32Window::InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption)
@@ -106,8 +131,15 @@ namespace Foundation
 			MessageBox(0, L"Failed to create new window...", 0, 0);
 		}
 
-		ShowWindow(WindowHandle, SW_SHOW);
-		UpdateWindow(WindowHandle);
+		if(!ShowWindow(WindowHandle, SW_SHOW))
+		{
+			CORE_ERROR("Failed to show window!");
+		}
+
+		if(!UpdateWindow(WindowHandle))
+		{
+			CORE_WARNING("Could not update window!");
+		}
 
 		return true;
 	}
@@ -115,8 +147,8 @@ namespace Foundation
 	void Win32Window::UpdateWindowData(INT32 width, INT32 height, bool isMinimised, bool isMaximised, bool isClosing, bool isResizing, bool vSync)
 	{
 		IsClosing = isClosing;
-		IsMinimised = isMinimised;
-		IsMaximised = isMaximised;
+		IsWindowFullScreen = isMinimised;
+		IsWindowMinimised = isMaximised;
 		IsResizing = isResizing;
 
 		Window32Data.Width = width;
