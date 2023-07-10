@@ -1,11 +1,9 @@
 #pragma once
-#include "Framework/Core/Core.h"
-#include "Framework/Core/Log/Log.h"
+#include <Framework/Core/Core.h>
+#include <Framework/Core/Log/Log.h>
+#include <Framework/Renderer/Settings/Settings.h>
+
 #include "Platform/DirectX12/DirectX12.h"
-#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
-
-
-
 
 
 using Microsoft::WRL::ComPtr;

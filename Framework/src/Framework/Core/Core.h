@@ -1,4 +1,17 @@
 #pragma once
+
+// Ignore warnings generated from internal header files.
+#pragma warning(push)
+#pragma warning(disable : 4616)
+#pragma warning(disable : 6285)
+#pragma warning(disable : 26437)
+#pragma warning(disable : 26450)
+#pragma warning(disable : 26451)
+#pragma warning(disable : 26495)
+#pragma warning(disable : 26498)
+#pragma warning(disable : 26800)
+#pragma warning(disable: 4530)
+
 #include <stdint.h>
 #include <assert.h>
 #include <functional>
@@ -7,9 +20,6 @@
 #include <utility>
 #include <mutex>
 
-
-// Disable exception warning
-#pragma warning(disable: 4530)
 
 // BIT shift by 'x' amount
 #define BIT(x) (1 << (x))

@@ -1,5 +1,6 @@
 #include "D3D12HeapManager.h"
 #include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/D3D12/D3D12.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -27,7 +28,7 @@ namespace Foundation::Graphics::D3D12
 		desc.Type = Type;
 		desc.NodeMask = 0;
 
-		ID3D12Device8* device = GetDevice();
+		ID3D12Device8* device = gD3D12Context->GetDevice();
 
 		HRESULT hr{ S_OK };
 		hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
@@ -64,7 +65,7 @@ namespace Foundation::Graphics::D3D12
 	void D3D12DescriptorHeap::Release()
 	{
 		CORE_ASSERT(!Size, "Descriptors still live!");
-		Internal::DeferredRelease(pHeap.Get());
+		gD3D12Context->DeferredRelease(pHeap.Get());
 	}
 
 	D3D12DescriptorHandle D3D12DescriptorHeap::Allocate()
@@ -105,10 +106,10 @@ namespace Foundation::Graphics::D3D12
 		CORE_ASSERT(pHandle.Index == index, "Index does not match the index of this descriptor slot!");
 
 		// Defer the free operation until we know it is safe.
-		DeferredAvailableIndices[CurrentFrameIndex()].push_back(index);
+		DeferredAvailableIndices[gD3D12Context->CurrentFrameIndex()].push_back(index);
 
 		// Let the renderer know there are pending releases for the current frame.
-		SetDeferredReleasesFlag();
+		gD3D12Context->SetDeferredReleasesFlag();
 		pHandle = {};
 
 	}

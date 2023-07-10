@@ -47,7 +47,6 @@ namespace Foundation::Graphics
 		
 		virtual ~RendererAPI() = 0;
 
-		virtual void Init(GraphicsContext* context) = 0;
 		virtual void PreInit() = 0;
 		virtual void PostInit() = 0;
 		virtual void Clean() = 0;
@@ -59,8 +58,10 @@ namespace Foundation::Graphics
 
 		virtual void Flush() = 0;
 
-		virtual void DrawSceneStaticGeometry(RenderPipeline* pso, const std::vector<RenderItem*>& renderItems) = 0;
-		virtual void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) = 0;
+		virtual void Draw(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer) = 0;
+		virtual void DrawIndexed(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer) = 0;
+		virtual void DrawInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, UINT32 instanceCount) = 0;
+		virtual void DrawIndexedInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer, UINT32 instanceCount) = 0;
 
 
 	private:

@@ -1,6 +1,6 @@
 #pragma once
 #include "MathHelper.h"
-#include "Framework/Renderer/Resources/Material.h"
+#include "Framework/Renderer/Material/Material.h"
 #include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 
 

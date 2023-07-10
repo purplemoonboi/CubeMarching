@@ -61,21 +61,22 @@ namespace Foundation::Graphics
 		//			calculated for rendering.
 		static void EndScene();
 
- 		// @brief - Creates the core engine materials. 
-		static void BuildCoreEngineDefaultMaterials();
-
-		// @brief - Creates the core engine textures.
-		static void BuildCoreEngineDefaultTextures();
-
 		static void CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions = 1);
 
 		static void CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name, UINT32 subSivisions = 1);
 
 		static void CreateSphere(float radius,  std::string& name, UINT32 lateralResolution = 6, UINT32 longitudeResolution = 6);
 
-		static void CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType);
-
 		static RenderItem* GetRenderItem(UINT16 index);
+
+	private:
+
+		// @brief - Creates the core engine materials. 
+		static void BuildCoreEngineDefaultMaterials();
+
+		// @brief - Creates the core engine textures.
+		static void BuildCoreEngineDefaultTextures();
+
 	};
 
 

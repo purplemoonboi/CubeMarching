@@ -45,6 +45,6 @@ namespace Foundation::Graphics
 	{
 		RenderInstruction::Clean();
 
-		Context->Clean();
+		Context->ShutDown();
 	}
 }

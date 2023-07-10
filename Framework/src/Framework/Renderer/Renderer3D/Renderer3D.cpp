@@ -178,37 +178,6 @@ namespace Foundation::Graphics
 		RenderData.TextureLibrary.Add("RockNormal", std::move(rockNormal));
 	}
 
-	void Renderer3D::CreateMesh(const std::string& meshTag, Transform transform, INT8 staticMeshType)
-	{
-
-		switch(staticMeshType)
-		{
-		case 0:
-			{
-				CreateCube(2, 2, 2, const_cast<std::string&>(meshTag));
-			}
-			break;
-		case 1:
-			{
-				CreateSphere(0.4,const_cast<std::string&>(meshTag));
-			}
-			break;
-			
-		}
-
-		ScopePointer<RenderItem> renderItem = RenderItem::Create
-		(
-			RenderData.Geometries[meshTag].get(),
-			RenderData.MaterialLibrary.Get("Green"),
-			meshTag+"_args",
-			RenderData.OpaqueRenderItems.size(),
-			transform
-		);
-
-		RenderData.OpaqueRenderItems.push_back(renderItem.get());
-		RenderData.RenderItems.push_back(std::move(renderItem));
-	}
-
 
 	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
 	{

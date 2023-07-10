@@ -20,8 +20,8 @@ namespace Foundation::Graphics::D3D12
         ComPtr<ID3D12GraphicsCommandList4>  pGCL{ nullptr };
         ComPtr<ID3D12CommandAllocator>      pCmdAlloc{ nullptr };
 
-        D3D12UploadBuffer<PassConstants>    PassBuffer;
-        D3D12UploadBuffer<ObjectConstant>   ConstantBuffer;
+        D3D12UploadBuffer<PassConstants>    PassBuffer{};
+        D3D12UploadBuffer<ObjectConstant>   ConstantBuffer{};
 
 		UINT64 Fence = 0;
     };

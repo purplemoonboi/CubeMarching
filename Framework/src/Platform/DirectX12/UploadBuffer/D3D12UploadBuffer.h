@@ -1,7 +1,7 @@
 #pragma once
 #include "../DirectX12.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/D3D12/D3D12.h"
 #include "Framework/Core/Log/Log.h"
 
 
@@ -26,7 +26,7 @@ namespace Foundation::Graphics::D3D12
 				ElementByteSize = D3D12BufferFactory::CalculateBufferByteSize(sizeof(T));
 			}
 
-			auto device = GetDevice();
+			auto device = gD3D12Context->GetDevice();
 			const HRESULT hr = device->CreateCommittedResource
 			(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -78,7 +78,7 @@ namespace Foundation::Graphics::D3D12
 
 			pUpload = nullptr;
 			MappedData = nullptr;
-			Internal::DeferredRelease(pUpload.Get());
+			gD3D12Context->DeferredRelease(pUpload.Get());
 		}
 
 		void CopyData(INT32 elementIndex, const T& data)
@@ -88,7 +88,7 @@ namespace Foundation::Graphics::D3D12
 
 		void Destroy()
 		{
-			Internal::DeferredRelease(pUpload.Get());
+			gD3D12Context->DeferredRelease(pUpload.Get());
 		}
 
 

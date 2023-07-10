@@ -1,8 +1,6 @@
 #pragma once
 #include "Platform/DirectX12/DirectX12.h"
 
-//#define GLM_ENABLE_EXPERIMENTAL
-//#include "glm/gtx/quaternion.hpp"
 
 #include <string>
 #include "Framework/Core/Core.h"

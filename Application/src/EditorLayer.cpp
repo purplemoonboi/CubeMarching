@@ -24,13 +24,12 @@ namespace Foundation::Editor
         Scene = CreateRef<class Scene>("Test Scene");
         TimerManager = Application::Get()->GetApplicationTimeManager();
 
-        
-
     }
 
     EditorLayer::~EditorLayer()
     {
-        
+
+
 
     }
 
@@ -112,7 +111,7 @@ namespace Foundation::Editor
 
 
 
-        Scene->OnRender(time, wireframe);
+        Scene->OnRender(time);
     }
 
     void EditorLayer::OnImGuiRender()

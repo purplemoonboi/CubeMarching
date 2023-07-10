@@ -1,6 +1,5 @@
 #pragma once
 #include "Framework/Renderer/Api/RendererAPI.h"
-#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 
 
 namespace Foundation::Graphics::D3D12
@@ -23,7 +22,6 @@ namespace Foundation::Graphics::D3D12
 
 		~D3D12RenderingApi() override;
 
-		void Init(GraphicsContext* context) override;
 		void Clean() override;
 
 		void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) override;
@@ -36,13 +34,15 @@ namespace Foundation::Graphics::D3D12
 
 		void Flush() override;
 
-		void DrawSceneStaticGeometry(RenderPipeline* pso, const std::vector<RenderItem*>& renderItems) override;
-		void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 indexCount = 0) override {}
+
+		void Draw(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer) override;
+		void DrawIndexed(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer) override;
+		void DrawInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, UINT32 instanceCount) override;
+		void DrawIndexedInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer, UINT32 instanceCount) override;
 
 
 	private:
-		// A pointer to the graphics context
-		D3D12Context* Context;
+
 
 	};
 
