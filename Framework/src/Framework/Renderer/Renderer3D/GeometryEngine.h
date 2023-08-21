@@ -30,7 +30,7 @@ namespace Foundation::Graphics
 	class GraphicsContext;
 
 
-	class Renderer3D
+	class GeometryEngine
 	{
 	public:
 

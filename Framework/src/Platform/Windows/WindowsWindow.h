@@ -7,11 +7,11 @@
 
 namespace Foundation
 {
-	class Win32Window : public Window
+	class WindowsWindow : public Window
 	{
 	public:
-		Win32Window() = default;
-		Win32Window
+		WindowsWindow() = default;
+		explicit WindowsWindow
 		(
 			HINSTANCE hInstance,
 			WNDPROC wndProc,
@@ -20,34 +20,27 @@ namespace Foundation
 			const std::wstring& windowCaption = L"DX12 Foundation"
 		);
 
+		explicit WindowsWindow(const WindowProperties& winProps);
 
+		explicit WindowsWindow(const WindowsWindow& window) noexcept;
 
 		void OnUpdate() override;
 
-		[[nodiscard]] INT32 GetWidth() const override; 
-		[[nodiscard]] INT32 GetHeight() const override;
-		[[nodiscard]] void* GetNativeWindow() const override;
 
-		[[nodiscard]] bool IsFullScreen() const override;
-		[[nodiscard]] bool IsMinimised() const override;
 
 		/*..Window Attributes..*/
 
-		void SetVSync(bool enabled) override { VSync = enabled; }
-		[[nodiscard]] bool IsVSync() const override { return VSync; }
-
-		
 
 		// @brief Set the applications on event process
 		void SetEventCallBack(const WindowCallback& callBack) override { Window32Data.AppEventCallBack = callBack; }
 
 	public:
 		// @brief Returns the pointer to this class.
-		static Win32Window* GetWindow();
+		static WindowsWindow* GetWindow();
 
 	private:
 
-		static Win32Window* WindowSPtr;
+		static WindowsWindow* WindowSPtr;
 
 		// @brief Initialises new window parameters and registers the
 		//		  window to the system.

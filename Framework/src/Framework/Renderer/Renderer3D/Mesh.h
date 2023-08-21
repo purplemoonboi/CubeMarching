@@ -1,5 +1,4 @@
 #pragma once
-#include <DirectXCollision.h>
 #include <string>
 #include <unordered_map>
 #include "Framework/Renderer/Buffers/Buffer.h"
@@ -18,7 +17,8 @@ namespace Foundation::Graphics
 
 		// Bounding box of the geometry defined by this submesh. 
 		// This is used in later chapters of the book.
-		BoundingBox Bounds;
+		//TODO: How we going to handle this sort of issue?
+		//BoundingBox Bounds;
 	};
 
 

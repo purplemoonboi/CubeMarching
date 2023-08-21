@@ -18,7 +18,7 @@
 /** rendering */
 #include "Framework/Renderer/Api/RendererAPI.h"
 #include "Renderer/Renderer3D/RenderInstruction.h"
-#include "Renderer/Renderer3D/Renderer3D.h"
+#include "Renderer/Renderer3D/GeometryEngine.h"
 #include "Renderer/Resources/Shader.h"
 #include "Renderer/Buffers/FrameBuffer.h"
 

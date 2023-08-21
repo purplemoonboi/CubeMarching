@@ -4,8 +4,8 @@
 #include "Framework/Renderer/Renderer3D/Renderer.h"
 
 
-#include "Platform/DirectX12/Api/D3D12Context.h"
-#include "Platform/Windows/Win32Window.h"
+#include "Platform/DirectX12/D3D12/D3D12.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 namespace Foundation::Graphics
 {
@@ -16,7 +16,10 @@ namespace Foundation::Graphics
 		switch (Renderer::GetAPI())
 		{
 			case RendererAPI::Api::None:   CORE_ASSERT(false, "Not a recognised api!");              return nullptr;
-			case RendererAPI::Api::DX12:   return CreateScope<D3D12Context>(dynamic_cast<Win32Window*>(window));
+			case RendererAPI::Api::DX12:
+			{
+				gD3D12Context.reset(new D3D12Context(dynamic_cast<WindowsWindow*>(window)));
+			}
 			case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!");     return nullptr;
 			default:
 			CORE_ASSERT(false, "Unknown error!");

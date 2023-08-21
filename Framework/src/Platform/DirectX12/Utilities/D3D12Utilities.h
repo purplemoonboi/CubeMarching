@@ -18,6 +18,17 @@ namespace Foundation::Graphics::D3D12
 		ID3D12Resource* resource
 	);
 
+	D3D12DescriptorHandle CreateDepthStencilView(
+		const D3D12_DEPTH_STENCIL_VIEW_DESC* desc,
+		ID3D12Resource* resource
+	);
+
+	HRESULT RefreshDepthStencilView(
+		const D3D12_DEPTH_STENCIL_VIEW_DESC* desc,
+		D3D12DescriptorHandle& handle,
+		ID3D12Resource* resource
+	);
+
 	D3D12DescriptorHandle CreateShaderResourceView(
 		const D3D12_SHADER_RESOURCE_VIEW_DESC& desc,
 		ID3D12Resource* resource

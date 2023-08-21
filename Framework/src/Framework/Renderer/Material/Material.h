@@ -59,36 +59,44 @@ namespace Foundation::Graphics
 	class Material
 	{
 	public:
-		static ScopePointer<Material> Create(std::string&& name);
-		virtual void SetDiffuse(float r, float g, float b, float a) = 0;
-		virtual void SetFresnel(float r, float g, float b) = 0;
-		virtual void SetRoughness(float roughness) = 0;
+		virtual void SetDiffuse(float r, float g, float b, float a);
+		virtual void SetFresnel(float r, float g, float b);
+		virtual void SetRoughness(float roughness);
 
-		virtual void SetDiffuseTexIndex(INT32 index) = 0;
-		virtual void SetNormalTexIndex(INT32 index) = 0;
-		virtual void SetRoughnessTexIndex(INT32 index) = 0;
-		virtual void SetDisplacementTexIndex(INT32 index) = 0;
-		virtual void SetMaterialBufferIndex(UINT32 index) = 0;
-		[[nodiscard]] virtual const std::string& GetName() const = 0;
-		[[nodiscard]] virtual UINT32 GetMaterialIndex() const = 0;
+		[[nodiscard]] virtual const std::string& GetName() const;
 	};
 
 	class MaterialLibrary
 	{
 	public:
 
-		static void Add(ScopePointer<Material> shader);
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="shader"></param>
+		static void Add(const std::string_view& name, RefPointer<Material> shader);
 
-		static void Add(const std::string& name, ScopePointer<Material> shader);
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		static RefPointer<Material> Get(const std::string_view& name);
 
-		static Material* Get(const std::string& name);
-
-		static UINT32 Size();
-
-		static bool Exists(const std::string& name);
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		static bool Exists(const std::string_view& name);
 
 	private:
-		static std::unordered_map<std::string, ScopePointer<Material>> Materials;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		static std::unordered_map<std::string, RefPointer<Material>> Materials;
 
 	};
 

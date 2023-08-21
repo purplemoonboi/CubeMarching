@@ -63,25 +63,39 @@ namespace Foundation::Graphics
 		ShaderDataType Type;
 		UINT Size;
 		UINT Offset;
+		UINT32 Slot;
+		bool PerInstance;
 		bool Normalised;
 
 		BufferElement() = default;
 
-		BufferElement(std::string&& name, ShaderDataType type, bool normalised = false)
+		BufferElement(std::string&& name, ShaderDataType type, bool normalised = false, bool perInstance = false)
 			:
-			Name(std::move(name)), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalised(normalised)
+				Name(std::move(name))
+			,	Type(type)
+			,	Size(ShaderDataTypeSize(type))
+			,	Offset(0)
+			,	Slot(0)
+			,	Normalised(normalised)
+			,	PerInstance(perInstance)
 		{
 		
 		}
 
-		BufferElement(std::string&& name, ShaderDataType type, UINT alignedByteOffset, INT32 semanticIndex = 0, bool normalised = false)
+		BufferElement(std::string&& name, ShaderDataType type, UINT alignedByteOffset, INT32 slot = 0, bool normalised = false, bool perInstance = false)
 			:
-			Name(std::move(name)), Type(type), Size(ShaderDataTypeSize(type)), Offset(alignedByteOffset), Normalised(normalised)
+				Name(std::move(name))
+			,	Type(type)
+			,	Size(ShaderDataTypeSize(type))
+			,	Offset(alignedByteOffset)
+			,	Slot(slot)
+			,	Normalised(normalised)
+			,	PerInstance(false)
 		{
 
 		}
 
-		UINT GetComponentCount() const
+		[[nodiscard]] UINT GetComponentCount() const
 		{
 			switch (Type)
 			{
@@ -99,6 +113,9 @@ namespace Foundation::Graphics
 				case ShaderDataType::Float4:   return 4;
 
 				case ShaderDataType::Bool:     return 1;
+
+
+				default: return 0;
 			}
 		}
 

@@ -1,5 +1,5 @@
 #include "Framework/cmpch.h"
-#include "Framework/Renderer/Renderer3D/Renderer3D.h"
+#include "Framework/Renderer/Renderer3D/GeometryEngine.h"
 
 #include "Scene.h"
 #include "Components.h"
@@ -118,11 +118,11 @@ namespace Foundation
 		{
 		}
 
-		Renderer3D::BeginScene(SceneCamera, time);
+		GeometryEngine::BeginScene(SceneCamera, time);
 		
 		
 
-		Renderer3D::EndScene();
+		GeometryEngine::EndScene();
 
 	}
 

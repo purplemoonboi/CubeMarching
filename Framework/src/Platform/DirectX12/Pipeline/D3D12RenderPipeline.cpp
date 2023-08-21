@@ -11,11 +11,6 @@ namespace Foundation::Graphics::D3D12
 	D3D12RenderPipeline::~D3D12RenderPipeline()
 	{}
 
-	void D3D12RenderPipeline::Invalidate()
-	{
-
-	}
-
 	void D3D12RenderPipeline::Bind()
 	{
 
@@ -50,47 +45,25 @@ namespace Foundation::Graphics::D3D12
 	{
 	}
 
-	void D3D12RenderPipeline::SetTaskShader(const std::string_view& name, Shader* shader)
+	void D3D12RenderPipeline::InitialiseRoot(const std::vector<PipelineInputDesc>& pipelineIn)
 	{
 	}
 
-	void D3D12RenderPipeline::SetMeshShader(const std::string_view& name, Shader* shader)
+	void D3D12RenderPipeline::LoadShader(const ShaderDesc& desc)
 	{
-	}
+		if(ShaderLibrary::Get(desc.Name) == nullptr)
+		{
+			auto shader = ShaderLibrary::Load(desc);
+		}
 
-	void D3D12RenderPipeline::SetRaytracingShader(const std::string_view& name, Shader* shader)
-	{
-	}
-
-	void D3D12RenderPipeline::SetComputeShader(const std::string_view& name, Shader* shader)
-	{
-	}
-
-
-	void D3D12RenderPipeline::SetInput(const std::string_view& name, float value)
-	{
-	}
-
-	void D3D12RenderPipeline::SetInput(const std::string_view& name, INT32 value)
-	{
-	}
-
-	void D3D12RenderPipeline::SetInput(const std::string_view& name, bool value)
-	{
-	}
-
-	void D3D12RenderPipeline::SetInput(const std::string_view& name, VertexBuffer& buffer)
-	{
-	}
-
-	void D3D12RenderPipeline::SetInput(const std::string_view& name, IndexBuffer& buffer)
-	{
 	}
 
 	D3D12RenderPipeline::D3D12RenderPipeline(PipelineDesc& desc)
+		:
+		RenderPipeline(desc)
 	{
 
-		InitialiseRoot(desc.Input);
+		InitialiseRoot(desc.InputDesc);
 
 		
 
@@ -102,6 +75,10 @@ namespace Foundation::Graphics::D3D12
 			{	"TANGENT",   0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{	"TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,          0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		};
+		for(auto& element : desc.Layout)
+		{
+			InputLayout.emplace_back({ element.Name,  0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 })
+		}
 
 		/** pso description */
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;

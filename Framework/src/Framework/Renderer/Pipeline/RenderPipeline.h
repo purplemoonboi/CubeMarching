@@ -2,19 +2,10 @@
 #include <wrl/client.h>
 #include "Framework/Core/core.h"
 #include "Framework/Renderer/Buffers/Buffer.h"
-
-#include <Platform/DirectX12/DirectX12.h>
-
-#include "Framework/Renderer/Resources/Shader.h"
+#include "Framework/Renderer/Shaders/Shader.h"
 
 namespace Foundation::Graphics
 {
-	class Texture;
-
-	class ComputeApi;
-	class BufferLayout;
-	class Shader;
-	class GraphicsContext;
 
 	enum class FillMode
 	{
@@ -48,10 +39,10 @@ namespace Foundation::Graphics
 
 	enum class Resource 
 	{
-		StructBuffer=0,// e.g A structured buffer
+		StructBuffer=0,		// e.g A structured buffer
 		ConstBuffer,
-		Texture,// e.g A 2D texture
-		Constants,// e.g A constant buffer of 32-bit values
+		Texture,			// e.g A 2D texture
+		Constants,			// e.g A constant buffer of 32-bit values
 		TableConstBuffer,
 		TableResourceBuffer,
 		TableStructBuffer
@@ -76,29 +67,25 @@ namespace Foundation::Graphics
 		PipelineDesc() = default;
 		~PipelineDesc() = default;
 
-
-		PipelineInputDesc Input;
+		std::vector<PipelineInputDesc> InputDesc;
 
 		FillMode		Fill		= FillMode::Opaque;
 		CullMode		Cull		= CullMode::Back;
 		BlendMode		Blend		= BlendMode::OneMinus;
 		TopologyMode	Topology	= TopologyMode::Triangle;
-
-	
-		std::array<Shader*, 5> Shaders{nullptr};
+		BufferLayout	Layout;
 	};
 
 	// @brief Base class for describing the rendering pipeline.
 	class RenderPipeline 
 	{
 	public:
-		RenderPipeline() = default;
+		RenderPipeline(const PipelineDesc& desc);
 		virtual ~RenderPipeline() = default;
 
 		static ScopePointer<RenderPipeline> Create(PipelineDesc& desc);
 
 		// @brief Updates pipeline resources
-		virtual void Invalidate() = 0;
 		virtual void Bind() = 0;
 		virtual void Destroy() = 0;
 
@@ -107,21 +94,8 @@ namespace Foundation::Graphics
 		virtual void SetHullShader(const std::string_view& name,		Shader* shader)	 = 0;
 		virtual void SetDomainShader(const std::string_view& name,		Shader* shader)	 = 0;
 		virtual void SetGeometryShader(const std::string_view& name,	Shader* shader)	 = 0;
-		virtual void SetTaskShader(const std::string_view& name,		Shader* shader)	 = 0;
-		virtual void SetMeshShader(const std::string_view& name,		Shader* shader)	 = 0;
-		virtual void SetRaytracingShader(const std::string_view& name,	Shader* shader)	 = 0;
 
-		virtual void SetComputeShader(const std::string_view& name,		Shader* shader)	 = 0;
-
-		virtual void SetInput(const std::string_view& name, float value) = 0;
-		virtual void SetInput(const std::string_view& name, INT32 value) = 0;
-		virtual void SetInput(const std::string_view& name, bool value) = 0;
-
-		virtual void SetInput(const std::string_view& name, VertexBuffer& buffer) = 0;
-		virtual void SetInput(const std::string_view& name, IndexBuffer& buffer) = 0;
-
-		[[nodiscard]] virtual ScopePointer<Texture> GetSceneTexture() const = 0;
-		[[nodiscard]] virtual ScopePointer<Texture> GetSceneDepthTexture() const = 0;
-
+	protected:
+		PipelineDesc Desc;
 	};
 }

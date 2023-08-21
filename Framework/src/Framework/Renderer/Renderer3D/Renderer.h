@@ -21,17 +21,8 @@ namespace Foundation::Graphics
 		static RendererStatus RendererStatus();
 		static void Clean();
 	private:
-		struct SceneData
-		{
-			
-		};
-
-		static SceneData* SceneData;
+		
 		static enum RendererStatus RenderStatus;
-
-
-		static ScopePointer<GraphicsContext> Context;
-
 	};
 }
 

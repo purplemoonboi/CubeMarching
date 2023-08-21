@@ -1,6 +1,4 @@
 #pragma once
-#include <Windows.h>
-
 #include "FrameResource.h"
 #include "Framework/Core/Core.h"
 #include "Framework/Core/Time/AppTimeManager.h"

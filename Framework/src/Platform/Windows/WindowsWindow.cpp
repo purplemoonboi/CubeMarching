@@ -1,19 +1,19 @@
 #include "Framework/cmpch.h"
 #include "Framework/Core/Log/Log.h"
-#include "Win32Window.h"
+#include "WindowsWindow.h"
 
 #include "Framework/Core/Events/AppEvents.h"
 
 namespace Foundation
 {
-	Win32Window* Win32Window::WindowSPtr = nullptr;
+	WindowsWindow* WindowsWindow::WindowSPtr = nullptr;
 
-	Win32Window* Win32Window::GetWindow()
+	WindowsWindow* WindowsWindow::GetWindow()
 	{
 		return WindowSPtr;
 	}
 
-	Win32Window::Win32Window
+	WindowsWindow::WindowsWindow
 	(
 		HINSTANCE hInstance,
 		WNDPROC wndProc,
@@ -22,28 +22,52 @@ namespace Foundation
 		const std::wstring& windowCaption
 	)
 		:
-		WindowHandle(nullptr),
-		Width(width),
-		Height(height),
-		IsWindowFullScreen(false),
-		IsWindowMinimised(false),
-		IsResizing(false),
-		IsClosing(false)
+			WindowHandle(nullptr)
+		,	Width(width)
+		,	Height(height)
+		,	IsWindowFullScreen(false)
+		,	IsWindowMinimised(false)
+		,	IsResizing(false)
+		,	IsClosing(false)
 	{
-		CORE_ASSERT(!WindowSPtr, "A window already exists! You can only have '1' window registered to the system!");
+		CORE_ASSERT(!WindowSPtr, "A window already exists!");
 		WindowSPtr = this;
 
 		//When it's safe to do so, initialise our window parameters.
 		if(!InitialiseWindow(hInstance, wndProc, windowCaption))
 		{
-			CORE_ERROR("A window could be initialised.... terminating application.")
+			CORE_ERROR("A window could not be initialised.... terminating application.")
 		}
 
 
 
 	}
 
-	void Win32Window::OnUpdate()
+	WindowsWindow::WindowsWindow(const WindowProperties& winProps)
+		:
+		WindowHandle(winProps.WinHandle)
+		,	Width(winProps.Width)
+		,	Height(winProps.Height)
+		,	IsWindowFullScreen(false)
+		,	IsWindowMinimised(false)
+		,	IsResizing(false)
+		,	IsClosing(false)
+		
+	{
+		CORE_ASSERT(!WindowSPtr, "A window already exists!");
+		WindowSPtr = this;
+		if (!InitialiseWindow(winProps.WinInstance, winProps.WinProc, winProps.Title))
+		{
+			CORE_ERROR("A window could not be initialised... terminating application.");
+		}
+	}
+
+	WindowsWindow::WindowsWindow(const WindowsWindow& window) noexcept
+	{
+
+	}
+
+	void WindowsWindow::OnUpdate()
 	{
 		if (Window32Data.Width > -1 && Window32Data.Height > -1)
 		{
@@ -58,32 +82,7 @@ namespace Foundation
 		}
 	}
 
-	INT32 Win32Window::GetWidth() const
-	{
-		return Width;
-	}
-
-	INT32 Win32Window::GetHeight() const
-	{
-		return Height;
-	}
-
-	void* Win32Window::GetNativeWindow() const
-	{
-		return WindowHandle;
-	}
-
-	bool Win32Window::IsFullScreen() const
-	{
-		return IsWindowFullScreen;
-	}
-
-	bool Win32Window::IsMinimised() const
-	{
-		return IsWindowMinimised;
-	}
-
-	bool Win32Window::InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption)
+	bool WindowsWindow::InitialiseWindow(HINSTANCE hInstance, WNDPROC wndProc, const std::wstring& windowCaption)
 	{
 		WNDCLASS windowClass;
 		windowClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -144,7 +143,7 @@ namespace Foundation
 		return true;
 	}
 
-	void Win32Window::UpdateWindowData(INT32 width, INT32 height, bool isMinimised, bool isMaximised, bool isClosing, bool isResizing, bool vSync)
+	void WindowsWindow::UpdateWindowData(INT32 width, INT32 height, bool isMinimised, bool isMaximised, bool isClosing, bool isResizing, bool vSync)
 	{
 		IsClosing = isClosing;
 		IsWindowFullScreen = isMinimised;

@@ -1,4 +1,4 @@
-#include "Renderer3D.h"
+#include "GeometryEngine.h"
 
 
 #include "GeometryGenerator.h"
@@ -45,30 +45,30 @@ namespace Foundation::Graphics
 
 		UINT64 BaseVertexLocation = 0;
 
-		//Renderer3D::RenderingStats RendererStats;
+		//GeometryEngine::RenderingStats RendererStats;
 
 	};
 
 	static RendererData RenderData;
 
 
-	void Renderer3D::PreInit()
+	void GeometryEngine::PreInit()
 	{
 		RenderInstruction::PreInitRenderer();
 	}
 
-	void Renderer3D::PostInit()
+	void GeometryEngine::PostInit()
 	{
 		RenderInstruction::PostInitRenderer();
 	}
 
-	void Renderer3D::Init()
+	void GeometryEngine::Init()
 	{
 		const auto api = RenderInstruction::GetApiPtr();
 
-		/** build and compile shaders */
-		auto vS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "VS", "vs_5_1");
-		auto pS  = Shader::Create(L"assets\\shaders\\Default.hlsl", "PS", "ps_5_1");
+		/** build and compile ShaderLib */
+		auto vS  = Shader::Create(L"assets\\ShaderLib\\Default.hlsl", "VS", "vs_5_1");
+		auto pS  = Shader::Create(L"assets\\ShaderLib\\Default.hlsl", "PS", "ps_5_1");
 
 		RenderData.ShaderLibrary.Add("vs", std::move(vS));
 		RenderData.ShaderLibrary.Add("ps", std::move(pS));
@@ -105,10 +105,10 @@ namespace Foundation::Graphics
 
 	}
 
-	void Renderer3D::Shutdown()
+	void GeometryEngine::Shutdown()
 	{}
 
-	void Renderer3D::BeginScene(MainCamera* camera, AppTimeManager* time)
+	void GeometryEngine::BeginScene(MainCamera* camera, AppTimeManager* time)
 	{
 
 
@@ -116,7 +116,7 @@ namespace Foundation::Graphics
 		RenderInstruction::OnBeginRender();
 	}
 
-	void Renderer3D::EndScene()
+	void GeometryEngine::EndScene()
 	{
 		/**
 		 *	Render the scene geometry to the scene
@@ -124,7 +124,7 @@ namespace Foundation::Graphics
 		RenderInstruction::OnEndRender();
 	}
 
-	void Renderer3D::BuildCoreEngineDefaultMaterials()
+	void GeometryEngine::BuildCoreEngineDefaultMaterials()
 	{
 		auto mat = Material::Create("Green");
 		mat->SetDiffuse(0.0f, 1.0f, 0.3f, 1.0f);
@@ -153,7 +153,7 @@ namespace Foundation::Graphics
 		RenderData.Materials.push_back(RenderData.MaterialLibrary.Get("Terrain"));
 	}
 
-	void Renderer3D::BuildCoreEngineDefaultTextures()
+	void GeometryEngine::BuildCoreEngineDefaultTextures()
 	{
 		/**
 		 *	moss
@@ -179,12 +179,12 @@ namespace Foundation::Graphics
 	}
 
 
-	RenderItem* Renderer3D::GetRenderItem(UINT16 index)
+	RenderItem* GeometryEngine::GetRenderItem(UINT16 index)
 	{
 		return RenderData.OpaqueRenderItems[index];
 	}
 
-	void Renderer3D::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
+	void GeometryEngine::CreateCube(float x, float y, float z, std::string& name, UINT32 subDivisions)
 	{
 		auto api = RenderInstruction::GetApiPtr();
 		auto cubeData = Geo.CreateBox(x, y, z, subDivisions);
@@ -219,7 +219,7 @@ namespace Foundation::Graphics
 		}
 	}
 
-	void Renderer3D::CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name,  UINT32 subSivisions)
+	void GeometryEngine::CreatePlane(float x, float y, float z, float w, float h, float depth, std::string& name,  UINT32 subSivisions)
 	{
 		auto api = RenderInstruction::GetApiPtr();
 		auto planeData = Geo.CreateQuad(x, y, z, w, h);
@@ -254,7 +254,7 @@ namespace Foundation::Graphics
 		}
 	}
 
-	void Renderer3D::CreateSphere(float radius, std::string& name, UINT32 lateralResolution, UINT32 longitudeResolution)
+	void GeometryEngine::CreateSphere(float radius, std::string& name, UINT32 lateralResolution, UINT32 longitudeResolution)
 	{
 		auto api = RenderInstruction::GetApiPtr();
 		auto sphereData = Geo.CreateSphere(radius, lateralResolution, longitudeResolution);

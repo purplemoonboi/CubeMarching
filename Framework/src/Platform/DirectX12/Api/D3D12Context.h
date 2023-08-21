@@ -7,12 +7,9 @@
 #include "Platform/DirectX12/DirectX12.h"
 
 
-
-
-
 namespace Foundation
 {
-	class Win32Window;
+	class WindowsWindow;
 }
 
 
@@ -32,7 +29,7 @@ namespace Foundation::Graphics::D3D12
 	public:
 		D3D12Context() = default;
 
-		explicit D3D12Context(Win32Window* window);
+		explicit D3D12Context(WindowsWindow* window);
 
 		// @brief Disables copy and move semantics.
 		DISABLE_COPY_AND_MOVE(D3D12Context);
@@ -60,6 +57,16 @@ namespace Foundation::Graphics::D3D12
 		//		  processes.
 		void ExecuteGraphicsCommandList() const;
 
+		[[nodiscard]] ID3D12CommandAllocator* GetGraphicsCommandAllocator() const { return pCmdAlloc.Get(); }
+
+		// @brief Returns a pointer to the main rendering queue.
+		[[nodiscard]] ID3D12CommandQueue* GetRenderingQueue() const { return pQueue.Get(); }
+
+		// @brief Returns a pointer to the rendering command list.
+		[[nodiscard]] ID3D12GraphicsCommandList* GetGraphicsCommandList() const { return pGraphicsCommandList.Get(); }
+
+		// @brief Returns a pointer to the mesh shader command list. Note, mesh ShaderLib must be supported on your machine.
+		[[nodiscard]] ID3D12GraphicsCommandList6* GetMeshShaderCommandList() const { return pDxmCommandList.Get(); }
 
 		HRESULT InitD3D12Core();
 		void CacheMSAAQuality();
@@ -91,7 +98,7 @@ namespace Foundation::Graphics::D3D12
 		D3D12RenderFrame* CurrentRenderFrame();
 
 		//	@brief Returns a pointer to the main device interface.
-		[[nodiscard("")]] ID3D12Device8* GetDevice() const;
+		[[nodiscard("")]] ID3D12Device* GetDevice() const;
 
 		// @brief Returns a pointer to the main fence, associated with the
 		//		  main render queue.
@@ -114,24 +121,26 @@ namespace Foundation::Graphics::D3D12
 
 		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
-	public:
-		ComPtr<ID3D12GraphicsCommandList6>	pGCL{ nullptr };
-		ComPtr<ID3D12CommandQueue>			pQueue{ nullptr };
-		ComPtr<ID3D12CommandAllocator>		pCmdAlloc{ nullptr };
-
 	private:
 		void CreateCommandObjects();
 		void CreateSwapChain();
 
-		ComPtr<ID3D12Device8>				pDevice{ nullptr };
-		ComPtr<IDXGIFactory4>				pDXGIFactory4{ nullptr };
-		ComPtr<ID3D12Fence>					pFence{ nullptr };
-		ComPtr<IDXGISwapChain>				pSwapChain{ nullptr };
+		ComPtr<ID3D12GraphicsCommandList>	pGraphicsCommandList{ nullptr };
+		ComPtr<ID3D12CommandQueue>			pQueue{ nullptr };
+		ComPtr<ID3D12CommandAllocator>		pCmdAlloc{ nullptr };
+
+		ComPtr<ID3D12Device>				pDevice			{ nullptr };
+		ComPtr<IDXGIFactory4>				pDXGIFactory4	{ nullptr };
+		ComPtr<ID3D12Fence>					pFence			{ nullptr };
+		ComPtr<IDXGISwapChain>				pSwapChain		{ nullptr };
 
 		D3D12DescriptorHeap	RtvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
 		D3D12DescriptorHeap	DsvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
 		D3D12DescriptorHeap	SrvHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
 		D3D12DescriptorHeap	UavHeap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+
+		ComPtr<ID3D12Device8> pDxmDevice						{ nullptr };
+		ComPtr<ID3D12GraphicsCommandList6> pDxmCommandList		{ nullptr };
 
 		std::array<D3D12RenderFrame, FRAMES_IN_FLIGHT> RenderFrames;
 		UINT32 FrameIndex{ 0 };

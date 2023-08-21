@@ -3,13 +3,13 @@
 
 #include "Framework/Core/Log/Log.h"
 
-#include "Platform/Windows/Win32Window.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 
 namespace Foundation::Graphics::D3D12
 {
 
-	D3D12Context::D3D12Context(Win32Window* window)
+	D3D12Context::D3D12Context(WindowsWindow* window)
 		:
 		pWindowHandle(static_cast<HWND>(window->GetNativeWindow())),
 		SwapChainWidth(window->GetWidth()),
@@ -38,7 +38,7 @@ namespace Foundation::Graphics::D3D12
 		THROW_ON_FAILURE(hr);
 		hr = SrvHeap.Init(4096, true);
 		THROW_ON_FAILURE(hr);
-		hr = UavHeap.Init(512, false);
+		hr = UavHeap.Init(1024, false);
 		THROW_ON_FAILURE(hr);
 
 		NAME_D3D12_OBJECT(RtvHeap.GetHeap(), L"RTV Heap Descriptor");
@@ -182,7 +182,7 @@ namespace Foundation::Graphics::D3D12
 
 #ifdef CM_DEBUG
 			pQueue->SetName(L"Graphics Queue");
-			pGCL->SetName(L"Graphics List");
+			pGraphicsCommandList->SetName(L"Graphics List");
 #endif
 		}
 		
@@ -224,11 +224,11 @@ namespace Foundation::Graphics::D3D12
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			pCmdAlloc.Get(),
 			nullptr,
-			IID_PPV_ARGS(pGCL.GetAddressOf())
+			IID_PPV_ARGS(pGraphicsCommandList.GetAddressOf())
 		);
 		THROW_ON_FAILURE(hr);
 
-		pGCL->Close();
+		pGraphicsCommandList->Close();
 	}
 
 	inline void D3D12Context::CreateSwapChain()
@@ -303,7 +303,7 @@ namespace Foundation::Graphics::D3D12
 
 	void inline D3D12Context::ExecuteGraphicsCommandList() const
 	{
-		ID3D12CommandList* cmdsLists[] = { pGCL.Get() };
+		ID3D12CommandList* cmdsLists[] = { pGraphicsCommandList.Get() };
 		pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 
@@ -352,7 +352,7 @@ namespace Foundation::Graphics::D3D12
 		return &UavHeap;
 	}
 
-	ID3D12Device8* D3D12Context::GetDevice() const
+	ID3D12Device* D3D12Context::GetDevice() const
 	{
 		return pDevice.Get();
 	}

@@ -1,6 +1,6 @@
 #include "Framework/cmpch.h"
 #include "Renderer.h"
-#include "Renderer3D.h"
+#include "GeometryEngine.h"
 #include "RenderInstruction.h"
 
 #include "Framework/Core/Compute/ComputeInstruction.h"
@@ -9,31 +9,25 @@
 namespace Foundation::Graphics
 {
 	RendererStatus Renderer::RenderStatus = RendererStatus::RUNNING;
-	ScopePointer<GraphicsContext> Renderer::Context = nullptr;
 
 
 	void Renderer::Init(Window* window)
 	{
-		// Initialise the api
-		Context = GraphicsContext::Create(window);
-
-		RenderInstruction::Init(Context.get());
+		
 
 		RenderStatus = RendererStatus::INITIALISING;
 
 
-		Renderer3D::PreInit();
+		GeometryEngine::PreInit();
 
-		Renderer3D::Init();
+		GeometryEngine::Init();
 
-		Renderer3D::PostInit();
+		GeometryEngine::PostInit();
 	}
 
 	void Renderer::OnWindowResize(INT32 x, INT32 y, INT32 width, INT32 height)
 	{
-		RenderStatus = RendererStatus::INVALIDATING_BUFFER;
 		RenderInstruction::SetViewport(x, y, width, height);
-		RenderStatus = RendererStatus::RUNNING;
 	}
 
 	RendererStatus Renderer::RendererStatus()
@@ -44,7 +38,5 @@ namespace Foundation::Graphics
 	void Renderer::Clean()
 	{
 		RenderInstruction::Clean();
-
-		Context->ShutDown();
 	}
 }

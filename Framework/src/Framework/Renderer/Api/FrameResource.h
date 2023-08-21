@@ -1,34 +1,17 @@
 #pragma once
-#include "Framework/Renderer/Resources/Light.h"
+#include "MathHelper.h"
+
 
 using namespace DirectX;
 
+
+#define MAX_LIGHTS 16
 
 namespace Foundation::Graphics
 {
 
 	struct Vertex
 	{
-		Vertex() {}
-		Vertex(
-			const DirectX::XMFLOAT3& p,
-			const DirectX::XMFLOAT3& n,
-			const DirectX::XMFLOAT3& t,
-			const DirectX::XMFLOAT2& uv) :
-			Position(p),
-			Normal(n),
-			TangentU(t),
-			TexC(uv) {}
-		Vertex(
-			float px, float py, float pz,
-			float nx, float ny, float nz,
-			float tx, float ty, float tz,
-			float u, float v) :
-			Position(px, py, pz),
-			Normal(nx, ny, nz),
-			TangentU(tx, ty, tz),
-			TexC(u, v) {}
-
 		XMFLOAT3 Position;
 		XMFLOAT3 Normal;
 		XMFLOAT3 TangentU;
@@ -50,6 +33,11 @@ namespace Foundation::Graphics
 		Vertex VertexC;
 	};
 
+	struct Light
+	{
+		
+	};
+
 	struct PassConstants
 	{
 		XMFLOAT4X4 View				 = MathHelper::Identity4x4();
@@ -67,7 +55,7 @@ namespace Foundation::Graphics
 		float TotalTime				 = 0.0f;
 		float DeltaTime				 = 0.0f;
 		XMFLOAT4 AmbientLight		 = { 0.0f, 0.0f, 0.0f, 1.0f };
-		Light Lights[MaxLights];
+		Light Lights[MAX_LIGHTS];
 	};
 
 	// Simple constant buffer

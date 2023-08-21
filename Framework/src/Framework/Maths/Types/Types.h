@@ -4,7 +4,7 @@
 
 namespace Foundation
 {
-
+#ifdef FOUNDATION_MATHS
 	struct Float
 	{
 		float x{0.0f};
@@ -51,4 +51,21 @@ namespace Foundation
 		INT32 z{ 0 };
 		INT32 w{ 0 };
 	};
+
+#elif CM_WINDOWS_PLATFORM
+#include "MathHelper.h"
+	using namespace DirectX;
+
+	typedef XMFLOAT2 Float2;
+	typedef XMFLOAT3 Float3;
+	typedef XMVECTOR Vector;
+
+	typedef XMFLOAT4X4 FMatrix;
+	typedef XMMATRIX Matrix;
+
+#endif
+
+
+
+
 }

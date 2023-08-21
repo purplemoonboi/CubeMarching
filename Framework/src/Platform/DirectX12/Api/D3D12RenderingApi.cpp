@@ -4,7 +4,6 @@
 #include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
 #include "Platform/Directx12/Buffers/D3D12Buffers.h"
 #include "Platform/DirectX12/Shaders/D3D12Shader.h"
-#include "Platform/DirectX12/RenderItems/D3D12RenderItem.h"
 #include "Platform/DirectX12/Pipeline/D3D12RenderPipeline.h"
 #include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
 #include "Platform/DirectX12/Heap/D3D12HeapManager.h"
@@ -47,18 +46,23 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12RenderingApi::PreInit()
 	{
+		auto* pCommandList = gD3D12Context->GetGraphicsCommandList();
+		auto* pCommandAlloc = gD3D12Context->GetGraphicsCommandAllocator();
+
 		HRESULT hr{ S_OK };
-		hr = gD3D12Context->pGCL->Reset(gD3D12Context->pCmdAlloc.Get(), nullptr);
+		hr = pCommandList->Reset(pCommandAlloc, nullptr);
 		THROW_ON_FAILURE(hr);
 	}
 
 	void D3D12RenderingApi::PostInit()
 	{
+		auto* pCommandList = gD3D12Context->GetGraphicsCommandList();
+		auto* pQueue = gD3D12Context->GetRenderingQueue();
 		// Execute the initialization commands.
-		HRESULT hr = gD3D12Context->pGCL->Close();
+		HRESULT hr = pCommandList->Close();
 		THROW_ON_FAILURE(hr);
-		ID3D12CommandList* pList[] = { gD3D12Context->pGCL.Get() };
-		gD3D12Context->pQueue->ExecuteCommandLists(_countof(pList), pList);
+		ID3D12CommandList* pList[] = { pCommandList };
+		pQueue->ExecuteCommandLists(_countof(pList), pList);
 		//Flush();
 	}
 
@@ -66,7 +70,8 @@ namespace Foundation::Graphics::D3D12
 	{
 		// If everything checks out prepare recording instructions under the
 		// current frame resource.
-		CORE_ASSERT(gD3D12Context->pQueue, "Invalid command queue...");
+		auto* pQueue = gD3D12Context->GetRenderingQueue();
+		CORE_ASSERT(pQueue, "Invalid command queue...");
 
 		gD3D12Context->IncrementFrame();
 		const auto frame = gD3D12Context->CurrentRenderFrame();
@@ -86,16 +91,18 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12RenderingApi::Flush()
 	{
+		auto* pQueue = gD3D12Context->GetRenderingQueue();
 		const auto frame = gD3D12Context->CurrentRenderFrame();
+
 
 		HRESULT hr{ S_OK };
 		hr = frame->pGCL->Close();
 		THROW_ON_FAILURE(hr);
 		ID3D12CommandList* cmdList[] = { frame->pGCL.Get() };
-		gD3D12Context->pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
+		pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
 		
 		frame->Fence = gD3D12Context->GetSyncCount();
-		hr = gD3D12Context->pQueue->Signal(gD3D12Context->(), frame->Fence);
+		hr = pQueue->Signal(gD3D12Context->GetFence(), frame->Fence);
 		THROW_ON_FAILURE(hr);
 	}
 

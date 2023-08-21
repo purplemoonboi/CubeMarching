@@ -26,7 +26,6 @@ namespace Foundation::Graphics::D3D12
 
 
 		~D3D12RenderPipeline()	override;
-		void Invalidate()		override;
 		void Bind()				override;
 		void Destroy()			override;
 
@@ -35,17 +34,6 @@ namespace Foundation::Graphics::D3D12
 		void SetHullShader(const std::string_view& name,		Shader* shader)		override;
 		void SetDomainShader(const std::string_view& name,		Shader* shader)		override;
 		void SetGeometryShader(const std::string_view& name,	Shader* shader)		override;
-		void SetTaskShader(const std::string_view& name,		Shader* shader)		override;
-		void SetMeshShader(const std::string_view& name,		Shader* shader)		override;
-		void SetRaytracingShader(const std::string_view& name,	Shader* shader)		override;
-
-		void SetComputeShader(const std::string_view& name,		Shader* shader)		override;
-
-		void SetInput(const std::string_view& name, float value)			override;
-		void SetInput(const std::string_view& name, INT32 value)			override;
-		void SetInput(const std::string_view& name, bool value)				override;
-		void SetInput(const std::string_view& name, VertexBuffer& buffer)	override;
-		void SetInput(const std::string_view& name, IndexBuffer& buffer)	override;
 
 
 	public://D3D12
@@ -55,8 +43,9 @@ namespace Foundation::Graphics::D3D12
 
 
 	private:
-		void InitialiseRoot(const PipelineInputDesc& pipelineIn);
-		PipelineDesc Desc;
+		void InitialiseRoot(const std::vector<PipelineInputDesc>& pipelineIn);
+
+		void LoadShader(const ShaderDesc& desc);
 
 		ComPtr<ID3D12PipelineState> Pso{nullptr};
 		ComPtr<ID3D12RootSignature> RootSignature{nullptr};
@@ -64,8 +53,7 @@ namespace Foundation::Graphics::D3D12
 		DXGI_FORMAT BackBufferFormat{ DXGI_FORMAT_R8G8B8A8_UNORM };
 		DXGI_FORMAT DepthBufferFormat{ DXGI_FORMAT_D24_UNORM_S8_UINT };
 
-		// Array of shaders to define the pipeline
-		std::array<D3D12Shader, 5> ShaderPipeline{ };
+		
 	};
 }
 

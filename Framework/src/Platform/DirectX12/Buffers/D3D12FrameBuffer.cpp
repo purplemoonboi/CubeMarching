@@ -80,14 +80,14 @@ namespace Foundation::Graphics::D3D12
 
 		CORE_ASSERT(device, "The 'D3D device' has failed...");
 		CORE_ASSERT(Context->pSwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(Context->pGCL, "The 'graphics command list' has failed...");
+		CORE_ASSERT(Context->pGraphicsCommandList, "The 'graphics command list' has failed...");
 
 		FrameBufferSpecs = specifications;
 
 		// Flush before changing any resources.
 		Context->FlushRenderQueue();
 
-		hr = Context->pGCL->Reset(Context->pCmdAlloc.Get(), nullptr);
+		hr = Context->pGraphicsCommandList->Reset(Context->pCmdAlloc.Get(), nullptr);
 		THROW_ON_FAILURE(hr);
 
 		// Release the previous resources we will be recreating.
@@ -187,7 +187,7 @@ namespace Foundation::Graphics::D3D12
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		Context->pGCL->ResourceBarrier
+		Context->pGraphicsCommandList->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -199,10 +199,10 @@ namespace Foundation::Graphics::D3D12
 		);
 
 		// Execute the resize commands.
-		hr = Context->pGCL->Close();
+		hr = Context->pGraphicsCommandList->Close();
 		THROW_ON_FAILURE(hr);
 
-		ID3D12CommandList* cmdsLists[] = { Context->pGCL.Get() };
+		ID3D12CommandList* cmdsLists[] = { Context->pGraphicsCommandList.Get() };
 		Context->pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.

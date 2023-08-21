@@ -4,10 +4,11 @@
 #include "Framework/Core/Layer/LayerStack.h"
 #include "Framework/Core/Events/AppEvents.h"
 #include "Framework/ImGui/Layer/ImGuiLayer.h"
+#include "Platform/DirectX12/Api/D3D12Context.h"
 
 #define WIN32_APP
 #ifdef WIN32_APP
-#include "Platform/Windows/Win32Window.h"
+#include "Platform/Windows/WindowsWindow.h"
 #endif
 
 namespace Foundation
@@ -26,9 +27,8 @@ namespace Foundation
 	class Application
 	{
 	protected:
-		Application(HINSTANCE hInstance, const std::wstring& appName);
+		explicit Application(HINSTANCE hInstance, const std::wstring& appName);
 		DISABLE_COPY_AND_MOVE(Application);
-
 
 	public:
 		virtual ~Application();
@@ -47,39 +47,41 @@ namespace Foundation
 
 	public:
 		/*..Getters..*/
-		static Application* Get() { return pApp; }
+		static Application* Get() { return p_App; }
 
-		AppTimeManager* GetApplicationTimeManager() { return &AppTimer; }
+		AppTimeManager* GetApplicationTimeManager() { return &m_AppTimer; }
 
-		Win32Window* GetWindow() { return &Window; }
+		Window* GetWindow() { return &m_Window; }
 
 		[[nodiscard]] ImGuiLayer* GetImGuiLayer() const { return ImGuiLayer; }
 
 	private:
 		void UpdateTimer();
 
-		// container for all the apps layers
+		// Contains all the application layers.
 		LayerStack LayerStack;
 
+		// Pointer to the imgui layer.
 		ImGuiLayer* ImGuiLayer;
 
 		bool IsRunning;
+
 		float PreviousFrameTime;
 
 	protected:
-		static Application* pApp;
+		static Application* p_App;
 
 		//Application instance handle
-		HINSTANCE AppInstance;
+		HINSTANCE p_AppInstance;
 
 		//System window
-		Win32Window Window;
+		WindowsWindow m_Window;
 
 		//A time manager
-		AppTimeManager AppTimer;
+		AppTimeManager m_AppTimer;
 
-		
-		EventData EventBlob;
+		// Records core event updates.
+		EventData m_EventBlob;
 	};
 
 	Application* CreateApplication(HINSTANCE hInstance, const std::wstring& appName);

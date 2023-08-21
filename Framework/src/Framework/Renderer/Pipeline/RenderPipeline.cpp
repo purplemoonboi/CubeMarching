@@ -11,6 +11,11 @@ namespace Foundation::Graphics
 {
 	using namespace D3D12;
 
+	RenderPipeline::RenderPipeline(const PipelineDesc& desc)
+		:
+		Desc(desc)
+	{}
+
 	ScopePointer<RenderPipeline> RenderPipeline::Create(PipelineDesc& desc)
 	{
 		switch (Renderer::GetAPI())

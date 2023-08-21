@@ -12,7 +12,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 namespace Foundation
 {
-	Application* Application::pApp = nullptr;
+	Application* Application::p_App = nullptr;
 
 	
 	LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -22,22 +22,30 @@ namespace Foundation
 
 	Application::Application(HINSTANCE hInstance, const std::wstring& appName)
 		:
-		IsRunning(true)
+			IsRunning(true)
+		,	ImGuiLayer(nullptr)
+		,	PreviousFrameTime(0.0f)
 	{
 		Log::Init();
 
 		//Check if an app instance exists
-		CORE_ASSERT(!pApp, "An application instance already exists!");
-		pApp = this;
+		CORE_ASSERT(!p_App, "An application instance already exists!");
+		p_App = this;
 
-		Window = Win32Window(hInstance, MainWndProc, 1920, 1080, L"Foundation");
+		// Create a windows window.
+		WindowProperties winProps = {};
+		winProps.WinInstance = hInstance;
+		winProps.WinHandle = 0;
+
+		m_Window = WindowsWindow(winProps);
+
 		// Bind the applications on event function to capture application specific events.
-		Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
+		m_Window.SetEventCallBack(BIND_DELEGATE(Application::OnApplicationEvent));
 
-		EventBlob.Callback = BIND_DELEGATE(Application::OnApplicationEvent);
+		m_EventBlob.Callback = BIND_DELEGATE(Application::OnApplicationEvent);
 
-		auto handle = static_cast<HWND>(Window.GetNativeWindow());
-		Graphics::Renderer::Init(&Window);
+		auto handle = static_cast<HWND>(m_Window.GetNativeWindow());
+		Graphics::Renderer::Init(&m_Window);
 
 		ImGuiLayer = new class ImGuiLayer();
 		PushOverlay(ImGuiLayer);
@@ -69,7 +77,7 @@ namespace Foundation
 	{
 		MSG message = { 0 };
 
-		AppTimer.Reset();
+		m_AppTimer.Reset();
 
 		while(message.message != WM_QUIT)
 		{
@@ -80,61 +88,55 @@ namespace Foundation
 			}
 			else
 			{
-				AppTimer.Tick();
+				m_AppTimer.Tick();
 
-				auto const rendererStatus = Graphics::Renderer::RendererStatus();
-				if(
-					rendererStatus	!= Graphics::RendererStatus::INITIALISING ||
-					rendererStatus	!= Graphics::RendererStatus::INVALIDATING_BUFFER)
+				//Process any events...
+				m_Window.OnUpdate();
+
+
+				if (!m_Window.IsMinimised() && IsRunning)
 				{
-					//Process any events...
-					Window.OnUpdate();
 
-
-					if (EventBlob.MouseClicked > 0)
+					if (m_EventBlob.MouseClicked > 0)
 					{
-						EventBlob.MouseClicked = 0;
-						MouseButtonPressedEvent me(EventBlob.Button, EventBlob.X, EventBlob.Y);
-						EventBlob.Callback(me);
+						m_EventBlob.MouseClicked = 0;
+						MouseButtonPressedEvent me(m_EventBlob.Button, m_EventBlob.X, m_EventBlob.Y);
+						m_EventBlob.Callback(me);
 					}
-					if (EventBlob.MouseReleased > 0)
+					if (m_EventBlob.MouseReleased > 0)
 					{
-						MouseButtonReleasedEvent me(EventBlob.Button, EventBlob.X, EventBlob.Y);
-						EventBlob.Callback(me);
+						MouseButtonReleasedEvent me(m_EventBlob.Button, m_EventBlob.X, m_EventBlob.Y);
+						m_EventBlob.Callback(me);
 					}
-					if (EventBlob.MouseMoved == 1)
+					if (m_EventBlob.MouseMoved == 1)
 					{
-						EventBlob.MouseMoved = 0;
-						MouseMovedEvent mm(EventBlob.X, EventBlob.Y, EventBlob.Button);
-						EventBlob.Callback(mm);
+						m_EventBlob.MouseMoved = 0;
+						MouseMovedEvent mm(m_EventBlob.X, m_EventBlob.Y, m_EventBlob.Button);
+						m_EventBlob.Callback(mm);
 					}
-					
 
-					if (!Window.IsMinimised() && IsRunning)
+
+					UpdateTimer();
+
+					//Update each layer
+					for (Layer* layer : LayerStack)
 					{
-
-						UpdateTimer();
-
-						//Update each layer
-						for (Layer* layer : LayerStack)
-						{
-							layer->OnUpdate(&AppTimer);
-						}
-
-						//Render each layer
-						for (Layer* layer : LayerStack)
-						{
-							layer->OnRender(&AppTimer);
-						}
-
-						ImGuiLayer::Begin();
-						for(Layer* overlay : LayerStack)
-						{
-							overlay->OnImGuiRender();
-						}
-						ImGuiLayer::End();
-
+						layer->OnUpdate(&m_AppTimer);
 					}
+
+					//Render each layer
+					for (Layer* layer : LayerStack)
+					{
+						layer->OnRender(&m_AppTimer);
+					}
+
+					ImGuiLayer::Begin();
+					for(Layer* overlay : LayerStack)
+					{
+						overlay->OnImGuiRender();
+					}
+					ImGuiLayer::End();
+
 				}
 			}
 		}
@@ -188,11 +190,11 @@ namespace Foundation
 		case WM_ACTIVATE:
 			if (LOWORD(wParam) == WA_INACTIVE)
 			{
-				AppTimer.Stop();
+				m_AppTimer.Stop();
 			}
 			else
 			{
-				AppTimer.Start();
+				m_AppTimer.Start();
 			}
 			return 0;
 		case WM_SIZE:
@@ -201,14 +203,14 @@ namespace Foundation
 			{
 				isMinimised = true;
 				isMaximised = false;
-				Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), true, false, false, false, false);
-				AppTimer.Stop();
+				m_Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), true, false, false, false, false);
+				m_AppTimer.Stop();
 			}
 			else if (wParam == SIZE_MAXIMIZED)
 			{
 				isMinimised = false;
 				isMaximised = true;
-				Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), false, true, false, false, false);
+				m_Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), false, true, false, false, false);
 			}
 			else if (wParam == SIZE_RESTORED)
 			{
@@ -230,7 +232,7 @@ namespace Foundation
 				}
 				else // Api call such as SetWindowPos or mSwapChain->SetFullscreenState.
 				{
-					Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), false, false, false, false, false);
+					m_Window.UpdateWindowData(LOWORD(lParam), HIWORD(lParam), false, false, false, false, false);
 				}
 
 
@@ -244,7 +246,7 @@ namespace Foundation
 			// Here we reset everything based on the new window dimensions.
 		case WM_EXITSIZEMOVE:
 			isResizing = false;
-			AppTimer .Start();
+			m_AppTimer .Start();
 			return 0;
 			// WM_DESTROY is sent when the window is being destroyed.
 		case WM_DESTROY:
@@ -267,12 +269,12 @@ namespace Foundation
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 		case WM_RBUTTONDOWN:
-			SetCapture(static_cast<HWND>(Window.GetNativeWindow()));
-			EventBlob.MouseClicked = 1;
-			EventBlob.MouseReleased = 0;
-			EventBlob.X = GET_X_LPARAM(lParam);
-			EventBlob.Y = GET_Y_LPARAM(lParam);
-			EventBlob.Button = wParam;
+			SetCapture(static_cast<HWND>(m_Window.GetNativeWindow()));
+			m_EventBlob.MouseClicked = 1;
+			m_EventBlob.MouseReleased = 0;
+			m_EventBlob.X = GET_X_LPARAM(lParam);
+			m_EventBlob.Y = GET_Y_LPARAM(lParam);
+			m_EventBlob.Button = wParam;
 
 				return 0;
 		case WM_LBUTTONUP:
@@ -280,19 +282,19 @@ namespace Foundation
 		case WM_RBUTTONUP:
 			ReleaseCapture();
 
-			EventBlob.MouseClicked = 0;
-			EventBlob.MouseReleased = 1;
-			EventBlob.X = GET_X_LPARAM(lParam);
-			EventBlob.Y = GET_Y_LPARAM(lParam);
-			EventBlob.Button = wParam;
+			m_EventBlob.MouseClicked = 0;
+			m_EventBlob.MouseReleased = 1;
+			m_EventBlob.X = GET_X_LPARAM(lParam);
+			m_EventBlob.Y = GET_Y_LPARAM(lParam);
+			m_EventBlob.Button = wParam;
 
 				return 0;
 		case WM_MOUSEMOVE:
 
-			EventBlob.Button = wParam;
-			EventBlob.X = GET_X_LPARAM(lParam);
-			EventBlob.Y = GET_Y_LPARAM(lParam);
-			EventBlob.MouseMoved = 1;
+			m_EventBlob.Button = wParam;
+			m_EventBlob.X = GET_X_LPARAM(lParam);
+			m_EventBlob.Y = GET_Y_LPARAM(lParam);
+			m_EventBlob.MouseMoved = 1;
 
 				return 0;
 		case WM_KEYDOWN:
@@ -327,7 +329,7 @@ namespace Foundation
 		frameCnt++;
 
 		// Compute averages over one second period.
-		if ((AppTimer.TimeElapsed() - timeElapsed) >= 1.0f)
+		if ((m_AppTimer.TimeElapsed() - timeElapsed) >= 1.0f)
 		{
 			float fps = (float)frameCnt; // fps = frameCnt / 1
 			float mspf = 1000.0f / fps;
@@ -338,7 +340,7 @@ namespace Foundation
 			std::wstring windowText = L"Foundation fps: " + fpsStr +
 				L"   mspf: " + mspfStr;
 
-			const auto wnd = static_cast<HWND>(Window.GetNativeWindow());
+			const auto wnd = static_cast<HWND>(m_Window.GetNativeWindow());
 			SetWindowText(wnd, windowText.c_str());
 
 			// Reset for next average.
