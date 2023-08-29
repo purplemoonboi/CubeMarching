@@ -1,7 +1,6 @@
 #pragma once
-#include "../DirectX12.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferUtils.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Framework/Core/Core.h"
+#include "Platform/DirectX12/DirectX12.h"
 
 namespace Foundation::Graphics::D3D12
 {
@@ -12,7 +11,7 @@ namespace Foundation::Graphics::D3D12
 	{
 	public:
 
-		D3D12UploadBuffer(D3D12Context* graphicsContext, UINT32 elementCount, UINT64 size, bool isConstantBuffer);
+		D3D12UploadBuffer(UINT32 elementCount, UINT64 size, bool isConstantBuffer);
 		DISABLE_COPY_AND_MOVE(D3D12UploadBuffer);
 
 		virtual ~D3D12UploadBuffer();
@@ -26,7 +25,7 @@ namespace Foundation::Graphics::D3D12
 
 		void Destroy()
 		{
-			UploadBuffer.Reset();
+			
 		}
 
 	private:
