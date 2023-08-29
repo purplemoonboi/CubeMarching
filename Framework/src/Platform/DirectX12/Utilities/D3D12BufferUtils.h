@@ -1,21 +1,13 @@
 #pragma once
 #include "../DirectX12.h"
-#include "Framework/Core/Log/Log.h"
 
-namespace Engine
+namespace Foundation::Graphics::D3D12
 {
-
 	using Microsoft::WRL::ComPtr;
 
 	class D3D12BufferUtils
 	{
 	public:
-
-		static void Init
-		(
-			ID3D12Device* device,
-			ID3D12GraphicsCommandList* graphicsCmdList
-		);
 
 		// @brief Creates a default upload buffer.
 		// @param[in] A pointer to the application's device.
@@ -80,9 +72,5 @@ namespace Engine
 
 		static UINT CalculateConstantBufferByteSize(UINT byteSize);
 
-
-	private:
-		static ID3D12Device* Device;
-		static ID3D12GraphicsCommandList* GraphicsCmdList;
 	};
 }

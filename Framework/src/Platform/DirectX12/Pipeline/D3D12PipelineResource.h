@@ -2,7 +2,6 @@
 #include <entt.hpp>
 #include <Framework/Core/Log/Log.h>
 #include "Framework/Renderer/Api/FrameResource.h"
-#include "Platform/DirectX12/Constants/D3D12GlobalConstants.h"
 
 
 namespace Foundation

@@ -20,7 +20,7 @@ namespace Foundation::Graphics
 		virtual void SwapBuffers() = 0;
 		virtual void OnResizeSwapChain(INT32 x, INT32 y) = 0;
 
-		static ScopePointer<GraphicsContext> Create(Window* window);
+		static GraphicsContext* Create(Window* window);
 
 	};
 }
