@@ -11,14 +11,18 @@ namespace Foundation::Graphics
 {
 	using namespace D3D12;
 
-	ScopePointer<GraphicsContext> GraphicsContext::Create(Window* window)
+	GraphicsContext* GraphicsContext::Create(Window* window)
 	{
 		switch (Renderer::GetAPI())
 		{
 			case RendererAPI::Api::None:   CORE_ASSERT(false, "Not a recognised api!");              return nullptr;
 			case RendererAPI::Api::DX12:
 			{
-				gD3D12Context.reset(new D3D12Context(dynamic_cast<WindowsWindow*>(window)));
+				if (gD3D12Context == nullptr)
+				{
+					gD3D12Context = CreateScope<D3D12Context>(dynamic_cast<WindowsWindow*>(window));
+				}
+				return gD3D12Context.get();
 			}
 			case RendererAPI::Api::Vulkan: CORE_ASSERT(false, "Vulkan is not a supported api!");     return nullptr;
 			default:
