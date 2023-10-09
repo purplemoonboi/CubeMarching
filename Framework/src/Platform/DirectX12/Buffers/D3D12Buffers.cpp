@@ -37,8 +37,7 @@ namespace Foundation::Graphics::D3D12
 		pVertexResource = D3D12BufferFactory::CreateDefaultBuffer
 		(
 			vertices,
-			size,
-			pUploadBuffers[0]
+			size
 		);
 	}
 
@@ -65,11 +64,11 @@ namespace Foundation::Graphics::D3D12
 	void D3D12VertexBuffer::OnDestroy()
 	{
 
-		auto* srvHeap = GetSRVHeap();
-		auto* rtvHeap = GetRTVHeap();
-		auto* dsvHeap = GetDSVHeap();
+		auto* srvHeap = gD3D12Context->GetSRVHeap();
+		auto* rtvHeap = gD3D12Context->GetRTVHeap();
+		auto* dsvHeap = gD3D12Context->GetDSVHeap();
 
-		Internal::DeferredRelease(pVertexResource.Get());
+		gD3D12Context->DeferredRelease(pVertexResource.Get());
 
 	}
 
@@ -178,8 +177,8 @@ namespace Foundation::Graphics::D3D12
 
 	D3D12IndexBuffer::~D3D12IndexBuffer()
 	{
-		Internal::DeferredRelease(pIndexResource.Get());
-		Internal::DeferredRelease(pUploadResource.Get());
+		gD3D12Context->DeferredRelease(pIndexResource.Get());
+		gD3D12Context->DeferredRelease(pUploadResource.Get());
 
 		Blob.Reset();
 	}
@@ -210,8 +209,8 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12IndexBuffer::OnDestroy()
 	{
-		Internal::DeferredRelease(pIndexResource.Get());
-		Internal::DeferredRelease(pUploadResource.Get());
+		gD3D12Context->DeferredRelease(pIndexResource.Get());
+		gD3D12Context->DeferredRelease(pUploadResource.Get());
 
 		Blob.Reset();
 	}
@@ -236,39 +235,6 @@ namespace Foundation::Graphics::D3D12
 	}
 
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//D3D12 STRUCTURED BUFFER///////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	template <typename T>
-	D3D12StructuredBuffer<T>::D3D12StructuredBuffer(T&& args) noexcept
-	{
-
-	}
-
-	template <typename T>
-	auto D3D12StructuredBuffer<T>::operator=(T&& rhs) noexcept -> D3D12StructuredBuffer<T>&
-	{
-		*this = std::forward<T>(rhs);
-		return *this;
-	}
-
-	template <typename T>
-	D3D12StructuredBuffer<T>::~D3D12StructuredBuffer()
-	{
-	}
-
-	template <typename T>
-	void D3D12StructuredBuffer<T>::OnDestroy()
-	{
-		Internal::DeferredRelease(pResource.Get());
-
-	}
-
-	template <typename T>
-	void D3D12StructuredBuffer<T>::SetBuffer(const T&& other)
-	{
-		Struct = std::forward<T>(other);
-	}
 
 }

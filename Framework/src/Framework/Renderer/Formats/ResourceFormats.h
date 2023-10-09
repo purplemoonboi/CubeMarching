@@ -137,7 +137,7 @@ namespace Foundation::Graphics
        FORCE_UINT = 0xffffffff
     };
 
-    [[nodiscard]] static DXGI_FORMAT FoundationResourceFormatToDX12(ResourceFormat format)
+    [[nodiscard]] static __inline DXGI_FORMAT FoundationResourceFormatToDX12(ResourceFormat format)
     {
 	    switch (format)
 	    {

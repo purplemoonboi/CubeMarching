@@ -55,6 +55,7 @@ namespace Foundation::Graphics
 		UINT8 Space		= 0;
 		UINT8 Flags		= 0;
 		Resource Type = Resource::ConstBuffer;
+
 	};
 
 	/**
@@ -97,5 +98,6 @@ namespace Foundation::Graphics
 
 	protected:
 		PipelineDesc Desc;
+		std::array<RefPointer<Shader>, 5> Shaders;
 	};
 }

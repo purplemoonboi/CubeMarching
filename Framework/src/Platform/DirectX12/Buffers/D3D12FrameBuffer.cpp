@@ -4,14 +4,15 @@
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 #include "Platform/DirectX12/Utilities/D3D12Utilities.h"
 #include "Framework/Core/Log/Log.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
+
+
+#include "Platform/DirectX12/D3D12/D3D12.h"
 
 namespace Foundation::Graphics::D3D12
 {
-	D3D12FrameBuffer::D3D12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs)
+	D3D12FrameBuffer::D3D12FrameBuffer(const FrameBufferSpecifications& fBufferSpecs, ResourceFormat format)
 		:
-		FrameBufferSpecs(fBufferSpecs),
-		BackBufferIndex(0)
+		FrameBuffer(fBufferSpecs, format)
 	{
 		ScissorRect = {};
 		ScreenViewport = {};
@@ -20,80 +21,66 @@ namespace Foundation::Graphics::D3D12
 	D3D12FrameBuffer::~D3D12FrameBuffer()
 	{}
 
-	void D3D12FrameBuffer::Init(GraphicsContext* context, FrameBufferSpecifications& fbs)
+
+	void D3D12FrameBuffer::Bind()
 	{
-		Context = dynamic_cast<D3D12Context*>(context);
+		auto pCommandList = gD3D12Context->GetGraphicsCommandList();
+		CORE_ASSERT(pCommandList, "The 'graphics command list' has failed...");
 
-		auto rtvHeap = GetRTVHeap();
-		auto dsvHeap = GetDSVHeap();
+		D3D12_RESOURCE_BARRIER barrier;
+		ZeroMemory(&barrier, sizeof(D3D12_RESOURCE_BARRIER));
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = TargetBuffer[BackBufferIndex].Get();
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Transition.Subresource = 0;
+		pCommandList->ResourceBarrier(1, &barrier);
 
-		pRTV[0] = rtvHeap->Allocate();
-		pRTV[1] = rtvHeap->Allocate();
-		pDSV	= dsvHeap->Allocate();
-
-		OnResizeFrameBuffer(fbs);
-	}
-
-	void D3D12FrameBuffer::Bind(void* args)
-	{
-		auto* commandList = static_cast<ID3D12GraphicsCommandList*>(args);
-
-		CORE_ASSERT(commandList, "The 'graphics command list' has failed...");
-
-		// Indicate there will be a transition made to the resource.
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			SwapChainBuffer[BackBufferIndex].Get(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET
-		));
-
-	
-		commandList->RSSetViewports(1, &ScreenViewport);
-		commandList->RSSetScissorRects(1, &ScissorRect);
-
-		commandList->OMSetRenderTargets(1, &pRTV[BackBufferIndex].CpuHandle, true, &pDSV.CpuHandle);
+		pCommandList->RSSetViewports(1, &ScreenViewport);
+		pCommandList->RSSetScissorRects(1, &ScissorRect);
+		pCommandList->OMSetRenderTargets(1, &pRTV[BackBufferIndex].CpuHandle, true, &pDSV.CpuHandle);
 
 	}
 
-	void D3D12FrameBuffer::UnBind(void* args)
+	void D3D12FrameBuffer::UnBind()
 	{
-		auto* commandList = static_cast<ID3D12GraphicsCommandList*>(args);
-		CORE_ASSERT(commandList, "The 'graphics command list' has failed...");
+		auto pCommandList = gD3D12Context->GetGraphicsCommandList();
+		CORE_ASSERT(pCommandList, "The 'graphics command list' has failed...");
 
-		commandList->ResourceBarrier
-		(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition
-			(
-				SwapChainBuffer[BackBufferIndex].Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PRESENT
-			)
-		);
+		D3D12_RESOURCE_BARRIER barrier;
+		ZeroMemory(&barrier, sizeof(D3D12_RESOURCE_BARRIER));
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = TargetBuffer[BackBufferIndex].Get();
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.Subresource = 0;
+		pCommandList->ResourceBarrier(1, &barrier);
 	}
 
 	void D3D12FrameBuffer::OnResizeFrameBuffer(FrameBufferSpecifications& specifications)
 	{
 		HRESULT hr{ S_OK };
 
-		auto device = GetDevice();
+		auto pDevice = gD3D12Context->GetDevice();
+		auto pCommandList = gD3D12Context->GetGraphicsCommandList();
+		auto pCommandAlloc = gD3D12Context->CurrentRenderFrame()->pCmdAlloc.Get();
+		CORE_ASSERT(pDevice, "The 'D3D device' has failed...");
 
-		CORE_ASSERT(device, "The 'D3D device' has failed...");
-		CORE_ASSERT(Context->pSwapChain, "The 'swap chain' has failed...");
-		CORE_ASSERT(Context->pGraphicsCommandList, "The 'graphics command list' has failed...");
 
-		FrameBufferSpecs = specifications;
+		FrameSpecs = specifications;
 
 		// Flush before changing any resources.
-		Context->FlushRenderQueue();
+		gD3D12Context->FlushRenderQueue();
 
-		hr = Context->pGraphicsCommandList->Reset(Context->pCmdAlloc.Get(), nullptr);
+		hr = pCommandList->Reset(pCommandAlloc, nullptr);
 		THROW_ON_FAILURE(hr);
 
 		// Release the previous resources we will be recreating.
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; ++i)
 		{
-			SwapChainBuffer[i].Reset();
+			TargetBuffer[i].Reset();
 		}
 
 		DepthStencilBuffer.Reset();
@@ -103,7 +90,7 @@ namespace Foundation::Graphics::D3D12
 		hr = Context->pSwapChain->ResizeBuffers
 		(
 			SWAP_CHAIN_BUFFER_COUNT,
-			FrameBufferSpecs.Width, FrameBufferSpecs.Height,
+			FrameSpecs.Width, FrameSpecs.Height,
 			BackBufferFormat,
 			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
 		);
@@ -112,34 +99,33 @@ namespace Foundation::Graphics::D3D12
 
 		BackBufferIndex = 0;
 
-		//CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(Context->RtvHeap->GetCPUDescriptorHandleForHeapStart());
 
 		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 		
 
 		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
 		{
-			Context->pSwapChain->GetBuffer(i, IID_PPV_ARGS(&SwapChainBuffer[i]));
+			Context->pSwapChain->GetBuffer(i, IID_PPV_ARGS(&TargetBuffer[i]));
 
-			device->CreateRenderTargetView
+			pDevice->CreateRenderTargetView
 			(
-				SwapChainBuffer[i].Get(),
+				TargetBuffer[i].Get(),
 				nullptr,
 				pRTV[i].CpuHandle
 			);
-			SwapChainBuffer->Get()->SetName(L"Swap Chain");
-			THROW_ON_FAILURE(device->GetDeviceRemovedReason());
+			TargetBuffer->Get()->SetName(L"Swap Chain");
+			THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
 		}
 
-		auto msaaState = GetMSAAState();
+		auto msaaState = pDevice->GetMSAAQuality();
 		auto msaaQuality = GetMSAAQuality();
 
 		// Create the depth/stencil buffer and view.
 		D3D12_RESOURCE_DESC depthStencilDesc;
 		depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		depthStencilDesc.Alignment = 0;
-		depthStencilDesc.Width = FrameBufferSpecs.Width;
-		depthStencilDesc.Height = FrameBufferSpecs.Height;
+		depthStencilDesc.Width = FrameSpecs.Width;
+		depthStencilDesc.Height = FrameSpecs.Height;
 		depthStencilDesc.DepthOrArraySize = 1;
 		depthStencilDesc.MipLevels = 1;
 		// Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from 
@@ -158,7 +144,7 @@ namespace Foundation::Graphics::D3D12
 		optClear.DepthStencil.Depth = 1.0f;
 		optClear.DepthStencil.Stencil = 0;
 
-		hr = device->CreateCommittedResource
+		hr = pDevice->CreateCommittedResource
 		(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -211,23 +197,17 @@ namespace Foundation::Graphics::D3D12
 		// Update the viewport transform to cover the client area.
 		ScreenViewport.TopLeftX = 0.0f;
 		ScreenViewport.TopLeftY = 0.0f;
-		ScreenViewport.Width = static_cast<float>(FrameBufferSpecs.Width);
-		ScreenViewport.Height = static_cast<float>(FrameBufferSpecs.Height);
+		ScreenViewport.Width = static_cast<float>(FrameSpecs.Width);
+		ScreenViewport.Height = static_cast<float>(FrameSpecs.Height);
 		ScreenViewport.MinDepth = 0.0f;
 		ScreenViewport.MaxDepth = 1.0f;
 
-		ScissorRect = { 0, 0, FrameBufferSpecs.Width, FrameBufferSpecs.Height };
+		ScissorRect = { 0, 0, FrameSpecs.Width, FrameSpecs.Height };
 	}
 
 	
 
-	void D3D12FrameBuffer::SetBufferSpecifications(FrameBufferSpecifications& fbSpecs)
-	{
-		FrameBufferSpecs.Width = fbSpecs.Width;
-		FrameBufferSpecs.Height = fbSpecs.Height;
-		FrameBufferSpecs.OffsetX = fbSpecs.OffsetX;
-		FrameBufferSpecs.OffsetY = fbSpecs.OffsetY;
-	}
+
 
 	UINT64 D3D12FrameBuffer::GetFrameBuffer() const
 	{
@@ -236,7 +216,7 @@ namespace Foundation::Graphics::D3D12
 
 	ID3D12Resource* D3D12FrameBuffer::CurrentBackBuffer() const
 	{
-		return SwapChainBuffer[BackBufferIndex].Get();
+		return TargetBuffer[BackBufferIndex].Get();
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE D3D12FrameBuffer::GetCurrentBackBufferViewCpu() const
@@ -251,11 +231,11 @@ namespace Foundation::Graphics::D3D12
 
 	INT32 D3D12FrameBuffer::GetWidth() const
 	{
-		return FrameBufferSpecs.Width;
+		return FrameSpecs.Width;
 	}
 
 	INT32 D3D12FrameBuffer::GetHeight() const
 	{
-		return FrameBufferSpecs.Height;
+		return FrameSpecs.Height;
 	}
 }

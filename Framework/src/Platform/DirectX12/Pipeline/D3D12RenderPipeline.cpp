@@ -68,16 +68,17 @@ namespace Foundation::Graphics::D3D12
 		
 
 		std::vector<D3D12_INPUT_ELEMENT_DESC> InputLayout;
-		InputLayout =
+		/*InputLayout =
 		{
 			{	"POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{	"NORMAL",    0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{	"TANGENT",   0, DXGI_FORMAT_R32G32B32_FLOAT,       0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{	"TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,          0, 36, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		};
+		};*/
 		for(auto& element : desc.Layout)
 		{
-			InputLayout.emplace_back({ element.Name,  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+			D3D12_INPUT_ELEMENT_DESC a = { element.Name,  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+			InputLayout.emplace_back();
 		}
 
 		/** pso description */
@@ -88,7 +89,7 @@ namespace Foundation::Graphics::D3D12
 		psoDesc.pRootSignature = RootSignature.Get();
 
 
-		for (auto* s : desc.Shaders)
+		for (auto* s : desc.s)
 		{
 			if (s != nullptr)
 			{
@@ -96,24 +97,25 @@ namespace Foundation::Graphics::D3D12
 
 				if(shaders != nullptr)
 				{
+					ID3DBlob* shaderData = shaders->GetComPointer();
 					LPVOID pBuf = static_cast<BYTE*>(shaders->GetShader()->GetBufferPointer());
 					SIZE_T size = shaders->GetShader()->GetBufferSize();
 
 					switch (shaders->GetShaderType())
 					{
-					case ShaderType::VS:
+					case EShaderType::VS:
 						psoDesc.VS = { pBuf, size };
 						break;
-					case ShaderType::HS:
+					case EShaderType::HS:
 						psoDesc.HS = { pBuf, size };
 						break;
-					case ShaderType::DS:
+					case EShaderType::DS:
 						psoDesc.DS = { pBuf, size };
 						break;
-					case ShaderType::GS:
+					case EShaderType::GS:
 						psoDesc.GS = { pBuf, size };
 						break;
-					case ShaderType::PS:
+					case EShaderType::PS:
 						psoDesc.PS = { pBuf, size };
 						break;
 					}

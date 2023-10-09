@@ -12,12 +12,14 @@ namespace Foundation::Graphics::D3D12
 
 	HRESULT D3D12DescriptorHeap::Init(UINT32 capacity, bool isShaderVisible)
 	{
-		std::lock_guard lock{ Mutex };
+		HRESULT hr{ S_OK };
+
+		std::lock_guard lock(Mutex);
 
 		CORE_ASSERT((capacity && capacity < D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2), "Invalid capacity!");
 		CORE_ASSERT(!(Type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER) && capacity > D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE, "Invalid heap type!");
 
-		if(Type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV || Type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+		if (Type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV || Type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 		{
 			IsShaderVisible = false;
 		}
@@ -28,11 +30,10 @@ namespace Foundation::Graphics::D3D12
 		desc.Type = Type;
 		desc.NodeMask = 0;
 
-		ID3D12Device8* device = gD3D12Context->GetDevice();
+		auto* pDevice = gD3D12Context->GetDevice();
 
-		HRESULT hr{ S_OK };
-		hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
-		if(!SUCCEEDED(hr))
+		hr = pDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&pHeap));
+		if (!SUCCEEDED(hr))
 		{
 			Release();
 			return hr;
@@ -43,21 +44,20 @@ namespace Foundation::Graphics::D3D12
 		Size = 0;
 		IsShaderVisible = isShaderVisible;
 
-		for(UINT32 i{0}; i < capacity; ++i)
+		for (UINT32 i{ 0 }; i < capacity; ++i)
 		{
 			AvailableHandles[i] = i;
 		}
 
-		for(UINT32 i{0}; i < FRAMES_IN_FLIGHT; ++i)
+		for (UINT32 i{ 0 }; i < FRAMES_IN_FLIGHT; ++i)
 		{
 			CORE_ASSERT(DeferredAvailableIndices[i].empty(), " ");
 		}
 
-		HeapSize = device->GetDescriptorHandleIncrementSize(Type);
+		HeapSize = pDevice->GetDescriptorHandleIncrementSize(Type);
 
 		pBeginCPU = pHeap->GetCPUDescriptorHandleForHeapStart();
 		pBeginGPU = (isShaderVisible) ? pHeap->GetGPUDescriptorHandleForHeapStart() : D3D12_GPU_DESCRIPTOR_HANDLE{ 0 };
-
 
 		return hr;
 	}
@@ -106,7 +106,7 @@ namespace Foundation::Graphics::D3D12
 		CORE_ASSERT(pHandle.Index == index, "Index does not match the index of this descriptor slot!");
 
 		// Defer the free operation until we know it is safe.
-		DeferredAvailableIndices[gD3D12Context->CurrentFrameIndex()].push_back(index);
+		DeferredAvailableIndices[gD3D12Context->GetCurrentFrameIndex()].push_back(index);
 
 		// Let the renderer know there are pending releases for the current frame.
 		gD3D12Context->SetDeferredReleasesFlag();

@@ -28,25 +28,7 @@ namespace Foundation::Graphics
 		}
 	}
 
-	ScopePointer<Texture> Texture::Create
-	(
-		const void* initData,
-		UINT32 width,
-		UINT32 height,
-		TextureFormat format
-	)
-	{
-		switch (RendererAPI::GetAPI())
-		{
-		case RendererAPI::Api::None: 	CORE_ASSERT(false, "Not a recognised api!");	return nullptr;
-		case RendererAPI::Api::Vulkan:	CORE_ASSERT(false, "Vulkan is not a supported api!");	return nullptr;
-		case RendererAPI::Api::DX12:	return CreateScope<D3D12Texture>(initData, width, height, format);
-		default:
-			return nullptr;
-		}
-	}
-
-	ScopePointer<Texture> Texture::Create(const std::wstring& fileName, const std::string& name)
+	ScopePointer<Texture> Texture::Create(const std::wstring& fileName, const std::string_view& name)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -67,17 +49,20 @@ namespace Foundation::Graphics
 	void TextureLibrary::Remove(const std::string& name)
 	{
 		CORE_ASSERT(Exists(name), "Texture does not exist!");
+		
+		//TODO: Add to the deferred resource vector
+
 		Textures.erase(name);
 	}
 
-	Texture* TextureLibrary::GetTexture(const std::string& name)
+	Texture* TextureLibrary::GetTexture(const std::string_view& name)
 	{
-		Texture* texture = Textures.at(name).get();
+		Texture* texture = Textures.at(std::string(name)).get();
 		return texture;
 	}
 
-	bool TextureLibrary::Exists(const std::string& name)
+	bool TextureLibrary::Exists(const std::string_view& name)
 	{
-		return (Textures.find(name) != Textures.end());
+		return (Textures.find(std::string(name)) != Textures.end());
 	}
 }

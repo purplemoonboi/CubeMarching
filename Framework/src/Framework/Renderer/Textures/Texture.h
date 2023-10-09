@@ -10,7 +10,7 @@ namespace Foundation::Graphics
 	class MemoryManager;
 	class GraphicsContext;
 
-	enum class TextureFormat
+	enum class ResourceFormat
 	{
 		UNKNOWN = 0,
 		R_FLOAT_32 = 41,
@@ -48,7 +48,7 @@ namespace Foundation::Graphics
 
 	struct TextureTypeSize
 	{
-		static std::unordered_map<TextureFormat, UINT64> TypeSize;
+		static std::unordered_map<ResourceFormat, UINT64> TypeSize;
 	};
 
 	class Texture
@@ -62,28 +62,21 @@ namespace Foundation::Graphics
 			const void* initData,
 			UINT32 width,
 			UINT32 height,
-			UINT16 depth,
-			TextureFormat format 
+			UINT16 depth = 1u,
+			ResourceFormat format = ResourceFormat::RGBA_FLOAT_32 
 		);
 
-		static ScopePointer<Texture> Create
-		(
-			const void* initData,
-			UINT32 width,
-			UINT32 height,
-			TextureFormat format = TextureFormat::RGBA_UINT_UNORM
-		);
 
 		static ScopePointer<Texture> Create
 		(
 			const std::wstring& fileName,
-			const std::string& name
+			const std::string_view& name
 		);
 
 		virtual void LoadFromFile
 		(
 			const std::wstring& fileName,
-			const std::string& name
+			const std::string_view& name
 		) = 0;
 
 		virtual void Destroy() = 0;
@@ -92,7 +85,7 @@ namespace Foundation::Graphics
 		[[nodiscard]] virtual UINT32			GetHeight()				const = 0;
 		[[nodiscard]] virtual UINT16			GetDepth()				const = 0;
 		[[nodiscard]] virtual TextureDimension	GetTextureDimension()	const = 0;
-		[[nodiscard]] virtual TextureFormat		GetTextureFormat()		const = 0;
+		[[nodiscard]] virtual ResourceFormat		GetTextureFormat()		const = 0;
 		[[nodiscard]] virtual UINT64			GetTexture()			const = 0;
 
 		virtual void SetWidth(UINT32 width) = 0;
@@ -109,9 +102,9 @@ namespace Foundation::Graphics
 
 		static void Remove(const std::string& name);
 
-		static Texture* GetTexture(const std::string& name);
+		static Texture* GetTexture(const std::string_view& name);
 
-		static bool Exists(const std::string& name);
+		static bool Exists(const std::string_view& name);
 
 
 	private:

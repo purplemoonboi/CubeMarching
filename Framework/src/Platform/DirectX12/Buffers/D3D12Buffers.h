@@ -2,14 +2,7 @@
 #include "Framework/Renderer/Buffers/Buffer.h"
 #include "Framework/Primitives/GeometryBuilder.h"
 
-
 #include "../Resources/D3D12RenderFrame.h"
-#include "../RenderItems/D3D12RenderItem.h"
-
-namespace Foundation
-{
-	class AppTimeManager;
-}
 
 // Using namespace
 using Microsoft::WRL::ComPtr;
@@ -19,16 +12,7 @@ namespace Foundation::Graphics::D3D12
 
 	class D3D12Context;
 
-	// @brief The buffer event system is exclusive for modern APIs such as Direct X12 and Vulkan.
-	//	      Because it is the programmer's responsibility for ensuring safe allocation and deallocation
-	//		  of GPU resources, a simple event system for scheduling commands was devised.
-	enum class BufferEventsFlags : INT8
-	{
-		Idle = 0x0000,				// Buffer remains in this state until....
-		DirtyBuffer = 0x0001,		//....a change has been requested....
-		QueueDeletion = 0x0010,		//....a request for buffer deletion.
-		InFlight = 0x0011			//....buffer is in use on GPU.
-	};
+	
 
 	class D3D12VertexBuffer : public VertexBuffer
 	{
@@ -51,19 +35,13 @@ namespace Foundation::Graphics::D3D12
 		[[nodiscard]] UINT32 GetCount() override;
 		[[nodiscard]] const void* GetData() const override;
 
-
 		[[nodiscard]] D3D12_VERTEX_BUFFER_VIEW GetView() const;
 
 	private:
 		ComPtr<ID3DBlob> Blob{ nullptr };
 		ComPtr<ID3D12Resource> pVertexResource{ nullptr };
-		ComPtr<ID3D12Resource> pUploadBuffers[2]{nullptr};
 
-		BufferLayout Layout;
-		BufferEventsFlags BufferState = BufferEventsFlags::Idle;
-
-		UINT64 Size;
-		UINT Count;
+	
 	};
 
 	class D3D12IndexBuffer : public IndexBuffer
@@ -95,34 +73,6 @@ namespace Foundation::Graphics::D3D12
 
 		UINT64 Size;
 		UINT Count;
-
-	};
-
-	template<typename T>
-	class D3D12StructuredBuffer : StructuredBuffer<T>
-	{
-	public:
-
-		D3D12StructuredBuffer() = default;
-		DISABLE_COPY(D3D12StructuredBuffer<T>);
-
-		D3D12StructuredBuffer(T&& args) noexcept;
-		auto operator=(T&& rhs) noexcept -> D3D12StructuredBuffer<T>&;
-
-		~D3D12StructuredBuffer() override;
-
-		void OnDestroy() override;
-		void SetBuffer(const T&& other) override;
-
-	protected:
-		T Struct;
-
-	private:
-
-		ComPtr<ID3D12Resource> pResource{nullptr};
-		ComPtr<ID3DBlob> Blob{ nullptr };
-
-		UINT64 Size{ 0 };
 
 	};
 

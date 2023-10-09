@@ -46,6 +46,7 @@ namespace Foundation::Graphics
 	private:
 		std::string Name;
 		EShaderType Type;
+		void* ByteCode;
 	};
 
 

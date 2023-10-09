@@ -7,9 +7,6 @@ namespace Foundation::Graphics
 {
 
 	class GraphicsContext;
-	struct RenderItem;
-	//class FrameResource;
-	class Material;
 
 	enum class ShaderDataType
 	{
@@ -114,7 +111,6 @@ namespace Foundation::Graphics
 
 				case ShaderDataType::Bool:     return 1;
 
-
 				default: return 0;
 			}
 		}
@@ -147,8 +143,8 @@ namespace Foundation::Graphics
 
 		std::vector<BufferElement>::iterator begin() { return Elements.begin(); }
 		std::vector<BufferElement>::iterator end() { return Elements.end(); }
-		std::vector<BufferElement>::const_iterator begin() const { return Elements.begin(); }
-		std::vector<BufferElement>::const_iterator end() const { return Elements.end(); }
+		[[nodiscard]] std::vector<BufferElement>::const_iterator begin() const { return Elements.begin(); }
+		[[nodiscard]] std::vector<BufferElement>::const_iterator end() const { return Elements.end(); }
 
 	private:
 
@@ -170,6 +166,17 @@ namespace Foundation::Graphics
 		UINT Stride;
 	};
 
+	// @brief The buffer event system is exclusive for modern APIs such as Direct X12 and Vulkan.
+	//	      Because it is the programmer's responsibility for ensuring safe allocation and deallocation
+	//		  of GPU resources, a simple event system for scheduling commands was devised.
+	enum class BufferEventsFlags : INT8
+	{
+		Idle = 0x0000,		// Buffer remains in this state until....
+		DirtyBuffer = 0x0001,		//....a change has been requested....
+		QueueDeletion = 0x0010,		//....a request for buffer deletion.
+		InFlight = 0x0011		//....buffer is in use on GPU.
+	};
+
 	class VertexBuffer
 	{
 	public:
@@ -185,6 +192,13 @@ namespace Foundation::Graphics
 
 		static ScopePointer<VertexBuffer> Create(UINT size, UINT vertexCount);
 		static ScopePointer<VertexBuffer> Create(const void* vertices, UINT size, UINT vertexCount, bool isDynamic);
+
+	protected:
+		BufferLayout Layout;
+		BufferEventsFlags BufferState = BufferEventsFlags::Idle;
+
+		UINT64 Size;
+		UINT Count;
 	};
 
 	class IndexBuffer
@@ -201,42 +215,25 @@ namespace Foundation::Graphics
 		static ScopePointer<IndexBuffer> Create(UINT16* indices, UINT64 size, UINT indexCount);
 	};
 
-	template<typename T>
-	class StructuredBuffer
+	class GPUResource
 	{
 	public:
-		virtual ~StructuredBuffer() = default;
+		GPUResource(const std::string_view& registeredName)
+		{
+			memset(&RegisteredName[0], char(0), sizeof(char) * 64u);
+			memcpy(&RegisteredName[0], &registeredName[0], static_cast<UINT32>((registeredName.size()) * sizeof(char)));
+		}
 
-		virtual void OnDestroy() = 0;
-		virtual void SetBuffer(const T&& other) = 0
-		;
-		[[nodiscard]] virtual T* GetData() const = 0;
-
-		static ScopePointer<StructuredBuffer<T>> Create(T& args);
-	
+	protected:
+		char RegisteredName[64];
 	};
 
-
-	
-
-	class ResourceBuffer
+	class DynamicBuffer : public GPUResource
 	{
 	public:
-		ResourceBuffer() = default;
-		virtual ~ResourceBuffer() = default;
-		virtual void Bind() const = 0;
-		virtual void UnBind() const = 0;
-		virtual void UpdatePassBuffer(const MainCamera& camera, const float deltaTime, const float elapsedTime, bool wireframe) = 0;
-		virtual void UpdateObjectBuffers(std::vector<RenderItem*>& renderItems) = 0;
-		virtual void UpdateMaterialBuffers(std::vector<Material*>& materials) = 0;
+		DynamicBuffer(const std::string_view& registeredName);
 
-		[[nodiscard]] virtual const INT32 GetCount() const = 0;
 
-		static ScopePointer<ResourceBuffer> Create
-		(
-			GraphicsContext* graphicsContext, 
-			UINT renderItemsCount
-		){}
 
 	};
 

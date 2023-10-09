@@ -22,7 +22,7 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		ComPtr<ID3D12Resource> defaultBuffer;
@@ -115,7 +115,7 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		ComPtr<ID3D12Resource> defaultBuffer;
@@ -233,7 +233,7 @@ namespace Foundation::Graphics::D3D12
 		ComPtr<ID3D12Resource>& uploadBuffer
 	)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		/**
@@ -330,7 +330,7 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateRenderTexture(INT32 width, INT32 height, DXGI_FORMAT format)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
@@ -366,7 +366,7 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateCounterResource(bool allowShaderAtomics, bool allowWrite)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
@@ -390,7 +390,7 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12BufferFactory::CreateUploadBuffer(ComPtr<ID3D12Resource>& resource, UINT32 bufferWidth)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
@@ -408,7 +408,7 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateReadBackBuffer(UINT32 bufferWidth)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
 		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };
@@ -431,7 +431,8 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateStructuredBuffer(UINT32 bufferWidth, bool allowWrite, bool allowAtomics)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
+
 		CORE_ASSERT(device, "Invalid device!");
 
 		ComPtr<ID3D12Resource> buffer = nullptr;
@@ -457,7 +458,8 @@ namespace Foundation::Graphics::D3D12
 
 	ComPtr<ID3D12Resource> D3D12BufferFactory::CreateStructuredBuffer(UINT32 bufferWidth, ID3D12Resource* upload, const void* data, bool allowWrite, bool allowAtomics)
 	{
-		const auto device = GetDevice();
+		const auto device = gD3D12Context->GetDevice();
+
 		CORE_ASSERT(device, "Invalid device!");
 
 		HRESULT hr{ S_OK };

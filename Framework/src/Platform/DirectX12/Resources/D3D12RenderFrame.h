@@ -17,6 +17,11 @@ namespace Foundation::Graphics::D3D12
         //DISABLE_COPY_AND_MOVE(D3D12RenderFrame);
         ~D3D12RenderFrame();
 
+        ID3D12CommandAllocator* GetFrameAllocator() const { return pCmdAlloc.Get(); }
+        ID3D12GraphicsCommandList* GetFrameGraphicsCommandList() const { return pGCL.Get(); }
+
+    private:
+
         ComPtr<ID3D12GraphicsCommandList4>  pGCL{ nullptr };
         ComPtr<ID3D12CommandAllocator>      pCmdAlloc{ nullptr };
 

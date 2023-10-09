@@ -22,21 +22,32 @@ namespace Foundation::Graphics
 		INT32 OffsetY;
 	};
 
-	// @brief Abstract class, needs to be implemented on a per Api basis.
 	class FrameBuffer
 	{
 	public:
+		FrameBuffer(const FrameBufferSpecifications& specs, ResourceFormat format)
+			:
+				FrameSpecs(specs)
+		{}
+
 		virtual ~FrameBuffer() = default;
-		virtual const FrameBufferSpecifications& GetSpecifications() const = 0;
-		virtual void Init(GraphicsContext* context, FrameBufferSpecifications& fbs) = 0;
-		virtual void Bind(void* args) = 0;
-		virtual void UnBind(void* args) = 0;
-		virtual void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs) = 0;
+
+		[[nodiscard]] const FrameBufferSpecifications& GetSpecifications() const { return FrameSpecs; }
+		[[nodiscard]] INT32 GetWidth() const { return FrameSpecs.Height; };
+		[[nodiscard]] INT32 GetHeight() const { return FrameSpecs.Width; };
+
+		virtual void Bind() = 0;
+		virtual void UnBind() = 0;
+
+		virtual void SetBufferSpecifications(FrameBufferSpecifications& fbSpecs);
 		virtual void OnResizeFrameBuffer(FrameBufferSpecifications& fbSpecs) = 0;
 		virtual UINT64 GetFrameBuffer() const = 0;
-		virtual INT32 GetWidth() const= 0;
-		virtual INT32 GetHeight() const = 0;
-		static ScopePointer<FrameBuffer> Create(const FrameBufferSpecifications& fBufferSpecs);
+
+		static ScopePointer<FrameBuffer> Create(const FrameBufferSpecifications& fBufferSpecs, ResourceFormat format);
+
+	protected:
+		FrameBufferSpecifications FrameSpecs;
+		ResourceFormat Format;
 	};
 
 }

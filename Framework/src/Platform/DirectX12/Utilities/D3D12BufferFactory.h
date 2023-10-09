@@ -14,7 +14,7 @@ namespace Foundation::Graphics::D3D12
 			ID3D12GraphicsCommandList4* graphicsCmdList
 		);
 
-		// @brief Creates a default upload buffer.
+		// @brief Creates a default resource buffer on the GPU.
 		// @param[in] A pointer to the application's device.
 		// @param[in] A pointer to the graphics command list.
 		// @param[in] A pointer to the initial vertex data.

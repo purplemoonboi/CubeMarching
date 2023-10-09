@@ -98,26 +98,26 @@ namespace Foundation::Graphics::D3D12
 		D3D12RenderFrame* CurrentRenderFrame();
 
 		//	@brief Returns a pointer to the main device interface.
-		[[nodiscard("")]] ID3D12Device* GetDevice() const;
+		[[nodiscard]] ID3D12Device* GetDevice() const;
 
 		// @brief Returns a pointer to the main fence, associated with the
 		//		  main render queue.
-		[[nodiscard("")]] ID3D12Fence* GetFence() const;
+		[[nodiscard]] ID3D12Fence* GetFence() const;
 
 		// @brief Returns the current frame index.
-		[[nodiscard("")]] UINT GetCurrentFrameIndex() const;
+		[[nodiscard]] UINT GetCurrentFrameIndex() const;
 
 		// @brief Returns the current msaa quality flag.
-		[[nodiscard("")]] UINT32 GetMSAAQuality();
+		[[nodiscard]] UINT32 GetMSAAQuality();
 
 		// @brief Returns the msaa state flag.
-		[[nodiscard("")]] BOOL GetMSAAState();
+		[[nodiscard]] BOOL GetMSAAState();
 
 		// @brief Returns a pointer to the main registered system window.
-		[[nodiscard("")]] HWND   GetHwnd() const;
+		[[nodiscard]] HWND   GetHwnd() const;
 
 		// @brief Returns the current sync count associated with the core render queue.
-		[[nodiscard("")]] UINT64 GetSyncCount() const;
+		[[nodiscard]] UINT64 GetSyncCount() const;
 
 		std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
