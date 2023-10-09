@@ -104,6 +104,9 @@ namespace Foundation::Graphics::D3D12
 		//		  main render queue.
 		[[nodiscard]] ID3D12Fence* GetFence() const;
 
+		// @brief Returns a pointer to the swap chain buffer
+		[[nodiscard]] IDXGISwapChain* GetSwapChain() { return pSwapChain.Get(); }
+
 		// @brief Returns the current frame index.
 		[[nodiscard]] UINT GetCurrentFrameIndex() const;
 

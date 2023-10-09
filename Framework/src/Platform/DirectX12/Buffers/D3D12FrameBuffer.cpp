@@ -65,7 +65,7 @@ namespace Foundation::Graphics::D3D12
 
 		auto pDevice = gD3D12Context->GetDevice();
 		auto pCommandList = gD3D12Context->GetGraphicsCommandList();
-		auto pCommandAlloc = gD3D12Context->CurrentRenderFrame()->pCmdAlloc.Get();
+		auto pCommandAlloc = gD3D12Context->CurrentRenderFrame()->GetFrameAllocator();
 		CORE_ASSERT(pDevice, "The 'D3D device' has failed...");
 
 
@@ -85,36 +85,41 @@ namespace Foundation::Graphics::D3D12
 
 		DepthStencilBuffer.Reset();
 
-
-		// Resize the swap chain.
-		hr = Context->pSwapChain->ResizeBuffers
-		(
-			SWAP_CHAIN_BUFFER_COUNT,
-			FrameSpecs.Width, FrameSpecs.Height,
-			BackBufferFormat,
-			DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
-		);
-		THROW_ON_FAILURE(hr);
-
-
-		BackBufferIndex = 0;
-
-
-		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
-		
-
-		for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
+		// If the frame buffer is bound to a swap chain, then resize the swap chain too!
+		if (FrameSpecs.SwapChainTarget)
 		{
-			Context->pSwapChain->GetBuffer(i, IID_PPV_ARGS(&TargetBuffer[i]));
+			auto pSwapChain = gD3D12Context->GetSwapChain();
 
-			pDevice->CreateRenderTargetView
+			// Resize the swap chain.
+			hr = pSwapChain->ResizeBuffers
 			(
-				TargetBuffer[i].Get(),
-				nullptr,
-				pRTV[i].CpuHandle
+				SWAP_CHAIN_BUFFER_COUNT,
+				FrameSpecs.Width, FrameSpecs.Height,
+				BackBufferFormat,
+				DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
 			);
-			TargetBuffer->Get()->SetName(L"Swap Chain");
-			THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
+			THROW_ON_FAILURE(hr);
+
+
+			BackBufferIndex = 0;
+
+
+			D3D12_RENDER_TARGET_VIEW_DESC desc = {};
+
+
+			for (UINT i = 0; i < SWAP_CHAIN_BUFFER_COUNT; i++)
+			{
+				pSwapChain->GetBuffer(i, IID_PPV_ARGS(&TargetBuffer[i]));
+
+				pDevice->CreateRenderTargetView
+				(
+					TargetBuffer[i].Get(),
+					nullptr,
+					pRTV[i].CpuHandle
+				);
+				TargetBuffer->Get()->SetName(L"Swap Chain");
+				THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
+			}
 		}
 
 		auto msaaState = pDevice->GetMSAAQuality();
@@ -155,7 +160,7 @@ namespace Foundation::Graphics::D3D12
 		);
 		THROW_ON_FAILURE(hr);
 
-		THROW_ON_FAILURE(device->GetDeviceRemovedReason());
+		THROW_ON_FAILURE(pDevice->GetDeviceRemovedReason());
 
 		// Create descriptor to mip level 0 of entire resource using the format of the resource.
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
@@ -164,7 +169,7 @@ namespace Foundation::Graphics::D3D12
 		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		device->CreateDepthStencilView
+		pDevice->CreateDepthStencilView
 		(
 			DepthStencilBuffer.Get(),
 			&dsvDesc,
@@ -173,7 +178,7 @@ namespace Foundation::Graphics::D3D12
 
 
 		// Transition the resource from its initial state to be used as a depth buffer.
-		Context->pGraphicsCommandList->ResourceBarrier
+		gD3D12Context->pGraphicsCommandList->ResourceBarrier
 		(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition
@@ -185,14 +190,14 @@ namespace Foundation::Graphics::D3D12
 		);
 
 		// Execute the resize commands.
-		hr = Context->pGraphicsCommandList->Close();
+		hr = gD3D12Context->pGraphicsCommandList->Close();
 		THROW_ON_FAILURE(hr);
 
-		ID3D12CommandList* cmdsLists[] = { Context->pGraphicsCommandList.Get() };
-		Context->pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+		ID3D12CommandList* cmdsLists[] = { gD3D12Context->pGraphicsCommandList.Get() };
+		gD3D12Context->pQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 		// Wait until resize is complete.
-		Context->FlushRenderQueue();
+		gD3D12Context->FlushRenderQueue();
 
 		// Update the viewport transform to cover the client area.
 		ScreenViewport.TopLeftX = 0.0f;

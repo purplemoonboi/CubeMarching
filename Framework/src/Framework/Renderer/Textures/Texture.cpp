@@ -7,7 +7,7 @@ namespace Foundation::Graphics
 	using namespace D3D12;
 	//using namespace Vulkan;
 
-	std::unordered_map<TextureFormat, UINT64> TextureTypeSize::TypeSize = {};
+	std::unordered_map<ResourceFormat, UINT64> TextureTypeSize::TypeSize = {};
 
 	ScopePointer<Texture> Texture::Create
 	(
@@ -15,7 +15,7 @@ namespace Foundation::Graphics
 		UINT32 width,
 		UINT32 height,
 		UINT16 depth,
-		TextureFormat format 
+		ResourceFormat format 
 	)
 	{
 		switch(RendererAPI::GetAPI())
