@@ -5,7 +5,7 @@
 
 namespace Foundation::Graphics::D3D12
 {
-	D3D12RenderTarget::D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, TextureFormat format)
+	D3D12RenderTarget::D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, ResourceFormat format)
 		:
 		Width(width),
 		Height(height),
@@ -143,9 +143,9 @@ namespace Foundation::Graphics::D3D12
 		return Height;
 	}
 
-	TextureFormat D3D12RenderTarget::GetTextureFormat() const
+	ResourceFormat D3D12RenderTarget::GetTextureFormat() const
 	{
-		return static_cast<TextureFormat>(Format);
+		return static_cast<ResourceFormat>(Format);
 	}
 
 	void* D3D12RenderTarget::GetTexture() const

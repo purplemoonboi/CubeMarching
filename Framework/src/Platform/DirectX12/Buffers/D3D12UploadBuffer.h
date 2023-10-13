@@ -10,11 +10,13 @@ namespace Foundation::Graphics::D3D12
 	class D3D12UploadBuffer
 	{
 	public:
-
+		D3D12UploadBuffer();
 		D3D12UploadBuffer(UINT32 elementCount, UINT64 size, bool isConstantBuffer);
 		DISABLE_COPY_AND_MOVE(D3D12UploadBuffer);
 
 		virtual ~D3D12UploadBuffer();
+
+		void Init(UINT32 elementCount, UINT64 size, bool isConstantBuffer);
 
 		ID3D12Resource* Resource() const { return UploadBuffer.Get(); }
 
@@ -25,7 +27,7 @@ namespace Foundation::Graphics::D3D12
 
 		void Destroy()
 		{
-			
+
 		}
 
 	private:

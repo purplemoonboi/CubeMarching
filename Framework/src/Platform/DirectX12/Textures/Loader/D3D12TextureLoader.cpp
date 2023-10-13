@@ -1,12 +1,12 @@
 #include "D3D12TextureLoader.h"
-#include "Platform/DirectX12/Core/D3D12Core.h"
+#include "Platform/DirectX12/D3D12/D3D12.h"
 #include <DDSTextureLoader.h>
 
 
 namespace Foundation::Graphics::D3D12
 {
 
-	ID3D12GraphicsCommandList4* D3D12TextureLoader::pGCL { nullptr };
+	ID3D12GraphicsCommandList4* D3D12TextureLoader::pGCL{ nullptr };
 
 	HRESULT D3D12TextureLoader::LoadTexture2DFromFile(
 		const std::wstring& fileName,
@@ -15,7 +15,7 @@ namespace Foundation::Graphics::D3D12
 	)
 	{
 		const HRESULT hr = DirectX::CreateDDSTextureFromFile12(
-			pDevice.Get(),
+			gD3D12Context->GetDevice(),
 			pGCL,
 			fileName.c_str(),
 			resource, uploadHeap

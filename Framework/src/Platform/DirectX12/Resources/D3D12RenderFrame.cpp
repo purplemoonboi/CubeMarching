@@ -1,24 +1,24 @@
 #include "Framework/cmpch.h"
 #include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/D3D12/D3D12.h"
 
 namespace Foundation::Graphics::D3D12
 {
-	
+
 
 	D3D12RenderFrame::~D3D12RenderFrame()
 	{
-		Internal::DeferredRelease(PassBuffer.Resource());
-		Internal::DeferredRelease(ConstantBuffer.Resource());
+		gD3D12Context->DeferredRelease(PassBuffer.Resource());
+		gD3D12Context->DeferredRelease(ConstantBuffer.Resource());
 
-	
+
 	}
 
 
 	D3D12RenderFrame::D3D12RenderFrame()
 	{
-		const auto device = GetDevice();
-		
+		const auto device = gD3D12Context->GetDevice();
+
 		/**
 		 * Create a command allocator for this resource.
 		 */
@@ -41,13 +41,7 @@ namespace Foundation::Graphics::D3D12
 		hr = pGCL->Close();
 		THROW_ON_FAILURE(hr);
 
-		/**
-		 * Create buffers for this resource
-		 */
-		PassBuffer		= D3D12UploadBuffer<PassConstants>(FRAMES_IN_FLIGHT, true);
-		ConstantBuffer	= D3D12UploadBuffer<ObjectConstant>(MAX_D3D12_WORLD_OBJECT_COUNT, true);
-
 	}
 
-	
+
 }

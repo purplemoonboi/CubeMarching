@@ -3,18 +3,13 @@
 
 namespace Engine
 {
-
+	class RenderPipeline;
+	class VertexBuffer;
+	class IndexBuffer;
 
 	class RenderInstruction
 	{
 	public:
-
-	
-
-		static void Init(GraphicsContext* context, INT32 viewportWidth, INT32 viewportHeight)
-		{
-			RendererApiPtr->Init(context, viewportWidth, viewportHeight);
-		}
 
 		static void PreInitRenderer()
 		{
@@ -29,16 +24,6 @@ namespace Engine
 		static void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 		{
 			RendererApiPtr->SetViewport(x, y, width, height);
-		}
-
-		static void BindTerrainPass(PipelineStateObject* pso, RenderItem* terrain)
-		{
-			RendererApiPtr->BindTerrainPass(pso, terrain);
-		}
-
-		static void BindGeometryPass(PipelineStateObject* pso, const std::vector<RenderItem*>& renderItems)
-		{
-			RendererApiPtr->BindStaticGeoPass(pso, renderItems);
 		}
 
 		static void OnBeginResourceCreation()
@@ -56,42 +41,31 @@ namespace Engine
 			RendererApiPtr->Flush();
 		}
 
-		static void PreRender
-		(
-			const std::vector<RenderItem*>& items, const std::vector<Material*>& materials,
-			RenderItem* terrain,
-			const MainCamera& camera,
-			const WorldSettings& settings,
-			float deltaTime,
-			float elapsedTime,
-			bool wireframe
-		)
+		static void Draw(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer)
 		{
-			RendererApiPtr->PreRender(items, materials, terrain, settings, camera, deltaTime, elapsedTime, wireframe);
+			RendererApiPtr->Draw(renderPipeline, vertexBuffer);
 		}
 
-		static void PostRender()
+		static void DrawIndexed(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer)
 		{
-			RendererApiPtr->PostRender();
+			RendererApiPtr->DrawIndexed(renderPipeline, vertexBuffer, indexBuffer);
 		}
 
-		static RendererAPI* GetApiPtr() { return RendererApiPtr; }
-
-		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
+		static void DrawInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, UINT32 instanceCount)
 		{
-			RendererApiPtr->DrawIndexed(vertexArray, count);
+			RendererApiPtr->DrawInstanced(renderPipeline, vertexBuffer, instanceCount);
 		}
 
-		static void DrawIndexed(const ScopePointer<MeshGeometry>& geometry, INT32 count = 0)
+		static void DrawIndexedInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer, UINT32 instanceCount)
 		{
-			RendererApiPtr->DrawIndexed(geometry, count);
+			RendererApiPtr->DrawIndexedInstanced(renderPipeline, vertexBuffer, indexBuffer);
 		}
 
-
+		static ScopePointer<RendererAPI> GetApiPtr() { return RendererApiPtr; }
 
 	private:
 
-		static RendererAPI* RendererApiPtr;
+		static ScopePointer<RendererAPI> RendererApiPtr;
 
 	};
 }

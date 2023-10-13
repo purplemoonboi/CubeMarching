@@ -27,7 +27,7 @@ namespace Foundation::Graphics::D3D12
 		UINT32 width, 
 		UINT32 height, 
 		UINT16 depthOrArrays, 
-		TextureFormat textureFormat
+		ResourceFormat textureFormat
 	)
 		:
 		Width(width),
@@ -81,7 +81,7 @@ namespace Foundation::Graphics::D3D12
 		const void* initData, 
 		UINT32 width, 
 		UINT32 height,
-		TextureFormat format
+		ResourceFormat format
 	)
 		:
 		Width(width),
@@ -250,9 +250,9 @@ namespace Foundation::Graphics::D3D12
 		return static_cast<TextureDimension>(Dimension);
 	}
 
-	TextureFormat D3D12Texture::GetTextureFormat() const
+	ResourceFormat D3D12Texture::GetTextureFormat() const
 	{
-		return static_cast<TextureFormat>(Format);
+		return static_cast<ResourceFormat>(Format);
 	}
 
 }

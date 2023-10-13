@@ -22,7 +22,9 @@
 
 
 // BIT shift by 'x' amount
-#define BIT(x) (1 << (x))
+#define BIT_LSHIFT(x) (1 << (x))
+
+#define BIT_RSHIFT(x) (1 >> (x))
 
 // Bind callback function
 #define BIND_DELEGATE(f) std::bind(&f, this, std::placeholders::_1)
@@ -86,11 +88,11 @@ namespace Foundation
 		T tmp = std::move(a);
 		a = std::move(b);
 		b = std::move(tmp);
-		
+
 	}
 
 	// typedef function delegate
-	using Delegate = std::function<void(Event&)>;
+	using EventDelegate = std::function<void(Event&)>;
 
 	// typedef unique pointer
 	template<typename T>

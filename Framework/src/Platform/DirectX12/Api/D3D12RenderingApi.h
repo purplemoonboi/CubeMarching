@@ -29,8 +29,8 @@ namespace Foundation::Graphics::D3D12
 		void PreInit() override;
 		void PostInit() override;
 
-		void OnBeginRender() override;
-		void OnEndRender() override;
+		void BeginRender() override;
+		void EndRender() override;
 
 		void Flush() override;
 

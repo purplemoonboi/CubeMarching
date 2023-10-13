@@ -26,7 +26,8 @@ namespace Engine
 	{
 		std::wstring FilePath;
 		std::string EntryPoint;
-		std::string ShaderModel;
+		std::string ShaderModel{ "6.0" };
+		void* macros{ nullptr };
 	};
 
 	// @brief The shader class is a high level object which allows the user to allocate
@@ -35,30 +36,17 @@ namespace Engine
 	class Shader
 	{
 	public:
-		virtual ~Shader() = default;
+		Shader() = default;
 
-		virtual void Bind() const = 0;
+		static Shader* Create(const ShaderArgs args, ShaderType type);
 
-		virtual void UnBind() const = 0;
+		ShaderArgs GetShaderArgs() const { return Args; }
+		ShaderType GetShaderType() const { return Type; }
 
-		virtual void SetFloat(std::string&& name, float value) = 0;
-		virtual void SetFloat2(std::string&& name, const DirectX::XMFLOAT2& matrix) = 0;
-		virtual void SetFloat3(std::string&& name, const DirectX::XMFLOAT3& matrix) = 0;
-		virtual void SetFloat4(std::string&& name, const DirectX::XMFLOAT4& matrix) = 0;
+	protected:
+		ShaderArgs Args;
+		ShaderType Type;
 
-		virtual void SetMat3(std::string&& name, const DirectX::XMFLOAT3X3& matrix) = 0;
-		virtual void SetMat4(std::string&& name, const DirectX::XMFLOAT4X4& matrix) = 0;
-
-
-		virtual const std::string& GetName() const = 0;
-
-		static ScopePointer<Shader> Create(const std::string& filepath);
-
-		static ScopePointer<Shader> Create(std::string&& filepath);
-
-		static ScopePointer<Shader> Create(const std::wstring& filePath, const std::string& entryPoint, const std::string& target, D3D_SHADER_MACRO* defines = nullptr);
-
-		static ScopePointer<Shader> Create(std::wstring&& filePath, std::string&& entryPoint, std::string&& target, D3D_SHADER_MACRO* defines = nullptr);
 	};
 
 
@@ -68,15 +56,15 @@ namespace Engine
 	public:
 
 		static void Add(ScopePointer<Shader> shader);
-		
+
 		static void Add(const std::string& name, ScopePointer<Shader> shader);
-		
+
 		static Shader* Load(const std::string& filePath);
-		
+
 		static Shader* Load(const std::string& name, const std::wstring& filePath, std::string&& entryPoint, std::string&& target);
-		
+
 		static Shader* GetShader(const std::string& name);
-		
+
 		static bool Exists(const std::string& name);
 
 	private:

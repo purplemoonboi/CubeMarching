@@ -39,10 +39,10 @@ namespace Foundation::Graphics
 			Lighting = 0x5,
 			AmbientOcclusion = 0x6,
 		};
-		
+
 	public:
 		static Api GetAPI() { return RenderingApi; }
-		
+
 		virtual ~RendererAPI() = 0;
 
 		virtual void PreInit() = 0;
@@ -51,8 +51,8 @@ namespace Foundation::Graphics
 
 		virtual void SetViewport(INT32 x, INT32 y, INT32 width, INT32 height) = 0;
 
-		virtual void OnBeginRender() = 0;
-		virtual void OnEndRender() = 0;
+		virtual void BeginRender() = 0;
+		virtual void EndRender() = 0;
 
 		virtual void Flush() = 0;
 

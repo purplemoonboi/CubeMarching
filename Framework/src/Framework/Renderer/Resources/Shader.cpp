@@ -10,7 +10,8 @@
 namespace Engine
 {
 
-	ScopePointer<Shader> Shader::Create(const std::string& filePath)
+
+	Shader* Shader::Create(const ShaderArgs args, ShaderType type)
 	{
 		switch (RendererAPI::GetAPI())
 		{
@@ -18,54 +19,7 @@ namespace Engine
 		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
 		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
 		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(filePath);
-		}
-
-		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
-		return nullptr;
-	}
-
-	ScopePointer<Shader> Shader::Create(std::string&& filepath)
-	{
-		switch (RendererAPI::GetAPI())
-		{
-		case RendererAPI::Api::None:	  CORE_ASSERT(false, "No Api found!"); return nullptr;
-		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
-		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(std::move(filepath));
-
-		}
-
-		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
-		return nullptr;
-	}
-
-	ScopePointer<Shader> Shader::Create(const std::wstring& filePath, const std::string& entryPoint, const std::string& target, D3D_SHADER_MACRO* defines)
-	{
-		switch (RendererAPI::GetAPI())
-		{
-		case RendererAPI::Api::None:	  CORE_ASSERT(false, "No Api found!"); return nullptr;
-		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
-		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(filePath, entryPoint, target, defines);
-
-		}
-
-		CORE_ASSERT(false, "Unknown renderer RendererAPI!");
-		return nullptr;
-	}
-
-	ScopePointer<Shader> Shader::Create(std::wstring&& filePath, std::string&& entryPoint, std::string&& target, D3D_SHADER_MACRO* defines)
-	{
-		switch (RendererAPI::GetAPI())
-		{
-		case RendererAPI::Api::None:	  CORE_ASSERT(false, "No Api found!"); return nullptr;
-		case RendererAPI::Api::OpenGL:	  CORE_ASSERT(false, "OpenGL is not a supported api!"); return nullptr;
-		case RendererAPI::Api::Vulkan:	  CORE_ASSERT(false, "Vulkan is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX11:	  CORE_ASSERT(false, "DirectX 11 is not a supported api!"); return nullptr;
-		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(std::move(filePath), std::move(entryPoint), std::move(target), defines);
+		case RendererAPI::Api::DX12:	  return CreateScope<D3D12Shader>(args, type);
 
 		}
 
@@ -74,7 +28,7 @@ namespace Engine
 	}
 
 	//Declare shader library.
-	std::unordered_map<std::string, ScopePointer<Shader>> ShaderLibrary::Shaders; 
+	std::unordered_map<std::string, ScopePointer<Shader>> ShaderLibrary::Shaders;
 
 	void ShaderLibrary::Add(const std::string& name, ScopePointer<Shader> shader)
 	{

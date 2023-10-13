@@ -17,7 +17,7 @@ namespace Foundation::Graphics::D3D12
 			UINT32 width,
 			UINT32 height,
 			UINT16 depth,
-			TextureFormat format
+			ResourceFormat format
 		);
 
 		D3D12Texture
@@ -25,7 +25,7 @@ namespace Foundation::Graphics::D3D12
 			const void* initData,
 			UINT32 width,
 			UINT32 height,
-			TextureFormat format = TextureFormat::RGBA_UINT_UNORM
+			ResourceFormat format = ResourceFormat::RGBA_UINT_UNORM
 		);
 
 		D3D12Texture
@@ -50,17 +50,10 @@ namespace Foundation::Graphics::D3D12
 		[[nodiscard]] UINT16			GetDepth()				const override;
 		[[nodiscard]] UINT64			GetTexture()			const override;
 		[[nodiscard]] TextureDimension	GetTextureDimension()	const override;
-		[[nodiscard]] TextureFormat		GetTextureFormat()		const override;
+		[[nodiscard]] ResourceFormat		GetTextureFormat()		const override;
 
 	private:
-		UINT64 Width;
-		UINT32 Height;
-		UINT16 Depth;
-		UINT MipLevels = -1;
-		std::string Name;
-		std::wstring FileName;
 
-		DXGI_FORMAT Format;
 
 		ComPtr<ID3D12Resource> GpuResource;
 		ComPtr<ID3D12Resource> UploadBuffer;

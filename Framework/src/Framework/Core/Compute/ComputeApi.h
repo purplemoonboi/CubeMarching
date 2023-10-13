@@ -10,7 +10,7 @@ namespace Foundation::Graphics
 	class ComputeApi
 	{
 	public:
-		virtual ~ComputeApi(){}
+		virtual ~ComputeApi() {}
 		virtual void Init(GraphicsContext* context) = 0;
 		virtual void ResetComputeCommandList(RenderPipeline* state = nullptr) = 0;
 		virtual void ExecuteComputeCommandList(UINT64* gpuSync) = 0;

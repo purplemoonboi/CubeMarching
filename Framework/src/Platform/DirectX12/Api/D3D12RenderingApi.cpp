@@ -1,18 +1,10 @@
 #include "D3D12RenderingApi.h"
 #include "Framework/Core/Log/Log.h"
 
-#include "Platform/Directx12/Buffers/D3D12FrameBuffer.h"
-#include "Platform/Directx12/Buffers/D3D12Buffers.h"
-#include "Platform/DirectX12/Shaders/D3D12Shader.h"
-#include "Platform/DirectX12/Pipeline/D3D12RenderPipeline.h"
-#include "Platform/DirectX12/Resources/D3D12RenderFrame.h"
-#include "Platform/DirectX12/Heap/D3D12HeapManager.h"
-#include "Platform/DirectX12/Pipeline/D3D12PipelineResource.h"
-#include "Platform/DirectX12/Utilities/D3D12Utilities.h"
-#include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
-#include "Platform/DirectX12/Textures/D3D12RenderTarget.h"
-#include "Platform/DirectX12/Textures/Loader/D3D12TextureLoader.h"
 #include "Platform/DirectX12/D3D12/D3D12.h"
+#include "Platform/DirectX12/Pipeline/D3D12RenderPipeline.h"
+#include "Platform/Directx12/Buffers/D3D12Buffers.h"
+
 
 namespace Foundation::Graphics::D3D12
 {
@@ -32,7 +24,7 @@ namespace Foundation::Graphics::D3D12
 
 	void D3D12RenderingApi::SetViewport(INT32 x, INT32 y, INT32 width, INT32 height)
 	{
-		
+
 		CORE_TRACE("Buffer resize w: {0}, h: {1}", width, height);
 		FrameBufferSpecifications fbSpecs = {};
 		fbSpecs.Width = width;
@@ -40,8 +32,8 @@ namespace Foundation::Graphics::D3D12
 		fbSpecs.OffsetX = x;
 		fbSpecs.OffsetY = y;
 
-		
-		
+
+
 	}
 
 	void D3D12RenderingApi::PreInit()
@@ -66,7 +58,7 @@ namespace Foundation::Graphics::D3D12
 		//Flush();
 	}
 
-	void D3D12RenderingApi::OnBeginRender()
+	void D3D12RenderingApi::BeginRender()
 	{
 		// If everything checks out prepare recording instructions under the
 		// current frame resource.
@@ -82,10 +74,10 @@ namespace Foundation::Graphics::D3D12
 
 	}
 
-	void D3D12RenderingApi::OnEndRender()
+	void D3D12RenderingApi::EndRender()
 	{
 		const auto frame = gD3D12Context->CurrentRenderFrame();
-		
+
 		Flush();
 	}
 
@@ -96,13 +88,14 @@ namespace Foundation::Graphics::D3D12
 
 
 		HRESULT hr{ S_OK };
-		hr = frame->pGCL->Close();
+		hr = frame->GetFrameGraphicsCommandList()->Close();
 		THROW_ON_FAILURE(hr);
-		ID3D12CommandList* cmdList[] = { frame->pGCL.Get() };
+		ID3D12CommandList* cmdList[] = { frame->GetFrameGraphicsCommandList() };
 		pQueue->ExecuteCommandLists(_countof(cmdList), cmdList);
-		
-		frame->Fence = gD3D12Context->GetSyncCount();
-		hr = pQueue->Signal(gD3D12Context->GetFence(), frame->Fence);
+
+		auto& fence = frame->GetFence();
+		fence = gD3D12Context->GetSyncCount();
+		hr = pQueue->Signal(gD3D12Context->GetFence(), fence);
 		THROW_ON_FAILURE(hr);
 	}
 

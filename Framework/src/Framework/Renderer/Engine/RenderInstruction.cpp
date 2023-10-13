@@ -5,5 +5,5 @@
 
 namespace Engine
 {
-	RendererAPI* RenderInstruction::RendererApiPtr = new D3D12RenderingApi();
+	ScopePointer<RendererAPI> RenderInstruction::RendererApiPtr = CreateScope<D3D12RenderingApi>(0);
 }

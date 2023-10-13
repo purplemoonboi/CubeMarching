@@ -3,32 +3,12 @@
 #include <string>
 #include <unordered_map>
 #include "Framework/Core/core.h"
-
+#include "Framework/Renderer/Formats/ResourceFormats.h"
 
 namespace Foundation::Graphics
 {
 	class MemoryManager;
 	class GraphicsContext;
-
-	enum class ResourceFormat
-	{
-		UNKNOWN = 0,
-		R_FLOAT_32 = 41,
-		RG_FLOAT_32 = 16,
-		RGB_FLOAT_32 = 6,
-		RGBA_FLOAT_32 = 2,
-		R_FLOAT_16 = 54,
-		RG_FLOAT_16 = 34,
-		RGBA_FLOAT_16 = 10,
-		R_SINT_8 = 64,
-		RG_SINT_8 = 52,
-		RGBA_SINT_8 = 32,
-		R_UINT_8 = 62,
-		RG_UINT_8 = 50,
-		RGB_UINT_8 = 7,
-		RGBA_UINT_8 = 30,
-		RGBA_UINT_UNORM = 28
-	};
 
 	enum class TextureDimension
 	{
@@ -63,7 +43,7 @@ namespace Foundation::Graphics
 			UINT32 width,
 			UINT32 height,
 			UINT16 depth = 1u,
-			ResourceFormat format = ResourceFormat::RGBA_FLOAT_32 
+			ResourceFormat format = ResourceFormat::R32G32B32A32_FLOAT
 		);
 
 
@@ -81,16 +61,26 @@ namespace Foundation::Graphics
 
 		virtual void Destroy() = 0;
 
-		[[nodiscard]] virtual UINT64			GetWidth()				const = 0;
-		[[nodiscard]] virtual UINT32			GetHeight()				const = 0;
-		[[nodiscard]] virtual UINT16			GetDepth()				const = 0;
-		[[nodiscard]] virtual TextureDimension	GetTextureDimension()	const = 0;
-		[[nodiscard]] virtual ResourceFormat		GetTextureFormat()		const = 0;
-		[[nodiscard]] virtual UINT64			GetTexture()			const = 0;
+		[[nodiscard]] virtual UINT64			GetWidth()				const { return Width; };
+		[[nodiscard]] virtual UINT32			GetHeight()				const { return Height; };
+		[[nodiscard]] virtual UINT16			GetDepth()				const {};
+		[[nodiscard]] virtual TextureDimension	GetTextureDimension()	const {};
+		[[nodiscard]] virtual ResourceFormat	GetTextureFormat()		const {};
+		[[nodiscard]] virtual UINT64			GetTexture()			const {};
 
 		virtual void SetWidth(UINT32 width) = 0;
 		virtual void SetHeight(UINT32 height) = 0;
 		virtual void SetDepth(UINT16 depth) = 0;
+
+	protected:
+		UINT64 Width;
+		UINT32 Height;
+		UINT16 Depth;
+		UINT MipLevels = -1;
+		std::string Name;
+		std::wstring FileName;
+
+		ResourceFormat Format;
 
 	};
 

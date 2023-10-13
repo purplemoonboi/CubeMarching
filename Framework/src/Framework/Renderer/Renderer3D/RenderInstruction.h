@@ -62,7 +62,7 @@ namespace Foundation::Graphics
 
 		static void OnBeginRender()
 		{
-			RendererApiPtr->OnBeginRender();
+			RendererApiPtr->BeginRender();
 		}
 
 		static void DrawIndexed(const RefPointer<VertexArray>& vertexArray, INT32 count = 0)
@@ -77,7 +77,7 @@ namespace Foundation::Graphics
 
 		static void OnEndRender()
 		{
-			RendererApiPtr->OnEndRender();
+			RendererApiPtr->EndRender();
 		}
 		
 	public:/*...Getters...*/

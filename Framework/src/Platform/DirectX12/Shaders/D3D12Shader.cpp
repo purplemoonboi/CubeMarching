@@ -1,6 +1,7 @@
 #include "D3D12Shader.h"
 #include "Framework/Core/Log/Log.h"
 #include "Platform/DirectX12/Pipeline/D3D12RenderPipeline.h"
+#include "Framework/Renderer/Shaders/Shader.h
 
 namespace Foundation::Graphics::D3D12
 {
@@ -49,14 +50,11 @@ namespace Foundation::Graphics::D3D12
 
 	D3D12Shader::D3D12Shader
 	(
-		const std::wstring& filePath, 
-		const std::string& entryPoint, 
-		const std::string& target,
-		EShaderType type,
-		D3D_SHADER_MACRO* defines
+		const ShaderArgs& args,
+		EShaderType type
 	)
 		:
-			Shader(entryPoint, type)
-		,	ShaderData(CompileShader(filePath, defines, entryPoint, target))
+		Shader(entryPoint, type)
+		, ShaderData(CompileShader(args.FilePath, args.macros, args.EntryPoint, args.ShaderModel))
 	{}
 }

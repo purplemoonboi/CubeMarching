@@ -10,7 +10,7 @@ namespace Foundation::Graphics::D3D12
 	class D3D12RenderTarget : public RenderTarget
 	{
 	public:
-		explicit D3D12RenderTarget(const void* data=nullptr, UINT32 width=-1U, UINT32 height=1U, TextureFormat format = TextureFormat::RGBA_UINT_UNORM);
+		explicit D3D12RenderTarget(const void* data=nullptr, UINT32 width=-1U, UINT32 height=1U, ResourceFormat format = ResourceFormat::RGBA_UINT_UNORM);
 		DISABLE_COPY(D3D12RenderTarget);
 		D3D12RenderTarget(D3D12RenderTarget&& rhs) noexcept;
 		auto operator=(D3D12RenderTarget&& rhs) noexcept -> D3D12RenderTarget&;
@@ -26,7 +26,7 @@ namespace Foundation::Graphics::D3D12
 	public:/*...Getters...*/
 		[[nodiscard]] UINT32 GetWidth()					const override;
 		[[nodiscard]] UINT32 GetHeight()				const override;
-		[[nodiscard]] TextureFormat GetTextureFormat()	const override;
+		[[nodiscard]] ResourceFormat GetTextureFormat()	const override;
 		[[nodiscard]] void* GetTexture()				const override;
 
 

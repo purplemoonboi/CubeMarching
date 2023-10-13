@@ -12,7 +12,7 @@ namespace Foundation::Graphics
 	ScopePointer<RenderTarget> RenderTarget::Create(
 		const void* initData, 
 		UINT32 width, UINT32 height, 
-		TextureFormat format
+		ResourceFormat format
 	)
 	{
 		switch (RendererAPI::GetAPI())

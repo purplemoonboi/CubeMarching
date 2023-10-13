@@ -1,5 +1,6 @@
 #pragma once
 #include "Framework/Core/core.h"
+#include "Framework/Renderer/Formats/ResourceFormats.h"
 
 namespace Foundation::Graphics
 {
@@ -27,7 +28,7 @@ namespace Foundation::Graphics
 	public:
 		FrameBuffer(const FrameBufferSpecifications& specs, ResourceFormat format)
 			:
-				FrameSpecs(specs)
+			FrameSpecs(specs)
 		{}
 
 		virtual ~FrameBuffer() = default;
