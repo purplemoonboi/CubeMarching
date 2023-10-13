@@ -3,7 +3,7 @@
 
 #include "Platform/DirectX12/Api/D3D12RenderingApi.h"
 
-namespace Engine
+namespace Foundation::Graphics
 {
-	ScopePointer<RendererAPI> RenderInstruction::RendererApiPtr = CreateScope<D3D12RenderingApi>(0);
+	ScopePointer<RendererAPI> RenderInstruction::RendererApiPtr = CreateScope<D3D12RenderingApi>();
 }

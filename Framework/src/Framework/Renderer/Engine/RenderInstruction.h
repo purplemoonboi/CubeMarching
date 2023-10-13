@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Renderer/Api/RendererAPI.h"
 
-namespace Engine
+namespace Foundation::Graphics
 {
 	class RenderPipeline;
 	class VertexBuffer;
@@ -58,10 +58,10 @@ namespace Engine
 
 		static void DrawIndexedInstanced(RenderPipeline* renderPipeline, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer, UINT32 instanceCount)
 		{
-			RendererApiPtr->DrawIndexedInstanced(renderPipeline, vertexBuffer, indexBuffer);
+			RendererApiPtr->DrawIndexedInstanced(renderPipeline, vertexBuffer, indexBuffer, instanceCount);
 		}
 
-		static ScopePointer<RendererAPI> GetApiPtr() { return RendererApiPtr; }
+		static RendererAPI* GetApiPtr() { return RendererApiPtr.get(); }
 
 	private:
 

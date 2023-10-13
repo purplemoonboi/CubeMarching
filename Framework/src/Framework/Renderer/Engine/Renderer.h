@@ -4,7 +4,7 @@
 #include "Framework/Renderer/Api/RendererAPI.h"
 
 
-namespace Engine
+namespace Foundation::Graphics
 {
 
 	class Renderer
@@ -18,7 +18,7 @@ namespace Engine
 	private:
 		struct SceneData
 		{
-			
+
 		};
 
 		static SceneData* SceneData;

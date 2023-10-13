@@ -11,7 +11,7 @@ namespace Foundation::Graphics::D3D12
 	{
 	public:
 		D3D12Shader() = default;
-		D3D12Shader(const std::wstring& filePath, const std::string& entryPoint, const std::string& target, EShaderType type, D3D_SHADER_MACRO* defines = nullptr);
+		D3D12Shader(const ShaderArgs& args, EShaderType type);
 
 		[[nodiscard]] const ComPtr<ID3DBlob>& GetComPointer() const { return ShaderData; }
 		[[nodiscard]] ComPtr<ID3DBlob>& GetComPointer() { return ShaderData; }

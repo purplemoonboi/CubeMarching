@@ -9,12 +9,12 @@
 
 #include "Framework/Renderer/Api/FrameResource.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
-#include "Framework/Renderer/Resources/Shader.h"
+#include "Framework/Renderer/Shaders/Shader.h"
 #include "Framework/Renderer/Material/Material.h"
 #include "Framework/Renderer/Textures/Texture.h"
 #include "Framework/Renderer/Pipeline/RenderPipeline.h"
 
-namespace Engine
+namespace Foundation::Graphics
 {
 
 	GeometryGenerator Geo;

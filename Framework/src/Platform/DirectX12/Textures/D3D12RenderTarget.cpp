@@ -1,11 +1,11 @@
 #include "D3D12RenderTarget.h"
 
-#include "Platform/DirectX12/Api/D3D12Context.h"
+#include "Platform/DirectX12/D3D12/D3D12.h"
 #include "Platform/DirectX12/Utilities/D3D12BufferFactory.h"
 
 namespace Foundation::Graphics::D3D12
 {
-	D3D12RenderTarget::D3D12RenderTarget(const void* data, UINT32 width, UINT32 height, ResourceFormat format)
+	D3D12RenderTarget::D3D12RenderTarget(ResourceFormat format, UINT32 width, UINT32 height)
 		:
 		Width(width),
 		Height(height),
@@ -62,38 +62,34 @@ namespace Foundation::Graphics::D3D12
 		return *this;
 	}
 
-	D3D12RenderTarget::~D3D12RenderTarget() 
+	D3D12RenderTarget::~D3D12RenderTarget()
 	{
-		const auto rtvHeap = GetRTVHeap();
+		const auto rtvHeap = gD3D12Context->GetRTVHeap();
 		rtvHeap->Free(pRTV);
 
-		Internal::DeferredRelease(pResource.Get());
+		gD3D12Context->DeferredRelease(pResource.Get());
 	}
 
 	void D3D12RenderTarget::Bind()
 	{
-		const auto frame = CurrentRenderFrame();
-		CORE_ASSERT(frame->pGCL.Get(), "Invalid graphics command list!");
+		const auto frame = gD3D12Context->CurrentRenderFrame();
+		CORE_ASSERT(frame->GetFrameGraphicsCommandList(), "Invalid graphics command list!");
 
 
-		frame->pGCL->OMSetRenderTargets(1, &pRTV.CpuHandle,
-			FALSE, &pDSV.CpuHandle);
-
-
-
+		frame->GetFrameGraphicsCommandList()->OMSetRenderTargets(1, &pRTV.CpuHandle, FALSE, &pDSV.CpuHandle);
 	}
 
 	void D3D12RenderTarget::OnDestroy()
 	{
-		auto* srvHeap = GetSRVHeap();
-		auto* rtvHeap = GetRTVHeap();
-		auto* dsvHeap = GetDSVHeap();
+		auto* srvHeap = gD3D12Context->GetSRVHeap();
+		auto* rtvHeap = gD3D12Context->GetRTVHeap();
+		auto* dsvHeap = gD3D12Context->GetDSVHeap();
 
 		rtvHeap->Free(pRTV);
 		srvHeap->Free(pSRV);
 		dsvHeap->Free(pRTV);
 
-		Internal::DeferredRelease(pResource.Get());
+		gD3D12Context->DeferredRelease(pResource.Get());
 	}
 
 	void D3D12RenderTarget::LoadFromFile(const std::wstring& fileName, const std::string& name)
@@ -153,7 +149,7 @@ namespace Foundation::Graphics::D3D12
 		return reinterpret_cast<void*>(pSRV.GpuHandle.ptr);
 	}
 
-	
+
 	void D3D12RenderTarget::SetWidth(UINT32 width)
 	{
 		Width = width;

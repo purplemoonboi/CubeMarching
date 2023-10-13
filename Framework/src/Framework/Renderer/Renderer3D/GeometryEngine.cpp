@@ -2,13 +2,13 @@
 
 
 #include "GeometryGenerator.h"
-#include "RenderInstruction.h"
+#include "Framework/Renderer/Engine/RenderInstruction.h"
 
 #include "Framework/Core/Compute/ComputeInstruction.h"
 #include "Framework/Renderer/Api/FrameResource.h"
 #include "Framework/Renderer/Buffers/VertexArray.h"
 #include "Framework/Renderer/Pipeline/RenderPipeline.h"
-#include "Framework/Renderer/Resources/Shader.h"
+#include "Framework/Renderer/Shaders/Shader.h"
 #include "Framework/Renderer/Material/Material.h"
 #include "Framework/Renderer/Textures/Texture.h"
 #include "Framework/Scene/Scene.h"
@@ -73,15 +73,11 @@ namespace Foundation::Graphics
 
 
 
-		RenderInstruction::OnBeginRender();
 	}
 
 	void GeometryEngine::EndScene()
 	{
-		/**
-		 *	Render the scene geometry to the scene
-		 */
-		RenderInstruction::OnEndRender();
+
 	}
 
 	void GeometryEngine::BuildCoreEngineDefaultMaterials()

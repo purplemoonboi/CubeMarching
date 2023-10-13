@@ -33,10 +33,23 @@ namespace Foundation::Graphics
 
 	class Texture
 	{
-	public:
+	protected:
+		Texture(
+			UINT32 width,
+			UINT32 height,
+			UINT16 depth = 1u,
+			ResourceFormat format = ResourceFormat::R32G32B32A32_FLOAT)
+			:
+			Width(width)
+			, Height(height)
+			, Depth(depth)
+			, Format(format)
+		{}
+
 		Texture() = default;
 		virtual ~Texture() = default;
 
+	public:
 		static ScopePointer<Texture> Create
 		(
 			const void* initData,
@@ -46,31 +59,25 @@ namespace Foundation::Graphics
 			ResourceFormat format = ResourceFormat::R32G32B32A32_FLOAT
 		);
 
-
 		static ScopePointer<Texture> Create
 		(
 			const std::wstring& fileName,
 			const std::string_view& name
 		);
 
-		virtual void LoadFromFile
-		(
-			const std::wstring& fileName,
-			const std::string_view& name
-		) = 0;
 
-		virtual void Destroy() = 0;
+		virtual void Destroy() {};
 
-		[[nodiscard]] virtual UINT64			GetWidth()				const { return Width; };
-		[[nodiscard]] virtual UINT32			GetHeight()				const { return Height; };
-		[[nodiscard]] virtual UINT16			GetDepth()				const {};
-		[[nodiscard]] virtual TextureDimension	GetTextureDimension()	const {};
-		[[nodiscard]] virtual ResourceFormat	GetTextureFormat()		const {};
-		[[nodiscard]] virtual UINT64			GetTexture()			const {};
+		[[nodiscard]] UINT64			GetWidth()				const { return Width; }
+		[[nodiscard]] UINT32			GetHeight()				const { return Height; }
+		[[nodiscard]] UINT16			GetDepth()				const { return Depth; }
+		[[nodiscard]] TextureDimension	GetTextureDimension()	const { return Dimension; }
+		[[nodiscard]] ResourceFormat	GetTextureFormat()		const { return Format; }
+		[[nodiscard]] virtual UINT64	GetTexture()			const { return 0; }
 
-		virtual void SetWidth(UINT32 width) = 0;
-		virtual void SetHeight(UINT32 height) = 0;
-		virtual void SetDepth(UINT16 depth) = 0;
+		virtual void SetWidth(UINT32 width) { Width = width; };
+		virtual void SetHeight(UINT32 height) { Height = height; };
+		virtual void SetDepth(UINT16 depth) { Depth = depth; };
 
 	protected:
 		UINT64 Width;
@@ -81,7 +88,7 @@ namespace Foundation::Graphics
 		std::wstring FileName;
 
 		ResourceFormat Format;
-
+		TextureDimension Dimension;
 	};
 
 	class TextureLibrary

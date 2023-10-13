@@ -6,7 +6,7 @@
 #include "Framework/Renderer/Api/FrameResource.h"
 
 
-namespace Engine
+namespace Foundation::Graphics
 {
 
 	class RendererApi;
